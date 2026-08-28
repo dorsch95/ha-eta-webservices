@@ -86,9 +86,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Bildpfad basierend auf der Auswahl aus dem Config Flow ermitteln
+    # Bildpfad basierend auf dem Repository-Namen von HACS
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png")
-    coordinator.system_image_path = f"/local/community/eta_webservices/{dateiname}"
+    coordinator.system_image_path = f"/local/community/ha-eta-webservices/{dateiname}"
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "coordinator": coordinator,
