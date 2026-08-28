@@ -3,9 +3,9 @@
 [![hacs_badge](https://shields.io)](https://github.com)
 [![License: MIT](https://shields.io)](LICENSE)
 
-Diese benutzerdefinierte Home Assistant Integration ermöglicht es, Daten von **ETA Heizsystemen** (Pelletkessel, Stückholzkessel, Hackgut, Puffer- und Solarspeicher) lokal über die integrierten RESTful Webservices (ETAtouch) auszulesen.
+Diese benutzerdefinierte Home Assistant Integration ermöglicht es, Daten von **ETA Heizsystemen** (Pelletkessel, Stückholzkessel, Hackgut, Puffer- und Solarspeicher sowie Frischwassermodule) lokal über die integrierten RESTful Webservices (ETAtouch) auszulesen.
 
-⚠️ **Hinweis:** Diese Integration kommuniziert komplett lokal in deinem Netzwerk und benötigt keine aktive Internetverbindung zu meinETA, sobald die Freischaltung erfolgt ist.
+✨ **Highlight:** Die Integration verfügt über eine **vollautomatische Erkennung (Autodiscovery)**. Sie scannt beim Start das Menü deiner Heizung und erstellt exakt nur die Sensoren, die an deiner Anlage auch wirklich physisch verbaut und angeschlossen sind!
 
 ---
 
@@ -42,40 +42,88 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. Klicke auf **Absenden**. Die Integration prüft die Verbindung und erstellt automatisch die Sensoren.
+4. Klicke auf **Absenden**. Die Integration prüft die Verbindung, scannt das Menü und erstellt automatisch deine Geräte-Struktur.
 
 ---
 
-## 📊 Standardmäßig unterstützte Sensoren
+## 📊 Automatisch erkannte Sensoren
 
-In der Grundkonfiguration liest die Integration folgende Werte aus:
-* 🌡️ **Kesseltemperatur** (`°C`)
-* 🔥 **Kesselstatus** (Zustandstext wie *Bereit*, *Heizen*, *Zünden* etc.)
+Je nach Ausstattung deiner ETA-Heizung werden folgende Entitäten automatisch ermittelt und angelegt:
 
-### Weitere Sensoren hinzufügen
-Jede ETA-Heizung hat je nach Ausstattung (Puffer, Solar, Heizkreise) unterschiedliche Datenpfade (URIs). Du kannst ganz einfach eigene Sensoren hinzufügen:
+* **🔥 Kessel & Umgebung:** Kesseltemperatur, Rücklauftemperatur, Kesseldruck, Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
+* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), Fühler 1 (oben), Fühler 2, Fühler 3 (unten), sowie optional Fühler 4 und Fühler 5.
+* **♨️ Heizkreis:** Vorlauftemperatur, Anforderung (Status).
+* **🚰 Frischwassermodul (FWM):** Warmwassertemperatur.
 
-1. Rufe im Browser `http://<DEINE-ETA-IP>:8080/user/menu` auf, um die XML-Struktur deiner Heizung zu sehen.
-2. Suche nach dem gewünschten Sensor und kopiere das Attribut `uri` (z. B. `/40/10021/0/0/12011`).
-3. Öffne die Datei `custom_components/eta_webservices/const.py` in deinem Home Assistant Verzeichnis und erweitere das `TRACKED_URIs`-Verzeichnis nach folgendem Muster:
+---
 
-```python
-"mein_neuer_sensor": {
-    "uri": "/dein/kopierter/pfad", 
-    "name": "ETA Wunschsensor Name",
-    "icon": "mdi:water"
-}
+## 📺 Dashboard-Vorlagen für Lovelace
+
+Du kannst die Daten auf deinem Dashboard entweder als übersichtliche Tabelle oder optisch als Bild-Elemente darstellen.
+
+### Option A: Die Tabellen-Ansicht (Empfohlen & am einfachsten)
+Erstellt eine saubere, strukturierte Listenansicht aller Werte. Kopiere diesen Code in ein leeres "Manuell"-Dashboard-Element:
+
+```yaml
+type: grid
+cards:
+  - type: entities
+    title: 🔥 Kessel & Werte
+    entities:
+      - entity: sensor.eta_kesseltemperatur
+      - entity: sensor.eta_rucklauftemperatur
+      - entity: sensor.eta_kesseldruck
+      - entity: sensor.eta_pellet_inhalt_tagesbehalter
+      - entity: sensor.eta_aussentemperatur
+  - type: entities
+    title: 🛢️ Pufferspeicher
+    entities:
+      - entity: sensor.eta_puffer_ladezustand
+      - entity: sensor.eta_puffer_fuhler_1_oben
+      - entity: sensor.eta_puffer_fuhler_2
+      - entity: sensor.eta_puffer_fuhler_3
+      - entity: sensor.eta_puffer_fuhler_4
+      - entity: sensor.eta_puffer_fuhler_5
+  - type: entities
+    title: 🚰 Heizkreis & Warmwasser
+    entities:
+      - entity: sensor.eta_heizkreis_vorlauftemperatur
+      - entity: sensor.eta_heizkreis_anforderung
+      - entity: sensor.eta_fwm_warmwassertemperatur
+columns: 1
+square: false
 ```
 
----
+### Option B: Die Bild-Modul-Ansicht (Für Kiosk-Tablets)
+Wenn du transparente Hintergrundbilder für deine Komponenten nutzt (z.B. im Format 1000x500px im Ordner `www/` hinterlegt), kannst du die Werte pixelgenau auf den Grafiken platzieren:
 
-## 📺 VNC-Bildschirm einbinden (Bonus)
-
-Da ETA-Heizungen auch per VNC erreichbar sind, kannst du das Live-Display deiner Heizung direkt in dein Home Assistant Dashboard einbetten:
-
-1. Installiere das Add-on **Apache Guacamole** oder **NoVNC** in Home Assistant.
-2. Trage dort die IP-Adresse deiner Heizung ein (VNC nutzt standardmäßig Port `5900`, meist ohne Passwort).
-3. Füge eine **Webseiten-Karte (Iframe)** zu deinem Lovelace-Dashboard hinzu und verlinke auf das Add-on.
+```yaml
+type: vertical-stack
+cards:
+  # Kessel-Modul
+  - type: picture-elements
+    image: /local/community/eta_webservices/kessel.png
+    elements:
+      - type: state-label
+        entity: sensor.eta_kesseltemperatur
+        style:
+          top: 50%
+          left: 50%
+          font-weight: bold
+  # Puffer-Modul
+  - type: picture-elements
+    image: /local/community/eta_webservices/puffer.png
+    elements:
+      - type: state-label
+        entity: sensor.eta_puffer_fuhler_1_oben
+        style: top: 20%; left: 50%;
+      - type: state-label
+        entity: sensor.eta_puffer_fuhler_3
+        style: top: 50%; left: 50%;
+      - type: state-label
+        entity: sensor.eta_puffer_fuhler_5
+        style: top: 80%; left: 50%;
+```
 
 ---
 
