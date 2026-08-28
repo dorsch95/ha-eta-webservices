@@ -25,9 +25,8 @@ def find_uris_in_menu(menu_dict, discovered_uris=None):
             uri = menu_dict["@uri"]
             for key, config in SENSOR_DEFINITIONS.items():
                 if config["search_name"] == name and key not in discovered_uris:
-                    if uri != "/user/menu" and not uri.endswith("/0"):
-                        discovered_uris[key] = uri
-                    elif uri.endswith("/0"):
+                    # KORREKTUR: Filter entfernt! Jede gefundene URI wird jetzt akzeptiert.
+                    if uri != "/user/menu":
                         discovered_uris[key] = uri
         for k, v in menu_dict.items():
             if isinstance(v, (dict, list)):
@@ -73,7 +72,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error(f"Fehler beim ETA Menü-Scan: {e}")
         return False
 
-    # KORREKTUR: Wir entfernen den harten Abbruch! Die Integration lädt jetzt IMMER.
     if not detected_uris:
         _LOGGER.warning("Autodiscovery konnte im Moment keine Sensoren finden. const.py prüfen!")
 
@@ -109,7 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_method=async_update_data, update_interval=timedelta(seconds=30),
     )
     
-    # Verhindert Fehlermeldungen beim ersten Start ohne erkannte Sensoren
     try:
         await coordinator.async_config_entry_first_refresh()
     except Exception:
@@ -127,6 +124,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Wird aufgerufen, wenn die Integration gelöscht wird."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
