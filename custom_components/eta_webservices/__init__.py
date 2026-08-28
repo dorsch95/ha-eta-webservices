@@ -12,7 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
-from .images import IMAGES_DATA  # Lädt unser Text-Bilderbuch
+from .images import IMAGES_DATA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,26 +45,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # --- GENERIERUNG DER BILDER AUS BASE64 TEXT ---
     try:
-        # Pfad festlegen: /homeassistant/www/community/ha-eta-webservices/
         target_dir = os.path.join(hass.config.path("www"), "community", "ha-eta-webservices")
-        
-        # Ordner erstellen, falls er physisch noch fehlt
         if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
             
-        # Jedes Text-Bild aus der images.py wieder als echte PNG auf die Festplatte schreiben
         for bild_key, base64_string in IMAGES_DATA.items():
             target_file = os.path.join(target_dir, f"{bild_key}.png")
-            
-            # Bild decodieren und speichern (im Executor, da Festplatten-Schreibzugriff blockierend ist)
             def write_image():
                 img_data = base64.b64decode(base64_string)
                 with open(target_file, "wb") as f:
                     f.write(img_data)
-            
             await hass.async_add_executor_job(write_image)
-            
-        _LOGGER.info("ETA Anlagenbilder wurden erfolgreich aus dem Code generiert und im WWW-Ordner gespeichert.")
     except Exception as e:
         _LOGGER.error(f"Fehler bei der automatischen ETA Bildgenerierung: {e}")
 
@@ -82,11 +73,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error(f"Fehler beim ETA Menü-Scan: {e}")
         return False
 
+    # KORREKTUR: Wir entfernen den harten Abbruch! Die Integration lädt jetzt IMMER.
     if not detected_uris:
-        return False
+        _LOGGER.warning("Autodiscovery konnte im Moment keine Sensoren finden. const.py prüfen!")
 
     async def async_update_data():
         data = {}
+        if not detected_uris:
+            return data
+            
         for key, uri in detected_uris.items():
             url = f"http://{host}:{port}/user/var{uri}"
             try:
@@ -113,9 +108,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass, _LOGGER, name="ETA Service",
         update_method=async_update_data, update_interval=timedelta(seconds=30),
     )
-    await coordinator.async_config_entry_first_refresh()
+    
+    # Verhindert Fehlermeldungen beim ersten Start ohne erkannte Sensoren
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        pass
 
-    # Gibt den Namen für die Lovelace-Zuordnung aus
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
     coordinator.system_image_path = dateiname
 
