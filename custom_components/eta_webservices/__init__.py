@@ -17,7 +17,6 @@ from .images import IMAGES_DATA
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Setzt die Integration über einen Config Entry auf."""
     host = entry.data["host"]
     port = entry.data["port"]
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
@@ -51,33 +50,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         if "value" in parsed[root_key]:
                             val_node = parsed[root_key]["value"]
                             scale = float(val_node.get("@scaleFactor", 1))
-                            raw_val_str = val_node.get("@value") or val_node.get("#text")
                             
-                            if raw_val_str is not None and raw_val_str.strip() != "":
-                                try:
-                                    data[key] = {
-                                        "value": float(raw_val_str) / scale,
-                                        "unit": val_node.get("@unit", ""),
-                                        "text": val_node.get("@strValue", "")
-                                    }
-                                except ValueError:
-                                    data[key] = {
-                                        "value": val_node.get("@strValue", raw_val_str),
-                                        "unit": "",
-                                        "text": val_node.get("@strValue", "")
-                                    }
-                            elif val_node.get("@strValue") is not None:
-                                clean_text = val_node.get("@strValue", "")
-                                if "°C" in clean_text:
+                            # KORREKTUR: Wenn es sich um eine "Anforderung" oder einen Status handelt, 
+                            # bevorzugen wir immer den Textwert (@strValue) statt des internen ETA-Zahlencodes.
+                            if "anforderung" in key or val_node.get("@unit") == "" or val_node.get("@unit") is None:
+                                data[key] = {
+                                    "value": val_node.get("@strValue", val_node.get("#text", "Aus")),
+                                    "unit": "",
+                                    "text": val_node.get("@strValue", "")
+                                }
+                            else:
+                                # Normaler numerischer Wert (z.B. Temperaturen)
+                                raw_val_str = val_node.get("@value") or val_node.get("#text")
+                                if raw_val_str is not None and raw_val_str.strip() != "":
                                     try:
-                                        num_val = float(clean_text.replace("°C", "").strip())
-                                        data[key] = {"value": num_val, "unit": "°C", "text": clean_text}
+                                        data[key] = {
+                                            "value": float(raw_val_str) / scale,
+                                            "unit": val_node.get("@unit", ""),
+                                            "text": val_node.get("@strValue", "")
+                                        }
                                     except ValueError:
-                                        data[key] = {"value": clean_text, "unit": "", "text": clean_text}
-                                else:
-                                    data[key] = {"value": clean_text, "unit": "", "text": clean_text}
+                                        data[key] = {
+                                            "value": val_node.get("@strValue", raw_val_str),
+                                            "unit": "",
+                                            "text": val_node.get("@strValue", "")
+                                        }
             except Exception:
-                # Sensor liefert keine Daten (z.B. Fühler 5 fehlt an dieser Anlage) -> Wird einfach übersprungen
                 pass
         return data
 
@@ -86,21 +84,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_method=async_update_data, update_interval=timedelta(seconds=30),
     )
     
-    # Ersten Abruf erzwingen
     await coordinator.async_config_entry_first_refresh()
 
-    # Bildpfad-Variable setzen
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
     coordinator.system_image_path = dateiname
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-
-    # Sensor-Plattform laden
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Wird aufgerufen, wenn die Integration gelöscht wird."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
