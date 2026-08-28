@@ -1,6 +1,8 @@
 import logging
 import asyncio
 from datetime import timedelta
+import os
+import shutil
 import aiohttp
 import xmltodict
 
@@ -14,7 +16,6 @@ from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
 _LOGGER = logging.getLogger(__name__)
 
 def find_uris_in_menu(menu_dict, discovered_uris=None):
-    """Durchsucht das ETA-Menü rekursiv nach den gesuchten Sensornamen."""
     if discovered_uris is None:
         discovered_uris = {}
     if isinstance(menu_dict, dict):
@@ -36,12 +37,38 @@ def find_uris_in_menu(menu_dict, discovered_uris=None):
     return discovered_uris
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Setzt die Integration über einen Config Entry auf."""
     host = entry.data["host"]
     port = entry.data["port"]
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
     session = async_get_clientsession(hass)
 
+    # --- AUTO-KOPIERFUNKTION FÜR BILDER ---
+    try:
+        # Pfad WO die Bilder jetzt liegen (im custom_components Ordner)
+        source_dir = os.path.join(os.path.dirname(__file__), "www")
+        
+        # Pfad WOHIN die Bilder müssen (im öffentlichen Home Assistant www Ordner)
+        target_dir = os.path.join(hass.config.path("www"), "community", "ha-eta-webservices")
+        
+        if os.path.exists(source_dir):
+            # Erstelle den Zielordner, falls er noch nicht existiert
+            os.makedirs(target_dir, exist_ok=True)
+            
+            # Kopiere alle Bilder aus dem custom_components-www in den echten www-Ordner
+            for dateiname in os.listdir(source_dir):
+                source_file = os.path.join(source_dir, dateiname)
+                target_file = os.path.join(target_dir, dateiname)
+                
+                # Nur kopieren, wenn die Datei im Zielordner noch nicht existiert oder älter ist
+                if os.path.isfile(source_file):
+                    if not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file):
+                        # Da shutil.copy blockierend ist, führen wir es im executor_job aus
+                        await hass.async_add_executor_job(shutil.copy, source_file, target_file)
+            _LOGGER.info("ETA Anlagenbilder erfolgreich in das Home Assistant WWW-Verzeichnis kopiert.")
+    except Exception as e:
+        _LOGGER.error(f"Fehler beim automatischen Kopieren der ETA Anlagenbilder: {e}")
+
+    # --- REGULÄRER INITIALISIERUNGS-ABLAUF ---
     menu_url = f"http://{host}:{port}/user/menu"
     detected_uris = {}
     try:
@@ -56,7 +83,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     if not detected_uris:
-        _LOGGER.error("Es konnten keine passenden ETA Sensoren automatisch erkannt werden.")
         return False
 
     async def async_update_data():
@@ -89,8 +115,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Wir speichern den reinen Schema-Namen ab (z.B. 'kessel_puffer')
-    # Das Bild laden wir ganz einfach und stressfrei im Dashboard über den offiziellen "www" Ordner
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
     coordinator.system_image_path = dateiname
 
@@ -103,7 +127,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Wird aufgerufen, wenn die Integration gelöscht wird."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
