@@ -1,44 +1,56 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import DOMAIN, TRACKED_URIs
+from homeassistant.helpers.device_registry import DeviceInfo
+from .const import DOMAIN, SENSOR_DEFINITIONS
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Sensoren basierend auf dem Coordinator registrieren."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    config_data = hass.data[DOMAIN][entry.entry_id]
+    coordinator = config_data["coordinator"]
+    detected_uris = config_data["detected_uris"]
     
     sensors = []
-    for key, info in TRACKED_URIs.items():
-        # Nur erstellen, wenn die Heizung für diesen Key Daten geliefert hat
-        if key in coordinator.data:
-            sensors.append(ETAWsSensor(coordinator, key, info))
+    # 1. Die echten Temperatursensoren registrieren
+    for key in detected_uris.keys():
+        if key in SENSOR_DEFINITIONS:
+            sensors.append(ETAAutodiscoveredSensor(coordinator, key, SENSOR_DEFINITIONS[key]))
+            
+    # 2. Den Bild-Sensor hinzufügen
+    sensors.append(ETASystemImageSensor(coordinator))
         
     async_add_entities(sensors)
 
-class ETAWsSensor(CoordinatorEntity, SensorEntity):
-    """Repräsentiert einen ETA Sensor."""
-
-    def __init__(self, coordinator, key, info):
+class ETAAutodiscoveredSensor(CoordinatorEntity, SensorEntity):
+    def __init__(self, coordinator, key, config_info):
         super().__init__(coordinator)
         self.key = key
-        self.info = info
-        self._attr_name = info["name"]
-        self._attr_unique_id = f"eta_{coordinator.config_entry.entry_id}_{key}"
-        self._attr_icon = info["icon"]
+        self._attr_name = config_info["friendly_name"]
+        self._attr_unique_id = f"eta_auto_{coordinator.config_entry.entry_id}_{key}"
+        self._attr_icon = config_info["icon"]
 
     @property
     def native_value(self):
-        """Gibt den Zustand des Sensors zurück."""
         data = self.coordinator.data.get(self.key)
         if data:
-            if data["unit"] == "" or data["unit"] is None:
-                return data["text"]
-            return data["value"]
+            return data["text"] if data["unit"] == "" or data["unit"] is None else data["value"]
         return None
 
     @property
     def native_unit_of_measurement(self):
-        """Gibt die Maßeinheit zurück."""
         data = self.coordinator.data.get(self.key)
         if data and data["unit"] != "":
             return data["unit"]
         return None
+
+class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
+    """Sensor, der den Pfad zum ausgewählten Anlagenbild ausgibt."""
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self.coordinator = coordinator
+        self._attr_name = "ETA Anlagenbild Pfad"
+        self._attr_unique_id = f"eta_style_{coordinator.config_entry.entry_id}_image"
+        self._attr_icon = "mdi:image"
+
+    @property
+    def native_value(self):
+        # Gibt den Pfad z.B. '/local/community/eta_webservices/kessel_puffer.png' aus
+        return self.coordinator.system_image_path
