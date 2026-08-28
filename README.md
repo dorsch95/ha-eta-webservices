@@ -60,7 +60,7 @@ Folgende Entitäten werden (sofern physisch an deiner Anlage angeschlossen) mit 
 
 ## 📺 Dashboard-Vorlage für Lovelace (Bild-Elemente)
 
-Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manuell auf deinen Server kopieren. Erstelle einfach eine neue Karte vom Typ **Manuell (Umschalten auf Code-Editor)** und füge diesen YAML-Code ein. Das Hintergrundbild passt sich exakt dem im Setup gewählten Schema an:
+Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manuell auf deinen Server kopieren. Erstelle einfach eine neue Karte vom Typ **Manuell (Umschalten auf Code-Editor)** und füge diesen YAML-Code ein. Das Hintergrundbild passt sich exakt dem im Setup gewählten Schema an: (WIRD NOCH ÜBERARBEITET, ZUR ZEIT MÜSSEN DIE STYLES NOCH MANUELL ANGEPASST WERDEN).
 
 ```yaml
 type: picture-elements
