@@ -3,9 +3,9 @@
 [![hacs_badge](https://shields.io)](https://github.com)
 [![License: MIT](https://shields.io)](LICENSE)
 
-Diese benutzerdefinierte Home Assistant Integration ermöglicht es, Daten von **ETA Heizsystemen** (Pelletkessel, Stückholzkessel, Hackgut, Puffer- und Solarspeicher sowie Frischwassermodule) lokal über die integrierten RESTful Webservices (ETAtouch) auszulesen.
+Diese benutzerdefinierte Integration ermöglicht es, Daten von **ETA Heizsystemen** (Pelletkessel, Stückholzkessel, Hackgut, Puffer- und Solarspeicher sowie Frischwassermodule) komplett lokal über die integrierten RESTful Webservices (ETAtouch) auszulesen.
 
-✨ **Highlight:** Die Integration verfügt über eine **vollautomatische Erkennung (Autodiscovery)**. Sie scannt beim Start das Menü deiner Heizung und erstellt exakt nur die Sensoren, die an deiner Anlage auch wirklich physisch verbaut und angeschlossen sind!
+⚡ Das Anlagenschema wird direkt im UI-Setup ausgewählt und die passenden Grafiken werden vollautomatisch im Hintergrund generiert.
 
 ---
 
@@ -16,14 +16,14 @@ Damit Home Assistant auf die Daten zugreifen kann, müssen die Webservices auf d
 1. Registriere deinen Kessel (falls noch nicht geschehen) auf dem Portal [meinETA](https://meineta.at).
 2. Gehe am Touch-Display deiner Heizung auf **Einstellungen** -> **Webservices**.
 3. Schalte dort den **LAN-Zugriff** frei.
-4. Gehe zu **Systemeinstellungen** -> **meinETA Zugang** und aktiviere die **Webservices**.
+4. Gehe zu **Systemeinstellungen** -> **meinETA Zugang** und activiere die **Webservices**.
 5. Die API der Heizung ist nun lokal unter `http://<DEINE-ETA-IP>:8080/user/var` erreichbar.
 
 ---
 
 ## 🚀 Installation via HACS
 
-Da es sich um eine benutzerdefinierte Integration handelt, kannst du sie ganz einfach in HACS hinzufügen:
+Da es sich um eine benutzerdefinierte Integration handelt, fügst du sie wie folgt in HACS hinzu:
 
 1. Navigiere in Home Assistant zu **HACS** -> **Integrationen**.
 2. Klicke oben rechts auf die drei Punkte (`...`) und wähle **Benutzerdefinierte Repositories** (Custom Repositories).
@@ -31,7 +31,7 @@ Da es sich um eine benutzerdefinierte Integration handelt, kannst du sie ganz ei
    `https://github.com`
 4. Wähle als Kategorie **Integration** und klicke auf **Hinzufügen**.
 5. Suche nach **ETA Heiztechnik Web Service** und klicke auf **Herunterladen**.
-6. **Wichtig:** Starte Home Assistant nach dem Download neu!
+6. **Wichtig:** Starte Home Assistant nach dem Download vollständig neu!
 
 ---
 
@@ -42,87 +42,68 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. Klicke auf **Absenden**. Die Integration prüft die Verbindung, scannt das Menü und erstellt automatisch deine Geräte-Struktur.
+4. Wähle im **Dropdown-Menü dein passendes Anlagenschema** aus (z. B. *Kessel + Puffer + 1x Heizkreis + FWM*).
+5. Klicke auf **Absenden**. Die Integration prüft die Verbindung und generiert die passenden Hintergrundbilder vollautomatisch auf deiner Festplatte.
 
 ---
 
-## 📊 Automatisch erkannte Sensoren
+## 📊 Unterstützte Sensoren
 
-Je nach Ausstattung deiner ETA-Heizung werden folgende Entitäten automatisch ermittelt und angelegt:
+Folgende Entitäten werden (sofern physisch an deiner Anlage angeschlossen) mit festen, optimierten Pfaden ausgelesen:
 
-* **🔥 Kessel & Umgebung:** Kesseltemperatur, Rücklauftemperatur, Kesseldruck, Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
-* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), Fühler 1 (oben), Fühler 2, Fühler 3 (unten), sowie optional Fühler 4 und Fühler 5.
-* **♨️ Heizkreis:** Vorlauftemperatur, Anforderung (Status).
+* **🔥 Kessel & Umgebung:** Kesseltemperatur, Rücklauftemperatur, Kesseldruck (bar), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
+* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), Fühler 1 (oben), Fühler 2, Fühler 3, Fühler 4, Fühler 5 (unten).
+* **♨️ Heizkreis:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
 * **🚰 Frischwassermodul (FWM):** Warmwassertemperatur.
 
 ---
 
-## 📺 Dashboard-Vorlagen für Lovelace
+## 📺 Dashboard-Vorlage für Lovelace (Bild-Elemente)
 
-Du kannst die Daten auf deinem Dashboard entweder als übersichtliche Tabelle oder optisch als Bild-Elemente darstellen.
-
-### Option A: Die Tabellen-Ansicht (Empfohlen & am einfachsten)
-Erstellt eine saubere, strukturierte Listenansicht aller Werte. Kopiere diesen Code in ein leeres "Manuell"-Dashboard-Element:
+Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manuell auf deinen Server kopieren. Erstelle einfach eine neue Karte vom Typ **Manuell (Umschalten auf Code-Editor)** und füge diesen YAML-Code ein. Das Hintergrundbild passt sich exakt dem im Setup gewählten Schema an:
 
 ```yaml
-type: grid
-cards:
-  - type: entities
-    title: 🔥 Kessel & Werte
-    entities:
-      - entity: sensor.eta_kesseltemperatur
-      - entity: sensor.eta_rucklauftemperatur
-      - entity: sensor.eta_kesseldruck
-      - entity: sensor.eta_pellet_inhalt_tagesbehalter
-      - entity: sensor.eta_aussentemperatur
-  - type: entities
-    title: 🛢️ Pufferspeicher
-    entities:
-      - entity: sensor.eta_puffer_ladezustand
-      - entity: sensor.eta_puffer_fuhler_1_oben
-      - entity: sensor.eta_puffer_fuhler_2
-      - entity: sensor.eta_puffer_fuhler_3
-      - entity: sensor.eta_puffer_fuhler_4
-      - entity: sensor.eta_puffer_fuhler_5
-  - type: entities
-    title: 🚰 Heizkreis & Warmwasser
-    entities:
-      - entity: sensor.eta_heizkreis_vorlauftemperatur
-      - entity: sensor.eta_heizkreis_anforderung
-      - entity: sensor.eta_fwm_warmwassertemperatur
-columns: 1
-square: false
-```
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel.png
+elements:
+  # --- DYNAMISCHER SCHEMAWECHSEL (HINTERGRUND) ---
+  - type: image
+    entity: sensor.eta_anlagenbild_pfad
+    state_image:
+      kessel: /local/community/ha-eta-webservices/kessel.png
+      kessel_puffer: /local/community/ha-eta-webservices/kessel_puffer.png
+      kessel_puffer_hk1: /local/community/ha-eta-webservices/kessel_puffer_hk1.png
+      kessel_puffer_fwm: /local/community/ha-eta-webservices/kessel_puffer_fwm.png
+      kessel_puffer_hk1_fwm: /local/community/ha-eta-webservices/kessel_puffer_hk1_fwm.png
+      kessel_puffer_hk2: /local/community/ha-eta-webservices/kessel_puffer_hk2.png
+      kessel_puffer_hk2_fwm: /local/community/ha-eta-webservices/kessel_puffer_hk2_fwm.png
+    style:
+      top: 50%
+      left: 50%
+      width: 100%
+      height: 100%
 
-### Option B: Die Bild-Modul-Ansicht (Für Kiosk-Tablets)
-Wenn du transparente Hintergrundbilder für deine Komponenten nutzt (z.B. im Format 1000x500px im Ordner `www/` hinterlegt), kannst du die Werte pixelgenau auf den Grafiken platzieren:
+  # --- MESSWERTE PLATZIEREN (Beispiele, Werte für top/left frei anpassen) ---
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 25%
+      left: 20%
+      font-weight: bold
+      font-size: 16px
 
-```yaml
-type: vertical-stack
-cards:
-  # Kessel-Modul
-  - type: picture-elements
-    image: /local/community/eta_webservices/kessel.png
-    elements:
-      - type: state-label
-        entity: sensor.eta_kesseltemperatur
-        style:
-          top: 50%
-          left: 50%
-          font-weight: bold
-  # Puffer-Modul
-  - type: picture-elements
-    image: /local/community/eta_webservices/puffer.png
-    elements:
-      - type: state-label
-        entity: sensor.eta_puffer_fuhler_1_oben
-        style: top: 20%; left: 50%;
-      - type: state-label
-        entity: sensor.eta_puffer_fuhler_3
-        style: top: 50%; left: 50%;
-      - type: state-label
-        entity: sensor.eta_puffer_fuhler_5
-        style: top: 80%; left: 50%;
+  - type: state-label
+    entity: sensor.eta_puffer_ladezustand
+    style:
+      top: 15%
+      left: 50%
+      font-weight: bold
+
+  - type: state-label
+    entity: sensor.eta_heizkreis_anforderung
+    style:
+      top: 32%
+      left: 80%
 ```
 
 ---
