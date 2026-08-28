@@ -1,4 +1,8 @@
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorEntity,
+    SensorDeviceClass,
+    SensorStateClass
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, STATIC_URIs
 
@@ -8,12 +12,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     sensors = []
     
-    # 1. Nur Sensoren erstellen, für die echte Daten im Koordinator gelandet sind
     for key, info in STATIC_URIs.items():
         if key in coordinator.data:
             sensors.append(ETAStaticSensor(coordinator, key, info))
             
-    # 2. Den Bildpfad-Sensor immer erstellen
+    # Den Bildpfad-Sensor immer erstellen
     sensors.append(ETASystemImageSensor(coordinator))
         
     async_add_entities(sensors)
@@ -26,12 +29,24 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = info["name"]
         self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
         self._attr_icon = info["icon"]
+        
+        # --- KORREKTUR: Dem System sagen, dass es sich um echte Messwerte handelt ---
+        if info.get("icon") == "mdi:thermometer" or "temperatur" in key:
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif info.get("icon") == "mdi:gauge":
+            self._attr_device_class = SensorDeviceClass.PRESSURE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self):
         data = self.coordinator.data.get(self.key)
         if data:
-            return data["text"] if data["unit"] == "" or data["unit"] is None else data["value"]
+            val = data["value"]
+            # Wenn es eine Zahl ist, runden wir sie sauber auf 1 Dezimalstelle
+            if isinstance(val, (int, float)):
+                return round(float(val), 1)
+            return val
         return None
 
     @property
@@ -39,6 +54,9 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data.get(self.key)
         if data and data["unit"] != "":
             return data["unit"]
+        # Standard-Einheit setzen, falls die ETA im XML mal patzt
+        if "temperatur" in self.key:
+            return "°C"
         return None
 
 class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
@@ -46,7 +64,7 @@ class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator):
         super().__init__(coordinator)
         self.coordinator = coordinator
-        self._attr_name = "ETA精 Anlagenbild Pfad"
+        self._attr_name = "ETA Anlagenbild Pfad"
         self._attr_unique_id = f"eta_style_{coordinator.config_entry.entry_id}_image"
         self._attr_icon = "mdi:image"
 
