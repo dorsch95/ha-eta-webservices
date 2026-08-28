@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.components.http import StaticPathConfig
 
 from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
 
@@ -41,10 +42,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
     session = async_get_clientsession(hass)
 
-    # --- KORREKTUR: Bilder-Ordner direkt im Webserver registrieren ---
-    # Registriert den lokalen 'www' Ordner deiner Integration als '/eta_bilder/' URL
+    # --- KORREKTUR: Modernen, asynchronen Pfad-Registrierer nutzen ---
     www_dir = os.path.join(os.path.dirname(__file__), "www")
-    hass.http.register_static_path("/eta_bilder", www_dir, False)
+    await hass.http.async_register_static_paths([
+        StaticPathConfig("/eta_bilder", www_dir, False)
+    ])
 
     menu_url = f"http://{host}:{port}/user/menu"
     detected_uris = {}
@@ -92,7 +94,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Gibt ab jetzt einfach den sauberen, kurzen Dateinamen aus (z.B. 'kessel_puffer')
+    # Gibt den reinen Dateinamen ohne Endung aus
     coordinator.system_image_path = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
