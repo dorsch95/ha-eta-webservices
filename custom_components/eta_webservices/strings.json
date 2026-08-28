@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ETA Heiztechnik verbinden",
+        "data": {
+          "host": "IP-Adresse der Heizung",
+          "port": "Port (Standard: 8080)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
+    }
+  }
+}
