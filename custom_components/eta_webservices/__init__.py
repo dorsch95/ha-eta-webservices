@@ -14,6 +14,7 @@ from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
 _LOGGER = logging.getLogger(__name__)
 
 def find_uris_in_menu(menu_dict, discovered_uris=None):
+    """Durchsucht das ETA-Menü rekursiv nach den gesuchten Sensornamen."""
     if discovered_uris is None:
         discovered_uris = {}
     if isinstance(menu_dict, dict):
@@ -35,6 +36,7 @@ def find_uris_in_menu(menu_dict, discovered_uris=None):
     return discovered_uris
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Setzt die Integration über einen Config Entry auf."""
     host = entry.data["host"]
     port = entry.data["port"]
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
@@ -54,6 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     if not detected_uris:
+        _LOGGER.error("Es konnten keine passenden ETA Sensoren automatisch erkannt werden.")
         return False
 
     async def async_update_data():
@@ -86,7 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Bildpfad basierend auf dem Repository-Namen von HACS
+    # Bildpfad angepasst an den neuen Speicherort unter 'ha-eta-webservices'
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png")
     coordinator.system_image_path = f"/local/community/ha-eta-webservices/{dateiname}"
 
@@ -99,6 +102,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Wird aufgerufen, wenn die Integration gelöscht wird."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
