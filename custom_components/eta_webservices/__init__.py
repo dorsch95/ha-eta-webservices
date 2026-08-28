@@ -89,9 +89,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Bildpfad angepasst an den neuen Speicherort unter 'ha-eta-webservices'
+    # LÖSUNG: Wir laden das Bild direkt stabil und cache-frei aus deinem GitHub-Ordner
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png")
-    coordinator.system_image_path = f"/local/community/ha-eta-webservices/{dateiname}"
+    coordinator.system_image_path = f"https://githubusercontent.com{dateiname}"
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "coordinator": coordinator,
