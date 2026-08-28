@@ -9,97 +9,76 @@ import xmltodict
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
+from .const import DOMAIN, STATIC_URIs, SCHEMAS
 from .images import IMAGES_DATA
 
 _LOGGER = logging.getLogger(__name__)
 
-def find_uris_in_menu(menu_dict, discovered_uris=None):
-    if discovered_uris is None:
-        discovered_uris = {}
-    if isinstance(menu_dict, dict):
-        if "@name" in menu_dict and "@uri" in menu_dict:
-            name = menu_dict["@name"]
-            uri = menu_dict["@uri"]
-            for key, config in SENSOR_DEFINITIONS.items():
-                if config["search_name"] == name and key not in discovered_uris:
-                    # KORREKTUR: Filter entfernt! Jede gefundene URI wird jetzt akzeptiert.
-                    if uri != "/user/menu":
-                        discovered_uris[key] = uri
-        for k, v in menu_dict.items():
-            if isinstance(v, (dict, list)):
-                find_uris_in_menu(v, discovered_uris)
-    elif isinstance(menu_dict, list):
-        for item in menu_dict:
-            find_uris_in_menu(item, discovered_uris)
-    return discovered_uris
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Setzt die Integration über einen Config Entry auf."""
     host = entry.data["host"]
     port = entry.data["port"]
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
     session = async_get_clientsession(hass)
 
-    # --- GENERIERUNG DER BILDER AUS BASE64 TEXT ---
+    # --- BILDER AUS BASE64 TEXT SCHREIBEN ---
     try:
         target_dir = os.path.join(hass.config.path("www"), "community", "ha-eta-webservices")
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir, exist_ok=True)
-            
+        os.makedirs(target_dir, exist_ok=True)
         for bild_key, base64_string in IMAGES_DATA.items():
             target_file = os.path.join(target_dir, f"{bild_key}.png")
             def write_image():
-                img_data = base64.b64decode(base64_string)
                 with open(target_file, "wb") as f:
-                    f.write(img_data)
+                    f.write(base64.b64decode(base64_string))
             await hass.async_add_executor_job(write_image)
     except Exception as e:
-        _LOGGER.error(f"Fehler bei der automatischen ETA Bildgenerierung: {e}")
+        _LOGGER.error(f"Fehler bei der ETA Bildgenerierung: {e}")
 
-    # --- INITIALISIERUNGS-ABLAUF ---
-    menu_url = f"http://{host}:{port}/user/menu"
-    detected_uris = {}
-    try:
-        async with session.get(menu_url, timeout=10) as response:
-            if response.status == 200:
-                xml_text = await response.text()
-                parsed_menu = xmltodict.parse(xml_text, process_namespaces=False)
-                root_key = next(iter(parsed_menu))
-                detected_uris = find_uris_in_menu(parsed_menu[root_key])
-    except Exception as e:
-        _LOGGER.error(f"Fehler beim ETA Menü-Scan: {e}")
-        return False
-
-    if not detected_uris:
-        _LOGGER.warning("Autodiscovery konnte im Moment keine Sensoren finden. const.py prüfen!")
-
+    # --- DATEN-ABRUF-KOORDINATOR ---
     async def async_update_data():
         data = {}
-        if not detected_uris:
-            return data
-            
-        for key, uri in detected_uris.items():
-            url = f"http://{host}:{port}/user/var{uri}"
+        for key, info in STATIC_URIs.items():
+            url = f"http://{host}:{port}/user/var{info['uri']}"
             try:
-                async with session.get(url, timeout=5) as response:
+                async with session.get(url, timeout=4) as response:
                     if response.status == 200:
                         xml_text = await response.text()
                         parsed = xmltodict.parse(xml_text, process_namespaces=False)
                         root_key = next(iter(parsed))
+                        
                         if "value" in parsed[root_key]:
                             val_node = parsed[root_key]["value"]
                             scale = float(val_node.get("@scaleFactor", 1))
-                            raw_val_str = val_node.get("#text") or val_node.get("@value")
-                            if raw_val_str is not None:
-                                data[key] = {
-                                    "value": float(raw_val_str) / scale,
-                                    "unit": val_node.get("@unit", ""),
-                                    "text": val_node.get("@strValue", "")
-                                }
-            except Exception as e:
-                _LOGGER.warning(f"Fehler beim Abruf von {url}: {e}")
+                            raw_val_str = val_node.get("@value") or val_node.get("#text")
+                            
+                            if raw_val_str is not None and raw_val_str.strip() != "":
+                                try:
+                                    data[key] = {
+                                        "value": float(raw_val_str) / scale,
+                                        "unit": val_node.get("@unit", ""),
+                                        "text": val_node.get("@strValue", "")
+                                    }
+                                except ValueError:
+                                    data[key] = {
+                                        "value": val_node.get("@strValue", raw_val_str),
+                                        "unit": "",
+                                        "text": val_node.get("@strValue", "")
+                                    }
+                            elif val_node.get("@strValue") is not None:
+                                clean_text = val_node.get("@strValue", "")
+                                if "°C" in clean_text:
+                                    try:
+                                        num_val = float(clean_text.replace("°C", "").strip())
+                                        data[key] = {"value": num_val, "unit": "°C", "text": clean_text}
+                                    except ValueError:
+                                        data[key] = {"value": clean_text, "unit": "", "text": clean_text}
+                                else:
+                                    data[key] = {"value": clean_text, "unit": "", "text": clean_text}
+            except Exception:
+                # Sensor liefert keine Daten (z.B. Fühler 5 fehlt an dieser Anlage) -> Wird einfach übersprungen
+                pass
         return data
 
     coordinator = DataUpdateCoordinator(
@@ -107,19 +86,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_method=async_update_data, update_interval=timedelta(seconds=30),
     )
     
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except Exception:
-        pass
+    # Ersten Abruf erzwingen
+    await coordinator.async_config_entry_first_refresh()
 
+    # Bildpfad-Variable setzen
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
     coordinator.system_image_path = dateiname
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "coordinator": coordinator,
-        "detected_uris": detected_uris
-    }
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
+    # Sensor-Plattform laden
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
     return True
 
