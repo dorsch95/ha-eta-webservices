@@ -2,7 +2,7 @@ import logging
 import asyncio
 from datetime import timedelta
 import os
-import shutil
+import base64
 import aiohttp
 import xmltodict
 
@@ -12,6 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
+from .images import IMAGES_DATA  # Lädt unser Text-Bilderbuch
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,33 +43,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
     session = async_get_clientsession(hass)
 
-    # --- AUTO-KOPIERFUNKTION FÜR BILDER ---
+    # --- GENERIERUNG DER BILDER AUS BASE64 TEXT ---
     try:
-        # Pfad WO die Bilder jetzt liegen (im custom_components Ordner)
-        source_dir = os.path.join(os.path.dirname(__file__), "www")
-        
-        # Pfad WOHIN die Bilder müssen (im öffentlichen Home Assistant www Ordner)
+        # Pfad festlegen: /homeassistant/www/community/ha-eta-webservices/
         target_dir = os.path.join(hass.config.path("www"), "community", "ha-eta-webservices")
         
-        if os.path.exists(source_dir):
-            # Erstelle den Zielordner, falls er noch nicht existiert
+        # Ordner erstellen, falls er physisch noch fehlt
+        if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
             
-            # Kopiere alle Bilder aus dem custom_components-www in den echten www-Ordner
-            for dateiname in os.listdir(source_dir):
-                source_file = os.path.join(source_dir, dateiname)
-                target_file = os.path.join(target_dir, dateiname)
-                
-                # Nur kopieren, wenn die Datei im Zielordner noch nicht existiert oder älter ist
-                if os.path.isfile(source_file):
-                    if not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file):
-                        # Da shutil.copy blockierend ist, führen wir es im executor_job aus
-                        await hass.async_add_executor_job(shutil.copy, source_file, target_file)
-            _LOGGER.info("ETA Anlagenbilder erfolgreich in das Home Assistant WWW-Verzeichnis kopiert.")
+        # Jedes Text-Bild aus der images.py wieder als echte PNG auf die Festplatte schreiben
+        for bild_key, base64_string in IMAGES_DATA.items():
+            target_file = os.path.join(target_dir, f"{bild_key}.png")
+            
+            # Bild decodieren und speichern (im Executor, da Festplatten-Schreibzugriff blockierend ist)
+            def write_image():
+                img_data = base64.b64decode(base64_string)
+                with open(target_file, "wb") as f:
+                    f.write(img_data)
+            
+            await hass.async_add_executor_job(write_image)
+            
+        _LOGGER.info("ETA Anlagenbilder wurden erfolgreich aus dem Code generiert und im WWW-Ordner gespeichert.")
     except Exception as e:
-        _LOGGER.error(f"Fehler beim automatischen Kopieren der ETA Anlagenbilder: {e}")
+        _LOGGER.error(f"Fehler bei der automatischen ETA Bildgenerierung: {e}")
 
-    # --- REGULÄRER INITIALISIERUNGS-ABLAUF ---
+    # --- INITIALISIERUNGS-ABLAUF ---
     menu_url = f"http://{host}:{port}/user/menu"
     detected_uris = {}
     try:
@@ -115,6 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
+    # Gibt den Namen für die Lovelace-Zuordnung aus
     dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
     coordinator.system_image_path = dateiname
 
