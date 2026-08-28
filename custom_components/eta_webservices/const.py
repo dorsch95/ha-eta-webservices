@@ -1,16 +1,41 @@
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
-# Hier trägst du deine ETA-Sensor-Pfade ein (findest du unter http://<ETA-IP>:8080/user/menu)
+# Deine exakten Test-URIs für Kessel, Außenfühler und den Pufferspeicher
 TRACKED_URIs = {
     "kessel_temperatur": {
-        "uri": "/40/10021/0/0/12001", 
+        "uri": "/264/10891/0/11109/0", 
         "name": "ETA Kesseltemperatur",
         "icon": "mdi:thermometer"
     },
-    "kessel_status": {
-        "uri": "/40/10021/0/0/12080", 
-        "name": "ETA Kesselstatus",
-        "icon": "mdi:fire"
+    "aussentemperatur": {
+        "uri": "/120/10241/0/11127/0", 
+        "name": "ETA Außentemperatur",
+        "icon": "mdi:thermometer"
+    },
+    "puffer_fühler_1": {
+        "uri": "/120/10601/0/11327/0", 
+        "name": "ETA Puffer Fühler 1 (oben)",
+        "icon": "mdi:thermometer-lines"
+    },
+    "puffer_fühler_2": {
+        "uri": "/120/10601/0/11328/0", 
+        "name": "ETA Puffer Fühler 2",
+        "icon": "mdi:thermometer-lines"
+    },
+    "puffer_fühler_3": {
+        "uri": "/120/10601/0/11329/0", 
+        "name": "ETA Puffer Fühler 3",
+        "icon": "mdi:thermometer-lines"
+    },
+    "puffer_fühler_4": {
+        "uri": "/120/10601/0/11330/0", 
+        "name": "ETA Puffer Fühler 4",
+        "icon": "mdi:thermometer-lines"
+    },
+    "puffer_fühler_5": {
+        "uri": "/120/10601/0/11331/0", 
+        "name": "ETA Puffer Fühler 5 (unten)",
+        "icon": "mdi:thermometer-lines"
     }
 }
