@@ -1,0 +1,11 @@
+{
+  "domain": "eta_webservices",
+  "name": "ETA Heiztechnik Web Service",
+  "codeowners": ["@dein_github_name"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com",
+  "iot_class": "local_polling",
+  "requirements": ["xmltodict==0.13.0"],
+  "version": "1.0.0"
+}
