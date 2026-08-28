@@ -17,6 +17,7 @@ from .images import IMAGES_DATA
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Setzt die Integration über einen Config Entry auf."""
     host = entry.data["host"]
     port = entry.data["port"]
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
@@ -49,32 +50,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         
                         if "value" in parsed[root_key]:
                             val_node = parsed[root_key]["value"]
-                            scale = float(val_node.get("@scaleFactor", 1))
                             
-                            # KORREKTUR: Wenn es sich um eine "Anforderung" oder einen Status handelt, 
-                            # bevorzugen wir immer den Textwert (@strValue) statt des internen ETA-Zahlencodes.
-                            if "anforderung" in key or val_node.get("@unit") == "" or val_node.get("@unit") is None:
+                            # KORREKTUR: Jetzt exakt mit '@strValue' abfragen, um das Wort "Aus" zu greifen!
+                            if key == "heizkreis_anforderung":
                                 data[key] = {
-                                    "value": val_node.get("@strValue", val_node.get("#text", "Aus")),
+                                    "value": val_node.get("@strValue", "Aus"),
                                     "unit": "",
-                                    "text": val_node.get("@strValue", "")
+                                    "is_string": True
                                 }
                             else:
-                                # Normaler numerischer Wert (z.B. Temperaturen)
+                                scale = float(val_node.get("@scaleFactor", 1))
                                 raw_val_str = val_node.get("@value") or val_node.get("#text")
+                                
                                 if raw_val_str is not None and raw_val_str.strip() != "":
                                     try:
                                         data[key] = {
                                             "value": float(raw_val_str) / scale,
                                             "unit": val_node.get("@unit", ""),
-                                            "text": val_node.get("@strValue", "")
+                                            "is_string": False
                                         }
                                     except ValueError:
                                         data[key] = {
                                             "value": val_node.get("@strValue", raw_val_str),
                                             "unit": "",
-                                            "text": val_node.get("@strValue", "")
+                                            "is_string": True
                                         }
+                                else:
+                                    data[key] = {
+                                        "value": val_node.get("@strValue", ""),
+                                        "unit": "",
+                                        "is_string": True
+                                    }
             except Exception:
                 pass
         return data
@@ -94,6 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Wird aufgerufen, wenn die Integration gelöscht wird."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
