@@ -1,7 +1,6 @@
 import logging
 import asyncio
 from datetime import timedelta
-import os
 import aiohttp
 import xmltodict
 
@@ -9,13 +8,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.components.http import StaticPathConfig
 
 from .const import DOMAIN, SENSOR_DEFINITIONS, SCHEMAS
 
 _LOGGER = logging.getLogger(__name__)
 
 def find_uris_in_menu(menu_dict, discovered_uris=None):
+    """Durchsucht das ETA-Menü rekursiv nach den gesuchten Sensornamen."""
     if discovered_uris is None:
         discovered_uris = {}
     if isinstance(menu_dict, dict):
@@ -37,16 +36,11 @@ def find_uris_in_menu(menu_dict, discovered_uris=None):
     return discovered_uris
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Setzt die Integration über einen Config Entry auf."""
     host = entry.data["host"]
     port = entry.data["port"]
     selected_schema = entry.data.get("schema", "Kessel + Puffer")
     session = async_get_clientsession(hass)
-
-    # --- KORREKTUR: Modernen, asynchronen Pfad-Registrierer nutzen ---
-    www_dir = os.path.join(os.path.dirname(__file__), "www")
-    await hass.http.async_register_static_paths([
-        StaticPathConfig("/eta_bilder", www_dir, False)
-    ])
 
     menu_url = f"http://{host}:{port}/user/menu"
     detected_uris = {}
@@ -62,6 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     if not detected_uris:
+        _LOGGER.error("Es konnten keine passenden ETA Sensoren automatisch erkannt werden.")
         return False
 
     async def async_update_data():
@@ -94,8 +89,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Gibt den reinen Dateinamen ohne Endung aus
-    coordinator.system_image_path = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
+    # Wir speichern den reinen Schema-Namen ab (z.B. 'kessel_puffer')
+    # Das Bild laden wir ganz einfach und stressfrei im Dashboard über den offiziellen "www" Ordner
+    dateiname = SCHEMAS.get(selected_schema, "kessel_puffer.png").replace(".png", "")
+    coordinator.system_image_path = dateiname
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "coordinator": coordinator,
@@ -106,6 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Wird aufgerufen, wenn die Integration gelöscht wird."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
