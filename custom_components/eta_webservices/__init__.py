@@ -19,7 +19,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = entry.data["port"]
     session = async_get_clientsession(hass)
 
-    # Zentraler Daten-Abrufer (Coordinator)
     async def async_update_data():
         data = {}
         for key, info in TRACKED_URIs.items():
@@ -28,23 +27,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 async with session.get(url, timeout=5) as response:
                     if response.status == 200:
                         xml_text = await response.text()
-                        parsed = xmltodict.parse(xml_text)
-                        val_node = parsed["eta"]["value"]
                         
-                        # Datenschicht aufbereiten
-                        scale = float(val_node.get("@scaleFactor", 1))
-                        raw_val = float(val_node.get("@value", 0))
+                        # Namespaces deaktivieren löscht das störende "eta:" Präfix
+                        parsed = xmltodict.parse(xml_text, process_namespaces=False)
                         
-                        data[key] = {
-                            "value": raw_val / scale,
-                            "unit": val_node.get("@unit", ""),
-                            "text": val_node.get("@strValue", "")
-                        }
+                        # Flexibler Zugriff auf das Root-Element (egal ob "eta" oder "eta:eta")
+                        root_key = next(iter(parsed))
+                        
+                        # Prüfen, ob der Kessel ein gültiges <value> Element geliefert hat
+                        if "value" in parsed[root_key]:
+                            val_node = parsed[root_key]["value"]
+                            
+                            scale = float(val_node.get("@scaleFactor", 1))
+                            raw_val = float(val_node.get("@value", 0))
+                            
+                            data[key] = {
+                                "value": raw_val / scale,
+                                "unit": val_node.get("@unit", ""),
+                                "text": val_node.get("@strValue", "")
+                            }
+                        else:
+                            _LOGGER.warning(f"Pfad {info['uri']} lieferte kein value-Element.")
             except Exception as e:
                 _LOGGER.warning(f"Fehler beim Abruf von {url}: {e}")
         
+        # Nur wenn absolut gar kein Sensor geladen werden konnte, Fehler werfen
         if not data:
-            raise UpdateFailed("Keine Daten von der ETA Heizung empfangen.")
+            raise UpdateFailed("Keine gültigen Sensordaten von der ETA Heizung empfangen. Prüfe deine URIs.")
         return data
 
     coordinator = DataUpdateCoordinator(
@@ -55,12 +64,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_interval=timedelta(seconds=30),
     )
 
-    # Ersten Abruf beim Start erzwingen
     await coordinator.async_config_entry_first_refresh()
-
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-
-    # Sensor-Plattform laden
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
     return True
 
