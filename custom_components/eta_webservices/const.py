@@ -1,7 +1,6 @@
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
-# Zuordnung der Schemen im UI zu den internen Bild-Schlüsseln
 SCHEMAS = {
     "Kessel": "kessel",
     "Kessel + Puffer": "kessel_puffer",
@@ -15,18 +14,18 @@ SCHEMAS = {
 SENSOR_DEFINITIONS = {
     # --- KESSEL & UMGEBUNG ---
     "kessel_temperatur": {
-        "search_name": "Kesseltemperatur",  # <-- KORREKTUR: "Kesseltemperatur" statt "Kessel"
+        "search_name": "Kessel",  # <-- Zurückgesetzt auf den funktionierenden Stand
         "friendly_name": "ETA Kesseltemperatur",
         "icon": "mdi:thermometer"
     },
     "ruecklauf_temperatur": {
-        "search_name": "Rücklauftemperatur", # <-- KORREKTUR: "Rücklauftemperatur" statt "Rücklauf"
+        "search_name": "Rücklauf", # <-- Zurückgesetzt auf den funktionierenden Stand
         "friendly_name": "ETA Rücklauftemperatur",
         "icon": "mdi:thermometer"
     },
     "kessel_druck": {"search_name": "Kesseldruck", "friendly_name": "ETA Kesseldruck", "icon": "mdi:gauge"},
     "pellet_tagesbehälter": {"search_name": "Inhalt Pelletsbehälter", "friendly_name": "ETA Pellet Inhalt Tagesbehälter", "icon": "mdi:weight-kilogram"},
-    "aussentemperatur": {"search_name": "Außentemperatur", "friendly_name": "ETA Außentemperatur", "icon": "mdi:thermometer"}, # <-- KORREKTUR: Alternativ "Außentemperaturfühler" prüfen
+    "aussentemperatur": {"search_name": "Außentemperaturfühler", "friendly_name": "ETA Außentemperatur", "icon": "mdi:thermometer"},
     
     # --- PUFFERSPEICHER ---
     "puffer_ladezustand": {"search_name": "Ladezustand", "friendly_name": "ETA Puffer Ladezustand", "icon": "mdi:battery-charging-60"},
