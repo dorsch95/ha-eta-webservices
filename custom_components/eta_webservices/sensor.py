@@ -8,7 +8,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     sensors = []
     for key, info in TRACKED_URIs.items():
-        sensors.append(ETAWsSensor(coordinator, key, info))
+        # Nur erstellen, wenn die Heizung für diesen Key Daten geliefert hat
+        if key in coordinator.data:
+            sensors.append(ETAWsSensor(coordinator, key, info))
         
     async_add_entities(sensors)
 
@@ -28,7 +30,6 @@ class ETAWsSensor(CoordinatorEntity, SensorEntity):
         """Gibt den Zustand des Sensors zurück."""
         data = self.coordinator.data.get(self.key)
         if data:
-            # Wenn die ETA keinen Einheiten-Typ sendet, ist es ein Text-Status (z.B. "Heizen")
             if data["unit"] == "" or data["unit"] is None:
                 return data["text"]
             return data["value"]
@@ -36,7 +37,7 @@ class ETAWsSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_unit_of_measurement(self):
-        """Gibt die Maßeinheit zurück (falls vorhanden)."""
+        """Gibt die Maßeinheit zurück."""
         data = self.coordinator.data.get(self.key)
         if data and data["unit"] != "":
             return data["unit"]
