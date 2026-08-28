@@ -1,15 +1,15 @@
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
-# Zuordnung der Schemen zu den Bilddateien
+# Zuordnung der Schemen im UI zu den internen Bild-Schlüsseln
 SCHEMAS = {
-    "Kessel": "kessel.png",
-    "Kessel + Puffer": "kessel_puffer.png",
-    "Kessel + Puffer + 1x Heizkreis": "kessel_puffer_hk1.png",
-    "Kessel + Puffer + FWM": "kessel_puffer_fwm.png",
-    "Kessel + Puffer + 1x Heizkreis + FWM": "kessel_puffer_hk1_fwm.png",
-    "Kessel + Puffer + 2x Heizkreis": "kessel_puffer_hk2.png",
-    "Kessel + Puffer + 2x Heizkreis + FWM": "kessel_puffer_hk2_fwm.png",
+    "Kessel": "kessel",
+    "Kessel + Puffer": "kessel_puffer",
+    "Kessel + Puffer + 1x Heizkreis": "kessel_puffer_hk1",
+    "Kessel + Puffer + FWM": "kessel_puffer_fwm",
+    "Kessel + Puffer + 1x Heizkreis + FWM": "kessel_puffer_hk1_fwm",
+    "Kessel + Puffer + 2x Heizkreis": "kessel_puffer_hk2",
+    "Kessel + Puffer + 2x Heizkreis + FWM": "kessel_puffer_hk2_fwm",
 }
 
 SENSOR_DEFINITIONS = {
