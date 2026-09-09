@@ -62,51 +62,388 @@ Folgende Entitäten werden (sofern physisch an deiner Anlage angeschlossen) mit 
 
 ## 📺 Dashboard-Vorlage für Lovelace (Bild-Elemente)
 
-Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manuell auf deinen Server kopieren. Erstelle einfach eine neue Karte vom Typ **Manuell (Umschalten auf Code-Editor)** und füge diesen YAML-Code ein. Das Hintergrundbild passt sich exakt dem im Setup gewählten Schema an: (WIRD NOCH ÜBERARBEITET, ZUR ZEIT MÜSSEN DIE STYLES NOCH MANUELL ANGEPASST WERDEN).
+Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manuell auf deinen Server kopieren. Jede Anlagengrafik hat die Messwert-Beschriftungen (z. B. "Kessel:", "Ladezustand:", "Vorlauf HK1:") bereits fest eingebrannt – es fehlt nur noch der Wert daneben. Die folgenden Karten wurden anhand einer pixelgenauen Analyse der jeweiligen Grafik erstellt, damit die Werte exakt neben ihrer Beschriftung erscheinen.
+
+Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erstelle eine neue Karte vom Typ **Manuell** (Umschalten auf Code-Editor) und füge den YAML-Code ein.
+
+> ℹ️ Für **Kessel Soll**, **Aschebox**, **Restsauerstoff** sowie **Heizkreis 2** sind auf den Grafiken bereits Beschriftungsfelder vorgesehen, es gibt dafür aber noch keine passenden Sensoren in der Integration (siehe `# TODO`-Kommentare in den Karten unten). Die einzelnen Puffer-Fühler (1–5) sowie die Außentemperatur haben keine eigene Beschriftung auf den Grafiken und werden daher hier nicht platziert – sie stehen aber weiterhin als normale Sensoren zur Verfügung und können z. B. in einer separaten Entities-Karte angezeigt werden.
+
+### Kessel
 
 ```yaml
 type: picture-elements
 image: /local/community/ha-eta-webservices/kessel.png
 elements:
-  # --- DYNAMISCHER SCHEMAWECHSEL (HINTERGRUND) ---
-  - type: image
-    entity: sensor.eta_anlagenbild_pfad
-    state_image:
-      kessel: /local/community/ha-eta-webservices/kessel.png
-      kessel_puffer: /local/community/ha-eta-webservices/kessel_puffer.png
-      kessel_puffer_hk1: /local/community/ha-eta-webservices/kessel_puffer_hk1.png
-      kessel_puffer_fwm: /local/community/ha-eta-webservices/kessel_puffer_fwm.png
-      kessel_puffer_hk1_fwm: /local/community/ha-eta-webservices/kessel_puffer_hk1_fwm.png
-      kessel_puffer_hk2: /local/community/ha-eta-webservices/kessel_puffer_hk2.png
-      kessel_puffer_hk2_fwm: /local/community/ha-eta-webservices/kessel_puffer_hk2_fwm.png
-    style:
-      top: 50%
-      left: 50%
-      width: 100%
-      height: 100%
-
-  # --- MESSWERTE PLATZIEREN (Beispiele, Werte für top/left frei anpassen) ---
   - type: state-label
     entity: sensor.eta_kesseltemperatur
     style:
-      top: 25%
-      left: 20%
+      top: 5.5%
+      left: 11%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+```
 
+### Kessel + Puffer
+
+```yaml
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel_puffer.png
+elements:
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 5.5%
+      left: 11%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
-      top: 15%
-      left: 50%
+      top: 12.7%
+      left: 45%
       font-weight: bold
+      font-size: 16px
+```
 
+### Kessel + Puffer + 1x Heizkreis
+
+```yaml
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel_puffer_hk1.png
+elements:
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 5.5%
+      left: 11%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_puffer_ladezustand
+    style:
+      top: 12.7%
+      left: 45%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_heizkreis_vorlauftemperatur
+    style:
+      top: 12.7%
+      left: 67%
+      font-weight: bold
+      font-size: 16px
   - type: state-label
     entity: sensor.eta_heizkreis_anforderung
     style:
-      top: 32%
-      left: 80%
+      top: 20.4%
+      left: 72%
+      font-weight: bold
+      font-size: 16px
 ```
+
+### Kessel + Puffer + FWM
+
+```yaml
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel_puffer_fwm.png
+elements:
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 5.5%
+      left: 11%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_puffer_ladezustand
+    style:
+      top: 12.7%
+      left: 45%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_fwm_warmwassertemperatur
+    style:
+      top: 12.7%
+      left: 65%
+      font-weight: bold
+      font-size: 16px
+```
+
+### Kessel + Puffer + 1x Heizkreis + FWM
+
+```yaml
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel_puffer_hk1_fwm.png
+elements:
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 5.5%
+      left: 11%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_puffer_ladezustand
+    style:
+      top: 12.7%
+      left: 45%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_fwm_warmwassertemperatur
+    style:
+      top: 12.7%
+      left: 65%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_heizkreis_vorlauftemperatur
+    style:
+      top: 12.7%
+      left: 86%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
+    entity: sensor.eta_heizkreis_anforderung
+    style:
+      top: 20.4%
+      left: 90%
+      font-weight: bold
+      font-size: 14px
+```
+
+### Kessel + Puffer + 2x Heizkreis
+
+```yaml
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel_puffer_hk2.png
+elements:
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 5.5%
+      left: 11%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_puffer_ladezustand
+    style:
+      top: 12.7%
+      left: 45%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_heizkreis_vorlauftemperatur
+    style:
+      top: 12.7%
+      left: 67%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_heizkreis_anforderung
+    style:
+      top: 20.4%
+      left: 72%
+      font-weight: bold
+      font-size: 16px
+  # TODO: "Vorlauf HK2" (top: 27.0%, left: 67%) - noch kein Sensor für einen 2. Heizkreis vorhanden
+  # TODO: "Anforderung HK2" (top: 34.7%, left: 72%) - noch kein Sensor für einen 2. Heizkreis vorhanden
+```
+
+### Kessel + Puffer + 2x Heizkreis + FWM
+
+```yaml
+type: picture-elements
+image: /local/community/ha-eta-webservices/kessel_puffer_hk2_fwm.png
+elements:
+  - type: state-label
+    entity: sensor.eta_kesseltemperatur
+    style:
+      top: 5.5%
+      left: 11%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_rucklauftemperatur
+    style:
+      top: 19.9%
+      left: 14%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kesseldruck
+    style:
+      top: 27.5%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    style:
+      top: 34.7%
+      left: 19%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_puffer_ladezustand
+    style:
+      top: 12.7%
+      left: 45%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_fwm_warmwassertemperatur
+    style:
+      top: 12.7%
+      left: 65%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_heizkreis_vorlauftemperatur
+    style:
+      top: 12.7%
+      left: 86%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
+    entity: sensor.eta_heizkreis_anforderung
+    style:
+      top: 20.4%
+      left: 90%
+      font-weight: bold
+      font-size: 14px
+  # TODO: "Vorlauf HK2" (top: 27.0%, left: 86%) - noch kein Sensor für einen 2. Heizkreis vorhanden
+  # TODO: "Anforderung HK2" (top: 34.7%, left: 90%) - noch kein Sensor für einen 2. Heizkreis vorhanden
+```
+
+> 💡 `top`/`left` verankern in Lovelace standardmäßig die **Mitte** des Elements. Solltest du eine andere Home-Assistant-Theme, Bildschirmgröße oder Kartenbreite verwenden, kannst du die Werte im visuellen Editor per Drag & Drop feinjustieren.
 
 ---
 
