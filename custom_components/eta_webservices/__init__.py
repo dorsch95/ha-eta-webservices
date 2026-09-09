@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN, STATIC_URIs, SCHEMAS
 from .images import IMAGES_DATA
+from .uri_discovery import async_discover_uris
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,11 +37,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error(f"Fehler bei der ETA Bildgenerierung: {e}")
 
+    # --- AUTOMATISCHE URI-ERKENNUNG ÜBER DEN ANLAGENMENÜBAUM ---
+    # Die numerischen URIs unterscheiden sich je nach Anlage. Statt sie fest
+    # zu verdrahten, werden sie einmalig anhand ihrer (stabilen) Namen im
+    # Menübaum der Anlage gesucht. Schlägt das fehl, wird auf die
+    # Standard-URI aus STATIC_URIs zurückgefallen.
+    discovered_uris = await async_discover_uris(session, host, port)
+
     # --- DATEN-ABRUF-KOORDINATOR ---
     async def async_update_data():
         data = {}
         for key, info in STATIC_URIs.items():
-            url = f"http://{host}:{port}/user/var{info['uri']}"
+            uri = discovered_uris.get(key, info["uri"])
+            url = f"http://{host}:{port}/user/var{uri}"
             try:
                 async with session.get(url, timeout=4) as response:
                     if response.status == 200:
