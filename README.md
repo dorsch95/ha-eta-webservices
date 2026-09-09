@@ -1,7 +1,7 @@
 # ETA Heiztechnik Web Service Integration für Home Assistant
 
-[![hacs_badge](https://shields.io)](https://github.com)
-[![License: MIT](https://shields.io)](LICENSE)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Diese benutzerdefinierte Integration ermöglicht es, Daten von **ETA Heizsystemen** (Pelletkessel, Stückholzkessel, Hackgut, Puffer- und Solarspeicher sowie Frischwassermodule) komplett lokal über die integrierten RESTful Webservices (ETAtouch) auszulesen.
 
@@ -30,7 +30,7 @@ Da es sich um eine benutzerdefinierte Integration handelt, fügst du sie wie fol
 1. Navigiere in Home Assistant zu **HACS** -> **Integrationen**.
 2. Klicke oben rechts auf die drei Punkte (`...`) und wähle **Benutzerdefinierte Repositories** (Custom Repositories).
 3. Füge die URL dieses GitHub-Repositories ein:
-   `https://github.com`
+   `https://github.com/dorsch95/ha-eta-webservices`
 4. Wähle als Kategorie **Integration** und klicke auf **Hinzufügen**.
 5. Suche nach **ETA Heiztechnik Web Service** und klicke auf **Herunterladen**.
 6. **Wichtig:** Starte Home Assistant nach dem Download vollständig neu!
@@ -47,16 +47,20 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 4. Wähle im **Dropdown-Menü dein passendes Anlagenschema** aus (z. B. *Kessel + Puffer + 1x Heizkreis + FWM*).
 5. Klicke auf **Absenden**. Die Integration prüft die Verbindung und generiert die passenden Hintergrundbilder vollautomatisch auf deiner Festplatte.
 
+Host, Port und Anlagenschema lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
+
 ---
 
 ## 📊 Unterstützte Sensoren
 
-Folgende Entitäten werden (sofern physisch an deiner Anlage angeschlossen) mit festen, optimierten Pfaden ausgelesen:
+Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Rücklauftemperatur, Kesseldruck (bar), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
-* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), Fühler 1 (oben), Fühler 2, Fühler 3, Fühler 4, Fühler 5 (unten).
+* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Fühler 1 ist immer der oberste, der zuletzt nummerierte immer der unterste - die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum und benennt sie entsprechend ("Fühler 1 (oben)" ... "Fühler N (unten)").
 * **♨️ Heizkreis:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
 * **🚰 Frischwassermodul (FWM):** Warmwassertemperatur.
+
+> Ein zweiter Heizkreis (HK2), Kessel-Solltemperatur, Aschebox und Restsauerstoff sind auf den Anlagengrafiken bereits als Beschriftungsfelder vorgesehen, werden aber aktuell noch nicht als Sensor ausgelesen (siehe Dashboard-Vorlagen unten).
 
 ---
 

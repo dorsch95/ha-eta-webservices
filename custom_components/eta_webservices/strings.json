@@ -12,6 +12,24 @@
     },
     "error": {
       "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
+    },
+    "abort": {
+      "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ETA Heiztechnik bearbeiten",
+        "data": {
+          "host": "IP-Adresse der Heizung",
+          "port": "Port (Standard: 8080)",
+          "schema": "Anlagenschema auswählen"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
     }
   }
 }

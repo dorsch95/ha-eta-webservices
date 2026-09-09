@@ -1,24 +1,23 @@
-from homeassistant.components.sensor import (
-    SensorEntity,
-    SensorDeviceClass,
-    SensorStateClass
-)
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import DOMAIN, STATIC_URIs
+from .const import DOMAIN
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Registriert Sensoren, die Daten vom Kessel geliefert haben."""
+    """Registriert Sensoren für alle für diese Anlage bekannten Messwerte."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    
-    sensors = []
-    
-    for key, info in STATIC_URIs.items():
-        if key in coordinator.data:
-            sensors.append(ETAStaticSensor(coordinator, key, info))
-            
+
+    # Alle bekannten Sensoren werden angelegt, unabhängig davon, ob die
+    # allererste Abfrage direkt erfolgreich war - ein einzelner Timeout beim
+    # Start soll nicht dazu führen, dass ein vorhandener Sensor dauerhaft
+    # fehlt. Der Zustand ist einfach "Unbekannt", bis der erste Wert kommt.
+    sensors = [
+        ETAStaticSensor(coordinator, key, info)
+        for key, info in coordinator.sensor_defs.items()
+    ]
+
     # Den Bildpfad-Sensor immer erstellen
     sensors.append(ETASystemImageSensor(coordinator))
-        
+
     async_add_entities(sensors)
 
 class ETAStaticSensor(CoordinatorEntity, SensorEntity):
@@ -26,17 +25,13 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, key, info):
         super().__init__(coordinator)
         self.key = key
+        self._default_unit = info.get("default_unit")
         self._attr_name = info["name"]
         self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
         self._attr_icon = info["icon"]
-        
-        # --- KORREKTUR: Dem System sagen, dass es sich um echte Messwerte handelt ---
-        if info.get("icon") == "mdi:thermometer" or "temperatur" in key:
-            self._attr_device_class = SensorDeviceClass.TEMPERATURE
-            self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif info.get("icon") == "mdi:gauge":
-            self._attr_device_class = SensorDeviceClass.PRESSURE
-            self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_device_info = coordinator.device_info
+        self._attr_device_class = info.get("device_class")
+        self._attr_state_class = info.get("state_class")
 
     @property
     def native_value(self):
@@ -54,10 +49,9 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data.get(self.key)
         if data and data["unit"] != "":
             return data["unit"]
-        # Standard-Einheit setzen, falls die ETA im XML mal patzt
-        if "temperatur" in self.key:
-            return "°C"
-        return None
+        # Standard-Einheit setzen, falls die ETA im XML mal patzt oder noch
+        # kein Wert vorliegt
+        return self._default_unit
 
 class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
     """Sensor, der das gewählte Schema-Bild ausgibt."""
@@ -67,6 +61,7 @@ class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = "ETA Anlagenbild Pfad"
         self._attr_unique_id = f"eta_style_{coordinator.config_entry.entry_id}_image"
         self._attr_icon = "mdi:image"
+        self._attr_device_info = coordinator.device_info
 
     @property
     def native_value(self):
