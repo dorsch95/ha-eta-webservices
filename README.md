@@ -70,7 +70,9 @@ Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manue
 
 Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erstelle eine neue Karte vom Typ **Manuell** (Umschalten auf Code-Editor) und füge den YAML-Code ein.
 
-> ℹ️ Für **Kessel Soll**, **Aschebox**, **Restsauerstoff** sowie **Heizkreis 2** sind auf den Grafiken bereits Beschriftungsfelder vorgesehen, es gibt dafür aber noch keine passenden Sensoren in der Integration (siehe `# TODO`-Kommentare in den Karten unten). Die einzelnen Puffer-Fühler (1–5) sowie die Außentemperatur haben keine eigene Beschriftung auf den Grafiken und werden daher hier nicht platziert – sie stehen aber weiterhin als normale Sensoren zur Verfügung und können z. B. in einer separaten Entities-Karte angezeigt werden.
+> ℹ️ Für **Kessel Soll**, **Aschebox**, **Restsauerstoff** sowie **Heizkreis 2** sind auf den Grafiken bereits Beschriftungsfelder vorgesehen, es gibt dafür aber noch keine passenden Sensoren in der Integration (siehe `# TODO`-Kommentare in den Karten unten). Die Außentemperatur hat keine eigene Beschriftung auf den Grafiken und wird daher hier nicht platziert – sie steht aber weiterhin als normaler Sensor zur Verfügung und kann z. B. in einer separaten Entities-Karte angezeigt werden.
+
+Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern, wofür sich nicht sinnvoll eine feste Karten-Vorlage pro Anzahl schreiben lässt. Statt eine feste Anzahl anzunehmen, enthält jede Puffer-Karte unten ein `markdown`-Element mit einem kleinen Jinja-Template, das direkt über der Pufferspeicher-Grafik automatisch **genau so viele Fühler-Zeilen untereinander anzeigt, wie an deiner Anlage tatsächlich gefunden wurden** (3 bis 8) – ganz ohne Anpassung des YAML-Codes. Fühler 1 wird dabei immer als "(oben)", der letzte gefundene immer als "(unten)" beschriftet.
 
 ### Kessel
 
@@ -149,6 +151,36 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
+  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
+  - type: markdown
+    style:
+      top: 58%
+      left: 38%
+      width: 30%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set valid = namespace(list=[]) -%}
+      {%- for n in range(1, 9) -%}
+        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
+          {%- set valid.list = valid.list + [n] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for n in valid.list -%}
+        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
+        {%- if n == valid.list[0] -%}
+          {%- set suffix = ' (oben)' -%}
+        {%- elif n == valid.list[-1] -%}
+          {%- set suffix = ' (unten)' -%}
+        {%- else -%}
+          {%- set suffix = '' -%}
+        {%- endif -%}
+        {%- if not loop.first -%}<br>{%- endif -%}
+        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
+      {%- endfor -%}
 ```
 
 ### Kessel + Puffer + 1x Heizkreis
@@ -192,6 +224,36 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
+  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
+  - type: markdown
+    style:
+      top: 58%
+      left: 38%
+      width: 30%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set valid = namespace(list=[]) -%}
+      {%- for n in range(1, 9) -%}
+        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
+          {%- set valid.list = valid.list + [n] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for n in valid.list -%}
+        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
+        {%- if n == valid.list[0] -%}
+          {%- set suffix = ' (oben)' -%}
+        {%- elif n == valid.list[-1] -%}
+          {%- set suffix = ' (unten)' -%}
+        {%- else -%}
+          {%- set suffix = '' -%}
+        {%- endif -%}
+        {%- if not loop.first -%}<br>{%- endif -%}
+        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
+      {%- endfor -%}
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -249,6 +311,36 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
+  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
+  - type: markdown
+    style:
+      top: 58%
+      left: 38%
+      width: 30%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set valid = namespace(list=[]) -%}
+      {%- for n in range(1, 9) -%}
+        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
+          {%- set valid.list = valid.list + [n] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for n in valid.list -%}
+        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
+        {%- if n == valid.list[0] -%}
+          {%- set suffix = ' (oben)' -%}
+        {%- elif n == valid.list[-1] -%}
+          {%- set suffix = ' (unten)' -%}
+        {%- else -%}
+          {%- set suffix = '' -%}
+        {%- endif -%}
+        {%- if not loop.first -%}<br>{%- endif -%}
+        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
+      {%- endfor -%}
   - type: state-label
     entity: sensor.eta_fwm_warmwassertemperatur
     style:
@@ -299,6 +391,36 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
+  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
+  - type: markdown
+    style:
+      top: 58%
+      left: 38%
+      width: 30%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set valid = namespace(list=[]) -%}
+      {%- for n in range(1, 9) -%}
+        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
+          {%- set valid.list = valid.list + [n] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for n in valid.list -%}
+        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
+        {%- if n == valid.list[0] -%}
+          {%- set suffix = ' (oben)' -%}
+        {%- elif n == valid.list[-1] -%}
+          {%- set suffix = ' (unten)' -%}
+        {%- else -%}
+          {%- set suffix = '' -%}
+        {%- endif -%}
+        {%- if not loop.first -%}<br>{%- endif -%}
+        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
+      {%- endfor -%}
   - type: state-label
     entity: sensor.eta_fwm_warmwassertemperatur
     style:
@@ -363,6 +485,36 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
+  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
+  - type: markdown
+    style:
+      top: 58%
+      left: 38%
+      width: 30%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set valid = namespace(list=[]) -%}
+      {%- for n in range(1, 9) -%}
+        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
+          {%- set valid.list = valid.list + [n] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for n in valid.list -%}
+        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
+        {%- if n == valid.list[0] -%}
+          {%- set suffix = ' (oben)' -%}
+        {%- elif n == valid.list[-1] -%}
+          {%- set suffix = ' (unten)' -%}
+        {%- else -%}
+          {%- set suffix = '' -%}
+        {%- endif -%}
+        {%- if not loop.first -%}<br>{%- endif -%}
+        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
+      {%- endfor -%}
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -422,6 +574,36 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
+  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
+  - type: markdown
+    style:
+      top: 58%
+      left: 38%
+      width: 30%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set valid = namespace(list=[]) -%}
+      {%- for n in range(1, 9) -%}
+        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
+          {%- set valid.list = valid.list + [n] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for n in valid.list -%}
+        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
+        {%- if n == valid.list[0] -%}
+          {%- set suffix = ' (oben)' -%}
+        {%- elif n == valid.list[-1] -%}
+          {%- set suffix = ' (unten)' -%}
+        {%- else -%}
+          {%- set suffix = '' -%}
+        {%- endif -%}
+        {%- if not loop.first -%}<br>{%- endif -%}
+        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
+      {%- endfor -%}
   - type: state-label
     entity: sensor.eta_fwm_warmwassertemperatur
     style:
