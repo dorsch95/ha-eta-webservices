@@ -160,11 +160,12 @@ DISCOVERY_ONLY_SENSORS = {
         "icon": "mdi:heat-wave",
         "is_string": True,
     },
+}
+
+OPTIONAL_SENSORS = {
     "fwm_zirkulation": {
         "name": "FWM Zirkulation",
         "icon": "mdi:water-thermometer",
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     },
 }

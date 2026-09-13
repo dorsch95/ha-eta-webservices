@@ -1,6 +1,6 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import DOMAIN
+from .const import DOMAIN, OPTIONAL_SENSORS
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Registriert Sensoren für alle für diese Anlage bekannten Messwerte."""
@@ -9,7 +9,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
     sensors = [
         ETAStaticSensor(coordinator, key, info)
         for key, info in coordinator.sensor_defs.items()
+        if key not in OPTIONAL_SENSORS
     ]
+
+    for key, info in OPTIONAL_SENSORS.items():
+        sensors.append(ETAOptionalSensor(coordinator, key, info))
 
     sensors.append(ETASystemImageSensor(coordinator))
     sensors.append(ETAAscheboxStatusSensor(coordinator))
@@ -51,6 +55,41 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
             return data["unit"]
         return self._default_unit
 
+class ETAOptionalSensor(CoordinatorEntity, SensorEntity):
+    """Sensor für Messwerte, die nicht jede Anlage hat (z.B. FWM-Zirkulation).
+
+    Existiert immer, damit eine Dashboard-Karte ihn gefahrlos referenzieren
+    kann - zeigt "-" statt eines "Entität nicht gefunden"-Fehlers, wenn der
+    zugehörige Wert an dieser Anlage nicht gefunden wurde.
+    """
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator, key, info):
+        super().__init__(coordinator)
+        self.key = key
+        self._unit = info.get("default_unit")
+        self._attr_name = info["name"]
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
+        self._attr_icon = info["icon"]
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def native_value(self):
+        data = self.coordinator.data.get(self.key)
+        if not data:
+            return "-"
+        val = data["value"]
+        if isinstance(val, (int, float)):
+            return round(float(val), 1)
+        return val
+
+    @property
+    def native_unit_of_measurement(self):
+        data = self.coordinator.data.get(self.key)
+        if not data:
+            return None
+        return data["unit"] or self._unit
+
 class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
     """Sensor, der das gewählte Schema-Bild ausgibt."""
     _attr_has_entity_name = True
@@ -91,10 +130,6 @@ class ETAAscheboxStatusSensor(CoordinatorEntity, SensorEntity):
         if not verbrauch or not schwelle:
             return None
         try:
-            return f"{round(verbrauch['value']):.0f}/{round(schwelle['value']):.0f}"
+            return f"{round(verbrauch['value']):.0f}/{round(schwelle['value']):.0f}kg"
         except (TypeError, ValueError):
             return None
-
-    @property
-    def native_unit_of_measurement(self):
-        return "kg"

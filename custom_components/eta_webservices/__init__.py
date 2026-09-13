@@ -16,6 +16,7 @@ from .const import (
     SCHEMAS,
     PUFFER_FUEHLER_FALLBACK_URIS,
     DISCOVERY_ONLY_SENSORS,
+    OPTIONAL_SENSORS,
     puffer_fuehler_info,
 )
 from .images import IMAGES_DATA
@@ -37,6 +38,11 @@ def _build_sensor_defs(discovered_uris, puffer_fuehler_indices):
             entry_info = dict(info)
             entry_info["uri"] = discovered_uris[key]
             sensor_defs[key] = entry_info
+
+    for key, info in OPTIONAL_SENSORS.items():
+        entry_info = dict(info)
+        entry_info["uri"] = discovered_uris.get(key)
+        sensor_defs[key] = entry_info
 
     indices = puffer_fuehler_indices or list(range(1, len(PUFFER_FUEHLER_FALLBACK_URIS) + 1))
     last_index = indices[-1] if indices else None
@@ -94,7 +100,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         success_count = 0
 
         for key, info in sensor_defs.items():
-            uri = discovered_uris.get(key, info["uri"])
+            uri = discovered_uris.get(key, info.get("uri"))
+            if not uri:
+                continue
             url = f"http://{host}:{port}/user/var{uri}"
             try:
                 async with session.get(url, timeout=4) as response:
