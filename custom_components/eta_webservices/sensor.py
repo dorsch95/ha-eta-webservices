@@ -6,16 +6,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Registriert Sensoren für alle für diese Anlage bekannten Messwerte."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    # Alle bekannten Sensoren werden angelegt, unabhängig davon, ob die
-    # allererste Abfrage direkt erfolgreich war - ein einzelner Timeout beim
-    # Start soll nicht dazu führen, dass ein vorhandener Sensor dauerhaft
-    # fehlt. Der Zustand ist einfach "Unbekannt", bis der erste Wert kommt.
     sensors = [
         ETAStaticSensor(coordinator, key, info)
         for key, info in coordinator.sensor_defs.items()
     ]
 
-    # Den Bildpfad-Sensor immer erstellen
     sensors.append(ETASystemImageSensor(coordinator))
     sensors.append(ETAAscheboxStatusSensor(coordinator))
 
@@ -41,7 +36,6 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data.get(self.key)
         if data:
             val = data["value"]
-            # Wenn es eine Zahl ist, runden wir sie sauber auf 1 Dezimalstelle
             if isinstance(val, (int, float)):
                 return round(float(val), 1)
             return val
@@ -52,8 +46,6 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data.get(self.key)
         if data and data["unit"] != "":
             return data["unit"]
-        # Standard-Einheit setzen, falls die ETA im XML mal patzt oder noch
-        # kein Wert vorliegt
         return self._default_unit
 
 class ETASystemImageSensor(CoordinatorEntity, SensorEntity):

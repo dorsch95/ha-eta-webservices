@@ -20,7 +20,6 @@ from .const import FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
 
 _LOGGER = logging.getLogger(__name__)
 
-# Für jeden Messwert-Schlüssel: (FUB-Rolle, [Namenspfad zum Objekt])
 DISCOVERY_PATHS = {
     "kessel_temperatur": ("kessel", ["Eingänge", "Kessel"]),
     "ruecklauf_temperatur": ("kessel", ["Eingänge", "Rücklauf"]),
@@ -36,8 +35,6 @@ DISCOVERY_PATHS = {
     "heizkreis_anforderung": ("hk", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "heizkreis2_vorlauf": ("hk2", ["Eingänge", "Vorlauf"]),
     "heizkreis2_anforderung": ("hk2", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
-    # FWM oder WW: unabhängig vom FUB-Namen interessieren nur Warmwasser
-    # und Zirkulation.
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     "fwm_zirkulation": ("fwm", ["Eingänge", "Zirkulation"]),
 }

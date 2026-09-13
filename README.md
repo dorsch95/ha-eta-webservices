@@ -228,7 +228,6 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
   - type: state-label
     entity: sensor.eta_puffer_fuehler_1
     style:
@@ -381,7 +380,6 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
   - type: state-label
     entity: sensor.eta_puffer_fuehler_1
     style:
@@ -548,7 +546,6 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
   - type: state-label
     entity: sensor.eta_puffer_fuehler_1
     style:
@@ -630,7 +627,6 @@ elements:
       font-weight: bold
       font-size: 14px
       text-shadow: 1px 1px 2px black
-  # Zirkulationsfühler ist nicht bei jeder Anlage vorhanden - bleibt sonst leer
   - type: state-label
     entity: sensor.eta_fwm_zirkulation
     style:
@@ -720,7 +716,6 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
   - type: state-label
     entity: sensor.eta_puffer_fuehler_1
     style:
@@ -802,7 +797,6 @@ elements:
       font-weight: bold
       font-size: 14px
       text-shadow: 1px 1px 2px black
-  # Zirkulationsfühler ist nicht bei jeder Anlage vorhanden - bleibt sonst leer
   - type: state-label
     entity: sensor.eta_fwm_zirkulation
     style:
@@ -906,7 +900,6 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
   - type: state-label
     entity: sensor.eta_puffer_fuehler_1
     style:
@@ -1087,7 +1080,6 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
   - type: state-label
     entity: sensor.eta_puffer_fuehler_1
     style:
@@ -1169,7 +1161,6 @@ elements:
       font-weight: bold
       font-size: 14px
       text-shadow: 1px 1px 2px black
-  # Zirkulationsfühler ist nicht bei jeder Anlage vorhanden - bleibt sonst leer
   - type: state-label
     entity: sensor.eta_fwm_zirkulation
     style:

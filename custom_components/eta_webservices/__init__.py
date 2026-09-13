@@ -66,7 +66,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     fub_name_overrides = config.get("fub_names", {})
     session = async_get_clientsession(hass)
 
-    # --- BILDER AUS BASE64 TEXT SCHREIBEN (nur falls nötig) ---
     try:
         target_dir = os.path.join(hass.config.path("www"), "community", "ha-eta-webservices")
         os.makedirs(target_dir, exist_ok=True)
@@ -84,17 +83,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error(f"Fehler bei der ETA Bildgenerierung: {e}")
 
-    # --- AUTOMATISCHE URI-ERKENNUNG ÜBER DEN ANLAGENMENÜBAUM ---
-    # Die numerischen URIs unterscheiden sich je nach Anlage. Statt sie fest
-    # zu verdrahten, werden sie einmalig anhand ihrer (stabilen) Namen im
-    # Menübaum der Anlage gesucht. Schlägt das fehl, wird auf die
-    # Standard-URI zurückgefallen.
     discovered_uris, puffer_fuehler_indices = await async_discover_uris(
         session, host, port, fub_name_overrides
     )
     sensor_defs = _build_sensor_defs(discovered_uris, puffer_fuehler_indices)
 
-    # --- DATEN-ABRUF-KOORDINATOR ---
     async def async_update_data():
         previous_data = coordinator.data or {}
         data = {}
@@ -149,9 +142,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     success_count += 1
             except Exception as err:
                 _LOGGER.debug("ETA: Abfrage von '%s' (%s) fehlgeschlagen: %s", key, url, err)
-                # Letzten bekannten Wert beibehalten statt kurzzeitig auf
-                # "Unbekannt" zu springen, wenn nur eine einzelne Abfrage
-                # in diesem Zyklus fehlschlägt.
                 if key in previous_data:
                     data[key] = previous_data[key]
 
@@ -174,11 +164,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator.sensor_defs = sensor_defs
     coordinator.device_info = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        # Kurzer, stabiler Gerätename: Mit has_entity_name=True auf den
-        # Sensoren wird dieser Name automatisch vor jeden Entitätsnamen
-        # gesetzt (Anzeige), ohne die generierte entity_id zu verlängern.
-        # Das Anlagenschema steht bewusst nicht hier drin, sondern nur im
-        # Config-Entry-Titel (Einstellungen > Geräte & Dienste).
         name="ETA Heizung",
         manufacturer="ETA",
         model=selected_schema,
