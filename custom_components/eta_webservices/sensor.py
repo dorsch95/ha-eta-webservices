@@ -23,6 +23,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class ETAStaticSensor(CoordinatorEntity, SensorEntity):
     """Repräsentiert einen ETA Sensor mit fester URI."""
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, key, info):
         super().__init__(coordinator)
         self.key = key
@@ -56,10 +58,12 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
 
 class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
     """Sensor, der das gewählte Schema-Bild ausgibt."""
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator):
         super().__init__(coordinator)
         self.coordinator = coordinator
-        self._attr_name = "ETA Anlagenbild Pfad"
+        self._attr_name = "Anlagenbild Pfad"
         self._attr_unique_id = f"eta_style_{coordinator.config_entry.entry_id}_image"
         self._attr_icon = "mdi:image"
         self._attr_device_info = coordinator.device_info
@@ -75,10 +79,12 @@ class ETAAscheboxStatusSensor(CoordinatorEntity, SensorEntity):
     wird die Kombination hier serverseitig berechnet und als normaler Sensor
     bereitgestellt, den eine einfache state-label-Karte referenzieren kann.
     """
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator):
         super().__init__(coordinator)
         self.coordinator = coordinator
-        self._attr_name = "ETA Aschebox Status"
+        self._attr_name = "Aschebox Status"
         self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_aschebox_status"
         self._attr_icon = "mdi:trash-can"
         self._attr_device_info = coordinator.device_info

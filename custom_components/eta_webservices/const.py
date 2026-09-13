@@ -23,7 +23,7 @@ STATIC_URIs = {
     # --- KESSEL & UMGEBUNG ---
     "kessel_temperatur": {
         "uri": "/264/10891/0/11109/0",
-        "name": "ETA Kesseltemperatur",
+        "name": "Kesseltemperatur",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -31,7 +31,7 @@ STATIC_URIs = {
     },
     "ruecklauf_temperatur": {
         "uri": "/264/10891/0/11160/0",
-        "name": "ETA Rücklauftemperatur",
+        "name": "Rücklauftemperatur",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -39,7 +39,7 @@ STATIC_URIs = {
     },
     "kessel_druck": {
         "uri": "/264/10891/0/0/12180",
-        "name": "ETA Kesseldruck",
+        "name": "Kesseldruck",
         "icon": "mdi:gauge",
         "device_class": SensorDeviceClass.PRESSURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -47,7 +47,7 @@ STATIC_URIs = {
     },
     "pellet_tagesbehälter": {
         "uri": "/264/10891/0/0/12011",
-        "name": "ETA Pellet Inhalt Tagesbehälter",
+        "name": "Pellet Inhalt Tagesbehälter",
         "icon": "mdi:weight-kilogram",
         "device_class": SensorDeviceClass.WEIGHT,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -55,7 +55,7 @@ STATIC_URIs = {
     },
     "aussentemperatur": {
         "uri": "/120/10241/0/11127/0",
-        "name": "ETA Außentemperatur",
+        "name": "Außentemperatur",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -63,7 +63,7 @@ STATIC_URIs = {
     },
     "kessel_soll": {
         "uri": "/264/10891/0/0/13953",
-        "name": "ETA Kessel Solltemperatur",
+        "name": "Kessel Solltemperatur",
         "icon": "mdi:thermostat",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -71,7 +71,7 @@ STATIC_URIs = {
     },
     "restsauerstoff": {
         "uri": "/264/10891/0/11108/2060",
-        "name": "ETA Restsauerstoff",
+        "name": "Restsauerstoff",
         "icon": "mdi:percent",
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -79,7 +79,7 @@ STATIC_URIs = {
     },
     "aschebox_verbrauch": {
         "uri": "/264/10891/0/0/12013",
-        "name": "ETA Aschebox Verbrauch seit Leerung",
+        "name": "Aschebox Verbrauch seit Leerung",
         "icon": "mdi:trash-can",
         "device_class": SensorDeviceClass.WEIGHT,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -87,7 +87,7 @@ STATIC_URIs = {
     },
     "aschebox_schwelle": {
         "uri": "/264/10891/0/0/12120",
-        "name": "ETA Aschebox Leeren nach",
+        "name": "Aschebox Leeren nach",
         "icon": "mdi:trash-can-outline",
         "device_class": SensorDeviceClass.WEIGHT,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -97,7 +97,7 @@ STATIC_URIs = {
     # --- PUFFERSPEICHER ---
     "puffer_ladezustand": {
         "uri": "/120/10601/0/0/12528",
-        "name": "ETA Puffer Ladezustand",
+        "name": "Puffer Ladezustand",
         "icon": "mdi:battery-charging-60",
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -107,7 +107,7 @@ STATIC_URIs = {
     # --- HEIZKREIS 1 ---
     "heizkreis_vorlauf": {
         "uri": "/120/10101/0/11060/0",
-        "name": "ETA Heizkreis Vorlauftemperatur",
+        "name": "Heizkreis Vorlauftemperatur",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -115,7 +115,7 @@ STATIC_URIs = {
     },
     "heizkreis_anforderung": {
         "uri": "/120/10101/0/11124/2001",
-        "name": "ETA Heizkreis Anforderung",
+        "name": "Heizkreis Anforderung",
         "icon": "mdi:heat-wave",
         "is_string": True,
     },
@@ -123,7 +123,7 @@ STATIC_URIs = {
     # --- FRISCHWASSERMODUL ---
     "fwm_warmwasser": {
         "uri": "/79/10531/0/11148/0",
-        "name": "ETA FWM Warmwassertemperatur",
+        "name": "FWM Warmwassertemperatur",
         "icon": "mdi:water-thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -153,11 +153,11 @@ PUFFER_FUEHLER_FALLBACK_URIS = [
 def puffer_fuehler_info(index, is_last):
     """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
     if index == 1:
-        name = f"ETA Puffer Fühler {index} (oben)"
+        name = f"Puffer Fühler {index} (oben)"
     elif is_last:
-        name = f"ETA Puffer Fühler {index} (unten)"
+        name = f"Puffer Fühler {index} (unten)"
     else:
-        name = f"ETA Puffer Fühler {index}"
+        name = f"Puffer Fühler {index}"
     return {
         "name": name,
         "icon": "mdi:thermometer-lines",
@@ -174,19 +174,19 @@ def puffer_fuehler_info(index, is_last):
 # über den Menübaum der Anlage findet.
 DISCOVERY_ONLY_SENSORS = {
     "heizkreis2_vorlauf": {
-        "name": "ETA Heizkreis 2 Vorlauftemperatur",
+        "name": "Heizkreis 2 Vorlauftemperatur",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     },
     "heizkreis2_anforderung": {
-        "name": "ETA Heizkreis 2 Anforderung",
+        "name": "Heizkreis 2 Anforderung",
         "icon": "mdi:heat-wave",
         "is_string": True,
     },
     "fwm_zirkulation": {
-        "name": "ETA FWM Zirkulation",
+        "name": "FWM Zirkulation",
         "icon": "mdi:water-thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,

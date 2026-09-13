@@ -174,7 +174,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator.sensor_defs = sensor_defs
     coordinator.device_info = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name=entry.title,
+        # Kurzer, stabiler Gerätename: Mit has_entity_name=True auf den
+        # Sensoren wird dieser Name automatisch vor jeden Entitätsnamen
+        # gesetzt (Anzeige), ohne die generierte entity_id zu verlängern.
+        # Das Anlagenschema steht bewusst nicht hier drin, sondern nur im
+        # Config-Entry-Titel (Einstellungen > Geräte & Dienste).
+        name="ETA Heizung",
         manufacturer="ETA",
         model=selected_schema,
         configuration_url=f"http://{host}:{port}",
