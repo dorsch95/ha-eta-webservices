@@ -77,6 +77,22 @@ STATIC_URIs = {
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "%",
     },
+    "aschebox_verbrauch": {
+        "uri": "/264/10891/0/0/12013",
+        "name": "ETA Aschebox Verbrauch seit Leerung",
+        "icon": "mdi:trash-can",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kg",
+    },
+    "aschebox_schwelle": {
+        "uri": "/264/10891/0/0/12120",
+        "name": "ETA Aschebox Leeren nach",
+        "icon": "mdi:trash-can-outline",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kg",
+    },
 
     # --- PUFFERSPEICHER ---
     "puffer_ladezustand": {

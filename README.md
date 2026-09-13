@@ -58,12 +58,11 @@ Host, Port, Anlagenschema und die FUB-Namen lassen sich später jederzeit über 
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
+* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg) - jeweils als eigener Sensor, im Dashboard unten als "459/1000kg" kombiniert dargestellt.
 * **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Fühler 1 ist immer der oberste, der zuletzt nummerierte immer der unterste - die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum und benennt sie entsprechend ("Fühler 1 (oben)" ... "Fühler N (unten)").
 * **♨️ Heizkreis 1:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
 * **♨️ Heizkreis 2** (nur bei Schema *2x Heizkreis*, sofern ein FUB "HK2" gefunden wird): Vorlauftemperatur, Anforderung.
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur, sowie Zirkulationstemperatur, sofern die Anlage einen entsprechenden Fühler hat.
-
-> **Aschebox** ist auf den Anlagengrafiken bereits als Beschriftungsfeld vorgesehen, wird aber aktuell noch nicht als Sensor ausgelesen (siehe Dashboard-Vorlagen unten).
 
 ### Funktionsblöcke wurden umbenannt?
 
@@ -86,9 +85,11 @@ Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manue
 
 Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erstelle eine neue Karte vom Typ **Manuell** (Umschalten auf Code-Editor) und füge den YAML-Code ein.
 
-> ℹ️ Für **Kessel Soll**, **Aschebox**, **Restsauerstoff** sowie **Heizkreis 2** sind auf den Grafiken bereits Beschriftungsfelder vorgesehen, es gibt dafür aber noch keine passenden Sensoren in der Integration (siehe `# TODO`-Kommentare in den Karten unten). Die Außentemperatur hat keine eigene Beschriftung auf den Grafiken und wird daher hier nicht platziert – sie steht aber weiterhin als normaler Sensor zur Verfügung und kann z. B. in einer separaten Entities-Karte angezeigt werden.
+> ℹ️ Die Außentemperatur hat keine eigene Beschriftung auf den Grafiken und wird daher hier nicht platziert – sie steht aber weiterhin als normaler Sensor zur Verfügung und kann z. B. in einer separaten Entities-Karte angezeigt werden.
 
 Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern, wofür sich nicht sinnvoll eine feste Karten-Vorlage pro Anzahl schreiben lässt. Statt eine feste Anzahl anzunehmen, enthält jede Puffer-Karte unten ein `markdown`-Element mit einem kleinen Jinja-Template, das direkt über der Pufferspeicher-Grafik automatisch **genau so viele Fühler-Zeilen untereinander anzeigt, wie an deiner Anlage tatsächlich gefunden wurden** (3 bis 8) – ganz ohne Anpassung des YAML-Codes. Fühler 1 wird dabei immer als "(oben)", der letzte gefundene immer als "(unten)" beschriftet.
+
+**Aschebox** und **FWM/WW** sind ebenfalls dynamisch: Die Aschebox-Beschriftung zeigt "Verbrauch/Schwellwert" kombiniert an (z. B. "459/1000kg"), und die FWM-Beschriftung zeigt Warmwasser- sowie (falls vorhanden) Zirkulationstemperatur - jeweils über ein kleines `markdown`-Element, das nur die tatsächlich vorhandenen Werte anzeigt.
 
 ### Kessel
 
@@ -138,6 +139,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
 ```
 
 ### Kessel + Puffer
@@ -188,6 +200,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -275,6 +298,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -376,6 +410,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -482,6 +527,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -602,6 +658,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -717,6 +784,17 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
+  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
+  - type: markdown
+    style:
+      top: 41.3%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+    content: |
+      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
+      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
+      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
