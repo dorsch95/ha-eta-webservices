@@ -58,11 +58,11 @@ Host, Port, Anlagenschema und die FUB-Namen lassen sich später jederzeit über 
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
-* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg), jeweils als eigener Sensor - plus ein dritter, kombinierter Sensor `sensor.eta_heizung_aschebox_status` mit dem Format "459/1000" (Einheit kg) für die Dashboard-Anzeige.
-* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Fühler 1 ist immer der oberste, der zuletzt nummerierte immer der unterste - die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum und benennt sie entsprechend ("Fühler 1 (oben)" ... "Fühler N (unten)").
+* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg), jeweils als eigener Sensor - plus ein dritter, kombinierter Sensor `sensor.eta_heizung_aschebox_status` mit dem Format "459/1000kg" für die Dashboard-Anzeige.
+* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum; Fühler 1 hat zusätzlich das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
 * **♨️ Heizkreis 1:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
 * **♨️ Heizkreis 2** (nur bei Schema *2x Heizkreis*, sofern ein FUB "HK2" gefunden wird): Vorlauftemperatur, Anforderung.
-* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur, sowie Zirkulationstemperatur, sofern die Anlage einen entsprechenden Fühler hat.
+* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur, sowie Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls die Anlage keinen entsprechenden Fühler hat.
 
 ### Funktionsblöcke wurden umbenannt?
 
@@ -91,7 +91,7 @@ Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erst
 
 Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern. Da `state-label` keine bedingte Anzeige kann, enthält jede Puffer-Karte pauschal **8 übereinander gestapelte `state-label`-Elemente** (Fühler 1 oben bis Fühler 8 unten, passend zur physischen Anordnung im Pufferspeicher). Hat deine Anlage weniger als 8 Fühler, zeigt Home Assistant für die überzähligen Positionen ein kleines Warndreieck ("Entität nicht gefunden") statt einer leeren Fläche - **lösche die Elemente für die Fühler, die du nicht hast, aus dem YAML** (schau vorher unter Entwicklerwerkzeuge → Zustände nach, wie viele `sensor.eta_heizung_puffer_fuhler_N`-Entitäten es bei dir gibt).
 
-**Aschebox** wird über einen eigenen Sensor (`sensor.eta_heizung_aschebox_status`) bereitgestellt, der die Kombination "459/1000kg" bereits serverseitig in der Integration berechnet - die Karte muss dafür nur eine ganz normale `state-label`-Zeile referenzieren. Bei **FWM/WW** stehen Warmwasser- und Zirkulationstemperatur (falls vorhanden) als zwei einzelne `state-label`-Zeilen übereinander.
+**Aschebox** wird über einen eigenen Sensor (`sensor.eta_heizung_aschebox_status`) bereitgestellt, der die Kombination "459/1000kg" bereits serverseitig in der Integration berechnet - die Karte muss dafür nur eine ganz normale `state-label`-Zeile referenzieren. Bei **FWM/WW** stehen Warmwasser- und Zirkulationstemperatur als zwei einzelne `state-label`-Zeilen übereinander; der Zirkulations-Sensor existiert immer und zeigt "-", wenn deine Anlage keinen entsprechenden Fühler hat - anders als bei den Pufferfühlern muss hier also nichts aus dem YAML gelöscht werden.
 
 ### Kessel
 
