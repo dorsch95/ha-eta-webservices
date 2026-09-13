@@ -85,7 +85,7 @@ Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manue
 
 Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erstelle eine neue Karte vom Typ **Manuell** (Umschalten auf Code-Editor) und füge den YAML-Code ein.
 
-> ℹ️ Die Außentemperatur hat keine eigene Beschriftung auf den Grafiken und wird daher hier nicht platziert – sie steht aber weiterhin als normaler Sensor zur Verfügung und kann z. B. in einer separaten Entities-Karte angezeigt werden.
+> ℹ️ Die Außentemperatur hat kein eigenes Beschriftungsfeld auf den Grafiken. Sie wird deshalb unabhängig vom Schema oben rechts in der Ecke mit einem kleinen Haus-Symbol (`mdi:home-thermometer-outline`) dargestellt, statt eine der Grafiken anzupassen.
 
 Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern, wofür sich nicht sinnvoll eine feste Karten-Vorlage pro Anzahl schreiben lässt. Statt eine feste Anzahl anzunehmen, enthält jede Puffer-Karte unten ein `markdown`-Element mit einem kleinen Jinja-Template, das direkt über der Pufferspeicher-Grafik automatisch **genau so viele Fühler-Zeilen untereinander anzeigt, wie an deiner Anlage tatsächlich gefunden wurden** (3 bis 8) – ganz ohne Anpassung des YAML-Codes. Fühler 1 wird dabei immer als "(oben)", der letzte gefundene immer als "(unten)" beschriftet.
 
@@ -150,6 +150,22 @@ elements:
       {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
       {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
       {%- endif -%}
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 ### Kessel + Puffer
@@ -248,6 +264,22 @@ elements:
         {%- if not loop.first -%}<br>{%- endif -%}
         **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
       {%- endfor -%}
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 ### Kessel + Puffer + 1x Heizkreis
@@ -360,6 +392,22 @@ elements:
       left: 72%
       font-weight: bold
       font-size: 16px
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 ### Kessel + Puffer + FWM
@@ -477,6 +525,22 @@ elements:
         {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
       {%- endif -%}
       {{ lines | join('<br>') }}
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 ### Kessel + Puffer + 1x Heizkreis + FWM
@@ -608,6 +672,22 @@ elements:
       left: 90%
       font-weight: bold
       font-size: 14px
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 ### Kessel + Puffer + 2x Heizkreis
@@ -734,6 +814,22 @@ elements:
       left: 72%
       font-weight: bold
       font-size: 16px
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 ### Kessel + Puffer + 2x Heizkreis + FWM
@@ -879,6 +975,22 @@ elements:
       left: 90%
       font-weight: bold
       font-size: 14px
+  - type: icon
+    icon: mdi:home-thermometer-outline
+    style:
+      top: 6%
+      left: 88%
+      color: white
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_aussentemperatur
+    style:
+      top: 6%
+      left: 95%
+      color: white
+      font-weight: bold
+      font-size: 14px
+      text-shadow: 1px 1px 2px black
 ```
 
 > 💡 `top`/`left` verankern in Lovelace standardmäßig die **Mitte** des Elements. Solltest du eine andere Home-Assistant-Theme, Bildschirmgröße oder Kartenbreite verwenden, kannst du die Werte im visuellen Editor per Drag & Drop feinjustieren.
