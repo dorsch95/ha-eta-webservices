@@ -58,7 +58,7 @@ Host, Port, Anlagenschema und die FUB-Namen lassen sich später jederzeit über 
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
-* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg) - jeweils als eigener Sensor, im Dashboard unten als "459/1000kg" kombiniert dargestellt.
+* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg), jeweils als eigener Sensor - plus ein dritter, kombinierter Sensor `sensor.eta_aschebox_status` mit dem Format "459/1000" (Einheit kg) für die Dashboard-Anzeige.
 * **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Fühler 1 ist immer der oberste, der zuletzt nummerierte immer der unterste - die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum und benennt sie entsprechend ("Fühler 1 (oben)" ... "Fühler N (unten)").
 * **♨️ Heizkreis 1:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
 * **♨️ Heizkreis 2** (nur bei Schema *2x Heizkreis*, sofern ein FUB "HK2" gefunden wird): Vorlauftemperatur, Anforderung.
@@ -87,9 +87,11 @@ Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erst
 
 > ℹ️ Die Außentemperatur hat kein eigenes Beschriftungsfeld auf den Grafiken. Sie wird deshalb unabhängig vom Schema oben rechts in der Ecke mit einem kleinen Haus-Symbol (`mdi:home-thermometer-outline`) dargestellt, statt eine der Grafiken anzupassen.
 
-Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern, wofür sich nicht sinnvoll eine feste Karten-Vorlage pro Anzahl schreiben lässt. Statt eine feste Anzahl anzunehmen, enthält jede Puffer-Karte unten ein `markdown`-Element mit einem kleinen Jinja-Template, das direkt über der Pufferspeicher-Grafik automatisch **genau so viele Fühler-Zeilen untereinander anzeigt, wie an deiner Anlage tatsächlich gefunden wurden** (3 bis 8) – ganz ohne Anpassung des YAML-Codes. Fühler 1 wird dabei immer als "(oben)", der letzte gefundene immer als "(unten)" beschriftet.
+> ⚠️ `picture-elements`-Karten unterstützen **kein** `type: markdown`-Element (nur `state-label`, `state-icon`, `icon`, `image`, `conditional`, `service-button`, `state-badge`) - eine frühere Version dieser README hat das fälschlich verwendet, was zu "Konfigurationsfehler: Unknown type encountered" führte. Die Karten unten nutzen nur gültige Elementtypen.
 
-**Aschebox** und **FWM/WW** sind ebenfalls dynamisch: Die Aschebox-Beschriftung zeigt "Verbrauch/Schwellwert" kombiniert an (z. B. "459/1000kg"), und die FWM-Beschriftung zeigt Warmwasser- sowie (falls vorhanden) Zirkulationstemperatur - jeweils über ein kleines `markdown`-Element, das nur die tatsächlich vorhandenen Werte anzeigt.
+Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern. Da `state-label` keine bedingte Anzeige kann, enthält jede Puffer-Karte pauschal **8 übereinander gestapelte `state-label`-Elemente** (Fühler 1 oben bis Fühler 8 unten, passend zur physischen Anordnung im Pufferspeicher). Hat deine Anlage weniger als 8 Fühler, bleiben die überzähligen Positionen einfach leer, da die zugehörige Entität nicht existiert - lösche die entsprechenden Elemente aus dem YAML, wenn dich die leeren Zeilen stören.
+
+**Aschebox** wird über einen eigenen Sensor (`sensor.eta_aschebox_status`) bereitgestellt, der die Kombination "459/1000kg" bereits serverseitig in der Integration berechnet - die Karte muss dafür nur eine ganz normale `state-label`-Zeile referenzieren. Bei **FWM/WW** stehen Warmwasser- und Zirkulationstemperatur (falls vorhanden) als zwei einzelne `state-label`-Zeilen übereinander.
 
 ### Kessel
 
@@ -139,17 +141,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: icon
     icon: mdi:home-thermometer-outline
     style:
@@ -216,17 +214,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -234,36 +228,79 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
-  - type: markdown
+  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_1
     style:
-      top: 58%
+      top: 22%
       left: 38%
-      width: 30%
       color: white
       font-weight: bold
       font-size: 12px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set valid = namespace(list=[]) -%}
-      {%- for n in range(1, 9) -%}
-        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
-          {%- set valid.list = valid.list + [n] -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {%- for n in valid.list -%}
-        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
-        {%- if n == valid.list[0] -%}
-          {%- set suffix = ' (oben)' -%}
-        {%- elif n == valid.list[-1] -%}
-          {%- set suffix = ' (unten)' -%}
-        {%- else -%}
-          {%- set suffix = '' -%}
-        {%- endif -%}
-        {%- if not loop.first -%}<br>{%- endif -%}
-        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
-      {%- endfor -%}
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_2
+    style:
+      top: 32%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_3
+    style:
+      top: 42%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_4
+    style:
+      top: 52%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_5
+    style:
+      top: 62%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_6
+    style:
+      top: 72%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_7
+    style:
+      top: 82%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_8
+    style:
+      top: 92%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
   - type: icon
     icon: mdi:home-thermometer-outline
     style:
@@ -330,17 +367,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -348,36 +381,79 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
-  - type: markdown
+  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_1
     style:
-      top: 58%
+      top: 22%
       left: 38%
-      width: 30%
       color: white
       font-weight: bold
       font-size: 12px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set valid = namespace(list=[]) -%}
-      {%- for n in range(1, 9) -%}
-        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
-          {%- set valid.list = valid.list + [n] -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {%- for n in valid.list -%}
-        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
-        {%- if n == valid.list[0] -%}
-          {%- set suffix = ' (oben)' -%}
-        {%- elif n == valid.list[-1] -%}
-          {%- set suffix = ' (unten)' -%}
-        {%- else -%}
-          {%- set suffix = '' -%}
-        {%- endif -%}
-        {%- if not loop.first -%}<br>{%- endif -%}
-        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
-      {%- endfor -%}
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_2
+    style:
+      top: 32%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_3
+    style:
+      top: 42%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_4
+    style:
+      top: 52%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_5
+    style:
+      top: 62%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_6
+    style:
+      top: 72%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_7
+    style:
+      top: 82%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_8
+    style:
+      top: 92%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -458,17 +534,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -476,55 +548,98 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
-  - type: markdown
+  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_1
     style:
-      top: 58%
+      top: 22%
       left: 38%
-      width: 30%
       color: white
       font-weight: bold
       font-size: 12px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set valid = namespace(list=[]) -%}
-      {%- for n in range(1, 9) -%}
-        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
-          {%- set valid.list = valid.list + [n] -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {%- for n in valid.list -%}
-        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
-        {%- if n == valid.list[0] -%}
-          {%- set suffix = ' (oben)' -%}
-        {%- elif n == valid.list[-1] -%}
-          {%- set suffix = ' (unten)' -%}
-        {%- else -%}
-          {%- set suffix = '' -%}
-        {%- endif -%}
-        {%- if not loop.first -%}<br>{%- endif -%}
-        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
-      {%- endfor -%}
-  # Zeigt Warmwasser- und (falls vorhanden) Zirkulationstemperatur an
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_2
     style:
-      top: 12.7%
+      top: 32%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_3
+    style:
+      top: 42%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_4
+    style:
+      top: 52%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_5
+    style:
+      top: 62%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_6
+    style:
+      top: 72%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_7
+    style:
+      top: 82%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_8
+    style:
+      top: 92%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_fwm_warmwassertemperatur
+    style:
+      top: 9%
       left: 65%
       color: white
       font-weight: bold
       font-size: 14px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set lines = [] -%}
-      {%- if has_value('sensor.eta_fwm_warmwassertemperatur') -%}
-        {%- set lines = lines + [states('sensor.eta_fwm_warmwassertemperatur') ~ ' ' ~ state_attr('sensor.eta_fwm_warmwassertemperatur', 'unit_of_measurement')] -%}
-      {%- endif -%}
-      {%- if has_value('sensor.eta_fwm_zirkulation') -%}
-        {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
-      {%- endif -%}
-      {{ lines | join('<br>') }}
+  # Zirkulationsfühler ist nicht bei jeder Anlage vorhanden - bleibt sonst leer
+  - type: state-label
+    entity: sensor.eta_fwm_zirkulation
+    style:
+      top: 16%
+      left: 65%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
   - type: icon
     icon: mdi:home-thermometer-outline
     style:
@@ -591,17 +706,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -609,55 +720,98 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
-  - type: markdown
+  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_1
     style:
-      top: 58%
+      top: 22%
       left: 38%
-      width: 30%
       color: white
       font-weight: bold
       font-size: 12px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set valid = namespace(list=[]) -%}
-      {%- for n in range(1, 9) -%}
-        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
-          {%- set valid.list = valid.list + [n] -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {%- for n in valid.list -%}
-        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
-        {%- if n == valid.list[0] -%}
-          {%- set suffix = ' (oben)' -%}
-        {%- elif n == valid.list[-1] -%}
-          {%- set suffix = ' (unten)' -%}
-        {%- else -%}
-          {%- set suffix = '' -%}
-        {%- endif -%}
-        {%- if not loop.first -%}<br>{%- endif -%}
-        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
-      {%- endfor -%}
-  # Zeigt Warmwasser- und (falls vorhanden) Zirkulationstemperatur an
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_2
     style:
-      top: 12.7%
+      top: 32%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_3
+    style:
+      top: 42%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_4
+    style:
+      top: 52%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_5
+    style:
+      top: 62%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_6
+    style:
+      top: 72%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_7
+    style:
+      top: 82%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_8
+    style:
+      top: 92%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_fwm_warmwassertemperatur
+    style:
+      top: 9%
       left: 65%
       color: white
       font-weight: bold
       font-size: 14px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set lines = [] -%}
-      {%- if has_value('sensor.eta_fwm_warmwassertemperatur') -%}
-        {%- set lines = lines + [states('sensor.eta_fwm_warmwassertemperatur') ~ ' ' ~ state_attr('sensor.eta_fwm_warmwassertemperatur', 'unit_of_measurement')] -%}
-      {%- endif -%}
-      {%- if has_value('sensor.eta_fwm_zirkulation') -%}
-        {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
-      {%- endif -%}
-      {{ lines | join('<br>') }}
+  # Zirkulationsfühler ist nicht bei jeder Anlage vorhanden - bleibt sonst leer
+  - type: state-label
+    entity: sensor.eta_fwm_zirkulation
+    style:
+      top: 16%
+      left: 65%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -738,17 +892,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -756,36 +906,79 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
-  - type: markdown
+  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_1
     style:
-      top: 58%
+      top: 22%
       left: 38%
-      width: 30%
       color: white
       font-weight: bold
       font-size: 12px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set valid = namespace(list=[]) -%}
-      {%- for n in range(1, 9) -%}
-        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
-          {%- set valid.list = valid.list + [n] -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {%- for n in valid.list -%}
-        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
-        {%- if n == valid.list[0] -%}
-          {%- set suffix = ' (oben)' -%}
-        {%- elif n == valid.list[-1] -%}
-          {%- set suffix = ' (unten)' -%}
-        {%- else -%}
-          {%- set suffix = '' -%}
-        {%- endif -%}
-        {%- if not loop.first -%}<br>{%- endif -%}
-        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
-      {%- endfor -%}
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_2
+    style:
+      top: 32%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_3
+    style:
+      top: 42%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_4
+    style:
+      top: 52%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_5
+    style:
+      top: 62%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_6
+    style:
+      top: 72%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_7
+    style:
+      top: 82%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_8
+    style:
+      top: 92%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -880,17 +1073,13 @@ elements:
       left: 20%
       font-weight: bold
       font-size: 14px
-  # Zeigt "Verbrauch/Schwellwert" kombiniert an, z.B. "459/1000kg"
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
-    content: |
-      {%- if has_value('sensor.eta_aschebox_verbrauch_seit_leerung') and has_value('sensor.eta_aschebox_leeren_nach') -%}
-      {{ states('sensor.eta_aschebox_verbrauch_seit_leerung') | float | round(0) | int }}/{{ states('sensor.eta_aschebox_leeren_nach') | float | round(0) | int }}{{ state_attr('sensor.eta_aschebox_leeren_nach', 'unit_of_measurement') }}
-      {%- endif -%}
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -898,55 +1087,98 @@ elements:
       left: 45%
       font-weight: bold
       font-size: 16px
-  # Zeigt automatisch alle tatsächlich vorhandenen Pufferfühler (3-8) untereinander an
-  - type: markdown
+  # Pufferfühler 1-8: nicht vorhandene Fühler bleiben automatisch leer
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_1
     style:
-      top: 58%
+      top: 22%
       left: 38%
-      width: 30%
       color: white
       font-weight: bold
       font-size: 12px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set valid = namespace(list=[]) -%}
-      {%- for n in range(1, 9) -%}
-        {%- if has_value('sensor.eta_puffer_fuehler_' ~ n) -%}
-          {%- set valid.list = valid.list + [n] -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {%- for n in valid.list -%}
-        {%- set eid = 'sensor.eta_puffer_fuehler_' ~ n -%}
-        {%- if n == valid.list[0] -%}
-          {%- set suffix = ' (oben)' -%}
-        {%- elif n == valid.list[-1] -%}
-          {%- set suffix = ' (unten)' -%}
-        {%- else -%}
-          {%- set suffix = '' -%}
-        {%- endif -%}
-        {%- if not loop.first -%}<br>{%- endif -%}
-        **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
-      {%- endfor -%}
-  # Zeigt Warmwasser- und (falls vorhanden) Zirkulationstemperatur an
-  - type: markdown
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_2
     style:
-      top: 12.7%
+      top: 32%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_3
+    style:
+      top: 42%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_4
+    style:
+      top: 52%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_5
+    style:
+      top: 62%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_6
+    style:
+      top: 72%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_7
+    style:
+      top: 82%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_puffer_fuehler_8
+    style:
+      top: 92%
+      left: 38%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
+  - type: state-label
+    entity: sensor.eta_fwm_warmwassertemperatur
+    style:
+      top: 9%
       left: 65%
       color: white
       font-weight: bold
       font-size: 14px
-      text-align: center
       text-shadow: 1px 1px 2px black
-    content: |
-      {%- set lines = [] -%}
-      {%- if has_value('sensor.eta_fwm_warmwassertemperatur') -%}
-        {%- set lines = lines + [states('sensor.eta_fwm_warmwassertemperatur') ~ ' ' ~ state_attr('sensor.eta_fwm_warmwassertemperatur', 'unit_of_measurement')] -%}
-      {%- endif -%}
-      {%- if has_value('sensor.eta_fwm_zirkulation') -%}
-        {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
-      {%- endif -%}
-      {{ lines | join('<br>') }}
+  # Zirkulationsfühler ist nicht bei jeder Anlage vorhanden - bleibt sonst leer
+  - type: state-label
+    entity: sensor.eta_fwm_zirkulation
+    style:
+      top: 16%
+      left: 65%
+      color: white
+      font-weight: bold
+      font-size: 12px
+      text-shadow: 1px 1px 2px black
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:

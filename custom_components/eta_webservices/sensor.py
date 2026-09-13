@@ -17,6 +17,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     # Den Bildpfad-Sensor immer erstellen
     sensors.append(ETASystemImageSensor(coordinator))
+    sensors.append(ETAAscheboxStatusSensor(coordinator))
 
     async_add_entities(sensors)
 
@@ -66,3 +67,33 @@ class ETASystemImageSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         return self.coordinator.system_image_path
+
+class ETAAscheboxStatusSensor(CoordinatorEntity, SensorEntity):
+    """Kombinierte Anzeige 'Verbrauch/Schwellwert' für die Aschebox, z.B. '459/1000'.
+
+    picture-elements-Karten unterstützen kein `type: markdown`-Element, daher
+    wird die Kombination hier serverseitig berechnet und als normaler Sensor
+    bereitgestellt, den eine einfache state-label-Karte referenzieren kann.
+    """
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self.coordinator = coordinator
+        self._attr_name = "ETA Aschebox Status"
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_aschebox_status"
+        self._attr_icon = "mdi:trash-can"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def native_value(self):
+        verbrauch = self.coordinator.data.get("aschebox_verbrauch")
+        schwelle = self.coordinator.data.get("aschebox_schwelle")
+        if not verbrauch or not schwelle:
+            return None
+        try:
+            return f"{round(verbrauch['value']):.0f}/{round(schwelle['value']):.0f}"
+        except (TypeError, ValueError):
+            return None
+
+    @property
+    def native_unit_of_measurement(self):
+        return "kg"
