@@ -45,9 +45,11 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
 4. Wähle im **Dropdown-Menü dein passendes Anlagenschema** aus (z. B. *Kessel + Puffer + 1x Heizkreis + FWM*).
-5. Klicke auf **Absenden**. Die Integration prüft die Verbindung und generiert die passenden Hintergrundbilder vollautomatisch auf deiner Festplatte.
+5. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
+6. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach gewähltem Schema mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+7. Klicke auf **Absenden**. Die passenden Hintergrundbilder werden automatisch auf deiner Festplatte generiert.
 
-Host, Port und Anlagenschema lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
+Host, Port, Anlagenschema und die FUB-Namen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
 
 ---
 
@@ -55,12 +57,26 @@ Host, Port und Anlagenschema lassen sich später jederzeit über **Einstellungen
 
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
-* **🔥 Kessel & Umgebung:** Kesseltemperatur, Rücklauftemperatur, Kesseldruck (bar), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
+* **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
 * **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Fühler 1 ist immer der oberste, der zuletzt nummerierte immer der unterste - die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum und benennt sie entsprechend ("Fühler 1 (oben)" ... "Fühler N (unten)").
-* **♨️ Heizkreis:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
-* **🚰 Frischwassermodul (FWM):** Warmwassertemperatur.
+* **♨️ Heizkreis 1:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
+* **♨️ Heizkreis 2** (nur bei Schema *2x Heizkreis*, sofern ein FUB "HK2" gefunden wird): Vorlauftemperatur, Anforderung.
+* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur, sowie Zirkulationstemperatur, sofern die Anlage einen entsprechenden Fühler hat.
 
-> Ein zweiter Heizkreis (HK2), Kessel-Solltemperatur, Aschebox und Restsauerstoff sind auf den Anlagengrafiken bereits als Beschriftungsfelder vorgesehen, werden aber aktuell noch nicht als Sensor ausgelesen (siehe Dashboard-Vorlagen unten).
+> **Aschebox** ist auf den Anlagengrafiken bereits als Beschriftungsfeld vorgesehen, wird aber aktuell noch nicht als Sensor ausgelesen (siehe Dashboard-Vorlagen unten).
+
+### Funktionsblöcke wurden umbenannt?
+
+Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann heißen sie auch in den Webservices anders, und die automatische Erkennung findet sie nicht mehr über ihren Standardnamen. Deshalb fragt die Integration beim Einrichten (und in den Optionen) für jeden relevanten FUB den tatsächlichen Namen ab. ETA-Standardnamen zum Vergleich:
+
+| Rolle | Standardname(n) |
+|---|---|
+| Kessel | `Kessel` |
+| Pufferspeicher | `PufferFlex` (ältere Anlagen ohne Flex-Funktion: `Puffer`) |
+| Frischwasser-/Warmwassermodul | `FWM`, oder `WW` bei einem reinen Warmwasserspeicher |
+| Heizkreis 1 | `HK`, oder `HK1` sobald mehrere Heizkreise vorhanden sind |
+| Heizkreis 2 | `HK2` |
+| Außentemperatur | `Sys` |
 
 ---
 
@@ -88,6 +104,13 @@ elements:
       font-weight: bold
       font-size: 16px
   - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
       top: 19.9%
@@ -108,6 +131,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
 ```
 
 ### Kessel + Puffer
@@ -124,6 +154,13 @@ elements:
       font-weight: bold
       font-size: 16px
   - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
       top: 19.9%
@@ -144,6 +181,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -197,6 +241,13 @@ elements:
       font-weight: bold
       font-size: 16px
   - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
       top: 19.9%
@@ -217,6 +268,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -284,6 +342,13 @@ elements:
       font-weight: bold
       font-size: 16px
   - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
       top: 19.9%
@@ -304,6 +369,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -341,13 +413,25 @@ elements:
         {%- if not loop.first -%}<br>{%- endif -%}
         **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
       {%- endfor -%}
-  - type: state-label
-    entity: sensor.eta_fwm_warmwassertemperatur
+  # Zeigt Warmwasser- und (falls vorhanden) Zirkulationstemperatur an
+  - type: markdown
     style:
       top: 12.7%
       left: 65%
+      color: white
       font-weight: bold
-      font-size: 16px
+      font-size: 14px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set lines = [] -%}
+      {%- if has_value('sensor.eta_fwm_warmwassertemperatur') -%}
+        {%- set lines = lines + [states('sensor.eta_fwm_warmwassertemperatur') ~ ' ' ~ state_attr('sensor.eta_fwm_warmwassertemperatur', 'unit_of_measurement')] -%}
+      {%- endif -%}
+      {%- if has_value('sensor.eta_fwm_zirkulation') -%}
+        {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
+      {%- endif -%}
+      {{ lines | join('<br>') }}
 ```
 
 ### Kessel + Puffer + 1x Heizkreis + FWM
@@ -364,6 +448,13 @@ elements:
       font-weight: bold
       font-size: 16px
   - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
       top: 19.9%
@@ -384,6 +475,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -421,13 +519,25 @@ elements:
         {%- if not loop.first -%}<br>{%- endif -%}
         **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
       {%- endfor -%}
-  - type: state-label
-    entity: sensor.eta_fwm_warmwassertemperatur
+  # Zeigt Warmwasser- und (falls vorhanden) Zirkulationstemperatur an
+  - type: markdown
     style:
       top: 12.7%
       left: 65%
+      color: white
       font-weight: bold
-      font-size: 16px
+      font-size: 14px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set lines = [] -%}
+      {%- if has_value('sensor.eta_fwm_warmwassertemperatur') -%}
+        {%- set lines = lines + [states('sensor.eta_fwm_warmwassertemperatur') ~ ' ' ~ state_attr('sensor.eta_fwm_warmwassertemperatur', 'unit_of_measurement')] -%}
+      {%- endif -%}
+      {%- if has_value('sensor.eta_fwm_zirkulation') -%}
+        {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
+      {%- endif -%}
+      {{ lines | join('<br>') }}
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -458,6 +568,13 @@ elements:
       font-weight: bold
       font-size: 16px
   - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
       top: 19.9%
@@ -478,6 +595,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -529,8 +653,20 @@ elements:
       left: 72%
       font-weight: bold
       font-size: 16px
-  # TODO: "Vorlauf HK2" (top: 27.0%, left: 67%) - noch kein Sensor für einen 2. Heizkreis vorhanden
-  # TODO: "Anforderung HK2" (top: 34.7%, left: 72%) - noch kein Sensor für einen 2. Heizkreis vorhanden
+  - type: state-label
+    entity: sensor.eta_heizkreis_2_vorlauftemperatur
+    style:
+      top: 27.0%
+      left: 67%
+      font-weight: bold
+      font-size: 16px
+  - type: state-label
+    entity: sensor.eta_heizkreis_2_anforderung
+    style:
+      top: 34.7%
+      left: 72%
+      font-weight: bold
+      font-size: 16px
 ```
 
 ### Kessel + Puffer + 2x Heizkreis + FWM
@@ -546,6 +682,13 @@ elements:
       left: 11%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_kessel_solltemperatur
+    style:
+      top: 12.7%
+      left: 15%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_rucklauftemperatur
     style:
@@ -567,6 +710,13 @@ elements:
       left: 19%
       font-weight: bold
       font-size: 16px
+  - type: state-label
+    entity: sensor.eta_restsauerstoff
+    style:
+      top: 48.7%
+      left: 20%
+      font-weight: bold
+      font-size: 14px
   - type: state-label
     entity: sensor.eta_puffer_ladezustand
     style:
@@ -604,13 +754,25 @@ elements:
         {%- if not loop.first -%}<br>{%- endif -%}
         **Fühler {{ n }}{{ suffix }}:** {{ states(eid) }} {{ state_attr(eid, 'unit_of_measurement') }}
       {%- endfor -%}
-  - type: state-label
-    entity: sensor.eta_fwm_warmwassertemperatur
+  # Zeigt Warmwasser- und (falls vorhanden) Zirkulationstemperatur an
+  - type: markdown
     style:
       top: 12.7%
       left: 65%
+      color: white
       font-weight: bold
-      font-size: 16px
+      font-size: 14px
+      text-align: center
+      text-shadow: 1px 1px 2px black
+    content: |
+      {%- set lines = [] -%}
+      {%- if has_value('sensor.eta_fwm_warmwassertemperatur') -%}
+        {%- set lines = lines + [states('sensor.eta_fwm_warmwassertemperatur') ~ ' ' ~ state_attr('sensor.eta_fwm_warmwassertemperatur', 'unit_of_measurement')] -%}
+      {%- endif -%}
+      {%- if has_value('sensor.eta_fwm_zirkulation') -%}
+        {%- set lines = lines + [states('sensor.eta_fwm_zirkulation') ~ ' ' ~ state_attr('sensor.eta_fwm_zirkulation', 'unit_of_measurement') ~ ' (Zirk.)'] -%}
+      {%- endif -%}
+      {{ lines | join('<br>') }}
   - type: state-label
     entity: sensor.eta_heizkreis_vorlauftemperatur
     style:
@@ -625,8 +787,20 @@ elements:
       left: 90%
       font-weight: bold
       font-size: 14px
-  # TODO: "Vorlauf HK2" (top: 27.0%, left: 86%) - noch kein Sensor für einen 2. Heizkreis vorhanden
-  # TODO: "Anforderung HK2" (top: 34.7%, left: 90%) - noch kein Sensor für einen 2. Heizkreis vorhanden
+  - type: state-label
+    entity: sensor.eta_heizkreis_2_vorlauftemperatur
+    style:
+      top: 27.0%
+      left: 86%
+      font-weight: bold
+      font-size: 14px
+  - type: state-label
+    entity: sensor.eta_heizkreis_2_anforderung
+    style:
+      top: 34.7%
+      left: 90%
+      font-weight: bold
+      font-size: 14px
 ```
 
 > 💡 `top`/`left` verankern in Lovelace standardmäßig die **Mitte** des Elements. Solltest du eine andere Home-Assistant-Theme, Bildschirmgröße oder Kartenbreite verwenden, kannst du die Werte im visuellen Editor per Drag & Drop feinjustieren.

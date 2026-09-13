@@ -8,6 +8,18 @@
           "port": "Port (Standard: 8080)",
           "schema": "Anlagenschema auswählen"
         }
+      },
+      "fub_names": {
+        "title": "Funktionsblock-Namen bestätigen",
+        "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen vorausgefüllt.",
+        "data": {
+          "kessel": "FUB-Name: Kessel",
+          "sys": "FUB-Name: Sys (für Außentemperatur)",
+          "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
+          "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
+          "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
+          "hk2": "FUB-Name: Heizkreis 2 (HK2)"
+        }
       }
     },
     "error": {
@@ -25,6 +37,18 @@
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
           "schema": "Anlagenschema auswählen"
+        }
+      },
+      "fub_names": {
+        "title": "Funktionsblock-Namen bestätigen",
+        "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen bzw. deinen bisherigen Angaben vorausgefüllt.",
+        "data": {
+          "kessel": "FUB-Name: Kessel",
+          "sys": "FUB-Name: Sys (für Außentemperatur)",
+          "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
+          "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
+          "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
+          "hk2": "FUB-Name: Heizkreis 2 (HK2)"
         }
       }
     },

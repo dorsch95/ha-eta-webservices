@@ -10,7 +10,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, STATIC_URIs, SCHEMAS, PUFFER_FUEHLER_FALLBACK_URIS, puffer_fuehler_info
+from .const import (
+    DOMAIN,
+    STATIC_URIs,
+    SCHEMAS,
+    PUFFER_FUEHLER_FALLBACK_URIS,
+    DISCOVERY_ONLY_SENSORS,
+    puffer_fuehler_info,
+)
 from .images import IMAGES_DATA
 from .uri_discovery import async_discover_uris
 
@@ -24,6 +31,12 @@ def _build_sensor_defs(discovered_uris, puffer_fuehler_indices):
     Pufferfühlern (3 bis 8 Stück, Fühler 1 = oben, letzter = unten).
     """
     sensor_defs = dict(STATIC_URIs)
+
+    for key, info in DISCOVERY_ONLY_SENSORS.items():
+        if key in discovered_uris:
+            entry_info = dict(info)
+            entry_info["uri"] = discovered_uris[key]
+            sensor_defs[key] = entry_info
 
     indices = puffer_fuehler_indices or list(range(1, len(PUFFER_FUEHLER_FALLBACK_URIS) + 1))
     last_index = indices[-1] if indices else None
@@ -50,6 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = config["host"]
     port = config["port"]
     selected_schema = config.get("schema", "Kessel + Puffer")
+    fub_name_overrides = config.get("fub_names", {})
     session = async_get_clientsession(hass)
 
     # --- BILDER AUS BASE64 TEXT SCHREIBEN (nur falls nötig) ---
@@ -75,7 +89,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # zu verdrahten, werden sie einmalig anhand ihrer (stabilen) Namen im
     # Menübaum der Anlage gesucht. Schlägt das fehl, wird auf die
     # Standard-URI zurückgefallen.
-    discovered_uris, puffer_fuehler_indices = await async_discover_uris(session, host, port)
+    discovered_uris, puffer_fuehler_indices = await async_discover_uris(
+        session, host, port, fub_name_overrides
+    )
     sensor_defs = _build_sensor_defs(discovered_uris, puffer_fuehler_indices)
 
     # --- DATEN-ABRUF-KOORDINATOR ---

@@ -61,6 +61,22 @@ STATIC_URIs = {
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     },
+    "kessel_soll": {
+        "uri": "/264/10891/0/0/13953",
+        "name": "ETA Kessel Solltemperatur",
+        "icon": "mdi:thermostat",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "restsauerstoff": {
+        "uri": "/264/10891/0/11108/2060",
+        "name": "ETA Restsauerstoff",
+        "icon": "mdi:percent",
+        "device_class": None,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "%",
+    },
 
     # --- PUFFERSPEICHER ---
     "puffer_ladezustand": {
@@ -133,3 +149,67 @@ def puffer_fuehler_info(index, is_last):
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     }
+
+
+# --- SENSOREN OHNE STATISCHEN FALLBACK ---
+# Für diese Sensoren gibt es keine sinnvolle feste Standard-URI (z.B. weil
+# ein 2. Heizkreis auf jeder Anlage eine andere Funktionsblock-Nummer hat).
+# Sie werden nur angelegt, wenn die automatische Erkennung sie tatsächlich
+# über den Menübaum der Anlage findet.
+DISCOVERY_ONLY_SENSORS = {
+    "heizkreis2_vorlauf": {
+        "name": "ETA Heizkreis 2 Vorlauftemperatur",
+        "icon": "mdi:thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "heizkreis2_anforderung": {
+        "name": "ETA Heizkreis 2 Anforderung",
+        "icon": "mdi:heat-wave",
+        "is_string": True,
+    },
+    "fwm_zirkulation": {
+        "name": "ETA FWM Zirkulation",
+        "icon": "mdi:water-thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+}
+
+# --- FUNKTIONSBLOCK-NAMEN (FUB) ---
+# Jeder FUB kann vom Nutzer an der Steuerung umbenannt werden. Diese Listen
+# sind nur die ETA-Standardnamen, nach denen zuerst gesucht wird - im
+# Setup kann der Nutzer den tatsächlichen Namen bestätigen/überschreiben.
+FUB_ROLE_DEFAULT_NAMES = {
+    "kessel": ["Kessel"],
+    "sys": ["Sys"],
+    "pufferflex": ["PufferFlex", "Puffer"],  # "Puffer" bei älteren Anlagen ohne Flex-Funktion
+    "fwm": ["FWM", "WW"],  # WW = reiner Warmwasserspeicher ohne Frischwassermodul
+    "hk": ["HK", "HK1"],
+    "hk2": ["HK2"],
+}
+
+# Welche FUB-Rollen für welches Anlagenschema überhaupt relevant sind -
+# steuert, welche Namensfelder im Setup/Options-Flow angezeigt werden.
+SCHEMA_FUB_ROLES = {
+    "Kessel": ["kessel", "sys"],
+    "Kessel + Puffer": ["kessel", "sys", "pufferflex"],
+    "Kessel + Puffer + 1x Heizkreis": ["kessel", "sys", "pufferflex", "hk"],
+    "Kessel + Puffer + FWM": ["kessel", "sys", "pufferflex", "fwm"],
+    "Kessel + Puffer + 1x Heizkreis + FWM": ["kessel", "sys", "pufferflex", "hk", "fwm"],
+    "Kessel + Puffer + 2x Heizkreis": ["kessel", "sys", "pufferflex", "hk", "hk2"],
+    "Kessel + Puffer + 2x Heizkreis + FWM": ["kessel", "sys", "pufferflex", "hk", "hk2", "fwm"],
+}
+
+
+def fub_role_default(role, roles_in_schema):
+    """Liefert den sinnvollsten Standardnamen für ein Formularfeld.
+
+    Bei zwei Heizkreisen heißt der erste laut ETA-Konvention "HK1" statt
+    "HK" - das wird hier als Vorbelegung berücksichtigt.
+    """
+    if role == "hk" and "hk2" in roles_in_schema:
+        return "HK1"
+    return FUB_ROLE_DEFAULT_NAMES[role][0]

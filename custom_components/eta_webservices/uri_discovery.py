@@ -2,9 +2,13 @@
 
 Die numerischen URIs (z.B. /264/10891/0/11109/0) unterscheiden sich je nach
 Anlagenkonfiguration und Firmware-Version. Die Bezeichnungen im Menübaum
-(abrufbar unter /user/menu) bleiben dagegen stabil. Diese Funktion läuft den
-Menübaum einmalig ab und ermittelt für jeden bekannten Messwert die aktuell
-gültige URI über den Pfad seiner Namen, statt die Zahlen hart zu verdrahten.
+(abrufbar unter /user/menu) bleiben dagegen stabil - mit einer Ausnahme: die
+Namen der Funktionsblöcke (FUB, z.B. "Kessel", "PufferFlex", "HK") können
+vom Nutzer an der Steuerung umbenannt werden. Deshalb wird jeder Messwert
+nicht direkt einem FUB-Namen zugeordnet, sondern einer FUB-*Rolle*
+("kessel", "pufferflex", "hk", ...). Für jede Rolle gibt es ETA-Standard-
+namen, die im Setup vom Nutzer überschrieben werden können, falls seine
+Anlage abweicht.
 """
 
 import logging
@@ -12,21 +16,28 @@ import re
 
 import xmltodict
 
-from .const import PUFFER_FUEHLER_MAX
+from .const import FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
 
 _LOGGER = logging.getLogger(__name__)
 
-# Für jeden Messwert-Schlüssel: (Name des Funktionsblocks, [Namenspfad zum Objekt])
+# Für jeden Messwert-Schlüssel: (FUB-Rolle, [Namenspfad zum Objekt])
 DISCOVERY_PATHS = {
-    "kessel_temperatur": ("Kessel", ["Eingänge", "Kessel"]),
-    "ruecklauf_temperatur": ("Kessel", ["Eingänge", "Rücklauf"]),
-    "kessel_druck": ("Kessel", ["Eingänge", "Kesseldruck"]),
-    "pellet_tagesbehälter": ("Kessel", ["Ausgänge", "Zählerstände", "Inhalt Pelletsbehälter"]),
-    "aussentemperatur": ("Sys", ["Außentemperatur", "Außentemperaturfühler"]),
-    "puffer_ladezustand": ("PufferFlex", ["Puffer", "Ladezustand"]),
-    "heizkreis_vorlauf": ("HK", ["Eingänge", "Vorlauf"]),
-    "heizkreis_anforderung": ("HK", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
-    "fwm_warmwasser": ("FWM", ["Eingänge", "Warmwasser"]),
+    "kessel_temperatur": ("kessel", ["Eingänge", "Kessel"]),
+    "ruecklauf_temperatur": ("kessel", ["Eingänge", "Rücklauf"]),
+    "kessel_druck": ("kessel", ["Eingänge", "Kesseldruck"]),
+    "pellet_tagesbehälter": ("kessel", ["Ausgänge", "Zählerstände", "Inhalt Pelletsbehälter"]),
+    "kessel_soll": ("kessel", ["Kessel", "Kessel", "Kessel Soll"]),
+    "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
+    "aussentemperatur": ("sys", ["Außentemperatur", "Außentemperaturfühler"]),
+    "puffer_ladezustand": ("pufferflex", ["Puffer", "Ladezustand"]),
+    "heizkreis_vorlauf": ("hk", ["Eingänge", "Vorlauf"]),
+    "heizkreis_anforderung": ("hk", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
+    "heizkreis2_vorlauf": ("hk2", ["Eingänge", "Vorlauf"]),
+    "heizkreis2_anforderung": ("hk2", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
+    # FWM oder WW: unabhängig vom FUB-Namen interessieren nur Warmwasser
+    # und Zirkulation.
+    "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
+    "fwm_zirkulation": ("fwm", ["Eingänge", "Zirkulation"]),
 }
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
@@ -61,7 +72,22 @@ def _find_fub(fubs, fub_name):
     return None
 
 
-def _discover_puffer_fuehler(fubs):
+def _find_fub_for_role(fubs, role, fub_name_overrides):
+    """Löst eine FUB-Rolle (z.B. "pufferflex") zum tatsächlichen FUB-Knoten auf.
+
+    Ein vom Nutzer im Setup angegebener Name hat immer Vorrang vor den
+    ETA-Standardnamen, da FUBs am Gerät umbenannt werden können.
+    """
+    override = (fub_name_overrides or {}).get(role)
+    candidates = [override] if override else FUB_ROLE_DEFAULT_NAMES.get(role, [])
+    for name in candidates:
+        fub = _find_fub(fubs, name)
+        if fub is not None:
+            return fub
+    return None
+
+
+def _discover_puffer_fuehler(fubs, fub_name_overrides):
     """Ermittelt die tatsächlich vorhandenen Pufferfühler (1 bis N).
 
     PufferFlex kann je nach Anlage zwischen 3 und PUFFER_FUEHLER_MAX Fühler
@@ -69,7 +95,7 @@ def _discover_puffer_fuehler(fubs):
     Da die Anzahl variiert, werden die "Eingänge" von PufferFlex nach allen
     Objekten durchsucht, deren Name mit "Fühler <Zahl>" beginnt.
     """
-    fub = _find_fub(fubs, "PufferFlex")
+    fub = _find_fub_for_role(fubs, "pufferflex", fub_name_overrides)
     if fub is None:
         return {}
     eingaenge = _find_path(fub, ["Eingänge"])
@@ -90,7 +116,7 @@ def _discover_puffer_fuehler(fubs):
     return found
 
 
-async def async_discover_uris(session, host, port):
+async def async_discover_uris(session, host, port, fub_name_overrides=None):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
@@ -99,7 +125,7 @@ async def async_discover_uris(session, host, port):
     - puffer_fuehler_indices: sortierte Liste der tatsächlich gefundenen
       Fühler-Nummern (leer, falls nichts gefunden wurde).
     Nicht gefundene Schlüssel fehlen im Ergebnis - der Aufrufer soll dafür
-    auf die Standard-URI zurückfallen.
+    auf die Standard-URI zurückfallen (sofern vorhanden).
     """
     url = f"http://{host}:{port}/user/menu"
     discovered = {}
@@ -130,8 +156,8 @@ async def async_discover_uris(session, host, port):
         _LOGGER.warning("ETA Menü konnte nicht geparst werden: %s", err)
         return discovered, []
 
-    for key, (fub_name, path) in DISCOVERY_PATHS.items():
-        fub = _find_fub(fubs, fub_name)
+    for key, (role, path) in DISCOVERY_PATHS.items():
+        fub = _find_fub_for_role(fubs, role, fub_name_overrides)
         if fub is None:
             continue
         found = _find_path(fub, path)
@@ -140,7 +166,7 @@ async def async_discover_uris(session, host, port):
             if uri:
                 discovered[key] = uri
 
-    puffer_fuehler = _discover_puffer_fuehler(fubs)
+    puffer_fuehler = _discover_puffer_fuehler(fubs, fub_name_overrides)
     puffer_fuehler_indices = sorted(puffer_fuehler)
     for index, uri in puffer_fuehler.items():
         discovered[f"puffer_fuehler_{index}"] = uri
@@ -157,7 +183,8 @@ async def async_discover_uris(session, host, port):
     if missing:
         _LOGGER.debug(
             "ETA Webservices: Für folgende Messwerte wurde keine passende URI "
-            "im Menübaum gefunden, es wird die Standard-URI verwendet: %s",
+            "im Menübaum gefunden (evtl. an dieser Anlage nicht vorhanden, oder "
+            "der FUB wurde umbenannt): %s",
             ", ".join(missing),
         )
 
