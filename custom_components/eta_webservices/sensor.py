@@ -30,6 +30,9 @@ class ETAStaticSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_info = coordinator.device_info
         self._attr_device_class = info.get("device_class")
         self._attr_state_class = info.get("state_class")
+        position = info.get("position")
+        if position:
+            self._attr_extra_state_attributes = {"position": position}
 
     @property
     def native_value(self):

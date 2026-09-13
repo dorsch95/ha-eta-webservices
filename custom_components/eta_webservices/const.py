@@ -132,13 +132,14 @@ PUFFER_FUEHLER_FALLBACK_URIS = [
 def puffer_fuehler_info(index, is_last):
     """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
     if index == 1:
-        name = f"Puffer Fühler {index} (oben)"
+        position = "oben"
     elif is_last:
-        name = f"Puffer Fühler {index} (unten)"
+        position = "unten"
     else:
-        name = f"Puffer Fühler {index}"
+        position = None
     return {
-        "name": name,
+        "name": f"Puffer Fühler {index}",
+        "position": position,
         "icon": "mdi:thermometer-lines",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,

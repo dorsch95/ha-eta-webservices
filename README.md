@@ -58,7 +58,7 @@ Host, Port, Anlagenschema und die FUB-Namen lassen sich später jederzeit über 
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
-* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg), jeweils als eigener Sensor - plus ein dritter, kombinierter Sensor `sensor.eta_aschebox_status` mit dem Format "459/1000" (Einheit kg) für die Dashboard-Anzeige.
+* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg), jeweils als eigener Sensor - plus ein dritter, kombinierter Sensor `sensor.eta_heizung_aschebox_status` mit dem Format "459/1000" (Einheit kg) für die Dashboard-Anzeige.
 * **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Fühler 1 ist immer der oberste, der zuletzt nummerierte immer der unterste - die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum und benennt sie entsprechend ("Fühler 1 (oben)" ... "Fühler N (unten)").
 * **♨️ Heizkreis 1:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
 * **♨️ Heizkreis 2** (nur bei Schema *2x Heizkreis*, sofern ein FUB "HK2" gefunden wird): Vorlauftemperatur, Anforderung.
@@ -91,7 +91,7 @@ Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erst
 
 Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern. Da `state-label` keine bedingte Anzeige kann, enthält jede Puffer-Karte pauschal **8 übereinander gestapelte `state-label`-Elemente** (Fühler 1 oben bis Fühler 8 unten, passend zur physischen Anordnung im Pufferspeicher). Hat deine Anlage weniger als 8 Fühler, bleiben die überzähligen Positionen einfach leer, da die zugehörige Entität nicht existiert - lösche die entsprechenden Elemente aus dem YAML, wenn dich die leeren Zeilen stören.
 
-**Aschebox** wird über einen eigenen Sensor (`sensor.eta_aschebox_status`) bereitgestellt, der die Kombination "459/1000kg" bereits serverseitig in der Integration berechnet - die Karte muss dafür nur eine ganz normale `state-label`-Zeile referenzieren. Bei **FWM/WW** stehen Warmwasser- und Zirkulationstemperatur (falls vorhanden) als zwei einzelne `state-label`-Zeilen übereinander.
+**Aschebox** wird über einen eigenen Sensor (`sensor.eta_heizung_aschebox_status`) bereitgestellt, der die Kombination "459/1000kg" bereits serverseitig in der Integration berechnet - die Karte muss dafür nur eine ganz normale `state-label`-Zeile referenzieren. Bei **FWM/WW** stehen Warmwasser- und Zirkulationstemperatur (falls vorhanden) als zwei einzelne `state-label`-Zeilen übereinander.
 
 ### Kessel
 
@@ -100,49 +100,49 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
@@ -156,7 +156,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
@@ -173,63 +173,63 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel_puffer.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_puffer_ladezustand
+    entity: sensor.eta_heizung_puffer_ladezustand
     style:
       top: 12.7%
       left: 45%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_1
+    entity: sensor.eta_heizung_puffer_fuhler_1
     style:
       top: 22%
       left: 38%
@@ -238,7 +238,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_2
+    entity: sensor.eta_heizung_puffer_fuhler_2
     style:
       top: 32%
       left: 38%
@@ -247,7 +247,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_3
+    entity: sensor.eta_heizung_puffer_fuhler_3
     style:
       top: 42%
       left: 38%
@@ -256,7 +256,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_4
+    entity: sensor.eta_heizung_puffer_fuhler_4
     style:
       top: 52%
       left: 38%
@@ -265,7 +265,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_5
+    entity: sensor.eta_heizung_puffer_fuhler_5
     style:
       top: 62%
       left: 38%
@@ -274,7 +274,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_6
+    entity: sensor.eta_heizung_puffer_fuhler_6
     style:
       top: 72%
       left: 38%
@@ -283,7 +283,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_7
+    entity: sensor.eta_heizung_puffer_fuhler_7
     style:
       top: 82%
       left: 38%
@@ -292,7 +292,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_8
+    entity: sensor.eta_heizung_puffer_fuhler_8
     style:
       top: 92%
       left: 38%
@@ -308,7 +308,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
@@ -325,63 +325,63 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel_puffer_hk1.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_puffer_ladezustand
+    entity: sensor.eta_heizung_puffer_ladezustand
     style:
       top: 12.7%
       left: 45%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_1
+    entity: sensor.eta_heizung_puffer_fuhler_1
     style:
       top: 22%
       left: 38%
@@ -390,7 +390,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_2
+    entity: sensor.eta_heizung_puffer_fuhler_2
     style:
       top: 32%
       left: 38%
@@ -399,7 +399,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_3
+    entity: sensor.eta_heizung_puffer_fuhler_3
     style:
       top: 42%
       left: 38%
@@ -408,7 +408,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_4
+    entity: sensor.eta_heizung_puffer_fuhler_4
     style:
       top: 52%
       left: 38%
@@ -417,7 +417,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_5
+    entity: sensor.eta_heizung_puffer_fuhler_5
     style:
       top: 62%
       left: 38%
@@ -426,7 +426,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_6
+    entity: sensor.eta_heizung_puffer_fuhler_6
     style:
       top: 72%
       left: 38%
@@ -435,7 +435,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_7
+    entity: sensor.eta_heizung_puffer_fuhler_7
     style:
       top: 82%
       left: 38%
@@ -444,7 +444,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_8
+    entity: sensor.eta_heizung_puffer_fuhler_8
     style:
       top: 92%
       left: 38%
@@ -453,14 +453,14 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_heizkreis_vorlauftemperatur
+    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
     style:
       top: 12.7%
       left: 67%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_heizkreis_anforderung
+    entity: sensor.eta_heizung_heizkreis_anforderung
     style:
       top: 20.4%
       left: 72%
@@ -474,7 +474,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
@@ -491,63 +491,63 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel_puffer_fwm.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_puffer_ladezustand
+    entity: sensor.eta_heizung_puffer_ladezustand
     style:
       top: 12.7%
       left: 45%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_1
+    entity: sensor.eta_heizung_puffer_fuhler_1
     style:
       top: 22%
       left: 38%
@@ -556,7 +556,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_2
+    entity: sensor.eta_heizung_puffer_fuhler_2
     style:
       top: 32%
       left: 38%
@@ -565,7 +565,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_3
+    entity: sensor.eta_heizung_puffer_fuhler_3
     style:
       top: 42%
       left: 38%
@@ -574,7 +574,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_4
+    entity: sensor.eta_heizung_puffer_fuhler_4
     style:
       top: 52%
       left: 38%
@@ -583,7 +583,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_5
+    entity: sensor.eta_heizung_puffer_fuhler_5
     style:
       top: 62%
       left: 38%
@@ -592,7 +592,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_6
+    entity: sensor.eta_heizung_puffer_fuhler_6
     style:
       top: 72%
       left: 38%
@@ -601,7 +601,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_7
+    entity: sensor.eta_heizung_puffer_fuhler_7
     style:
       top: 82%
       left: 38%
@@ -610,7 +610,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_8
+    entity: sensor.eta_heizung_puffer_fuhler_8
     style:
       top: 92%
       left: 38%
@@ -619,7 +619,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_fwm_warmwassertemperatur
+    entity: sensor.eta_heizung_fwm_warmwassertemperatur
     style:
       top: 9%
       left: 65%
@@ -628,7 +628,7 @@ elements:
       font-size: 14px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_fwm_zirkulation
+    entity: sensor.eta_heizung_fwm_zirkulation
     style:
       top: 16%
       left: 65%
@@ -644,7 +644,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
@@ -661,63 +661,63 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel_puffer_hk1_fwm.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_puffer_ladezustand
+    entity: sensor.eta_heizung_puffer_ladezustand
     style:
       top: 12.7%
       left: 45%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_1
+    entity: sensor.eta_heizung_puffer_fuhler_1
     style:
       top: 22%
       left: 38%
@@ -726,7 +726,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_2
+    entity: sensor.eta_heizung_puffer_fuhler_2
     style:
       top: 32%
       left: 38%
@@ -735,7 +735,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_3
+    entity: sensor.eta_heizung_puffer_fuhler_3
     style:
       top: 42%
       left: 38%
@@ -744,7 +744,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_4
+    entity: sensor.eta_heizung_puffer_fuhler_4
     style:
       top: 52%
       left: 38%
@@ -753,7 +753,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_5
+    entity: sensor.eta_heizung_puffer_fuhler_5
     style:
       top: 62%
       left: 38%
@@ -762,7 +762,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_6
+    entity: sensor.eta_heizung_puffer_fuhler_6
     style:
       top: 72%
       left: 38%
@@ -771,7 +771,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_7
+    entity: sensor.eta_heizung_puffer_fuhler_7
     style:
       top: 82%
       left: 38%
@@ -780,7 +780,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_8
+    entity: sensor.eta_heizung_puffer_fuhler_8
     style:
       top: 92%
       left: 38%
@@ -789,7 +789,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_fwm_warmwassertemperatur
+    entity: sensor.eta_heizung_fwm_warmwassertemperatur
     style:
       top: 9%
       left: 65%
@@ -798,7 +798,7 @@ elements:
       font-size: 14px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_fwm_zirkulation
+    entity: sensor.eta_heizung_fwm_zirkulation
     style:
       top: 16%
       left: 65%
@@ -807,14 +807,14 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_heizkreis_vorlauftemperatur
+    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
     style:
       top: 12.7%
       left: 86%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_heizkreis_anforderung
+    entity: sensor.eta_heizung_heizkreis_anforderung
     style:
       top: 20.4%
       left: 90%
@@ -828,7 +828,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
@@ -845,63 +845,63 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel_puffer_hk2.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_puffer_ladezustand
+    entity: sensor.eta_heizung_puffer_ladezustand
     style:
       top: 12.7%
       left: 45%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_1
+    entity: sensor.eta_heizung_puffer_fuhler_1
     style:
       top: 22%
       left: 38%
@@ -910,7 +910,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_2
+    entity: sensor.eta_heizung_puffer_fuhler_2
     style:
       top: 32%
       left: 38%
@@ -919,7 +919,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_3
+    entity: sensor.eta_heizung_puffer_fuhler_3
     style:
       top: 42%
       left: 38%
@@ -928,7 +928,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_4
+    entity: sensor.eta_heizung_puffer_fuhler_4
     style:
       top: 52%
       left: 38%
@@ -937,7 +937,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_5
+    entity: sensor.eta_heizung_puffer_fuhler_5
     style:
       top: 62%
       left: 38%
@@ -946,7 +946,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_6
+    entity: sensor.eta_heizung_puffer_fuhler_6
     style:
       top: 72%
       left: 38%
@@ -955,7 +955,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_7
+    entity: sensor.eta_heizung_puffer_fuhler_7
     style:
       top: 82%
       left: 38%
@@ -964,7 +964,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_8
+    entity: sensor.eta_heizung_puffer_fuhler_8
     style:
       top: 92%
       left: 38%
@@ -973,28 +973,28 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_heizkreis_vorlauftemperatur
+    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
     style:
       top: 12.7%
       left: 67%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_heizkreis_anforderung
+    entity: sensor.eta_heizung_heizkreis_anforderung
     style:
       top: 20.4%
       left: 72%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_heizkreis_2_vorlauftemperatur
+    entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
     style:
       top: 27.0%
       left: 67%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_heizkreis_2_anforderung
+    entity: sensor.eta_heizung_heizkreis_2_anforderung
     style:
       top: 34.7%
       left: 72%
@@ -1008,7 +1008,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
@@ -1025,63 +1025,63 @@ type: picture-elements
 image: /local/community/ha-eta-webservices/kessel_puffer_hk2_fwm.png
 elements:
   - type: state-label
-    entity: sensor.eta_kesseltemperatur
+    entity: sensor.eta_heizung_kesseltemperatur
     style:
       top: 5.5%
       left: 11%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kessel_solltemperatur
+    entity: sensor.eta_heizung_kessel_solltemperatur
     style:
       top: 12.7%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_rucklauftemperatur
+    entity: sensor.eta_heizung_rucklauftemperatur
     style:
       top: 19.9%
       left: 14%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_kesseldruck
+    entity: sensor.eta_heizung_kesseldruck
     style:
       top: 27.5%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_pellet_inhalt_tagesbehalter
+    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
     style:
       top: 34.7%
       left: 19%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_restsauerstoff
+    entity: sensor.eta_heizung_restsauerstoff
     style:
       top: 48.7%
       left: 20%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_aschebox_status
+    entity: sensor.eta_heizung_aschebox_status
     style:
       top: 41.3%
       left: 15%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_puffer_ladezustand
+    entity: sensor.eta_heizung_puffer_ladezustand
     style:
       top: 12.7%
       left: 45%
       font-weight: bold
       font-size: 16px
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_1
+    entity: sensor.eta_heizung_puffer_fuhler_1
     style:
       top: 22%
       left: 38%
@@ -1090,7 +1090,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_2
+    entity: sensor.eta_heizung_puffer_fuhler_2
     style:
       top: 32%
       left: 38%
@@ -1099,7 +1099,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_3
+    entity: sensor.eta_heizung_puffer_fuhler_3
     style:
       top: 42%
       left: 38%
@@ -1108,7 +1108,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_4
+    entity: sensor.eta_heizung_puffer_fuhler_4
     style:
       top: 52%
       left: 38%
@@ -1117,7 +1117,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_5
+    entity: sensor.eta_heizung_puffer_fuhler_5
     style:
       top: 62%
       left: 38%
@@ -1126,7 +1126,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_6
+    entity: sensor.eta_heizung_puffer_fuhler_6
     style:
       top: 72%
       left: 38%
@@ -1135,7 +1135,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_7
+    entity: sensor.eta_heizung_puffer_fuhler_7
     style:
       top: 82%
       left: 38%
@@ -1144,7 +1144,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_puffer_fuehler_8
+    entity: sensor.eta_heizung_puffer_fuhler_8
     style:
       top: 92%
       left: 38%
@@ -1153,7 +1153,7 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_fwm_warmwassertemperatur
+    entity: sensor.eta_heizung_fwm_warmwassertemperatur
     style:
       top: 9%
       left: 65%
@@ -1162,7 +1162,7 @@ elements:
       font-size: 14px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_fwm_zirkulation
+    entity: sensor.eta_heizung_fwm_zirkulation
     style:
       top: 16%
       left: 65%
@@ -1171,28 +1171,28 @@ elements:
       font-size: 12px
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_heizkreis_vorlauftemperatur
+    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
     style:
       top: 12.7%
       left: 86%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_heizkreis_anforderung
+    entity: sensor.eta_heizung_heizkreis_anforderung
     style:
       top: 20.4%
       left: 90%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_heizkreis_2_vorlauftemperatur
+    entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
     style:
       top: 27.0%
       left: 86%
       font-weight: bold
       font-size: 14px
   - type: state-label
-    entity: sensor.eta_heizkreis_2_anforderung
+    entity: sensor.eta_heizung_heizkreis_2_anforderung
     style:
       top: 34.7%
       left: 90%
@@ -1206,7 +1206,7 @@ elements:
       color: white
       text-shadow: 1px 1px 2px black
   - type: state-label
-    entity: sensor.eta_aussentemperatur
+    entity: sensor.eta_heizung_aussentemperatur
     style:
       top: 6%
       left: 95%
