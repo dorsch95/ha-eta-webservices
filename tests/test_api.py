@@ -18,32 +18,58 @@ def parse(xml: str):
 
 def test_skalierter_zahlenwert():
     reading = parse(var_xml(value="555", unit="°C", scale="10"))
-    assert reading.value == pytest.approx(55.5)
+    assert reading.display == pytest.approx(55.5)
     assert reading.unit == "°C"
     assert reading.is_text is False
 
 
 def test_scale_null_fuehrt_nicht_zur_division_durch_null():
     reading = parse(var_xml(value="555", unit="°C", scale="0"))
-    assert reading.value == pytest.approx(555.0)
+    assert reading.display == pytest.approx(555.0)
 
 
-def test_textwert():
-    reading = parse(var_xml(str_value="Heizbetrieb"))
-    assert reading.value == "Heizbetrieb"
+def test_textwert_zeigt_den_klartext_statt_der_kennzahl():
+    """Der Rohwert einer Textvariable ist eine interne Kennzahl.
+
+    Die Anlage kennzeichnet solche Variablen über advTextOffset. Wer das
+    übersieht, zeigt dem Nutzer statt "Heizbetrieb" die Zahl 950 an -
+    genau das ist in einer früheren Version passiert.
+    """
+    reading = parse(
+        var_xml(value="950", str_value="Heizbetrieb", text_offset="950")
+    )
+    assert reading.display == "Heizbetrieb"
     assert reading.is_text is True
+    assert reading.unit == ""
 
 
 def test_leerer_wert_faellt_auf_text_zurueck():
     reading = parse(var_xml(value="", str_value="Aus"))
-    assert reading.value == "Aus"
+    assert reading.display == "Aus"
     assert reading.is_text is True
+
+
+def test_zahlenwert_bleibt_zahl_wenn_kein_textoffset_gesetzt_ist():
+    reading = parse(
+        var_xml(value="724", str_value="72,4", unit="°C", scale="10")
+    )
+    assert reading.display == pytest.approx(72.4)
+    assert reading.is_text is False
+    assert reading.unit == "°C"
+
+
+def test_dezimalstellen_der_anlage_werden_uebernommen():
+    reading = parse(
+        var_xml(value="148", str_value="1,48", unit="bar", scale="100",
+                dec_places="2")
+    )
+    assert reading.dec_places == 2
 
 
 async def test_einzelwert_lesen(hass):
     client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
     reading = await client.async_get_value("/120/10101/0/11109/0")
-    assert reading.value == pytest.approx(55.5)
+    assert reading.display == pytest.approx(55.5)
 
 
 async def test_fehlerhafter_status_wird_zu_api_error(hass):

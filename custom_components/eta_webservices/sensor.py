@@ -91,7 +91,7 @@ class ETAMeasurementSensor(ETABaseSensor):
         reading = self.coordinator.data.get(self._key)
         if reading is None:
             return self._missing_value
-        return reading.value
+        return reading.display
 
 
 class ETAOptionalSensor(ETAMeasurementSensor):
@@ -124,9 +124,9 @@ class ETAOptionalSensor(ETAMeasurementSensor):
         reading = self.coordinator.data.get(self._key)
         if reading is None:
             return self._missing_value
-        if isinstance(reading.value, float):
-            return round(reading.value, 1)
-        return reading.value
+        if isinstance(reading.display, float):
+            return round(reading.display, 1)
+        return reading.display
 
     @property
     def native_unit_of_measurement(self):

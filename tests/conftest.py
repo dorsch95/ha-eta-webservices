@@ -51,14 +51,29 @@ def load_menu() -> str:
     return (FIXTURES / "menu.xml").read_text(encoding="utf-8")
 
 
-def var_xml(value=None, str_value=None, unit="", scale="1") -> str:
-    """Baut eine Antwort, wie sie /user/var{uri} liefert."""
-    attrs = f'unit="{unit}" scaleFactor="{scale}"'
-    if value is not None:
-        attrs += f' value="{value}"'
-    if str_value is not None:
-        attrs += f' strValue="{str_value}"'
-    return f'<eta version="1.0"><value {attrs}/></eta>'
+def var_xml(
+    value=None,
+    str_value=None,
+    unit="",
+    scale="1",
+    dec_places="1",
+    text_offset="0",
+) -> str:
+    """Baut eine Antwort, wie sie /user/var{uri} liefert.
+
+    Aufbau exakt wie in der ETAtouch-Dokumentation, Abschnitt 4.1: Der
+    Rohwert steht im Element selbst, nicht in einem Attribut, und
+    Textvariablen sind an einem advTextOffset ungleich null zu erkennen.
+    Eine Attrappe, die stattdessen ein value-Attribut liefert, verdeckt
+    genau die Fehler, um die es hier geht.
+    """
+    attrs = (
+        f'uri="/user/var/1/2/3/4/5" strValue="{str_value or ""}" '
+        f'unit="{unit}" decPlaces="{dec_places}" scaleFactor="{scale}" '
+        f'advTextOffset="{text_offset}"'
+    )
+    roh = "" if value is None else value
+    return f'<eta version="1.0"><value {attrs}>{roh}</value></eta>'
 
 
 class FakeResponse:
@@ -103,7 +118,9 @@ class FakeSession:
         if "12120" in url:
             return self._tracked(var_xml(value="1000", unit="kg"))
         if "2001" in url:
-            return self._tracked(var_xml(str_value="Heizbetrieb"))
+            return self._tracked(
+                var_xml(value="950", str_value="Heizbetrieb", text_offset="950")
+            )
         return self._tracked(var_xml(value="555", unit="°C", scale="10"))
 
     def _tracked(self, text: str):

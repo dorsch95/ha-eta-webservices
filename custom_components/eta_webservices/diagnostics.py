@@ -38,7 +38,7 @@ async def async_get_config_entry_diagnostics(
             "uri": info.get("uri"),
             "quelle": "menuebaum" if key in coordinator.discovered_uris else "standard",
             "rolle": DISCOVERY_PATHS.get(key, (None, None))[0],
-            "letzter_wert": None if reading is None else reading.value,
+            "letzter_wert": None if reading is None else reading.display,
             "einheit": info.get("default_unit"),
         }
 

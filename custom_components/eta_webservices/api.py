@@ -20,14 +20,35 @@ class ETAApiError(Exception):
 
 
 class ETAValue:
-    """Ein einzelner von der Anlage gelesener Messwert."""
+    """Ein einzelner von der Anlage gelesener Messwert.
 
-    __slots__ = ("value", "unit", "is_text")
+    Die Anlage liefert zu jedem Wert sowohl eine Zahl als auch einen
+    formatierten Text. Beide werden behalten, weil erst die
+    Sensordefinition entscheidet, welcher von beiden angezeigt wird.
+    """
 
-    def __init__(self, value: float | str | None, unit: str, is_text: bool) -> None:
+    __slots__ = ("value", "text", "unit", "is_text", "dec_places")
+
+    def __init__(
+        self,
+        value: float | None,
+        text: str,
+        unit: str,
+        is_text: bool,
+        dec_places: int | None = None,
+    ) -> None:
         self.value = value
+        self.text = text
         self.unit = unit
         self.is_text = is_text
+        self.dec_places = dec_places
+
+    @property
+    def display(self) -> float | str | None:
+        """Der Wert in der Form, in der die Anlage ihn darstellt."""
+        if self.is_text:
+            return self.text
+        return self.value
 
 
 class ETAApiClient:
@@ -130,19 +151,47 @@ class ETAApiClient:
         return {key: value for key, value in results if value is not None}
 
 
+def _ganzzahl(node: dict, schluessel: str) -> int | None:
+    try:
+        return int(node[schluessel])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def _parse_value_node(node: Any) -> ETAValue:
-    """Wandelt einen <value>-Knoten in einen ETAValue um."""
+    """Wandelt einen <value>-Knoten in einen ETAValue um.
+
+    Aufbau laut ETAtouch-Dokumentation (Abschnitt 4.1):
+
+        <value uri="..." strValue="Off" unit="" decPlaces="0"
+               scaleFactor="1" advTextOffset="1802">1802</value>
+
+    Der Rohwert steht also im Element selbst, nicht in einem Attribut.
+    Bei Textvariablen ist dieser Rohwert nur eine interne Kennzahl - die
+    Anlage kennzeichnet sie über advTextOffset, und der lesbare Zustand
+    steht in strValue. Wer das übersieht, zeigt dem Nutzer statt
+    "Heizbetrieb" die Zahl 950 an.
+    """
     if not isinstance(node, dict):
-        return ETAValue(str(node), "", True)
+        return ETAValue(None, str(node), "", True)
 
-    raw = node.get("@value") or node.get("#text")
-    str_value = node.get("@strValue")
+    roh = node.get("#text")
+    if roh is None:
+        roh = node.get("@value")
+    text = node.get("@strValue") or ""
+    einheit = node.get("@unit", "") or ""
+    dec_places = _ganzzahl(node, "@decPlaces")
+    text_offset = _ganzzahl(node, "@advTextOffset")
 
-    if raw is not None and str(raw).strip():
+    zahl = None
+    if roh is not None and str(roh).strip():
         try:
-            scale = float(node.get("@scaleFactor", 1)) or 1.0
-            return ETAValue(float(raw) / scale, node.get("@unit", ""), False)
+            skalierung = float(node.get("@scaleFactor", 1) or 1) or 1.0
+            zahl = float(roh) / skalierung
         except (TypeError, ValueError):
-            pass
+            zahl = None
 
-    return ETAValue(str_value if str_value is not None else "", "", True)
+    ist_text = bool(text_offset) or zahl is None
+    if ist_text:
+        return ETAValue(zahl, text, "", True, dec_places)
+    return ETAValue(zahl, text, einheit, False, dec_places)
