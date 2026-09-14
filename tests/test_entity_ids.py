@@ -42,6 +42,11 @@ ERWARTETE_IDS = {
     "puffer_ladezustand": "sensor.eta_heizung_puffer_ladezustand",
     "restsauerstoff": "sensor.eta_heizung_restsauerstoff",
     "ruecklauf_temperatur": "sensor.eta_heizung_rucklauftemperatur",
+    "solar_ertrag_gestern": "sensor.eta_heizung_solar_ertrag_gestern",
+    "solar_ertrag_heute": "sensor.eta_heizung_solar_ertrag_heute",
+    "solar_kollektor": "sensor.eta_heizung_solar_kollektortemperatur",
+    "solar_leistung": "sensor.eta_heizung_solar_leistung",
+    "solar_waermemenge": "sensor.eta_heizung_solar_warmemenge",
 }
 
 

@@ -444,3 +444,52 @@ async def test_kesselzustand_wird_als_text_gelesen(hass, entry):
     assert sensor.native_value == "Heizen"
     assert sensor.native_unit_of_measurement is None
     assert sensor.state_class is None
+
+
+async def test_solar_entsteht_nur_bei_angekreuzter_komponente(hass, entry):
+    _, by_name = await setup_integration(hass, entry)
+    assert "Solar Kollektortemperatur" not in by_name
+    assert "Komponente Solar" not in by_name
+
+
+async def test_solar_mit_waermemengenmessung(hass, entry):
+    entry.data["components"] = ["kessel", "solar"]
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert "Solar Kollektortemperatur" in by_name
+    assert "Komponente Solar" in by_name
+    for name in (
+        "Solar Leistung",
+        "Solar Wärmemenge",
+        "Solar Ertrag heute",
+        "Solar Ertrag gestern",
+    ):
+        assert name in by_name, name
+
+    assert by_name["Solar Wärmemenge"].native_unit_of_measurement == "kWh"
+    assert by_name["Solar Leistung"].native_unit_of_measurement == "kW"
+    assert coordinator.sensor_defs["solar_kollektor"]["uri"] == "/120/10221/0/11139/0"
+
+
+async def test_solar_ohne_waermemengenmessung(hass, entry, menu_xml):
+    """Ohne Wärmemengenmessung darf keine leere Entität entstehen."""
+    zweig = (
+        '<object uri="/120/10221/0/0/12379" name="Leistung">\n'
+        '<object uri="/120/10221/0/0/12349" name="Wärmemenge"/>\n'
+        '<object uri="/120/10221/0/0/12350" name="Ertrag heute"/>\n'
+        '<object uri="/120/10221/0/0/12769" name="Ertrag gestern"/>\n'
+        "</object>\n"
+    )
+    assert zweig in menu_xml
+    hass.session.menu = menu_xml.replace(zweig, "")
+    entry.data["components"] = ["kessel", "solar"]
+    _, by_name = await setup_integration(hass, entry)
+
+    assert "Solar Kollektortemperatur" in by_name
+    for name in (
+        "Solar Leistung",
+        "Solar Wärmemenge",
+        "Solar Ertrag heute",
+        "Solar Ertrag gestern",
+    ):
+        assert name not in by_name, name

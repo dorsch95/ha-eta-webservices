@@ -53,7 +53,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1, Heizkreis 2). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
+4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1, Heizkreis 2, Solaranlage). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deiner Lieferscheinung ein anderer Wert, trage ihn hier ein.
 7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
@@ -75,6 +75,7 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 * **📊 Verbrauch:** Verbrauch seit der letzten Entaschung (kg) und der umgerechnete Energieverbrauch (kWh). Beide Zähler liefern Langzeitstatistik, sind also über Monate auswertbar.
 * **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
 * **♨️ Heizkreis 1 und 2:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*).
+* **☀️ Solaranlage:** Kollektortemperatur. Bei einer Anlage **mit Wärmemengenmessung** zusätzlich Leistung (kW), Wärmemenge (kWh), Ertrag heute und Ertrag gestern - siehe unten.
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls deine Anlage keinen entsprechenden Fühler hat.
 * **🚨 Aktive Fehler** (im Setup abwählbar): Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
 * **🔌 Schalter** für Kessel und Heizkreise, sofern deine Anlage sie zulässt - siehe unten.
@@ -93,6 +94,7 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 | Frischwasser-/Warmwassermodul | `FWM`, oder `WW` bei einem reinen Warmwasserspeicher |
 | Heizkreis 1 | `HK`, oder `HK1` sobald mehrere Heizkreise vorhanden sind |
 | Heizkreis 2 | `HK2` |
+| Solaranlage | `Solar` |
 | Außentemperatur | `Sys` |
 
 ---
@@ -172,6 +174,25 @@ python dashboard/karte_bauen.py
 
 ---
 
+
+## ☀️ Solaranlage
+
+Kreuzt du **Solaranlage** an, liest die Integration die **Kollektortemperatur** aus (`sensor.eta_heizung_solar_kollektortemperatur`).
+
+Vier weitere Werte gibt es nur, wenn deine Solaranlage eine **Wärmemengenmessung** hat:
+
+| Sensor | Bedeutung |
+|---|---|
+| `sensor.eta_heizung_solar_leistung` | aktuelle Leistung in kW |
+| `sensor.eta_heizung_solar_warmemenge` | Wärmemenge insgesamt in kWh |
+| `sensor.eta_heizung_solar_ertrag_heute` | Ertrag seit Mitternacht |
+| `sensor.eta_heizung_solar_ertrag_gestern` | Ertrag des Vortags |
+
+**Du musst nichts zusätzlich auswählen.** Die Integration schaut im Menübaum deiner Anlage nach, ob es diese Werte gibt. Hat deine Anlage keine Wärmemengenmessung, entstehen die vier Entitäten erst gar nicht - statt dauerhaft leer herumzustehen. In der Dashboard-Karte bleiben die betreffenden Zeilen dann einfach weg.
+
+`sensor.eta_heizung_solar_warmemenge` liefert Langzeitstatistik und lässt sich als **Solarertrag** ins Energie-Dashboard aufnehmen (**Einstellungen -> Dashboards -> Energie -> Solarpanel hinzufügen**).
+
+---
 
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 

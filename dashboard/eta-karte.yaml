@@ -201,6 +201,57 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 85%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_solar
+        state: solar
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/solar.png
+        elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_kollektortemperatur
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_kollektortemperatur
+            style:
+              top: 8%
+              left: 50%
+              color: '#e8615f'
+              font-size: 90%
+            prefix: 'Koll.: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_leistung
+            style:
+              top: 15%
+              left: 50%
+              color: '#e0b63f'
+              font-size: 85%
+            prefix: 'Leistung: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_ertrag_heute
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_ertrag_heute
+            style:
+              top: 22%
+              left: 50%
+              color: '#d5d9de'
+              font-size: 85%
+            prefix: 'Heute: '
 - type: conditional
   conditions:
   - condition: screen
@@ -402,6 +453,57 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 90%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_solar
+        state: solar
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/solar.png
+        elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_kollektortemperatur
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_kollektortemperatur
+            style:
+              top: 8%
+              left: 50%
+              color: '#e8615f'
+              font-size: 95%
+            prefix: 'Kollektor: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_leistung
+            style:
+              top: 15%
+              left: 50%
+              color: '#e0b63f'
+              font-size: 90%
+            prefix: 'Leistung: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_ertrag_heute
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_ertrag_heute
+            style:
+              top: 22%
+              left: 50%
+              color: '#d5d9de'
+              font-size: 90%
+            prefix: 'Heute: '
 - type: conditional
   conditions:
   - condition: screen
@@ -603,3 +705,54 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 95%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_solar
+        state: solar
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/solar.png
+        elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_kollektortemperatur
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_kollektortemperatur
+            style:
+              top: 8%
+              left: 50%
+              color: '#e8615f'
+              font-size: 100%
+            prefix: 'Kollektor: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_leistung
+            style:
+              top: 15%
+              left: 50%
+              color: '#e0b63f'
+              font-size: 95%
+            prefix: 'Leistung: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_ertrag_heute
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_solar_ertrag_heute
+            style:
+              top: 22%
+              left: 50%
+              color: '#d5d9de'
+              font-size: 95%
+            prefix: 'Heute: '

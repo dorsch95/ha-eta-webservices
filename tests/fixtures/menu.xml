@@ -136,5 +136,15 @@
 </object>
 </object>
 </fub>
+<fub uri="/120/10221" name="Solar">
+<object uri="/120/10221/0/0/10990" name="Eingänge">
+<object uri="/120/10221/0/11139/0" name="Kollektor"/>
+</object>
+<object uri="/120/10221/0/0/12379" name="Leistung">
+<object uri="/120/10221/0/0/12349" name="Wärmemenge"/>
+<object uri="/120/10221/0/0/12350" name="Ertrag heute"/>
+<object uri="/120/10221/0/0/12769" name="Ertrag gestern"/>
+</object>
+</fub>
 </menu>
 </eta>

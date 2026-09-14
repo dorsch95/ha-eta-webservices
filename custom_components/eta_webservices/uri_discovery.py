@@ -40,7 +40,28 @@ DISCOVERY_PATHS = {
     "heizkreis2_anforderung": ("hk2", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     "fwm_zirkulation": ("fwm", ["Eingänge", "Zirkulation"]),
+    "solar_kollektor": ("solar", ["Eingänge", "Kollektor"]),
+    "solar_leistung": ("solar", ["Leistung"]),
+    "solar_waermemenge": ("solar", ["Leistung", "Wärmemenge"]),
+    "solar_ertrag_heute": ("solar", ["Leistung", "Ertrag heute"]),
+    "solar_ertrag_gestern": ("solar", ["Leistung", "Ertrag gestern"]),
 }
+
+NAMENSSUCHE = {
+    "solar_kollektor": "Kollektor",
+    "solar_leistung": "Leistung",
+    "solar_waermemenge": "Wärmemenge",
+    "solar_ertrag_heute": "Ertrag heute",
+    "solar_ertrag_gestern": "Ertrag gestern",
+}
+"""Zweiter Versuch über den bloßen Objektnamen, falls der Pfad nicht passt.
+
+Bei Solar liegt der Ertragszweig je nach Anlage unterschiedlich tief im
+Menü. Die Namen selbst sind dagegen eindeutig, deshalb wird hier - und
+nur hier - der ganze Funktionsblock danach durchsucht, wenn der feste
+Pfad ins Leere läuft. Für die übrigen Messwerte bleibt es beim festen
+Pfad: dort gibt es Namen wie "Vorlauf", die mehrfach vorkommen.
+"""
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
 
@@ -143,6 +164,26 @@ def _finde_schalter(fub):
     return durchsuchen(fub)
 
 
+def _finde_nach_namen(fub, name):
+    """Sucht im ganzen Funktionsblock das erste Objekt mit diesem Namen."""
+    if fub is None:
+        return None
+    ziel = name.casefold()
+
+    def durchsuchen(knoten):
+        for kind in _as_list(knoten.get("object")):
+            if not isinstance(kind, dict):
+                continue
+            if kind.get("@name", "").strip().casefold() == ziel and kind.get("@uri"):
+                return kind["@uri"]
+            treffer = durchsuchen(kind)
+            if treffer:
+                return treffer
+        return None
+
+    return durchsuchen(fub)
+
+
 def _discover_puffer_fuehler(fub):
     """Ermittelt die tatsächlich vorhandenen Pufferfühler (1 bis N).
 
@@ -200,10 +241,11 @@ async def async_discover_uris(client, fub_name_overrides=None):
         if fub is None:
             continue
         found = _find_path(fub, path)
-        if found is not None:
-            uri = found.get("@uri")
-            if uri:
-                discovered[key] = uri
+        uri = found.get("@uri") if found is not None else None
+        if not uri and key in NAMENSSUCHE:
+            uri = _finde_nach_namen(fub, NAMENSSUCHE[key])
+        if uri:
+            discovered[key] = uri
 
     for key, role in SWITCH_ROLES.items():
         fub = fubs_by_role.get(role)

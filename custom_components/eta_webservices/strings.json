@@ -22,7 +22,8 @@
           "pufferflex": "FUB name: buffer tank (default PufferFlex, older systems: Puffer)",
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
-          "hk2": "FUB name: heating circuit 2 (HK2)"
+          "hk2": "FUB name: heating circuit 2 (HK2)",
+          "solar": "FUB name: Solar thermal system (Solar)"
         }
       },
       "reconfigure": {
@@ -73,7 +74,8 @@
           "pufferflex": "FUB name: buffer tank (default PufferFlex, older systems: Puffer)",
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
-          "hk2": "FUB name: heating circuit 2 (HK2)"
+          "hk2": "FUB name: heating circuit 2 (HK2)",
+          "solar": "FUB name: Solar thermal system (Solar)"
         }
       },
       "switch_warning": {
@@ -91,7 +93,8 @@
         "puffer": "Buffer tank",
         "fwm": "Fresh water / hot water module",
         "hk1": "Heating circuit 1",
-        "hk2": "Heating circuit 2"
+        "hk2": "Heating circuit 2",
+        "solar": "Solar thermal system"
       }
     }
   },
@@ -166,6 +169,9 @@
       "komponente_puffer": {
         "name": "Buffer tank component"
       },
+      "komponente_solar": {
+        "name": "Solar component"
+      },
       "pellet_energie": {
         "name": "Pellet energy consumption"
       },
@@ -204,6 +210,21 @@
       },
       "ruecklauf_temperatur": {
         "name": "Return temperature"
+      },
+      "solar_ertrag_gestern": {
+        "name": "Solar yield yesterday"
+      },
+      "solar_ertrag_heute": {
+        "name": "Solar yield today"
+      },
+      "solar_kollektor": {
+        "name": "Solar collector temperature"
+      },
+      "solar_leistung": {
+        "name": "Solar power"
+      },
+      "solar_waermemenge": {
+        "name": "Solar heat quantity"
       }
     },
     "switch": {

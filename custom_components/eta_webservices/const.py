@@ -73,6 +73,12 @@ COMPONENTS = {
         "roles": ["hk2"],
         "discovery_prefixes": ["heizkreis2_"],
     },
+    "solar": {
+        "name": "Solar",
+        "image": "solar",
+        "roles": ["solar"],
+        "discovery_prefixes": ["solar_"],
+    },
 }
 """Die wählbaren Bausteine einer Anlage.
 
@@ -320,7 +326,60 @@ DISCOVERY_ONLY_SENSORS = {
         "icon": "mdi:heat-wave",
         "is_string": True,
     },
+    "solar_kollektor": {
+        "component": "solar",
+        "name": "Solar Kollektortemperatur",
+        "translation_key": "solar_kollektor",
+        "icon": "mdi:solar-panel-large",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "solar_leistung": {
+        "component": "solar",
+        "name": "Solar Leistung",
+        "translation_key": "solar_leistung",
+        "icon": "mdi:flash",
+        "device_class": SensorDeviceClass.POWER,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kW",
+    },
+    "solar_waermemenge": {
+        "component": "solar",
+        "name": "Solar Wärmemenge",
+        "translation_key": "solar_waermemenge",
+        "icon": "mdi:sun-thermometer",
+        "device_class": SensorDeviceClass.ENERGY,
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "default_unit": "kWh",
+    },
+    "solar_ertrag_heute": {
+        "component": "solar",
+        "name": "Solar Ertrag heute",
+        "translation_key": "solar_ertrag_heute",
+        "icon": "mdi:weather-sunny",
+        "device_class": SensorDeviceClass.ENERGY,
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "default_unit": "kWh",
+    },
+    "solar_ertrag_gestern": {
+        "component": "solar",
+        "name": "Solar Ertrag gestern",
+        "translation_key": "solar_ertrag_gestern",
+        "icon": "mdi:weather-sunset-down",
+        "device_class": SensorDeviceClass.ENERGY,
+        "default_unit": "kWh",
+    },
 }
+"""Messwerte, die es nur gibt, wenn der Menübaum sie hergibt.
+
+Ohne gefundene URI entsteht hier keine Entität. Das ist bei Solar der
+Kern der Sache: Wärmemenge, Ertrag heute und Ertrag gestern liefert nur
+eine Anlage mit Wärmemengenmessung. Wer keine hat, soll nicht drei
+Entitäten geschenkt bekommen, die für immer leer bleiben - und niemand
+soll sie extra abwählen müssen, denn die Anlage weiß selbst, ob sie
+sie hat.
+"""
 
 OPTIONAL_SENSORS = {
     "fwm_zirkulation": {
@@ -339,6 +398,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "fwm": ["FWM", "WW"],
     "hk": ["HK", "HK1"],
     "hk2": ["HK2"],
+    "solar": ["Solar"],
 }
 
 def normalize_components(components):

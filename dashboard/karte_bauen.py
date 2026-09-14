@@ -26,6 +26,7 @@ FARBEN = {
     "hell": "#d5d9de",
     "weiss": "#ffffff",
     "gedaempft": "#9aa5b1",
+    "solar": "#e0b63f",
 }
 
 KESSEL_ZEILEN = [
@@ -57,6 +58,27 @@ def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
     if prefix:
         element["prefix"] = prefix
     return element
+
+
+def nur_wenn_vorhanden(entity, elemente):
+    """Blendet Zeilen aus, deren Entität es an dieser Anlage nicht gibt.
+
+    Die Solarwerte für Leistung und Ertrag entstehen nur bei einer
+    Anlage mit Wärmemengenmessung. Ohne diese Bedingung stünde bei
+    allen anderen "Entität nicht gefunden" in der Kachel - eine fehlende
+    Entität wertet Home Assistant als "unknown".
+    """
+    return {
+        "type": "conditional",
+        "conditions": [
+            {
+                "condition": "state",
+                "entity": f"sensor.eta_heizung_{entity}",
+                "state_not": "unknown",
+            }
+        ],
+        "elements": elemente,
+    }
 
 
 def komponente(marker, zustand, bild, elemente):
@@ -137,6 +159,52 @@ def grid(spalten, schrift, kurz):
                     label("heizkreis_2_vorlauftemperatur", "HK2: " if kurz else "Vorlauf HK2: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", None, "hell", 15, 50, schrift - 5),
+                ],
+            ),
+            komponente(
+                "solar",
+                "solar",
+                "solar",
+                [
+                    nur_wenn_vorhanden(
+                        "solar_kollektortemperatur",
+                        [
+                            label(
+                                "solar_kollektortemperatur",
+                                "Koll.: " if kurz else "Kollektor: ",
+                                "kessel",
+                                8,
+                                50,
+                                schrift,
+                            )
+                        ],
+                    ),
+                    nur_wenn_vorhanden(
+                        "solar_leistung",
+                        [
+                            label(
+                                "solar_leistung",
+                                "Leistung: ",
+                                "solar",
+                                15,
+                                50,
+                                schrift - 5,
+                            )
+                        ],
+                    ),
+                    nur_wenn_vorhanden(
+                        "solar_ertrag_heute",
+                        [
+                            label(
+                                "solar_ertrag_heute",
+                                "Heute: ",
+                                "hell",
+                                22,
+                                50,
+                                schrift - 5,
+                            )
+                        ],
+                    ),
                 ],
             ),
         ],

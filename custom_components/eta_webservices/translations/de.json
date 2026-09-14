@@ -22,7 +22,8 @@
           "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
-          "hk2": "FUB-Name: Heizkreis 2 (HK2)"
+          "hk2": "FUB-Name: Heizkreis 2 (HK2)",
+          "solar": "FUB-Name: Solaranlage (Solar)"
         }
       },
       "reconfigure": {
@@ -73,7 +74,8 @@
           "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
-          "hk2": "FUB-Name: Heizkreis 2 (HK2)"
+          "hk2": "FUB-Name: Heizkreis 2 (HK2)",
+          "solar": "FUB-Name: Solaranlage (Solar)"
         }
       },
       "switch_warning": {
@@ -91,7 +93,8 @@
         "puffer": "Pufferspeicher",
         "fwm": "Frischwassermodul / Warmwasser",
         "hk1": "Heizkreis 1",
-        "hk2": "Heizkreis 2"
+        "hk2": "Heizkreis 2",
+        "solar": "Solaranlage"
       }
     }
   },
@@ -166,6 +169,9 @@
       "komponente_puffer": {
         "name": "Komponente Pufferspeicher"
       },
+      "komponente_solar": {
+        "name": "Komponente Solar"
+      },
       "pellet_energie": {
         "name": "Pellet Energieverbrauch"
       },
@@ -204,6 +210,21 @@
       },
       "ruecklauf_temperatur": {
         "name": "Rücklauftemperatur"
+      },
+      "solar_ertrag_gestern": {
+        "name": "Solar Ertrag gestern"
+      },
+      "solar_ertrag_heute": {
+        "name": "Solar Ertrag heute"
+      },
+      "solar_kollektor": {
+        "name": "Solar Kollektortemperatur"
+      },
+      "solar_leistung": {
+        "name": "Solar Leistung"
+      },
+      "solar_waermemenge": {
+        "name": "Solar Wärmemenge"
       }
     },
     "switch": {
