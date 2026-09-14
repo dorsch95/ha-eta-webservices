@@ -112,6 +112,9 @@
   },
   "entity": {
     "binary_sensor": {
+      "aschebox_faellig": {
+        "name": "Empty ash box"
+      },
       "stoerung": {
         "name": "Fault"
       }

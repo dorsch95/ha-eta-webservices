@@ -78,6 +78,7 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 * **☀️ Solaranlage:** Kollektortemperatur. Bei einer Anlage **mit Wärmemengenmessung** zusätzlich Leistung (kW), Wärmemenge (kWh), Ertrag heute und Ertrag gestern - siehe unten.
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur.
 * **🚨 Störung** (im Setup abwählbar): `binary_sensor.eta_heizung_storung` ist an, sobald mindestens eine Störung anliegt - damit reicht in einer Automatisierung ein Gerätetrigger, statt eine Zahl mit Null zu vergleichen.
+* **🗑️ Aschebox leeren:** `binary_sensor.eta_heizung_aschebox_leeren` ist an, sobald seit der letzten Leerung so viel verbrannt wurde, wie an der Anlage als Schwelle eingestellt ist. Beide Werte kommen von der Heizung, hier wird nur verglichen.
 * **🚨 Aktive Fehler** (im Setup abwählbar): Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
 * **🔌 Schalter** für Kessel und Heizkreise sowie je Heizkreis eine **Betriebsart** (Automatik, Heizen, Absenken, Aus), sofern deine Anlage sie zulässt - siehe unten.
 * **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
@@ -310,6 +311,22 @@ automation:
             {{ state_attr('sensor.eta_heizung_aktive_fehler', 'fehler')
                | map(attribute='meldung') | join(', ') }}
 ```
+
+---
+
+## 🧩 Fertige Automatisierungen (Blueprints)
+
+Im Ordner [`blueprints/automation/eta_webservices`](blueprints/automation/eta_webservices) liegen drei gebrauchsfertige Automatisierungen:
+
+| Blueprint | Wofür |
+|---|---|
+| **Störung melden** | Push-Nachricht, sobald eine Störung ansteht - mit dem Klartext der Meldung |
+| **Aschebox leeren** | Erinnerung, sobald die Schwelle der Anlage erreicht ist |
+| **Heizkreis absenken bei offenem Fenster** | Setzt den Heizkreis auf Absenken, solange ein Fenster offen steht, und danach zurück |
+
+**Einbauen:** Die gewünschte `.yaml` nach `config/blueprints/automation/eta_webservices/` kopieren (Ordner ggf. anlegen) und Home Assistant neu starten. Danach unter **Einstellungen -> Automatisierungen & Szenen -> Blueprints** auswählen.
+
+Der dritte braucht die Betriebsart-Auswahl, also einen freigegebenen Schreibzugriff.
 
 ---
 

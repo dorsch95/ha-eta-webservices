@@ -1,0 +1,44 @@
+blueprint:
+  name: ETA Heizung - Störung melden
+  description: >-
+    Meldet sich, sobald an der Heizung eine Störung ansteht, und nennt die
+    Meldung im Klartext. Der Hinweis der Anlage - etwa "Heizungswasser
+    nachfüllen" - steht mit in der Nachricht.
+  domain: automation
+  source_url: https://github.com/dorsch95/ha-eta-webservices/blob/main/blueprints/automation/eta_webservices/stoerung_melden.yaml
+  input:
+    stoerungsmelder:
+      name: Störungsmelder
+      description: Die Entität "Störung" deiner ETA-Heizung.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              integration: eta_webservices
+    aktion:
+      name: Benachrichtigung
+      description: >-
+        Was geschehen soll. Üblich ist eine Push-Nachricht an dein Handy.
+        Die Nachricht steht als {{ meldung }} bereit.
+      selector:
+        action: {}
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input stoerungsmelder
+    from: "off"
+    to: "on"
+
+variables:
+  melder: !input stoerungsmelder
+  meldung: >-
+    {% set fehler = state_attr(melder, 'fehler') or [] %}
+    {% if fehler %}
+    {{ fehler | map(attribute='meldung') | join(', ') }}
+    {% else %}
+    Störung an der Heizung
+    {% endif %}
+
+actions: !input aktion

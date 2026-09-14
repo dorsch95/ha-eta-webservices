@@ -1,0 +1,43 @@
+blueprint:
+  name: ETA Heizung - Aschebox leeren
+  description: >-
+    Erinnert, sobald seit der letzten Leerung so viel verbrannt wurde, wie an
+    der Anlage als Schwelle eingestellt ist. Beide Werte kommen von der
+    Heizung selbst.
+  domain: automation
+  source_url: https://github.com/dorsch95/ha-eta-webservices/blob/main/blueprints/automation/eta_webservices/aschebox_leeren.yaml
+  input:
+    erinnerung:
+      name: Erinnerung
+      description: Die Entität "Aschebox leeren" deiner ETA-Heizung.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              integration: eta_webservices
+    wartezeit:
+      name: Verzögerung
+      description: >-
+        So lange muss die Erinnerung anstehen, bevor benachrichtigt wird.
+        Verhindert eine Nachricht, wenn der Zähler kurz über die Schwelle
+        springt.
+      default:
+        minutes: 30
+      selector:
+        duration: {}
+    aktion:
+      name: Benachrichtigung
+      description: Was geschehen soll, wenn es so weit ist.
+      selector:
+        action: {}
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input erinnerung
+    from: "off"
+    to: "on"
+    for: !input wartezeit
+
+actions: !input aktion

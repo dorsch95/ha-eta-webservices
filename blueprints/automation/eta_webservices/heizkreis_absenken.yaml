@@ -1,0 +1,81 @@
+blueprint:
+  name: ETA Heizung - Heizkreis absenken bei offenem Fenster
+  description: >-
+    Setzt einen Heizkreis auf Absenken, solange ein Fenster oder eine Tür
+    offen steht, und danach zurück auf Automatik.
+
+    Voraussetzung: Beim Einrichten der Integration muss das Schalten erlaubt
+    sein, sonst gibt es die Betriebsart-Auswahl nicht.
+  domain: automation
+  source_url: https://github.com/dorsch95/ha-eta-webservices/blob/main/blueprints/automation/eta_webservices/heizkreis_absenken.yaml
+  input:
+    betriebsart:
+      name: Betriebsart des Heizkreises
+      description: Die Auswahl "Betriebsart" des Heizkreises, der abgesenkt werden soll.
+      selector:
+        entity:
+          filter:
+            - domain: select
+              integration: eta_webservices
+    fenster:
+      name: Fenster oder Tür
+      description: Ein oder mehrere Kontakte. Es genügt einer, der offen ist.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: binary_sensor
+    offen_seit:
+      name: Erst nach
+      description: So lange muss das Fenster offen stehen, bevor abgesenkt wird.
+      default:
+        minutes: 3
+      selector:
+        duration: {}
+    zurueck_auf:
+      name: Danach zurück auf
+      default: automatik
+      selector:
+        select:
+          options:
+            - label: Automatik
+              value: automatik
+            - label: Heizen
+              value: heizen
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input fenster
+    to: "on"
+    for: !input offen_seit
+    id: offen
+  - trigger: state
+    entity_id: !input fenster
+    to: "off"
+    id: zu
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: offen
+        sequence:
+          - action: select.select_option
+            target:
+              entity_id: !input betriebsart
+            data:
+              option: absenken
+      - conditions:
+          - condition: trigger
+            id: zu
+          - condition: state
+            entity_id: !input fenster
+            state: "off"
+        sequence:
+          - action: select.select_option
+            target:
+              entity_id: !input betriebsart
+            data:
+              option: !input zurueck_auf

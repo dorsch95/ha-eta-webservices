@@ -570,9 +570,7 @@ async def test_stoerungsmelder_haengt_an_den_fehlern(hass, entry):
     await coordinator.async_refresh()
     entities: list = []
     await bs.async_setup_entry(hass, entry, entities.extend)
-    assert len(entities) == 1
-
-    melder = entities[0]
+    melder = next(e for e in entities if e.translation_key == "stoerung")
     assert melder.is_on is True
     assert melder.extra_state_attributes["anzahl"] == len(coordinator.errors)
 
@@ -587,4 +585,35 @@ async def test_ohne_stoerungsmeldungen_kein_melder(hass, entry):
     await setup_integration(hass, entry)
     entities: list = []
     await bs.async_setup_entry(hass, entry, entities.extend)
-    assert entities == []
+    assert not [e for e in entities if e.translation_key == "stoerung"]
+
+
+async def test_aschebox_erinnerung_vergleicht_die_werte_der_anlage(hass, entry):
+    """Die Schwelle kommt von der Anlage, nicht aus einer Annahme."""
+    from eta_webservices import binary_sensor as bs
+
+    coordinator, _ = await setup_integration(hass, entry)
+    entities: list = []
+    await bs.async_setup_entry(hass, entry, entities.extend)
+    melder = next(e for e in entities if e.translation_key == "aschebox_faellig")
+
+    verbrauch = melder.extra_state_attributes["verbrauch"]
+    schwelle = melder.extra_state_attributes["schwelle"]
+    assert verbrauch is not None and schwelle is not None
+    assert melder.is_on is (verbrauch >= schwelle)
+
+
+async def test_aschebox_erinnerung_bleibt_aus_ohne_werte(hass, entry, menu_xml):
+    """Lieber keine Erinnerung als eine, die auf Geratenem beruht."""
+    from eta_webservices import binary_sensor as bs
+
+    hass.session.menu = menu_xml.replace(
+        'name="Aschebox leeren nach"', 'name="Verschoben"'
+    )
+    await setup_integration(hass, entry)
+    entities: list = []
+    await bs.async_setup_entry(hass, entry, entities.extend)
+    melder = next(e for e in entities if e.translation_key == "aschebox_faellig")
+
+    assert melder.extra_state_attributes["schwelle"] is None
+    assert melder.is_on is False
