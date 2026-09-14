@@ -35,7 +35,7 @@ ERWARTETE_IDS = {
     "kessel_soll": "sensor.eta_heizung_kessel_solltemperatur",
     "kessel_temperatur": "sensor.eta_heizung_kesseltemperatur",
     "pellet_energie": "sensor.eta_heizung_pellet_energieverbrauch",
-    "pellet_tagesbehälter": "sensor.eta_heizung_pellet_inhalt_tagesbehalter",
+    "pellet_tagesbehaelter": "sensor.eta_heizung_pellet_inhalt_tagesbehalter",
     "puffer_fuehler_1": "sensor.eta_heizung_puffer_fuhler_1",
     "puffer_ladezustand": "sensor.eta_heizung_puffer_ladezustand",
     "restsauerstoff": "sensor.eta_heizung_restsauerstoff",

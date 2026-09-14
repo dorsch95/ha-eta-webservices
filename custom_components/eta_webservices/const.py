@@ -120,7 +120,7 @@ STATIC_URIs = {
         "component": "kessel",
         "uri": "/264/10891/0/0/12011",
         "name": "Pellet Inhalt Tagesbehälter",
-        "translation_key": "pellet_tagesbehälter",
+        "translation_key": "pellet_tagesbehaelter",
         "icon": "mdi:weight-kilogram",
         "device_class": SensorDeviceClass.WEIGHT,
         "state_class": SensorStateClass.MEASUREMENT,

@@ -75,3 +75,41 @@ def test_jede_entitaet_ist_in_allen_sprachen_benannt():
     for pfad in TRANSLATIONS:
         namen = json.loads(pfad.read_text(encoding="utf-8"))["entity"]["sensor"]
         assert schluessel <= set(namen), pfad.name
+
+
+@pytest.mark.parametrize("path", [STRINGS, *TRANSLATIONS], ids=lambda p: p.name)
+def test_uebersetzungsschluessel_sind_gueltig(path):
+    """Home Assistant lässt nur [a-z0-9-_] als Schlüssel zu.
+
+    hassfest weist Umlaute und Großbuchstaben zurück. Der interne
+    Sensorschlüssel darf davon abweichen (er steckt in der unique_id und
+    lässt sich nicht mehr ändern), der Übersetzungsschlüssel nicht.
+    """
+    import re
+
+    daten = json.loads(path.read_text(encoding="utf-8"))
+    for bereich, eintraege in daten.get("entity", {}).items():
+        for schluessel in eintraege:
+            assert re.fullmatch(r"[a-z0-9][a-z0-9\-_]*[a-z0-9]", schluessel), (
+                f"{bereich}.{schluessel}"
+            )
+
+
+def test_sensoren_verweisen_auf_gueltige_uebersetzungsschluessel():
+    import re
+
+    from eta_webservices.const import (
+        DISCOVERY_ONLY_SENSORS,
+        OPTIONAL_SENSORS,
+        STATIC_URIs,
+        puffer_fuehler_info,
+    )
+
+    schluessel = [
+        info["translation_key"]
+        for tabelle in (STATIC_URIs, DISCOVERY_ONLY_SENSORS, OPTIONAL_SENSORS)
+        for info in tabelle.values()
+    ]
+    schluessel += [puffer_fuehler_info(i, False)["translation_key"] for i in range(1, 9)]
+    for eintrag in schluessel:
+        assert re.fullmatch(r"[a-z0-9][a-z0-9\-_]*[a-z0-9]", eintrag), eintrag
