@@ -1222,6 +1222,21 @@ elements:
 
 ---
 
+## 🩺 Wenn ein Wert fehlt
+
+Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Fehlt ein Wert, liegt das fast immer daran, dass ein Funktionsblock umbenannt wurde oder die Hardware an deiner Anlage nicht verbaut ist.
+
+Unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Gerät "ETA Heizung" -> Diagnose herunterladen** bekommst du eine Datei, die für jeden Messwert zeigt:
+
+* ob seine Adresse im Menübaum **gefunden** wurde (`"quelle": "menuebaum"`) oder auf den Standardwert zurückgefallen ist (`"quelle": "standard"`),
+* welche Adresse tatsächlich abgefragt wird,
+* welcher Wert zuletzt angekommen ist,
+* und unter `"nicht_gefunden"` eine Liste aller Werte ohne Treffer.
+
+Die IP-Adresse ist in dieser Datei geschwärzt, du kannst sie also bedenkenlos an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) anhängen.
+
+---
+
 ## 🧪 Entwicklung
 
 Die Testsuite läuft gegen ein echtes Home Assistant, aber ohne laufende Instanz und ohne echte Heizung - die Anlage wird durch einen aufgezeichneten Menübaum ersetzt:

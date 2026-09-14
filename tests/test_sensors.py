@@ -142,3 +142,44 @@ async def test_fest_hinterlegte_uri_greift_ohne_fund(hass, entry, menu_xml):
         coordinator.sensor_defs["kessel_temperatur"]["uri"]
         == STATIC_URIs["kessel_temperatur"]["uri"]
     )
+
+
+async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
+    from eta_webservices.diagnostics import (
+        REDACTED,
+        async_get_config_entry_diagnostics,
+    )
+
+    await setup_integration(hass, entry)
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert bericht["konfiguration"]["host"] == REDACTED
+    assert bericht["erkennung"]["ueber_menuebaum_gefunden"] > 0
+    assert bericht["erkennung"]["pufferfuehler"]
+    assert bericht["letzte_abfrage"]["erfolgreich"] is True
+
+    kessel = bericht["messwerte"]["kessel_temperatur"]
+    assert kessel["quelle"] == "menuebaum"
+    assert kessel["rolle"] == "kessel"
+    assert kessel["letzter_wert"] == pytest.approx(55.5)
+
+
+async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+
+    hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
+    await setup_integration(hass, entry)
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert "kessel_temperatur" in bericht["erkennung"]["nicht_gefunden"]
+    assert bericht["messwerte"]["kessel_temperatur"]["quelle"] == "standard"
+
+
+async def test_diagnose_ist_serialisierbar(hass, entry):
+    import json
+
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+
+    await setup_integration(hass, entry)
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+    assert json.dumps(bericht)
