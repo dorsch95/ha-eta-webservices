@@ -5,11 +5,21 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .api import ETAApiClient
 from .const import (
@@ -57,10 +67,13 @@ def _connection_schema(current: dict[str, Any]) -> vol.Schema:
             vol.Required(
                 CONF_PORT, default=current.get(CONF_PORT, DEFAULT_PORT)
             ): cv.port,
-            vol.Required(
-                CONF_COMPONENTS, default=vorauswahl
-            ): cv.multi_select(
-                {key: COMPONENTS[key]["name"] for key in _WAEHLBARE_KOMPONENTEN}
+            vol.Required(CONF_COMPONENTS, default=vorauswahl): SelectSelector(
+                SelectSelectorConfig(
+                    options=_WAEHLBARE_KOMPONENTEN,
+                    multiple=True,
+                    mode=SelectSelectorMode.LIST,
+                    translation_key="components",
+                )
             ),
             vol.Required(
                 CONF_SCAN_INTERVAL,
@@ -150,7 +163,7 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
         return ETAOptionsFlow()
 
 
-class ETAOptionsFlow(OptionsFlow):
+class ETAOptionsFlow(OptionsFlowWithReload):
     """Nachträgliches Ändern von Verbindung, Schema und FUB-Namen."""
 
     def __init__(self) -> None:

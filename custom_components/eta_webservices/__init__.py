@@ -6,7 +6,6 @@ import base64
 import logging
 import os
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -16,11 +15,10 @@ from .const import (
     CONF_FUB_NAMES,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
     PLATFORMS,
     components_from_config,
 )
-from .coordinator import ETADataUpdateCoordinator
+from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .images import IMAGES_DATA
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +47,7 @@ def _write_component_images(www_root: str) -> None:
             file.write(decoded)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     """Setzt die Integration über einen Config Entry auf."""
     config = {**entry.data, **entry.options}
     host = config[CONF_HOST]
@@ -73,22 +71,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    entry.async_on_unload(entry.add_update_listener(async_update_options))
+    entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Lädt die Integration neu, wenn die Optionen geändert wurden."""
-    await hass.config_entries.async_reload(entry.entry_id)
-
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     """Wird aufgerufen, wenn die Integration entfernt wird."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-        if not hass.data[DOMAIN]:
-            hass.data.pop(DOMAIN)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

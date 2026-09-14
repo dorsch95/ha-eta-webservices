@@ -6,12 +6,12 @@ import pytest
 
 import eta_webservices
 from eta_webservices import sensor as sensor_platform
-from eta_webservices.const import DOMAIN, OPTIONAL_SENSORS
+from eta_webservices.const import OPTIONAL_SENSORS
 
 
 async def setup_integration(hass, entry):
     assert await eta_webservices.async_setup_entry(hass, entry) is True
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     entities: list = []
     await sensor_platform.async_setup_entry(hass, entry, entities.extend)
     return coordinator, {entity.name: entity for entity in entities}
@@ -111,7 +111,6 @@ async def test_zweiter_setup_schreibt_grafiken_nicht_erneut(hass, entry):
     eine_datei = os.path.join(verzeichnis, os.listdir(verzeichnis)[0])
     vorher = os.stat(eine_datei).st_mtime_ns
 
-    hass.data.clear()
     await setup_integration(hass, entry)
     assert os.stat(eine_datei).st_mtime_ns == vorher
 
@@ -145,15 +144,15 @@ async def test_fest_hinterlegte_uri_greift_ohne_fund(hass, entry, menu_xml):
 
 
 async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
-    from eta_webservices.diagnostics import (
-        REDACTED,
-        async_get_config_entry_diagnostics,
-    )
+    from homeassistant.components.diagnostics import REDACTED
+
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
 
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
 
     assert bericht["konfiguration"]["host"] == REDACTED
+    assert "192.0.2" not in str(bericht)
     assert bericht["erkennung"]["ueber_menuebaum_gefunden"] > 0
     assert bericht["erkennung"]["pufferfuehler"]
     assert bericht["letzte_abfrage"]["erfolgreich"] is True

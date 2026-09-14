@@ -57,5 +57,15 @@
     "error": {
       "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
     }
+  },
+  "selector": {
+    "components": {
+      "options": {
+        "puffer": "Pufferspeicher",
+        "fwm": "Frischwassermodul / Warmwasser",
+        "hk1": "Heizkreis 1",
+        "hk2": "Heizkreis 2"
+      }
+    }
   }
 }

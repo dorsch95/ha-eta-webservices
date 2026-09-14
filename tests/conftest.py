@@ -113,6 +113,7 @@ class FakeConfigEntry:
         self.options = options or {}
         self.entry_id = "testeintrag"
         self.title = "ETA Heizung"
+        self.runtime_data = None
         self._unload_callbacks: list = []
 
     def add_update_listener(self, listener):

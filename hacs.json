@@ -1,5 +1,5 @@
 {
   "name": "ETA Heiztechnik Web Service",
-  "homeassistant": "2025.2.0",
+  "homeassistant": "2025.8.0",
   "content_in_root": false
 }

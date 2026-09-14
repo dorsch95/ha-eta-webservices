@@ -12,22 +12,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_COMPONENTS, CONF_FUB_NAMES, DOMAIN
-from .coordinator import ETADataUpdateCoordinator
+from .const import CONF_COMPONENTS, CONF_FUB_NAMES
+from .coordinator import ETAConfigEntry
 from .uri_discovery import DISCOVERY_PATHS
 
-REDACTED = "**redigiert**"
+TO_REDACT = {CONF_HOST}
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: ETAConfigEntry
 ) -> dict[str, Any]:
     """Stellt den Zustand einer eingerichteten Anlage zusammen."""
-    coordinator: ETADataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     daten = coordinator.data or {}
 
     messwerte = {}
@@ -43,16 +43,21 @@ async def async_get_config_entry_diagnostics(
         }
 
     return {
-        "konfiguration": {
-            CONF_HOST: REDACTED,
-            CONF_COMPONENTS: coordinator.components,
-            CONF_FUB_NAMES: {**entry.data, **entry.options}.get(CONF_FUB_NAMES, {}),
-            "abfrageintervall": (
-                coordinator.update_interval.total_seconds()
-                if coordinator.update_interval
-                else None
-            ),
-        },
+        "konfiguration": async_redact_data(
+            {
+                CONF_HOST: {**entry.data, **entry.options}.get(CONF_HOST),
+                CONF_COMPONENTS: coordinator.components,
+                CONF_FUB_NAMES: {**entry.data, **entry.options}.get(
+                    CONF_FUB_NAMES, {}
+                ),
+                "abfrageintervall": (
+                    coordinator.update_interval.total_seconds()
+                    if coordinator.update_interval
+                    else None
+                ),
+            },
+            TO_REDACT,
+        ),
         "erkennung": {
             "ueber_menuebaum_gefunden": len(coordinator.discovered_uris),
             "erwartet": len(DISCOVERY_PATHS),

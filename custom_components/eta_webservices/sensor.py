@@ -3,23 +3,22 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import COMPONENTS, DOMAIN, OPTIONAL_SENSORS
-from .coordinator import ETADataUpdateCoordinator
+from .const import COMPONENTS, OPTIONAL_SENSORS
+from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: ETAConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Registriert alle Sensoren dieser Anlage."""
-    coordinator: ETADataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     entities: list[SensorEntity] = [
         ETAMeasurementSensor(coordinator, key, info)

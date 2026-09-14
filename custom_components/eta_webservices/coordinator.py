@@ -25,6 +25,9 @@ from .uri_discovery import async_discover_uris
 
 _LOGGER = logging.getLogger(__name__)
 
+type ETAConfigEntry = ConfigEntry["ETADataUpdateCoordinator"]
+"""Config Entry, der seinen Koordinator in runtime_data trägt."""
+
 
 def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
     """Stellt zusammen, welche Sensoren diese Anlage hat und unter welcher URI.
@@ -84,7 +87,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     def __init__(
         self,
         hass: HomeAssistant,
-        entry: ConfigEntry,
+        entry: ETAConfigEntry,
         client: ETAApiClient,
         scan_interval: int,
         components: list[str],

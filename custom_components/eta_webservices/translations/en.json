@@ -57,5 +57,15 @@
     "error": {
       "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler."
     }
+  },
+  "selector": {
+    "components": {
+      "options": {
+        "puffer": "Buffer tank",
+        "fwm": "Fresh water / hot water module",
+        "hk1": "Heating circuit 1",
+        "hk2": "Heating circuit 2"
+      }
+    }
   }
 }
