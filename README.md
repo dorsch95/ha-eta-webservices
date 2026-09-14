@@ -267,6 +267,18 @@ Unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Ger
 
 Die IP-Adresse ist in dieser Datei geschwärzt, du kannst sie also bedenkenlos an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) anhängen.
 
+### Bericht direkt von der Anlage
+
+Reicht der Diagnose-Export nicht, weil die Integration den Wert gar nicht erst anlegt, fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Das Skript braucht nur Python, keine Zusatzpakete, und läuft auf jedem Rechner in deinem Netz:
+
+```bash
+python3 eta_bericht.py 10.0.0.173
+```
+
+Heraus kommt `eta_bericht.txt` mit der Webservice-Version, allen Funktionsblöcken, den schaltbar aussehenden Objekten samt ihrer Beschreibung (`isWritable`, mögliche Werte), den aktiven Störungen und dem vollständigen Menübaum. Die IP-Adresse ist auch hier geschwärzt.
+
+Das Skript liest nur. Einzige Ausnahme ist ein Variablensatz, den die Anlage ohnehin nur im Arbeitsspeicher hält und der am Ende wieder entfernt wird - er prüft, ob die Sammelabfrage funktioniert.
+
 ---
 
 ## 🧪 Entwicklung
