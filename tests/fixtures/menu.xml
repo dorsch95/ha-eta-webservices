@@ -107,11 +107,12 @@
 </object>
 </object>
 <object uri="/264/10891/0/0/10991" name="Ausgänge">
-<object uri="/264/10891/0/0/12010" name="Zählerstände">
-<object uri="/264/10891/0/0/12011" name="Inhalt Pelletsbehälter"/>
-<object uri="/264/10891/0/0/12012" name="Verbrauch seit Entaschung"/>
-<object uri="/264/10891/0/0/12013" name="Verbrauch seit Aschebox leeren"/>
+<object uri="/264/10891/0/11123/0" name="Kesselpumpe">
+<object uri="/264/10891/0/11123/2001" name="Anforderung"/>
 </object>
+</object>
+<object uri="/264/10891/0/0/12010" name="Zählerstände">
+<object uri="/264/10891/0/0/12016" name="Gesamtverbrauch"/>
 </object>
 <object uri="/264/10891/0/0/12182" name="Sonstiges">
 <object uri="/264/10891/0/0/12080" name="Ein/Aus Taste"/>
@@ -126,6 +127,10 @@
 <object uri="/264/10891/0/0/12006" name="Angeforderte Temperatur"/>
 </object>
 <object uri="/264/10891/0/0/12022" name="Kessel Min"/>
+</object>
+<object uri="/264/10891/0/0/12005" name="Pelletsbehälter">
+<object uri="/264/10891/0/0/12011" name="Inhalt Pelletsbehälter"/>
+<object uri="/264/10891/0/0/12071" name="Pelletsbehälter auffüllen"/>
 </object>
 <object uri="/264/10891/0/0/12050" name="Entaschung">
 <object uri="/264/10891/0/0/12248" name="Beginn Ruhezeit"/>

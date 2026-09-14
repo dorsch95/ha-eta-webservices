@@ -24,11 +24,20 @@ DISCOVERY_PATHS = {
     "kessel_temperatur": ("kessel", ["Eingänge", "Kessel"]),
     "ruecklauf_temperatur": ("kessel", ["Eingänge", "Rücklauf"]),
     "kessel_druck": ("kessel", ["Eingänge", "Kesseldruck"]),
-    "pellet_tagesbehälter": ("kessel", ["Ausgänge", "Zählerstände", "Inhalt Pelletsbehälter"]),
+    "pellet_tagesbehälter": (
+        "kessel",
+        ["Kessel", "Pelletsbehälter", "Inhalt Pelletsbehälter"],
+    ),
     "kessel_soll": ("kessel", ["Kessel", "Kessel", "Kessel Soll"]),
     "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
-    "aschebox_verbrauch": ("kessel", ["Ausgänge", "Zählerstände", "Verbrauch seit Aschebox leeren"]),
-    "entaschung_verbrauch": ("kessel", ["Ausgänge", "Zählerstände", "Verbrauch seit Entaschung"]),
+    "aschebox_verbrauch": (
+        "kessel",
+        ["Kessel", "Entaschung", "Verbrauch seit Aschebox leeren"],
+    ),
+    "entaschung_verbrauch": (
+        "kessel",
+        ["Kessel", "Entaschung", "Verbrauch seit Entaschung"],
+    ),
     "aschebox_schwelle": ("kessel", ["Kessel", "Entaschung", "Aschebox leeren nach"]),
     "kessel_zustand": ("kessel", ["Kessel", "Kessel-Zustand detailliert"]),
     "aussentemperatur": ("sys", ["Außentemperatur", "Außentemperaturfühler"]),

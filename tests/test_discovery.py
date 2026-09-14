@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from eta_webservices.api import ETAApiClient
 from eta_webservices.const import fub_role_default
 from eta_webservices.uri_discovery import async_discover_uris
@@ -157,3 +159,34 @@ async def test_umbenannte_solaranlage_mit_fremder_leistung(hass, menu_xml):
     mit_angabe, _ = await discover(hass, {"solar": "Solarthermie Dach"})
     assert mit_angabe["solar_kollektor"] == "/120/10221/0/11139/0"
     assert mit_angabe["solar_waermemenge"] == "/120/10221/0/0/12349"
+
+
+ECHTE_PFADE = {
+    "aschebox_verbrauch": "/264/10891/0/0/12013",
+    "entaschung_verbrauch": "/264/10891/0/0/12012",
+    "pellet_tagesbehälter": "/264/10891/0/0/12011",
+    "aschebox_schwelle": "/264/10891/0/0/12120",
+}
+"""Adressen, die an einer echten Anlage bestätigt wurden.
+
+Die drei Verbrauchszähler lagen im Code unter "Ausgänge >
+Zählerstände". An der Anlage stehen sie unter "Kessel > Entaschung"
+beziehungsweise "Kessel > Pelletsbehälter" - der Pelletverbrauch und
+damit das Energie-Dashboard blieben deshalb leer. Aufgefallen ist es
+erst an einem Menübaum aus dem Feld, weil die Attrappe die Zähler
+versehentlich an beiden Stellen führte.
+"""
+
+
+@pytest.mark.parametrize("key, uri", sorted(ECHTE_PFADE.items()))
+async def test_zaehler_liegen_unter_kessel(hass, key, uri):
+    uris, _ = await discover(hass)
+    assert uris.get(key) == uri
+
+
+async def test_zaehler_werden_nicht_ueber_ausgaenge_gefunden(hass, menu_xml):
+    """Unter "Ausgänge" stehen sie an einer echten Anlage nicht."""
+    assert 'name="Zählerstände"' in menu_xml
+    ausgaenge = menu_xml[menu_xml.index('name="Ausgänge"') :]
+    ausgaenge = ausgaenge[: ausgaenge.index("</object>")]
+    assert "Verbrauch seit" not in ausgaenge
