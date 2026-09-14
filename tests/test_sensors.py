@@ -183,3 +183,16 @@ async def test_diagnose_ist_serialisierbar(hass, entry):
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
     assert json.dumps(bericht)
+
+
+async def test_ohne_menuebaum_entstehen_nur_die_drei_sicheren_fuehler(hass, entry):
+    hass.session.fail_uris = {"/user/menu"}
+    coordinator, by_name = await setup_integration(hass, entry)
+    fuehler = [name for name in by_name if name.startswith("Puffer Fühler")]
+    assert len(fuehler) == 3
+    ohne_uri = [
+        key
+        for key, info in coordinator.sensor_defs.items()
+        if not info.get("uri") and key not in OPTIONAL_SENSORS
+    ]
+    assert not ohne_uri

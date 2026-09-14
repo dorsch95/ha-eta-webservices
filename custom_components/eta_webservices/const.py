@@ -133,15 +133,19 @@ STATIC_URIs = {
     },
 }
 
-PUFFER_FUEHLER_MIN = 3
 PUFFER_FUEHLER_MAX = 8
+
 PUFFER_FUEHLER_FALLBACK_URIS = [
     "/120/10601/0/11327/0",
     "/120/10601/0/11328/0",
     "/120/10601/0/11329/0",
-    "/120/10601/0/11330/0",
-    "/120/10601/0/11331/0",
 ]
+"""Rückfallebene, falls der Menübaum nicht gelesen werden kann.
+
+PufferFlex hat immer mindestens drei Fühler (oben, Mitte, unten); mehr
+werden nur angelegt, wenn sie im Menübaum tatsächlich gefunden wurden -
+sonst entstünden Entitäten, die dauerhaft ohne Wert bleiben.
+"""
 
 
 def puffer_fuehler_info(index, is_last):
