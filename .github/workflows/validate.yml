@@ -25,7 +25,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          ignore: topics
 
   tests:
     runs-on: ubuntu-latest
