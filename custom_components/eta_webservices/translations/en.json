@@ -188,6 +188,17 @@
       "ruecklauf_temperatur": {
         "name": "Return temperature"
       }
+    },
+    "switch": {
+      "heizkreis2_schalter": {
+        "name": "Heating circuit 2"
+      },
+      "heizkreis_schalter": {
+        "name": "Heating circuit 1"
+      },
+      "kessel_schalter": {
+        "name": "Boiler"
+      }
     }
   }
 }

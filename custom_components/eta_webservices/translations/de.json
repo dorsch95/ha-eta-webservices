@@ -188,6 +188,17 @@
       "ruecklauf_temperatur": {
         "name": "Rücklauftemperatur"
       }
+    },
+    "switch": {
+      "heizkreis2_schalter": {
+        "name": "Heizkreis 2"
+      },
+      "heizkreis_schalter": {
+        "name": "Heizkreis 1"
+      },
+      "kessel_schalter": {
+        "name": "Kessel"
+      }
     }
   }
 }

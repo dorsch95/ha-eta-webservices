@@ -43,6 +43,29 @@ DISCOVERY_PATHS = {
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
 
+_SCHALTER_NAMEN = (
+    "ein/aus taste",
+    "ein/aus-taste",
+    "e/a taste",
+    "ein/aus",
+    "on/off button",
+    "i/o key",
+)
+"""Objektnamen, die eindeutig einen Ein/Aus-Schalter bezeichnen.
+
+Bewusst eng gehalten. Ein Name wie "Betriebsart" oder "Kessel" könnte
+auch an einem Messwert oder einer mehrstufigen Einstellung hängen - und
+dort einen Rohwert hineinzuschreiben wäre in einer Heizungssteuerung
+kein Schönheitsfehler. Was die Liste findet, prüft anschließend
+/user/varinfo noch einmal nach.
+"""
+
+SWITCH_ROLES = {
+    "kessel_schalter": "kessel",
+    "heizkreis_schalter": "hk",
+    "heizkreis2_schalter": "hk2",
+}
+
 
 def _as_list(node):
     if node is None:
@@ -92,6 +115,31 @@ def _resolve_fubs_by_role(fubs, fub_name_overrides):
                 break
 
     return resolved
+
+
+def _finde_schalter(fub):
+    """Sucht im ganzen Funktionsblock nach einem Ein/Aus-Objekt.
+
+    Der Pfad dorthin heißt je nach Firmware anders, der Name des Objekts
+    selbst ist dagegen eindeutig - deshalb wird hier über den Namen
+    gesucht statt über einen festen Pfad.
+    """
+    if fub is None:
+        return None
+
+    def durchsuchen(knoten):
+        for kind in _as_list(knoten.get("object")):
+            if not isinstance(kind, dict):
+                continue
+            if kind.get("@name", "").strip().casefold() in _SCHALTER_NAMEN:
+                if kind.get("@uri"):
+                    return kind["@uri"]
+            treffer = durchsuchen(kind)
+            if treffer:
+                return treffer
+        return None
+
+    return durchsuchen(fub)
 
 
 def _discover_puffer_fuehler(fub):
@@ -155,6 +203,12 @@ async def async_discover_uris(client, fub_name_overrides=None):
             uri = found.get("@uri")
             if uri:
                 discovered[key] = uri
+
+    for key, role in SWITCH_ROLES.items():
+        fub = fubs_by_role.get(role)
+        uri = _finde_schalter(fub)
+        if uri:
+            discovered[key] = uri
 
     puffer_fuehler = _discover_puffer_fuehler(fubs_by_role.get("pufferflex"))
     puffer_fuehler_indices = sorted(puffer_fuehler)

@@ -4,7 +4,7 @@ from homeassistant.const import Platform
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
 
 CONF_SCHEMA = "schema"
 CONF_COMPONENTS = "components"
@@ -73,6 +73,30 @@ Kombination aus n Komponenten einen eigenen Eintrag und ein eigenes Bild.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
+
+SWITCHES = {
+    "kessel_schalter": {
+        "component": "kessel",
+        "translation_key": "kessel_schalter",
+        "icon": "mdi:power",
+    },
+    "heizkreis_schalter": {
+        "component": "hk1",
+        "translation_key": "heizkreis_schalter",
+        "icon": "mdi:radiator",
+    },
+    "heizkreis2_schalter": {
+        "component": "hk2",
+        "translation_key": "heizkreis2_schalter",
+        "icon": "mdi:radiator",
+    },
+}
+"""Schaltbare Funktionen, je Komponente eine.
+
+Welche Zustände geschaltet werden, steht nicht hier: Die Rohwerte
+kommen aus /user/varinfo, direkt von der Anlage. Nur so lässt sich
+ausschließen, dass ein falscher Wert in die Steuerung geschrieben wird.
+"""
 
 LEGACY_SCHEMA_COMPONENTS = {
     "Kessel": ["kessel"],

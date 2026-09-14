@@ -76,6 +76,7 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 * **♨️ Heizkreis 1 und 2:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*).
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls deine Anlage keinen entsprechenden Fühler hat.
 * **🚨 Aktive Fehler:** Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
+* **🔌 Schalter** für Kessel und Heizkreise, sofern deine Anlage sie zulässt - siehe unten.
 * **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
 
 Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast - keine dauerhaft leeren Sensoren für Hardware, die deine Anlage nicht hat.
@@ -188,6 +189,32 @@ Grundlage ist der Zähler *Verbrauch seit Aschebox leeren* mal dem eingestellten
 Findet die Integration im Menübaum nichts zu einer angekreuzten Komponente, legt sie eine **Reparatur** an (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und führt direkt zu den Optionen, wo du den tatsächlichen Funktionsblock-Namen eintragen kannst.
 
 Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann liegt es an der Verbindung und nicht an den Namen.
+
+---
+
+## 🔌 Kessel und Heizkreise schalten
+
+Findet die Integration an einem Funktionsblock eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel`, `switch.eta_heizung_heizkreis_1` und `switch.eta_heizung_heizkreis_2`.
+
+Ein Schalter entsteht nur, wenn **alle** folgenden Punkte zutreffen:
+
+* Im Menübaum des Funktionsblocks gibt es ein Objekt namens *Ein/Aus Taste* (oder *E/A Taste*, *On/off button*, *I/O key*).
+* Deine Anlage meldet diese Variable über `/user/varinfo` ausdrücklich als **beschreibbar**.
+* Sie kennt dafür **genau zwei** Zustände, und einer davon heißt erkennbar "Aus".
+
+Die Rohwerte für Ein und Aus werden **nicht geraten**, sondern von der Anlage abgefragt. Trifft einer der Punkte nicht zu, entsteht kein Schalter - lieber keiner als einer, der einen falschen Wert in die Heizungssteuerung schreibt.
+
+> ℹ️ Deine Anlage braucht dafür Webservice-Version 1.2 oder neuer (Systemsoftware ab x.49.0). Welche Version du hast, steht am Gerät unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service**.
+
+Erscheint kein Schalter, obwohl deine Anlage einen haben sollte, hilft das **Debug-Protokoll** weiter: Es nennt für jeden Kandidaten den Grund (*nicht beschreibbar*, *hat N Zustände statt zwei*, *unklar, welcher Zustand 'aus' bedeutet*). Dafür in der `configuration.yaml`:
+
+```yaml
+logger:
+  logs:
+    custom_components.eta_webservices: debug
+```
+
+> ⚠️ Der Schalter greift direkt in die Heizungssteuerung ein. Im Winter einen Heizkreis oder den Kessel per Automation abzuschalten kann Räume auskühlen lassen; für den Frostschutz ist weiterhin die Anlage selbst zuständig.
 
 ---
 

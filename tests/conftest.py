@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from homeassistant.core import callback
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "custom_components"))
 
@@ -114,6 +115,9 @@ class FakeSession:
         self.varset_unterstuetzt = True
         self.errors_xml = self.LEERE_FEHLER
         self.varinfo_unterstuetzt = True
+        self.schreiben_erlaubt = True
+        self.gesetzte_werte: list[tuple[str, str]] = []
+        self.schreibbar = True
 
     def _ausfall_pruefen(self, url: str) -> None:
         """Simuliert Netzwerkfehler - für jeden Endpunkt gleichermaßen."""
@@ -121,7 +125,7 @@ class FakeSession:
             if fragment in url:
                 raise ConnectionError(f"simulierter Netzwerkfehler für {url}")
 
-    def request(self, methode: str, url: str, timeout=None):
+    def request(self, methode: str, url: str, data=None, timeout=None):
         """Bildet aiohttp.ClientSession.request nach.
 
         Alle Anfragen der Integration laufen hier durch, deshalb wird nur
@@ -130,9 +134,19 @@ class FakeSession:
         """
         self.count += 1
         self._ausfall_pruefen(url)
+        if methode == "POST":
+            return self._wert_setzen(url, data or {})
         if methode in ("PUT", "DELETE"):
             return self._varset_aendern(methode, url)
         return self.get(url, timeout)
+
+    def _wert_setzen(self, url: str, daten: dict):
+        """Nimmt einen gesetzten Rohwert entgegen und merkt ihn sich."""
+        uri = url.split("/user/var", 1)[1]
+        if not self.schreiben_erlaubt:
+            return FakeResponse("", status=403)
+        self.gesetzte_werte.append((uri, daten.get("value")))
+        return self._tracked(f'<eta version="1.0"><success uri="{uri}"/></eta>')
 
     def _varset_aendern(self, methode: str, url: str):
         pfad = url.split("/user/vars/", 1)[1]
@@ -174,7 +188,7 @@ class FakeSession:
             return {"value": "2370", "str_value": "23,70", "unit": "kg", "scale": "100"}
         if "12120" in uri:
             return {"value": "1000", "str_value": "1000", "unit": "kg"}
-        if "2001" in uri:
+        if "2001" in uri or "12080" in uri:
             return {"value": "950", "str_value": "Heizbetrieb", "text_offset": "950"}
         return {"value": "555", "str_value": "55,5", "unit": "°C", "scale": "10"}
 
@@ -198,13 +212,26 @@ class FakeSession:
         )
 
     def _varinfo(self, url: str):
+        """Nur echte Schalt-URIs melden sich als beschreibbar.
+
+        Sonst würde jeder Messwert wie ein Schalter aussehen, und die
+        Tests könnten nicht zeigen, dass die Prüfung tatsächlich greift.
+        """
         if not self.varinfo_unterstuetzt:
             return FakeResponse("", status=404)
+        if "12080" not in url:
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
+                'name="Messwert" fullName="x" unit="°C" decPlaces="1" '
+                'scaleFactor="10" advTextOffset="0" isWritable="0">'
+                "<type>DEFAULT</type></variable></varInfo></eta>"
+            )
         return self._tracked(
             '<eta version="1.0"><varInfo uri="/u">'
             '<variable uri="/u" name="Anforderung" fullName="HK > Anforderung" '
             'unit="" decPlaces="0" scaleFactor="1" advTextOffset="950" '
-            'isWritable="1"><type>TEXT</type><validValues>'
+            f'isWritable="{1 if self.schreibbar else 0}">'
+            "<type>TEXT</type><validValues>"
             '<value strValue="Aus">949</value>'
             '<value strValue="Heizbetrieb">950</value>'
             "</validValues></variable></varInfo></eta>"
@@ -281,6 +308,31 @@ class FakeHass:
 
     async def async_add_executor_job(self, func, *args):
         return func(*args)
+
+    @property
+    def loop(self):
+        return asyncio.get_running_loop()
+
+    @callback
+    def async_run_hass_job(self, hassjob, *args, background: bool = False):
+        """Bildet den Aufruf eines HassJob nach.
+
+        Wird vom Debouncer hinter async_request_refresh gebraucht - also
+        immer dann, wenn ein Schalter nach dem Schreiben den echten
+        Zustand nachlesen will. "background" steuert in Home Assistant
+        nur, wie die Aufgabe eingeplant wird, und gehört nicht an die
+        aufgerufene Funktion weitergereicht.
+        """
+        ergebnis = hassjob.target(*args)
+        if asyncio.iscoroutine(ergebnis):
+            return asyncio.get_running_loop().create_task(ergebnis)
+        return ergebnis
+
+    def async_create_task(self, ziel, name=None, eager_start=True):
+        return asyncio.get_running_loop().create_task(ziel)
+
+    def async_create_background_task(self, ziel, name=None, eager_start=True):
+        return asyncio.get_running_loop().create_task(ziel)
 
 
 @pytest.fixture

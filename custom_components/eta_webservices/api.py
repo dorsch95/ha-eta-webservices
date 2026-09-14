@@ -106,12 +106,21 @@ class ETAApiClient:
         """Holt eine Ressource und gibt den Rohtext zurück."""
         return await self._request("GET", path, timeout)
 
-    async def _request(self, methode: str, path: str, timeout: float) -> str:
+    async def _request(
+        self,
+        methode: str,
+        path: str,
+        timeout: float,
+        daten: dict[str, str] | None = None,
+    ) -> str:
         """Führt eine HTTP-Anfrage aus und gibt den Rohtext zurück."""
         url = f"{self.base_url}{path}"
         try:
             async with self._session.request(
-                methode, url, timeout=aiohttp.ClientTimeout(total=timeout)
+                methode,
+                url,
+                data=daten,
+                timeout=aiohttp.ClientTimeout(total=timeout),
             ) as response:
                 if response.status == 404:
                     raise ETANotFoundError(f"{url} ist der Anlage nicht bekannt")
@@ -211,12 +220,12 @@ class ETAApiClient:
         if not isinstance(variable, dict):
             return None
 
-        gueltige = []
+        gueltige: dict[str, str] = {}
         werte = variable.get("validValues")
         if isinstance(werte, dict):
             for eintrag in _as_list(werte.get("value")):
                 if isinstance(eintrag, dict) and eintrag.get("@strValue"):
-                    gueltige.append(eintrag["@strValue"])
+                    gueltige[eintrag["@strValue"]] = (eintrag.get("#text") or "").strip()
 
         return {
             "name": variable.get("@name"),
@@ -224,8 +233,22 @@ class ETAApiClient:
             "unit": variable.get("@unit", ""),
             "type": variable.get("type"),
             "writable": variable.get("@isWritable") == "1",
-            "valid_values": gueltige,
+            "valid_values": list(gueltige),
+            "raw_values": gueltige,
         }
+
+    async def async_set_value(self, uri: str, raw_value: str) -> None:
+        """Setzt eine Variable auf einen Rohwert.
+
+        Die Anlage erwartet laut Dokumentation (Abschnitt 4.2) den
+        unskalierten Rohwert als Formularfeld - also genau die Zahl, die
+        /user/varinfo unter validValues zu einem Zustand nennt.
+        """
+        antwort = await self._request(
+            "POST", f"/user/var{uri}", REQUEST_TIMEOUT, {"value": raw_value}
+        )
+        if "<success" not in antwort:
+            raise ETAApiError(f"Setzen von {uri} auf {raw_value} wurde abgelehnt")
 
     async def async_create_varset(self, name: str, uris: list[str]) -> None:
         """Legt einen Variablensatz an und füllt ihn.

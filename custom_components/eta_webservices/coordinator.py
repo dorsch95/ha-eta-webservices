@@ -14,6 +14,7 @@ from .api import ETAApiClient, ETAApiError, ETAError, ETAValue
 from .const import (
     COMPONENTS,
     DISCOVERY_ONLY_SENSORS,
+    SWITCHES,
     DOMAIN,
     OPTIONAL_SENSORS,
     PUFFER_FUEHLER_FALLBACK_URIS,
@@ -25,6 +26,14 @@ from .repairs import async_check_components
 from .uri_discovery import async_discover_uris
 
 _LOGGER = logging.getLogger(__name__)
+
+AUS_BEGRIFFE = {"aus", "off", "0", "nein", "no", "ausgeschaltet"}
+"""Zustandsnamen, die eine ausgeschaltete Funktion bezeichnen.
+
+Welcher der beiden Zustände "aus" ist, lässt sich nicht am Rohwert
+ablesen - er ist bei ETA je nach Variable mal der kleinere, mal der
+größere. Deshalb wird der Klartext ausgewertet.
+"""
 
 type ETAConfigEntry = ConfigEntry["ETADataUpdateCoordinator"]
 """Config Entry, der seinen Koordinator in runtime_data trägt."""
@@ -110,6 +119,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.api_version: str | None = None
         self.errors: list[ETAError] = []
         self.varinfo: dict[str, dict] = {}
+        self.switch_defs: dict[str, dict] = {}
         self._varset_name = f"ha{entry.entry_id}"[:32]
         self._varset_bereit = False
 
@@ -173,6 +183,78 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             await self.client.async_delete_varset(self._varset_name)
             self._varset_bereit = False
 
+    async def _schalter_pruefen(self) -> None:
+        """Prüft die gefundenen Schalt-Kandidaten an der Anlage nach.
+
+        Erkannte Schalter wandern zusätzlich in die Sensordefinitionen -
+        aber mit dem Vermerk, dass sie zur switch-Plattform gehören. So
+        wird ihr Zustand im selben Abfragezyklus mitgelesen, ohne dass
+        daneben noch ein Sensor mit demselben Wert entsteht.
+
+        Ein Kandidat wird nur dann zum Schalter, wenn die Anlage ihn als
+        beschreibbar meldet und genau zwei Zustände kennt. Welcher davon
+        "aus" bedeutet, sagt ebenfalls die Anlage - der Rohwert wird
+        nirgends geraten, weil ein falscher Wert hier in die
+        Heizungssteuerung geschrieben würde.
+        """
+        aktiv = set(self.components)
+        for key, definition in SWITCHES.items():
+            if definition["component"] not in aktiv:
+                continue
+            uri = self.discovered_uris.get(key)
+            if not uri:
+                continue
+
+            info = await self.client.async_get_varinfo(uri)
+            if not info or not info.get("writable"):
+                _LOGGER.debug("ETA: %s ist nicht beschreibbar, kein Schalter", key)
+                continue
+
+            roh = info.get("raw_values") or {}
+            if len(roh) != 2:
+                _LOGGER.debug(
+                    "ETA: %s hat %d Zustände statt zwei, kein Schalter",
+                    key,
+                    len(roh),
+                )
+                continue
+
+            aus_text = next(
+                (t for t in roh if t.strip().casefold() in AUS_BEGRIFFE), None
+            )
+            if aus_text is None:
+                _LOGGER.debug(
+                    "ETA: bei %s ist unklar, welcher Zustand 'aus' bedeutet (%s)",
+                    key,
+                    list(roh),
+                )
+                continue
+            ein_text = next(t for t in roh if t != aus_text)
+
+            self.switch_defs[key] = {
+                **definition,
+                "uri": uri,
+                "ein_text": ein_text,
+                "ein_roh": roh[ein_text],
+                "aus_roh": roh[aus_text],
+            }
+            self.sensor_defs[key] = {
+                "component": definition["component"],
+                "translation_key": definition["translation_key"],
+                "icon": definition["icon"],
+                "is_string": True,
+                "uri": uri,
+                "platform": "switch",
+            }
+            _LOGGER.info(
+                "ETA: Schalter %s erkannt (%s -> %s / %s -> %s)",
+                key,
+                ein_text,
+                roh[ein_text],
+                aus_text,
+                roh[aus_text],
+            )
+
     async def _varinfo_laden(self) -> None:
         """Holt zu den Textwerten ihre gültigen Zustände.
 
@@ -203,6 +285,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         )
         self.api_version = await self.client.async_get_api_version()
         await self._varinfo_laden()
+        await self._schalter_pruefen()
         await self._varset_anlegen()
 
     async def _async_update_data(self) -> dict[str, ETAValue]:

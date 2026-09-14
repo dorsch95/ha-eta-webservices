@@ -158,11 +158,21 @@ async def test_funktionsblock_ohne_fehler_liefert_nichts(hass):
 
 async def test_varinfo_liefert_die_gueltigen_zustaende(hass):
     client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
-    info = await client.async_get_varinfo("/120/10101/0/11124/2001")
+    info = await client.async_get_varinfo("/120/10101/0/0/12080")
 
     assert info["valid_values"] == ["Aus", "Heizbetrieb"]
+    assert info["raw_values"] == {"Aus": "949", "Heizbetrieb": "950"}
     assert info["writable"] is True
     assert info["type"] == "TEXT"
+
+
+async def test_varinfo_meldet_nicht_schreibbare_werte_als_solche(hass):
+    """Ein Messwert darf nicht als beschreibbar durchgehen."""
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    info = await client.async_get_varinfo("/264/10891/0/11109/0")
+
+    assert info["writable"] is False
+    assert info["valid_values"] == []
 
 
 async def test_varinfo_fehlt_auf_aelteren_anlagen(hass):

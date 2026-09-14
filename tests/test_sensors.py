@@ -411,7 +411,7 @@ async def test_api_version_steht_am_geraet(hass, entry):
 
 
 async def test_gueltige_zustaende_werden_erfasst(hass, entry):
+    """Zu Textwerten hält die Integration fest, was die Anlage dazu sagt."""
     coordinator, _ = await setup_integration(hass, entry)
-    info = coordinator.varinfo["heizkreis_anforderung"]
-    assert info["valid_values"] == ["Aus", "Heizbetrieb"]
-    assert info["writable"] is True
+    assert "heizkreis_anforderung" in coordinator.varinfo
+    assert coordinator.varinfo["heizkreis_anforderung"]["writable"] is False

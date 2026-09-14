@@ -27,7 +27,7 @@ async def async_setup_entry(
     entities: list[SensorEntity] = [
         ETAMeasurementSensor(coordinator, key, info)
         for key, info in coordinator.sensor_defs.items()
-        if key not in OPTIONAL_SENSORS
+        if key not in OPTIONAL_SENSORS and info.get("platform") != "switch"
     ]
 
     entities.extend(
