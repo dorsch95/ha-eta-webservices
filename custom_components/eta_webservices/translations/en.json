@@ -25,7 +25,8 @@
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
-          "hk4": "FUB name: heating circuit 4 (HK4)"
+          "hk4": "FUB name: heating circuit 4 (HK4)",
+          "lager": "FUB name: pellet store (Lager)"
         }
       },
       "reconfigure": {
@@ -79,7 +80,8 @@
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
-          "hk4": "FUB name: heating circuit 4 (HK4)"
+          "hk4": "FUB name: heating circuit 4 (HK4)",
+          "lager": "FUB name: pellet store (Lager)"
         }
       },
       "switch_warning": {
@@ -100,7 +102,8 @@
         "hk2": "Heating circuit 2",
         "solar": "Solar thermal system",
         "hk3": "Heating circuit 3",
-        "hk4": "Heating circuit 4"
+        "hk4": "Heating circuit 4",
+        "lager": "Pellet store"
       }
     }
   },
@@ -114,6 +117,9 @@
     "binary_sensor": {
       "aschebox_faellig": {
         "name": "Empty ash box"
+      },
+      "lager_niedrig": {
+        "name": "Pellet level low"
       },
       "stoerung": {
         "name": "Fault"
@@ -236,14 +242,35 @@
       "komponente_kessel": {
         "name": "Boiler component"
       },
+      "komponente_lager": {
+        "name": "Pellet store component"
+      },
       "komponente_puffer": {
         "name": "Buffer tank component"
       },
       "komponente_solar": {
         "name": "Solar component"
       },
+      "lager_maximum": {
+        "name": "Store capacity"
+      },
+      "lager_vorrat": {
+        "name": "Store level"
+      },
+      "lager_warngrenze": {
+        "name": "Store warning level"
+      },
+      "lager_zustand": {
+        "name": "Store discharge"
+      },
       "pellet_energie": {
         "name": "Pellet energy consumption"
+      },
+      "pellet_energie_gesamt": {
+        "name": "Pellet total energy consumption"
+      },
+      "pellet_gesamtverbrauch": {
+        "name": "Pellet total consumption"
       },
       "pellet_tagesbehaelter": {
         "name": "Pellet day hopper level"

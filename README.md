@@ -53,7 +53,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
+4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deiner Lieferscheinung ein anderer Wert, trage ihn hier ein.
 7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
@@ -72,7 +72,8 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg) sowie der **Kesselzustand** als Text (*Heizen*, *Aus* usw.).
 * **🗑️ Aschebox:** Verbrauch seit der letzten Leerung (kg) und der Schwellwert, ab dem geleert werden soll (kg) - plus ein kombinierter Sensor `sensor.eta_heizung_aschebox_status` im Format "459/1000kg" für die Dashboard-Anzeige.
-* **📊 Verbrauch:** Verbrauch seit der letzten Entaschung (kg) und der umgerechnete Energieverbrauch (kWh). Beide Zähler liefern Langzeitstatistik, sind also über Monate auswertbar.
+* **📊 Verbrauch:** Gesamtverbrauch der Anlage (kg), Verbrauch seit der letzten Entaschung (kg) und der umgerechnete Energieverbrauch (kWh). Alle liefern Langzeitstatistik, sind also über Monate auswertbar.
+* **🌾 Pelletlager:** Vorrat im Lagerraum, die an der Anlage eingestellte Warngrenze, das Fassungsvermögen und der Zustand der Austragung. Dazu `binary_sensor.eta_heizung_pelletvorrat_niedrig`, sobald der Vorrat die Warngrenze erreicht - mit dem Füllstand in Prozent als Attribut.
 * **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
 * **♨️ Heizkreis 1 bis 4:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*). Heizkreis 3 und 4 sind für größere Anlagen gedacht; kreuze nur an, was du wirklich hast.
 * **☀️ Solaranlage:** Kollektortemperatur. Bei einer Anlage **mit Wärmemengenmessung** zusätzlich Leistung (kW), Wärmemenge (kWh), Ertrag heute und Ertrag gestern - siehe unten.
@@ -118,6 +119,7 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 | Heizkreis 2 | `HK2` |
 | Heizkreis 3 | `HK3` |
 | Heizkreis 4 | `HK4` |
+| Pelletlager | `Lager` |
 | Solaranlage | `Solar` |
 | Außentemperatur | `Sys` |
 
@@ -224,7 +226,9 @@ Die Integration rechnet den Pelletverbrauch in Energie um und stellt ihn als `se
 
 **Einstellungen -> Dashboards -> Energie -> Gasverbrauch hinzufügen** und den Sensor auswählen. Danach siehst du deinen Heizverbrauch pro Tag, Monat und Jahr, bei hinterlegtem Pelletpreis auch die Kosten.
 
-Grundlage ist der Zähler *Verbrauch seit Aschebox leeren* mal dem eingestellten Heizwert. Dass dieser Zähler beim Leeren der Aschebox auf null zurückspringt, ist unkritisch - Home Assistant summiert über die Rücksprünge hinweg korrekt weiter.
+Grundlage ist der **Gesamtverbrauch** deiner Anlage mal dem eingestellten Heizwert - ein Zähler, der nie zurückspringt. Kennt deine Anlage ihn nicht, wird stattdessen der Zähler *Verbrauch seit Aschebox leeren* verwendet; dass der beim Leeren auf null zurückspringt, ist unkritisch, weil Home Assistant über Rücksprünge hinweg korrekt weitersummiert.
+
+Es entsteht immer **genau ein** Energiesensor - je nach Anlage `sensor.eta_heizung_pellet_energieverbrauch_gesamt` oder `sensor.eta_heizung_pellet_energieverbrauch`. Zwei würden sich im Energie-Dashboard doppelt zählen lassen.
 
 > ⚠️ Ändere den Heizwert möglichst nur einmal beim Einrichten. Bei einer nachträglichen Änderung springt der Sensorwert, und Home Assistant wertet einen Sprung nach unten als Zählerrücksetzung - der Gesamtverbrauch fällt dadurch einmalig zu hoch aus.
 

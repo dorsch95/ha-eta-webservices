@@ -25,7 +25,8 @@
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
-          "hk4": "FUB-Name: Heizkreis 4 (HK4)"
+          "hk4": "FUB-Name: Heizkreis 4 (HK4)",
+          "lager": "FUB-Name: Pelletlager (Lager)"
         }
       },
       "reconfigure": {
@@ -79,7 +80,8 @@
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
-          "hk4": "FUB-Name: Heizkreis 4 (HK4)"
+          "hk4": "FUB-Name: Heizkreis 4 (HK4)",
+          "lager": "FUB-Name: Pelletlager (Lager)"
         }
       },
       "switch_warning": {
@@ -100,7 +102,8 @@
         "hk2": "Heizkreis 2",
         "solar": "Solaranlage",
         "hk3": "Heizkreis 3",
-        "hk4": "Heizkreis 4"
+        "hk4": "Heizkreis 4",
+        "lager": "Pelletlager"
       }
     }
   },
@@ -114,6 +117,9 @@
     "binary_sensor": {
       "aschebox_faellig": {
         "name": "Aschebox leeren"
+      },
+      "lager_niedrig": {
+        "name": "Pelletvorrat niedrig"
       },
       "stoerung": {
         "name": "Störung"
@@ -236,14 +242,35 @@
       "komponente_kessel": {
         "name": "Komponente Kessel"
       },
+      "komponente_lager": {
+        "name": "Komponente Pelletlager"
+      },
       "komponente_puffer": {
         "name": "Komponente Pufferspeicher"
       },
       "komponente_solar": {
         "name": "Komponente Solar"
       },
+      "lager_maximum": {
+        "name": "Lager Fassungsvermögen"
+      },
+      "lager_vorrat": {
+        "name": "Lager Vorrat"
+      },
+      "lager_warngrenze": {
+        "name": "Lager Warngrenze"
+      },
+      "lager_zustand": {
+        "name": "Lager Austragung"
+      },
       "pellet_energie": {
         "name": "Pellet Energieverbrauch"
+      },
+      "pellet_energie_gesamt": {
+        "name": "Pellet Energieverbrauch gesamt"
+      },
+      "pellet_gesamtverbrauch": {
+        "name": "Pellet Gesamtverbrauch"
       },
       "pellet_tagesbehaelter": {
         "name": "Pellet Inhalt Tagesbehälter"

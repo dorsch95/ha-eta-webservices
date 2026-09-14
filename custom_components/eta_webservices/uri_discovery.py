@@ -30,6 +30,7 @@ DISCOVERY_PATHS = {
     ),
     "kessel_soll": ("kessel", ["Kessel", "Kessel", "Kessel Soll"]),
     "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
+    "pellet_gesamtverbrauch": ("kessel", ["Zählerstände", "Gesamtverbrauch"]),
     "aschebox_verbrauch": (
         "kessel",
         ["Kessel", "Entaschung", "Verbrauch seit Aschebox leeren"],
@@ -52,6 +53,10 @@ DISCOVERY_PATHS = {
     "heizkreis4_anforderung": ("hk4", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     "fwm_zirkulation": ("fwm", ["Eingänge", "Zirkulation"]),
+    "lager_vorrat": ("lager", ["Vorrat"]),
+    "lager_warngrenze": ("lager", ["Vorrat", "Vorrat Warngrenze"]),
+    "lager_maximum": ("lager", ["Vorrat", "Maximaler Vorrat"]),
+    "lager_zustand": ("lager", ["Austragung", "Austragung-Zustand detailliert"]),
     "solar_kollektor": ("solar", ["Eingänge", "Kollektor"]),
     "solar_leistung": ("solar", ["Leistung"]),
     "solar_waermemenge": ("solar", ["Leistung", "Wärmemenge"]),

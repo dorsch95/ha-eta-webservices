@@ -90,6 +90,12 @@ COMPONENTS = {
         "roles": ["hk4"],
         "discovery_prefixes": ["heizkreis4_"],
     },
+    "lager": {
+        "name": "Pelletlager",
+        "image": "lager",
+        "roles": ["lager"],
+        "discovery_prefixes": ["lager_"],
+    },
     "solar": {
         "name": "Solar",
         "image": "solar",
@@ -266,6 +272,15 @@ SENSORS = {
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "%",
     },
+    "pellet_gesamtverbrauch": {
+        "component": "kessel",
+        "name": "Pellet Gesamtverbrauch",
+        "translation_key": "pellet_gesamtverbrauch",
+        "icon": "mdi:counter",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "default_unit": "kg",
+    },
     "aschebox_verbrauch": {
         "component": "kessel",
         "name": "Aschebox Verbrauch seit Leerung",
@@ -382,6 +397,40 @@ SENSORS = {
         "icon": "mdi:heat-wave",
         "is_string": True,
     },
+    "lager_vorrat": {
+        "component": "lager",
+        "name": "Lager Vorrat",
+        "translation_key": "lager_vorrat",
+        "icon": "mdi:silo",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kg",
+    },
+    "lager_warngrenze": {
+        "component": "lager",
+        "name": "Lager Warngrenze",
+        "translation_key": "lager_warngrenze",
+        "icon": "mdi:alert-outline",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kg",
+    },
+    "lager_maximum": {
+        "component": "lager",
+        "name": "Lager Fassungsvermögen",
+        "translation_key": "lager_maximum",
+        "icon": "mdi:silo-outline",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kg",
+    },
+    "lager_zustand": {
+        "component": "lager",
+        "name": "Lager Austragung",
+        "translation_key": "lager_zustand",
+        "icon": "mdi:screw-lag",
+        "is_string": True,
+    },
     "solar_kollektor": {
         "component": "solar",
         "name": "Solar Kollektortemperatur",
@@ -474,6 +523,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "hk2": ["HK2"],
     "hk3": ["HK3"],
     "hk4": ["HK4"],
+    "lager": ["Lager"],
     "solar": ["Solar"],
 }
 

@@ -220,6 +220,8 @@ class FakeSession:
             return {"value": "950", "str_value": "Heizbetrieb", "text_offset": "950"}
         if "12000" in uri:
             return {"value": "1803", "str_value": "Heizen", "text_offset": "1802"}
+        if "12423" in uri:
+            return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
         return {"value": "555", "str_value": "55,5", "unit": "°C", "scale": "10"}
 
     def _varset_lesen(self, url: str):

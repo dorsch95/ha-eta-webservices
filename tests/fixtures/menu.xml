@@ -186,5 +186,16 @@
 </object>
 </object>
 </fub>
+<fub uri="/264/10201" name="Lager">
+<object uri="/264/10201/0/0/12773" name="Typ des Lagers"/>
+<object uri="/264/10201/0/0/19417" name="Austragung">
+<object uri="/264/10201/0/0/12423" name="Austragung-Zustand detailliert"/>
+<object uri="/264/10201/0/0/12236" name="Laufzeit Austragschnecke"/>
+</object>
+<object uri="/264/10201/0/0/12015" name="Vorrat">
+<object uri="/264/10201/0/0/12042" name="Vorrat Warngrenze"/>
+<object uri="/264/10201/0/0/12790" name="Maximaler Vorrat"/>
+</object>
+</fub>
 </menu>
 </eta>

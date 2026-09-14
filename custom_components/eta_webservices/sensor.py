@@ -32,7 +32,16 @@ async def async_setup_entry(
     ]
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
-    entities.append(ETAPelletEnergySensor(coordinator))
+    if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
+        entities.append(
+            ETAPelletEnergySensor(
+                coordinator, "pellet_energie_gesamt", "pellet_gesamtverbrauch"
+            )
+        )
+    else:
+        entities.append(
+            ETAPelletEnergySensor(coordinator, "pellet_energie", "aschebox_verbrauch")
+        )
     if coordinator.enable_errors:
         entities.append(ETAErrorSensor(coordinator))
     entities.extend(
@@ -206,25 +215,36 @@ class ETAPelletEnergySensor(ETABaseSensor):
     """Rechnet den Pelletverbrauch in Energie um.
 
     Das Energie-Dashboard von Home Assistant nimmt nur Quellen an, die
-    Energie in kWh als aufsummierenden Zähler liefern - Kilogramm Pellets
-    versteht es nicht. Grundlage ist der Verbrauchszähler seit dem letzten
-    Leeren der Aschebox; dass der beim Leeren auf null zurückspringt, ist
-    unkritisch, weil total_increasing genau dafür gedacht ist.
+    Energie in kWh als aufsummierenden Zähler liefern - Kilogramm
+    Pellets versteht es nicht.
+
+    Grundlage ist der Gesamtverbrauch der Anlage, wenn ihr Menübaum ihn
+    hergibt: Er läuft immer weiter. Sonst bleibt es beim Zähler seit dem
+    letzten Leeren der Aschebox; dass der zurückspringt, fängt
+    total_increasing ab.
+
+    Beide sind getrennte Entitäten, und es entsteht immer nur eine. Ein
+    Wechsel der Grundlage würde sonst im Energie-Dashboard als riesiger
+    Verbrauch in einer einzigen Stunde erscheinen - der Sprung von
+    "seit der letzten Leerung" auf "seit dem ersten Tag".
     """
 
     _attr_icon = "mdi:lightning-bolt"
-    _attr_translation_key = "pellet_energie"
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_native_unit_of_measurement = "kWh"
     _attr_suggested_display_precision = 0
 
-    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
-        super().__init__(coordinator, "pellet_energie")
+    def __init__(
+        self, coordinator: ETADataUpdateCoordinator, key: str, quelle: str
+    ) -> None:
+        super().__init__(coordinator, key)
+        self._attr_translation_key = key
+        self._quelle = quelle
 
     @property
     def native_value(self):
-        verbrauch = self.coordinator.data.get("aschebox_verbrauch")
+        verbrauch = self.coordinator.data.get(self._quelle)
         if verbrauch is None:
             return None
         try:

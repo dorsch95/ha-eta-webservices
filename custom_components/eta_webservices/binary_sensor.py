@@ -25,6 +25,8 @@ async def async_setup_entry(
         entities.append(ETAProblemBinarySensor(coordinator))
     if "aschebox_verbrauch" in coordinator.sensor_defs:
         entities.append(ETAAscheboxBinarySensor(coordinator))
+    if "lager_vorrat" in coordinator.sensor_defs:
+        entities.append(ETALagerBinarySensor(coordinator))
     async_add_entities(entities)
 
 
@@ -109,4 +111,54 @@ class ETAAscheboxBinarySensor(
         return {
             "verbrauch": self._zahl("aschebox_verbrauch"),
             "schwelle": self._zahl("aschebox_schwelle"),
+        }
+
+
+class ETALagerBinarySensor(
+    CoordinatorEntity[ETADataUpdateCoordinator], BinarySensorEntity
+):
+    """Meldet, wenn der Vorrat im Pelletlager zur Neige geht.
+
+    Die Warngrenze steht an der Anlage und ist dort auf den eigenen
+    Lagerraum eingestellt. Sie hier zu erfinden wäre geraten - wie viel
+    Vorrat "wenig" ist, hängt an Lagergröße und Liefermenge.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "lager_niedrig"
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_icon = "mdi:silo"
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"eta_static_{coordinator.config_entry.entry_id}_lager_niedrig"
+        )
+        self._attr_device_info = coordinator.device_info
+
+    def _zahl(self, key: str) -> float | None:
+        reading = self.coordinator.data.get(key)
+        if reading is None or reading.is_text or reading.value is None:
+            return None
+        return reading.value
+
+    @property
+    def is_on(self) -> bool:
+        vorrat = self._zahl("lager_vorrat")
+        grenze = self._zahl("lager_warngrenze")
+        if vorrat is None or grenze is None or grenze <= 0:
+            return False
+        return vorrat <= grenze
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        vorrat = self._zahl("lager_vorrat")
+        maximum = self._zahl("lager_maximum")
+        füllstand = None
+        if vorrat is not None and maximum:
+            füllstand = round(vorrat / maximum * 100, 1)
+        return {
+            "vorrat": vorrat,
+            "warngrenze": self._zahl("lager_warngrenze"),
+            "fuellstand_prozent": füllstand,
         }

@@ -167,6 +167,16 @@ def grid(spalten, schrift, kurz):
                 ],
             ),
             komponente(
+                "pelletlager",
+                "lager",
+                "lager",
+                [
+                    label("lager_vorrat", "Vorrat: ", "behaelter", 8, 50, schrift + 5),
+                    label("lager_warngrenze", "Ab: " if kurz else "Warnung ab: ",
+                          "gedaempft", 15, 50, schrift),
+                ],
+            ),
+            komponente(
                 "solar",
                 "solar",
                 "solar",

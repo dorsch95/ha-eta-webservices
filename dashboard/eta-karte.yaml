@@ -252,6 +252,31 @@ cards:
     - type: conditional
       conditions:
       - condition: state
+        entity: sensor.eta_heizung_komponente_pelletlager
+        state: lager
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/lager.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_lager_vorrat
+          style:
+            top: 8%
+            left: 50%
+            color: '#5fbfa8'
+            font-size: 95%
+          prefix: 'Vorrat: '
+        - type: state-label
+          entity: sensor.eta_heizung_lager_warngrenze
+          style:
+            top: 15%
+            left: 50%
+            color: '#9aa5b1'
+            font-size: 90%
+          prefix: 'Ab: '
+    - type: conditional
+      conditions:
+      - condition: state
         entity: sensor.eta_heizung_komponente_solar
         state: solar
       card:
@@ -534,6 +559,31 @@ cards:
     - type: conditional
       conditions:
       - condition: state
+        entity: sensor.eta_heizung_komponente_pelletlager
+        state: lager
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/lager.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_lager_vorrat
+          style:
+            top: 8%
+            left: 50%
+            color: '#5fbfa8'
+            font-size: 100%
+          prefix: 'Vorrat: '
+        - type: state-label
+          entity: sensor.eta_heizung_lager_warngrenze
+          style:
+            top: 15%
+            left: 50%
+            color: '#9aa5b1'
+            font-size: 95%
+          prefix: 'Warnung ab: '
+    - type: conditional
+      conditions:
+      - condition: state
         entity: sensor.eta_heizung_komponente_solar
         state: solar
       card:
@@ -813,6 +863,31 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 95%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_pelletlager
+        state: lager
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/lager.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_lager_vorrat
+          style:
+            top: 8%
+            left: 50%
+            color: '#5fbfa8'
+            font-size: 105%
+          prefix: 'Vorrat: '
+        - type: state-label
+          entity: sensor.eta_heizung_lager_warngrenze
+          style:
+            top: 15%
+            left: 50%
+            color: '#9aa5b1'
+            font-size: 100%
+          prefix: 'Warnung ab: '
     - type: conditional
       conditions:
       - condition: state

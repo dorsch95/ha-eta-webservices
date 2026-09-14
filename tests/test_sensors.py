@@ -300,9 +300,9 @@ async def test_pellet_energie_rechnet_kilogramm_in_kwh(hass, entry):
     from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
     coordinator, by_name = await setup_integration(hass, entry)
-    energie = by_name["Pellet Energieverbrauch"]
+    energie = by_name["Pellet Energieverbrauch gesamt"]
 
-    kilogramm = coordinator.data["aschebox_verbrauch"].value
+    kilogramm = coordinator.data["pellet_gesamtverbrauch"].value
     assert energie.native_value == pytest.approx(
         kilogramm * coordinator.pellet_kwh_per_kg
     )
@@ -315,8 +315,8 @@ async def test_pellet_energie_folgt_dem_eingestellten_heizwert(hass, entry):
     entry.data["pellet_kwh_per_kg"] = 5.0
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.pellet_kwh_per_kg == 5.0
-    assert by_name["Pellet Energieverbrauch"].native_value == pytest.approx(
-        coordinator.data["aschebox_verbrauch"].value * 5.0
+    assert by_name["Pellet Energieverbrauch gesamt"].native_value == pytest.approx(
+        coordinator.data["pellet_gesamtverbrauch"].value * 5.0
     )
 
 
@@ -617,3 +617,79 @@ async def test_aschebox_erinnerung_bleibt_aus_ohne_werte(hass, entry, menu_xml):
 
     assert melder.extra_state_attributes["schwelle"] is None
     assert melder.is_on is False
+
+
+async def test_es_gibt_immer_genau_einen_energiesensor(hass, entry, menu_xml):
+    """Zwei würden sich im Energie-Dashboard doppelt zählen lassen."""
+    from homeassistant.components.sensor import SensorDeviceClass
+
+    for menu in (menu_xml, menu_xml.replace('name="Gesamtverbrauch"', 'name="Weg"')):
+        hass.session.menu = menu
+        _, by_name = await setup_integration(hass, entry)
+        energie = [
+            e for e in by_name.values()
+            if getattr(e, "device_class", None) == SensorDeviceClass.ENERGY
+            and str(e.translation_key).startswith("pellet_")
+        ]
+        assert len(energie) == 1, [e.translation_key for e in energie]
+
+
+async def test_ohne_gesamtverbrauch_bleibt_es_beim_ascheboxzaehler(hass, entry, menu_xml):
+    """Ältere Anlagen kennen den Gesamtverbrauch nicht."""
+    hass.session.menu = menu_xml.replace('name="Gesamtverbrauch"', 'name="Weg"')
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert "Pellet Energieverbrauch gesamt" not in by_name
+    energie = by_name["Pellet Energieverbrauch"]
+    assert energie.native_value == pytest.approx(
+        coordinator.data["aschebox_verbrauch"].value * coordinator.pellet_kwh_per_kg
+    )
+
+
+async def test_lager_entsteht_nur_bei_angekreuzter_komponente(hass, entry):
+    _, by_name = await setup_integration(hass, entry)
+    assert "Lager Vorrat" not in by_name
+
+
+async def test_lagervorrat_und_warnung(hass, entry):
+    from eta_webservices import binary_sensor as bs
+
+    entry.data["components"] = ["kessel", "lager"]
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert coordinator.sensor_defs["lager_vorrat"]["uri"] == "/264/10201/0/0/12015"
+    assert by_name["Lager Vorrat"].native_unit_of_measurement == "kg"
+    assert "Lager Austragung" in by_name
+
+    entities: list = []
+    await bs.async_setup_entry(hass, entry, entities.extend)
+    warnung = next(e for e in entities if e.translation_key == "lager_niedrig")
+
+    attribute = warnung.extra_state_attributes
+    assert attribute["vorrat"] is not None
+    assert warnung.is_on is (attribute["vorrat"] <= attribute["warngrenze"])
+
+
+async def test_lagerwarnung_bleibt_aus_ohne_grenze(hass, entry, menu_xml):
+    from eta_webservices import binary_sensor as bs
+
+    hass.session.menu = menu_xml.replace('name="Vorrat Warngrenze"', 'name="Weg"')
+    entry.data["components"] = ["kessel", "lager"]
+    await setup_integration(hass, entry)
+    entities: list = []
+    await bs.async_setup_entry(hass, entry, entities.extend)
+    warnung = next(e for e in entities if e.translation_key == "lager_niedrig")
+
+    assert warnung.extra_state_attributes["warngrenze"] is None
+    assert warnung.is_on is False
+
+
+async def test_lager_austragung_ist_klartext(hass, entry):
+    """Ein Zustand ist Text, keine Kennzahl."""
+    entry.data["components"] = ["kessel", "lager"]
+    _, by_name = await setup_integration(hass, entry)
+
+    sensor = by_name["Lager Austragung"]
+    assert sensor.native_value == "Bereit"
+    assert sensor.native_unit_of_measurement is None
+    assert sensor.state_class is None
