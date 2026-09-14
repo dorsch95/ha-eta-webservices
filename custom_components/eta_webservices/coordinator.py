@@ -16,7 +16,7 @@ from .const import (
     COMPONENTS,
     SWITCHES,
     DOMAIN,
-    OPTIONAL_SENSORS,
+    PUFFER_FUEHLER_MINDEST,
     SENSORS,
     normalize_components,
     puffer_fuehler_info,
@@ -47,34 +47,32 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
     geraten - im günstigen Fall läuft die Abfrage ins Leere, im
     ungünstigen zeigt der Sensor still den falschen Wert.
 
-    Was der Menübaum nicht hergibt, wird deshalb auch nicht angelegt.
-    Optionale Sensoren sind die Ausnahme: sie entstehen immer und zeigen
-    "-", damit eine Dashboard-Karte sie gefahrlos referenzieren kann.
+    Was der Menübaum nicht hergibt, bekommt trotzdem eine Entität, nur
+    eben ohne URI: sie zeigt dann dauerhaft "-". Welche Werte eine
+    Anlage hat, lässt sich nicht sauber vorhersagen - Restsauerstoff hat
+    jeder Kessel, einen Kesseldruck nicht jeder -, und eine Entität, die
+    mal da ist und mal nicht, bricht Dashboards und Automatisierungen.
+
     Messwerte von Komponenten, die der Nutzer nicht ausgewählt hat,
-    entstehen erst gar nicht.
+    entstehen weiterhin gar nicht.
     """
     aktiv = set(normalize_components(components))
     sensor_defs = {
-        key: {**info, "uri": discovered_uris[key]}
+        key: {**info, "uri": discovered_uris.get(key)}
         for key, info in SENSORS.items()
-        if info["component"] in aktiv and key in discovered_uris
+        if info["component"] in aktiv
     }
 
-    for key, info in OPTIONAL_SENSORS.items():
-        if info["component"] in aktiv:
-            sensor_defs[key] = {**info, "uri": discovered_uris.get(key)}
-
-    if "puffer" not in aktiv or not puffer_fuehler_indices:
+    if "puffer" not in aktiv:
         return sensor_defs
 
-    last_index = puffer_fuehler_indices[-1]
-    for index in puffer_fuehler_indices:
+    indices = puffer_fuehler_indices or list(range(1, PUFFER_FUEHLER_MINDEST + 1))
+    last_index = indices[-1]
+    for index in indices:
         key = f"puffer_fuehler_{index}"
-        if key not in discovered_uris:
-            continue
         sensor_defs[key] = {
             **puffer_fuehler_info(index, index == last_index),
-            "uri": discovered_uris[key],
+            "uri": discovered_uris.get(key),
         }
 
     return sensor_defs

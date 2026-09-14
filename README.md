@@ -9,7 +9,7 @@ Diese benutzerdefinierte Integration liest **ETA Heizsysteme** (Pelletkessel, St
 
 📈 Der Pelletverbrauch steht als Energiewert bereit und lässt sich ins **Energie-Dashboard** von Home Assistant aufnehmen.
 
-🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Im Code steht **keine einzige feste URI**: Was der Menübaum deiner Anlage nicht hergibt, bekommt auch keine Entität - eine Adresse von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen. Findet sich zu einer ganzen Komponente nichts, meldet sich Home Assistant mit einem Reparatur-Hinweis.
+🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Im Code steht **keine einzige feste URI** - eine Adresse von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen. Was der Menübaum deiner Anlage nicht hergibt, bekommt trotzdem eine Entität; sie zeigt dann dauerhaft **"-"**. Findet sich zu einer ganzen Komponente nichts, meldet sich Home Assistant zusätzlich mit einem Reparatur-Hinweis.
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
@@ -76,12 +76,14 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 * **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
 * **♨️ Heizkreis 1 und 2:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*).
 * **☀️ Solaranlage:** Kollektortemperatur. Bei einer Anlage **mit Wärmemengenmessung** zusätzlich Leistung (kW), Wärmemenge (kWh), Ertrag heute und Ertrag gestern - siehe unten.
-* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls deine Anlage keinen entsprechenden Fühler hat.
+* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur.
 * **🚨 Aktive Fehler** (im Setup abwählbar): Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
 * **🔌 Schalter** für Kessel und Heizkreise, sofern deine Anlage sie zulässt - siehe unten.
 * **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
 
-Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast - keine dauerhaft leeren Sensoren für Hardware, die deine Anlage nicht hat.
+Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast.
+
+Innerhalb einer angekreuzten Komponente gibt es jeden Sensor **immer**. Findet die Integration einen Wert im Menübaum deiner Anlage nicht, zeigt der Sensor "-" statt eines Werts. Das ist Absicht: Restsauerstoff hat jeder Kessel, einen Kesseldruck nicht jeder - und eine Entität, die je nach Anlage da ist oder fehlt, bricht Dashboards, Automatisierungen und Statistiken. Welche Werte betroffen sind, steht im Diagnose-Export unter `nicht_gefunden`.
 
 ### Funktionsblöcke wurden umbenannt?
 
@@ -188,7 +190,7 @@ Vier weitere Werte gibt es nur, wenn deine Solaranlage eine **Wärmemengenmessun
 | `sensor.eta_heizung_solar_ertrag_heute` | Ertrag seit Mitternacht |
 | `sensor.eta_heizung_solar_ertrag_gestern` | Ertrag des Vortags |
 
-**Du musst nichts zusätzlich auswählen.** Die Integration schaut im Menübaum deiner Anlage nach, ob es diese Werte gibt. Hat deine Anlage keine Wärmemengenmessung, entstehen die vier Entitäten erst gar nicht - statt dauerhaft leer herumzustehen. In der Dashboard-Karte bleiben die betreffenden Zeilen dann einfach weg.
+**Du musst nichts zusätzlich auswählen.** Die Integration schaut im Menübaum deiner Anlage nach, ob es diese Werte gibt. Hat deine Anlage keine Wärmemengenmessung, zeigen die vier Sensoren dauerhaft "-".
 
 `sensor.eta_heizung_solar_warmemenge` liefert Langzeitstatistik und lässt sich als **Solarertrag** ins Energie-Dashboard aufnehmen (**Einstellungen -> Dashboards -> Energie -> Solarpanel hinzufügen**).
 

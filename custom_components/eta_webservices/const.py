@@ -318,9 +318,24 @@ SENSORS = {
         "device_class": SensorDeviceClass.ENERGY,
         "default_unit": "kWh",
     },
+    "fwm_zirkulation": {
+        "component": "fwm",
+        "name": "FWM Zirkulation",
+        "translation_key": "fwm_zirkulation",
+        "icon": "mdi:water-thermometer",
+        "default_unit": "°C",
+    },
 }
 
 PUFFER_FUEHLER_MAX = 8
+
+PUFFER_FUEHLER_MINDEST = 3
+"""So viele Fühler bekommt ein Puffer, wenn der Menübaum keine nennt.
+
+PufferFlex hat immer mindestens drei (oben, Mitte, unten). Mehr
+entstehen nur, wenn sie tatsächlich gefunden wurden - wie viele es
+sind, weiß nur die Anlage.
+"""
 
 def puffer_fuehler_info(index, is_last):
     """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
@@ -341,16 +356,6 @@ def puffer_fuehler_info(index, is_last):
         "default_unit": "°C",
     }
 
-
-OPTIONAL_SENSORS = {
-    "fwm_zirkulation": {
-        "component": "fwm",
-        "name": "FWM Zirkulation",
-        "translation_key": "fwm_zirkulation",
-        "icon": "mdi:water-thermometer",
-        "default_unit": "°C",
-    },
-}
 
 FUB_ROLE_DEFAULT_NAMES = {
     "kessel": ["Kessel"],

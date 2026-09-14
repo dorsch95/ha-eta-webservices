@@ -42,13 +42,11 @@ KESSEL_ZEILEN = [
 
 
 def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
-    """Eine Beschriftungszeile, die sich ausblendet, wenn es sie nicht gibt.
+    """Eine Beschriftungszeile der Kachel.
 
-    Jede URI stammt aus dem Menübaum der jeweiligen Anlage. Was dort
-    fehlt - nicht verbaute Hardware, eine Solaranlage ohne
-    Wärmemengenmessung, ein anders benannter Wert - hat keine Entität.
-    Ohne die Bedingung stünde in der Kachel "Entität nicht gefunden";
-    eine fehlende Entität wertet Home Assistant als "unknown".
+    Jede Entität einer angekreuzten Komponente existiert immer, auch
+    wenn der Menübaum den Wert nicht hergibt - dann steht dort "-".
+    Deshalb braucht die Zeile keine Bedingung.
     """
     stil = {
         "top": f"{top}%",
@@ -65,17 +63,7 @@ def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
     }
     if prefix:
         element["prefix"] = prefix
-    return {
-        "type": "conditional",
-        "conditions": [
-            {
-                "condition": "state",
-                "entity": element["entity"],
-                "state_not": "unknown",
-            }
-        ],
-        "elements": [element],
-    }
+    return element
 
 
 def komponente(marker, zustand, bild, elemente):

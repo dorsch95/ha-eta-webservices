@@ -12,7 +12,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import OPTIONAL_SENSORS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 
 
@@ -25,16 +24,12 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
 
     entities: list[SensorEntity] = [
-        ETAMeasurementSensor(coordinator, key, info)
+        (ETAMeasurementSensor if info.get("uri") else ETAPlaceholderSensor)(
+            coordinator, key, info
+        )
         for key, info in coordinator.sensor_defs.items()
-        if key not in OPTIONAL_SENSORS and info.get("platform") != "switch"
+        if info.get("platform") != "switch"
     ]
-
-    entities.extend(
-        ETAOptionalSensor(coordinator, key, coordinator.sensor_defs[key])
-        for key in OPTIONAL_SENSORS
-        if key in coordinator.sensor_defs
-    )
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
     entities.append(ETAPelletEnergySensor(coordinator))
@@ -96,19 +91,25 @@ class ETAMeasurementSensor(ETABaseSensor):
         return reading.display
 
 
-class ETAOptionalSensor(ETAMeasurementSensor):
-    """Messwert, den nicht jede Anlage hat (z.B. FWM-Zirkulation).
+class ETAPlaceholderSensor(ETAMeasurementSensor):
+    """Ein Messwert, den der Menübaum dieser Anlage nicht hergibt.
 
-    Existiert immer, damit eine Dashboard-Karte ihn gefahrlos referenzieren
-    kann, und zeigt "-" statt eines "Entität nicht gefunden"-Fehlers, wenn
-    der Wert an dieser Anlage nicht vorhanden ist.
+    Die Entität entsteht trotzdem und zeigt dauerhaft "-". Welche Werte
+    eine Anlage hat, lässt sich nicht vorhersagen: Restsauerstoff hat
+    jeder Kessel, einen Kesseldruck nicht jeder. Eine Entität, die je
+    nach Anlage da ist oder fehlt, bricht Dashboards, Automatisierungen
+    und Statistiken - "-" sagt dasselbe, ohne etwas kaputtzumachen.
 
-    Einheit und Präzision werden dynamisch geliefert: solange der Wert der
-    Platzhalter "-" ist, darf keine numerische Einheit gesetzt sein, sonst
-    behandelt Home Assistant die Entität als ungültig.
+    Einheit, Geräteklasse und Zustandsklasse bleiben leer: Home
+    Assistant würde einen Sensor mit numerischer Geräteklasse und dem
+    Zustand "-" sonst als fehlerhaft melden, und zwar in jedem
+    Abfragezyklus.
     """
 
-    _missing_value = "-"
+    _attr_device_class = None
+    _attr_state_class = None
+    _attr_native_unit_of_measurement = None
+    _attr_suggested_display_precision = None
 
     def __init__(
         self,
@@ -117,24 +118,14 @@ class ETAOptionalSensor(ETAMeasurementSensor):
         info: dict,
     ) -> None:
         super().__init__(coordinator, key, info)
-        self._optional_unit = info.get("default_unit")
+        self._attr_device_class = None
+        self._attr_state_class = None
         self._attr_native_unit_of_measurement = None
         self._attr_suggested_display_precision = None
 
     @property
-    def native_value(self):
-        reading = self.coordinator.data.get(self._key)
-        if reading is None:
-            return self._missing_value
-        if isinstance(reading.display, float):
-            return round(reading.display, 1)
-        return reading.display
-
-    @property
-    def native_unit_of_measurement(self):
-        if self.coordinator.data.get(self._key) is None:
-            return None
-        return self._optional_unit
+    def native_value(self) -> str:
+        return "-"
 
 
 class ETAAscheboxStatusSensor(ETABaseSensor):

@@ -18,126 +18,78 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/kessel.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_aussentemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_aussentemperatur
-            style:
-              top: 4%
-              left: 6%
-              color: '#9aa5b1'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'Außen: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kesseltemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kesseltemperatur
-            style:
-              top: 12%
-              left: 6%
-              color: '#e8615f'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'Kessel: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kessel_solltemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kessel_solltemperatur
-            style:
-              top: 19%
-              left: 6%
-              color: '#e2867f'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'Soll: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_rucklauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_rucklauftemperatur
-            style:
-              top: 26%
-              left: 6%
-              color: '#7b88e0'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'RL: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kesseldruck
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kesseldruck
-            style:
-              top: 33%
-              left: 6%
-              color: '#d3a15a'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'Druck: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style:
-              top: 40%
-              left: 6%
-              color: '#5fbfa8'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'Behälter: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_aschebox_status
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_aschebox_status
-            style:
-              top: 47%
-              left: 6%
-              color: '#a98fd0'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'Asche: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_restsauerstoff
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_restsauerstoff
-            style:
-              top: 54%
-              left: 6%
-              color: '#d89a6a'
-              font-size: 90%
-              transform: translate(0, -50%)
-            prefix: 'O₂: '
+        - type: state-label
+          entity: sensor.eta_heizung_aussentemperatur
+          style:
+            top: 4%
+            left: 6%
+            color: '#9aa5b1'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'Außen: '
+        - type: state-label
+          entity: sensor.eta_heizung_kesseltemperatur
+          style:
+            top: 12%
+            left: 6%
+            color: '#e8615f'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'Kessel: '
+        - type: state-label
+          entity: sensor.eta_heizung_kessel_solltemperatur
+          style:
+            top: 19%
+            left: 6%
+            color: '#e2867f'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'Soll: '
+        - type: state-label
+          entity: sensor.eta_heizung_rucklauftemperatur
+          style:
+            top: 26%
+            left: 6%
+            color: '#7b88e0'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'RL: '
+        - type: state-label
+          entity: sensor.eta_heizung_kesseldruck
+          style:
+            top: 33%
+            left: 6%
+            color: '#d3a15a'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'Druck: '
+        - type: state-label
+          entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
+          style:
+            top: 40%
+            left: 6%
+            color: '#5fbfa8'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'Behälter: '
+        - type: state-label
+          entity: sensor.eta_heizung_aschebox_status
+          style:
+            top: 47%
+            left: 6%
+            color: '#a98fd0'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'Asche: '
+        - type: state-label
+          entity: sensor.eta_heizung_restsauerstoff
+          style:
+            top: 54%
+            left: 6%
+            color: '#d89a6a'
+            font-size: 90%
+            transform: translate(0, -50%)
+          prefix: 'O₂: '
     - type: conditional
       conditions:
       - condition: state
@@ -147,59 +99,35 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/puffer.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_ladezustand
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_ladezustand
-            style:
-              top: 8%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 95%
-            prefix: 'Ladung: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_1
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_1
-            style:
-              top: 36%
-              left: 50%
-              color: '#ffffff'
-              font-size: 100%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_2
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_2
-            style:
-              top: 62%
-              left: 50%
-              color: '#ffffff'
-              font-size: 100%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_3
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_3
-            style:
-              top: 88%
-              left: 50%
-              color: '#ffffff'
-              font-size: 100%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_ladezustand
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+          prefix: 'Ladung: '
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_1
+          style:
+            top: 36%
+            left: 50%
+            color: '#ffffff'
+            font-size: 100%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_2
+          style:
+            top: 62%
+            left: 50%
+            color: '#ffffff'
+            font-size: 100%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_3
+          style:
+            top: 88%
+            left: 50%
+            color: '#ffffff'
+            font-size: 100%
     - type: conditional
       conditions:
       - condition: state
@@ -209,34 +137,22 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/fwm.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_fwm_warmwassertemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_fwm_warmwassertemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 95%
-            prefix: 'WW: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_fwm_zirkulation
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_fwm_zirkulation
-            style:
-              top: 15%
-              left: 50%
-              color: '#9aa5b1'
-              font-size: 90%
-            prefix: 'Zirk.: '
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_warmwassertemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+          prefix: 'WW: '
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_zirkulation
+          style:
+            top: 15%
+            left: 50%
+            color: '#9aa5b1'
+            font-size: 90%
+          prefix: 'Zirk.: '
     - type: conditional
       conditions:
       - condition: state
@@ -246,33 +162,21 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/heizkreis.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 90%
-            prefix: 'HK1: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_anforderung
-            style:
-              top: 15%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 85%
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 90%
+          prefix: 'HK1: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 85%
     - type: conditional
       conditions:
       - condition: state
@@ -282,33 +186,21 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/heizkreis.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 90%
-            prefix: 'HK2: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_2_anforderung
-            style:
-              top: 15%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 85%
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 90%
+          prefix: 'HK2: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 85%
     - type: conditional
       conditions:
       - condition: state
@@ -318,48 +210,30 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/solar.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_kollektortemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_kollektortemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 90%
-            prefix: 'Koll.: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_leistung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_leistung
-            style:
-              top: 15%
-              left: 50%
-              color: '#e0b63f'
-              font-size: 85%
-            prefix: 'Leistung: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_ertrag_heute
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_ertrag_heute
-            style:
-              top: 22%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 85%
-            prefix: 'Heute: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_kollektortemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 90%
+          prefix: 'Koll.: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_leistung
+          style:
+            top: 15%
+            left: 50%
+            color: '#e0b63f'
+            font-size: 85%
+          prefix: 'Leistung: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_ertrag_heute
+          style:
+            top: 22%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 85%
+          prefix: 'Heute: '
 - type: conditional
   conditions:
   - condition: screen
@@ -378,126 +252,78 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/kessel.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_aussentemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_aussentemperatur
-            style:
-              top: 4%
-              left: 6%
-              color: '#9aa5b1'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Außen: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kesseltemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kesseltemperatur
-            style:
-              top: 12%
-              left: 6%
-              color: '#e8615f'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Kessel: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kessel_solltemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kessel_solltemperatur
-            style:
-              top: 19%
-              left: 6%
-              color: '#e2867f'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Soll: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_rucklauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_rucklauftemperatur
-            style:
-              top: 26%
-              left: 6%
-              color: '#7b88e0'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Rücklauf: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kesseldruck
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kesseldruck
-            style:
-              top: 33%
-              left: 6%
-              color: '#d3a15a'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Druck: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style:
-              top: 40%
-              left: 6%
-              color: '#5fbfa8'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Behälter: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_aschebox_status
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_aschebox_status
-            style:
-              top: 47%
-              left: 6%
-              color: '#a98fd0'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Aschebox: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_restsauerstoff
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_restsauerstoff
-            style:
-              top: 54%
-              left: 6%
-              color: '#d89a6a'
-              font-size: 95%
-              transform: translate(0, -50%)
-            prefix: 'Restsauerstoff: '
+        - type: state-label
+          entity: sensor.eta_heizung_aussentemperatur
+          style:
+            top: 4%
+            left: 6%
+            color: '#9aa5b1'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Außen: '
+        - type: state-label
+          entity: sensor.eta_heizung_kesseltemperatur
+          style:
+            top: 12%
+            left: 6%
+            color: '#e8615f'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Kessel: '
+        - type: state-label
+          entity: sensor.eta_heizung_kessel_solltemperatur
+          style:
+            top: 19%
+            left: 6%
+            color: '#e2867f'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Soll: '
+        - type: state-label
+          entity: sensor.eta_heizung_rucklauftemperatur
+          style:
+            top: 26%
+            left: 6%
+            color: '#7b88e0'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Rücklauf: '
+        - type: state-label
+          entity: sensor.eta_heizung_kesseldruck
+          style:
+            top: 33%
+            left: 6%
+            color: '#d3a15a'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Druck: '
+        - type: state-label
+          entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
+          style:
+            top: 40%
+            left: 6%
+            color: '#5fbfa8'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Behälter: '
+        - type: state-label
+          entity: sensor.eta_heizung_aschebox_status
+          style:
+            top: 47%
+            left: 6%
+            color: '#a98fd0'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Aschebox: '
+        - type: state-label
+          entity: sensor.eta_heizung_restsauerstoff
+          style:
+            top: 54%
+            left: 6%
+            color: '#d89a6a'
+            font-size: 95%
+            transform: translate(0, -50%)
+          prefix: 'Restsauerstoff: '
     - type: conditional
       conditions:
       - condition: state
@@ -507,59 +333,35 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/puffer.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_ladezustand
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_ladezustand
-            style:
-              top: 8%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 100%
-            prefix: 'Ladezustand: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_1
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_1
-            style:
-              top: 36%
-              left: 50%
-              color: '#ffffff'
-              font-size: 105%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_2
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_2
-            style:
-              top: 62%
-              left: 50%
-              color: '#ffffff'
-              font-size: 105%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_3
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_3
-            style:
-              top: 88%
-              left: 50%
-              color: '#ffffff'
-              font-size: 105%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_ladezustand
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 100%
+          prefix: 'Ladezustand: '
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_1
+          style:
+            top: 36%
+            left: 50%
+            color: '#ffffff'
+            font-size: 105%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_2
+          style:
+            top: 62%
+            left: 50%
+            color: '#ffffff'
+            font-size: 105%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_3
+          style:
+            top: 88%
+            left: 50%
+            color: '#ffffff'
+            font-size: 105%
     - type: conditional
       conditions:
       - condition: state
@@ -569,34 +371,22 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/fwm.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_fwm_warmwassertemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_fwm_warmwassertemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 100%
-            prefix: 'Warmwasser: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_fwm_zirkulation
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_fwm_zirkulation
-            style:
-              top: 15%
-              left: 50%
-              color: '#9aa5b1'
-              font-size: 95%
-            prefix: 'Zirkulation: '
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_warmwassertemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 100%
+          prefix: 'Warmwasser: '
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_zirkulation
+          style:
+            top: 15%
+            left: 50%
+            color: '#9aa5b1'
+            font-size: 95%
+          prefix: 'Zirkulation: '
     - type: conditional
       conditions:
       - condition: state
@@ -606,33 +396,21 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/heizkreis.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 95%
-            prefix: 'Vorlauf HK1: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_anforderung
-            style:
-              top: 15%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 90%
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 95%
+          prefix: 'Vorlauf HK1: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 90%
     - type: conditional
       conditions:
       - condition: state
@@ -642,33 +420,21 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/heizkreis.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 95%
-            prefix: 'Vorlauf HK2: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_2_anforderung
-            style:
-              top: 15%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 90%
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 95%
+          prefix: 'Vorlauf HK2: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 90%
     - type: conditional
       conditions:
       - condition: state
@@ -678,48 +444,30 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/solar.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_kollektortemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_kollektortemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 95%
-            prefix: 'Kollektor: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_leistung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_leistung
-            style:
-              top: 15%
-              left: 50%
-              color: '#e0b63f'
-              font-size: 90%
-            prefix: 'Leistung: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_ertrag_heute
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_ertrag_heute
-            style:
-              top: 22%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 90%
-            prefix: 'Heute: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_kollektortemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 95%
+          prefix: 'Kollektor: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_leistung
+          style:
+            top: 15%
+            left: 50%
+            color: '#e0b63f'
+            font-size: 90%
+          prefix: 'Leistung: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_ertrag_heute
+          style:
+            top: 22%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 90%
+          prefix: 'Heute: '
 - type: conditional
   conditions:
   - condition: screen
@@ -738,126 +486,78 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/kessel.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_aussentemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_aussentemperatur
-            style:
-              top: 4%
-              left: 6%
-              color: '#9aa5b1'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Außen: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kesseltemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kesseltemperatur
-            style:
-              top: 12%
-              left: 6%
-              color: '#e8615f'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Kessel: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kessel_solltemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kessel_solltemperatur
-            style:
-              top: 19%
-              left: 6%
-              color: '#e2867f'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Soll: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_rucklauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_rucklauftemperatur
-            style:
-              top: 26%
-              left: 6%
-              color: '#7b88e0'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Rücklauf: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_kesseldruck
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_kesseldruck
-            style:
-              top: 33%
-              left: 6%
-              color: '#d3a15a'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Druck: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style:
-              top: 40%
-              left: 6%
-              color: '#5fbfa8'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Behälter: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_aschebox_status
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_aschebox_status
-            style:
-              top: 47%
-              left: 6%
-              color: '#a98fd0'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Aschebox: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_restsauerstoff
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_restsauerstoff
-            style:
-              top: 54%
-              left: 6%
-              color: '#d89a6a'
-              font-size: 100%
-              transform: translate(0, -50%)
-            prefix: 'Restsauerstoff: '
+        - type: state-label
+          entity: sensor.eta_heizung_aussentemperatur
+          style:
+            top: 4%
+            left: 6%
+            color: '#9aa5b1'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Außen: '
+        - type: state-label
+          entity: sensor.eta_heizung_kesseltemperatur
+          style:
+            top: 12%
+            left: 6%
+            color: '#e8615f'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Kessel: '
+        - type: state-label
+          entity: sensor.eta_heizung_kessel_solltemperatur
+          style:
+            top: 19%
+            left: 6%
+            color: '#e2867f'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Soll: '
+        - type: state-label
+          entity: sensor.eta_heizung_rucklauftemperatur
+          style:
+            top: 26%
+            left: 6%
+            color: '#7b88e0'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Rücklauf: '
+        - type: state-label
+          entity: sensor.eta_heizung_kesseldruck
+          style:
+            top: 33%
+            left: 6%
+            color: '#d3a15a'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Druck: '
+        - type: state-label
+          entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
+          style:
+            top: 40%
+            left: 6%
+            color: '#5fbfa8'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Behälter: '
+        - type: state-label
+          entity: sensor.eta_heizung_aschebox_status
+          style:
+            top: 47%
+            left: 6%
+            color: '#a98fd0'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Aschebox: '
+        - type: state-label
+          entity: sensor.eta_heizung_restsauerstoff
+          style:
+            top: 54%
+            left: 6%
+            color: '#d89a6a'
+            font-size: 100%
+            transform: translate(0, -50%)
+          prefix: 'Restsauerstoff: '
     - type: conditional
       conditions:
       - condition: state
@@ -867,59 +567,35 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/puffer.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_ladezustand
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_ladezustand
-            style:
-              top: 8%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 105%
-            prefix: 'Ladezustand: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_1
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_1
-            style:
-              top: 36%
-              left: 50%
-              color: '#ffffff'
-              font-size: 110%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_2
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_2
-            style:
-              top: 62%
-              left: 50%
-              color: '#ffffff'
-              font-size: 110%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_puffer_fuhler_3
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_puffer_fuhler_3
-            style:
-              top: 88%
-              left: 50%
-              color: '#ffffff'
-              font-size: 110%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_ladezustand
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 105%
+          prefix: 'Ladezustand: '
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_1
+          style:
+            top: 36%
+            left: 50%
+            color: '#ffffff'
+            font-size: 110%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_2
+          style:
+            top: 62%
+            left: 50%
+            color: '#ffffff'
+            font-size: 110%
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_3
+          style:
+            top: 88%
+            left: 50%
+            color: '#ffffff'
+            font-size: 110%
     - type: conditional
       conditions:
       - condition: state
@@ -929,34 +605,22 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/fwm.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_fwm_warmwassertemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_fwm_warmwassertemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 105%
-            prefix: 'Warmwasser: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_fwm_zirkulation
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_fwm_zirkulation
-            style:
-              top: 15%
-              left: 50%
-              color: '#9aa5b1'
-              font-size: 100%
-            prefix: 'Zirkulation: '
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_warmwassertemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 105%
+          prefix: 'Warmwasser: '
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_zirkulation
+          style:
+            top: 15%
+            left: 50%
+            color: '#9aa5b1'
+            font-size: 100%
+          prefix: 'Zirkulation: '
     - type: conditional
       conditions:
       - condition: state
@@ -966,33 +630,21 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/heizkreis.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 100%
-            prefix: 'Vorlauf HK1: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_anforderung
-            style:
-              top: 15%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 95%
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 100%
+          prefix: 'Vorlauf HK1: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
     - type: conditional
       conditions:
       - condition: state
@@ -1002,33 +654,21 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/heizkreis.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 100%
-            prefix: 'Vorlauf HK2: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_heizkreis_2_anforderung
-            style:
-              top: 15%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 95%
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 100%
+          prefix: 'Vorlauf HK2: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
     - type: conditional
       conditions:
       - condition: state
@@ -1038,45 +678,27 @@ cards:
         type: picture-elements
         image: /local/community/ha-eta-webservices/solar.png
         elements:
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_kollektortemperatur
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_kollektortemperatur
-            style:
-              top: 8%
-              left: 50%
-              color: '#e8615f'
-              font-size: 100%
-            prefix: 'Kollektor: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_leistung
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_leistung
-            style:
-              top: 15%
-              left: 50%
-              color: '#e0b63f'
-              font-size: 95%
-            prefix: 'Leistung: '
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: sensor.eta_heizung_solar_ertrag_heute
-            state_not: unknown
-          elements:
-          - type: state-label
-            entity: sensor.eta_heizung_solar_ertrag_heute
-            style:
-              top: 22%
-              left: 50%
-              color: '#d5d9de'
-              font-size: 95%
-            prefix: 'Heute: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_kollektortemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 100%
+          prefix: 'Kollektor: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_leistung
+          style:
+            top: 15%
+            left: 50%
+            color: '#e0b63f'
+            font-size: 95%
+          prefix: 'Leistung: '
+        - type: state-label
+          entity: sensor.eta_heizung_solar_ertrag_heute
+          style:
+            top: 22%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+          prefix: 'Heute: '

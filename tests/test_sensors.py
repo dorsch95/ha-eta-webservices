@@ -6,7 +6,6 @@ import pytest
 
 import eta_webservices
 from eta_webservices import sensor as sensor_platform
-from eta_webservices.const import OPTIONAL_SENSORS
 
 from .conftest import entity_name
 
@@ -117,10 +116,15 @@ async def test_zweiter_setup_schreibt_grafiken_nicht_erneut(hass, entry):
     assert os.stat(eine_datei).st_mtime_ns == vorher
 
 
-async def test_alle_optionalen_sensoren_existieren_immer(hass, entry):
+async def test_jeder_sensor_einer_komponente_existiert(hass, entry):
+    """Auch ohne Fund im Menübaum entsteht die Entität - mit "-"."""
+    from eta_webservices.const import SENSORS
+
     coordinator, _ = await setup_integration(hass, entry)
-    for key in OPTIONAL_SENSORS:
-        assert key in coordinator.sensor_defs
+    aktiv = set(coordinator.components)
+    for key, info in SENSORS.items():
+        if info["component"] in aktiv:
+            assert key in coordinator.sensor_defs, key
 
 
 async def test_jede_uri_stammt_aus_dem_menuebaum(hass, entry, menu_xml):
@@ -135,13 +139,29 @@ async def test_jede_uri_stammt_aus_dem_menuebaum(hass, entry, menu_xml):
             assert info["uri"] in coordinator.discovered_uris.values(), key
 
 
-async def test_ohne_fund_entsteht_kein_sensor(hass, entry, menu_xml):
-    """Lieber keine Entität als eine mit geratener Adresse."""
+async def test_ohne_fund_zeigt_der_sensor_einen_strich(hass, entry, menu_xml):
+    """Die Entität bleibt, nur eben ohne Adresse und ohne Wert."""
     hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
     coordinator, by_name = await setup_integration(hass, entry)
 
-    assert "kessel_temperatur" not in coordinator.sensor_defs
-    assert "Kesseltemperatur" not in by_name
+    assert coordinator.sensor_defs["kessel_temperatur"]["uri"] is None
+    sensor = by_name["Kesseltemperatur"]
+    assert sensor.native_value == "-"
+
+
+async def test_strich_sensor_meldet_keine_klassen(hass, entry, menu_xml):
+    """Sonst meldet Home Assistant den Zustand "-" als Fehler.
+
+    Eine numerische Geräteklasse verträgt keinen Text als Zustand - das
+    stünde sonst in jedem Abfragezyklus im Protokoll.
+    """
+    hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
+    _, by_name = await setup_integration(hass, entry)
+
+    sensor = by_name["Kesseltemperatur"]
+    assert sensor.device_class is None
+    assert sensor.state_class is None
+    assert sensor.native_unit_of_measurement is None
 
 
 async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
@@ -172,7 +192,7 @@ async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
     bericht = await async_get_config_entry_diagnostics(hass, entry)
 
     assert "kessel_temperatur" in bericht["erkennung"]["nicht_gefunden"]
-    assert "kessel_temperatur" not in bericht["messwerte"]
+    assert bericht["messwerte"]["kessel_temperatur"]["uri"] is None
 
 
 async def test_diagnose_ist_serialisierbar(hass, entry):
@@ -489,11 +509,12 @@ async def test_solar_ohne_waermemengenmessung(hass, entry, menu_xml):
     entry.data["components"] = ["kessel", "solar"]
     _, by_name = await setup_integration(hass, entry)
 
-    assert "Solar Kollektortemperatur" in by_name
+    assert isinstance(by_name["Solar Kollektortemperatur"].native_value, float)
     for name in (
         "Solar Leistung",
         "Solar Wärmemenge",
         "Solar Ertrag heute",
         "Solar Ertrag gestern",
     ):
-        assert name not in by_name, name
+        assert by_name[name].native_value == "-", name
+        assert by_name[name].state_class is None, name

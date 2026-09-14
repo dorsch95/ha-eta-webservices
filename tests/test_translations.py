@@ -62,13 +62,12 @@ def test_jede_entitaet_ist_in_allen_sprachen_benannt():
     import json
 
     from eta_webservices.const import (
-        OPTIONAL_SENSORS,
         SENSORS,
     )
 
     schluessel = {
         info["translation_key"]
-        for tabelle in (SENSORS, OPTIONAL_SENSORS)
+        for tabelle in (SENSORS,)
         for info in tabelle.values()
     }
     for pfad in TRANSLATIONS:
@@ -98,14 +97,13 @@ def test_sensoren_verweisen_auf_gueltige_uebersetzungsschluessel():
     import re
 
     from eta_webservices.const import (
-        OPTIONAL_SENSORS,
         SENSORS,
         puffer_fuehler_info,
     )
 
     schluessel = [
         info["translation_key"]
-        for tabelle in (SENSORS, OPTIONAL_SENSORS)
+        for tabelle in (SENSORS,)
         for info in tabelle.values()
     ]
     schluessel += [puffer_fuehler_info(i, False)["translation_key"] for i in range(1, 9)]
