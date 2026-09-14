@@ -8,7 +8,7 @@ from eta_webservices.uri_discovery import async_discover_uris
 
 
 async def discover(hass, overrides=None):
-    client = ETAApiClient(hass, hass.session, "10.0.0.173", 8080)
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
     return await async_discover_uris(client, overrides or {})
 
 

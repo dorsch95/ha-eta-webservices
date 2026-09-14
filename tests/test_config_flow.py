@@ -17,7 +17,7 @@ from eta_webservices.const import (
 
 def gueltige_eingabe(**overrides):
     daten = {
-        "host": "10.0.0.173",
+        "host": "192.0.2.10",
         "port": 8080,
         "schema": next(iter(SCHEMAS)),
         "scan_interval": DEFAULT_SCAN_INTERVAL,
@@ -44,9 +44,9 @@ def test_verbindungsformular_lehnt_unbekanntes_schema_ab():
 
 
 def test_verbindungsformular_uebernimmt_bisherige_werte():
-    schema = _connection_schema({"host": "192.168.1.5", "port": 8081})
+    schema = _connection_schema({"host": "192.0.2.20", "port": 8081})
     markers = {str(key): key for key in schema.schema}
-    assert markers["host"].default() == "192.168.1.5"
+    assert markers["host"].default() == "192.0.2.20"
     assert markers["port"].default() == 8081
 
 

@@ -179,7 +179,7 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
 def entry() -> FakeConfigEntry:
     return FakeConfigEntry(
         {
-            "host": "10.0.0.173",
+            "host": "192.0.2.10",
             "port": 8080,
             "schema": "Kessel + Puffer + 1x Heizkreis + FWM",
             "scan_interval": 30,

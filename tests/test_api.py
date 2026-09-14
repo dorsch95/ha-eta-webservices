@@ -41,7 +41,7 @@ def test_leerer_wert_faellt_auf_text_zurueck():
 
 
 async def test_einzelwert_lesen(hass):
-    client = ETAApiClient(hass, hass.session, "10.0.0.173", 8080)
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
     reading = await client.async_get_value("/120/10101/0/11109/0")
     assert reading.value == pytest.approx(55.5)
 
@@ -53,19 +53,19 @@ async def test_fehlerhafter_status_wird_zu_api_error(hass):
 
             return FakeResponse("", status=404)
 
-    client = ETAApiClient(hass, Broken(""), "10.0.0.173", 8080)
+    client = ETAApiClient(hass, Broken(""), "192.0.2.10", 8080)
     with pytest.raises(ETAApiError):
         await client.async_get_value("/1/2/3")
 
 
 async def test_verbindungstest_meldet_fehler_statt_zu_werfen(hass):
     hass.session.fail_uris = {"/user/menu"}
-    client = ETAApiClient(hass, hass.session, "10.0.0.173", 8080)
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
     assert await client.async_test_connection() is False
 
 
 async def test_mehrere_werte_parallel_aber_begrenzt(hass):
-    client = ETAApiClient(hass, hass.session, "10.0.0.173", 8080)
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
     uris = {f"s{i}": f"/1/2/{i}" for i in range(20)}
     values = await client.async_get_values(uris)
     assert len(values) == 20
@@ -75,7 +75,7 @@ async def test_mehrere_werte_parallel_aber_begrenzt(hass):
 
 async def test_einzelner_fehler_kippt_den_zyklus_nicht(hass):
     hass.session.fail_uris = {"/1/2/7"}
-    client = ETAApiClient(hass, hass.session, "10.0.0.173", 8080)
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
     uris = {f"s{i}": f"/1/2/{i}" for i in range(10)}
     values = await client.async_get_values(uris)
     assert "s7" not in values
