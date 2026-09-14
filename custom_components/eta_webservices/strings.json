@@ -263,9 +263,6 @@
       "lager_zustand": {
         "name": "Store discharge"
       },
-      "pellet_energie": {
-        "name": "Pellet energy consumption"
-      },
       "pellet_energie_gesamt": {
         "name": "Pellet total energy consumption"
       },

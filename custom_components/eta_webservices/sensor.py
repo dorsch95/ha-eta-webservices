@@ -32,16 +32,7 @@ async def async_setup_entry(
     ]
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
-    if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
-        entities.append(
-            ETAPelletEnergySensor(
-                coordinator, "pellet_energie_gesamt", "pellet_gesamtverbrauch"
-            )
-        )
-    else:
-        entities.append(
-            ETAPelletEnergySensor(coordinator, "pellet_energie", "aschebox_verbrauch")
-        )
+    entities.append(_pellet_energie(coordinator))
     if coordinator.enable_errors:
         entities.append(ETAErrorSensor(coordinator))
     entities.extend(
@@ -49,6 +40,29 @@ async def async_setup_entry(
     )
 
     async_add_entities(entities)
+
+
+def _pellet_energie(coordinator: ETADataUpdateCoordinator) -> SensorEntity:
+    """Baut den Energiewert aus dem Gesamtverbrauch der Anlage.
+
+    Der Gesamtverbrauch unter "Zählerstände" ist der Zähler, den jede
+    Anlage führt, und er springt nie zurück. Der Zähler seit dem letzten
+    Leeren der Aschebox taugt dafür nicht: Er sagt, wann die Aschebox zu
+    leeren ist, und hat mit dem Verbrauch der Anlage nichts zu tun.
+
+    Führt eine Anlage den Gesamtverbrauch nicht, entsteht ein
+    Platzhalter mit "-". Sonst böte sich im Energie-Dashboard eine
+    Quelle an, die nie etwas liefert.
+    """
+    if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
+        return ETAPelletEnergySensor(
+            coordinator, "pellet_energie_gesamt", "pellet_gesamtverbrauch"
+        )
+    return ETAPlaceholderSensor(
+        coordinator,
+        "pellet_energie_gesamt",
+        {"translation_key": "pellet_energie_gesamt", "icon": "mdi:lightning-bolt"},
+    )
 
 
 class ETABaseSensor(CoordinatorEntity[ETADataUpdateCoordinator], SensorEntity):
@@ -218,15 +232,14 @@ class ETAPelletEnergySensor(ETABaseSensor):
     Energie in kWh als aufsummierenden Zähler liefern - Kilogramm
     Pellets versteht es nicht.
 
-    Grundlage ist der Gesamtverbrauch der Anlage, wenn ihr Menübaum ihn
-    hergibt: Er läuft immer weiter. Sonst bleibt es beim Zähler seit dem
-    letzten Leeren der Aschebox; dass der zurückspringt, fängt
-    total_increasing ab.
+    Grundlage ist der Gesamtverbrauch der Anlage. Bis Version 0.16 war
+    es der Zähler seit dem letzten Leeren der Aschebox - der misst aber
+    den Füllstand der Aschebox, nicht den Verbrauch.
 
-    Beide sind getrennte Entitäten, und es entsteht immer nur eine. Ein
-    Wechsel der Grundlage würde sonst im Energie-Dashboard als riesiger
-    Verbrauch in einer einzigen Stunde erscheinen - der Sprung von
-    "seit der letzten Leerung" auf "seit dem ersten Tag".
+    Deshalb ist dies eine eigene Entität und nicht die alte mit neuer
+    Grundlage: Der Sprung von "seit der letzten Leerung" auf "seit dem
+    ersten Tag" erschiene im Energie-Dashboard sonst als riesiger
+    Verbrauch in einer einzigen Stunde.
     """
 
     _attr_icon = "mdi:lightning-bolt"

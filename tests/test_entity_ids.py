@@ -44,7 +44,6 @@ ERWARTETE_IDS = {
     "lager_warngrenze": "sensor.eta_heizung_lager_warngrenze",
     "lager_zustand": "sensor.eta_heizung_lager_austragung",
     "aktive_fehler": "sensor.eta_heizung_aktive_fehler",
-    "pellet_energie": "sensor.eta_heizung_pellet_energieverbrauch",
     "pellet_energie_gesamt": "sensor.eta_heizung_pellet_energieverbrauch_gesamt",
     "pellet_gesamtverbrauch": "sensor.eta_heizung_pellet_gesamtverbrauch",
     "pellet_tagesbehaelter": "sensor.eta_heizung_pellet_inhalt_tagesbehalter",

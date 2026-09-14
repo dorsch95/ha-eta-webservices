@@ -222,13 +222,13 @@ Vier weitere Werte gibt es nur, wenn deine Solaranlage eine **Wärmemengenmessun
 
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 
-Die Integration rechnet den Pelletverbrauch in Energie um und stellt ihn als `sensor.eta_heizung_pellet_energieverbrauch` in kWh bereit. Damit lässt er sich neben Strom und Gas ins Energie-Dashboard aufnehmen:
+Die Integration rechnet den Pelletverbrauch in Energie um und stellt ihn als `sensor.eta_heizung_pellet_energieverbrauch_gesamt` in kWh bereit. Damit lässt er sich neben Strom und Gas ins Energie-Dashboard aufnehmen:
 
 **Einstellungen -> Dashboards -> Energie -> Gasverbrauch hinzufügen** und den Sensor auswählen. Danach siehst du deinen Heizverbrauch pro Tag, Monat und Jahr, bei hinterlegtem Pelletpreis auch die Kosten.
 
-Grundlage ist der **Gesamtverbrauch** deiner Anlage mal dem eingestellten Heizwert - ein Zähler, der nie zurückspringt. Kennt deine Anlage ihn nicht, wird stattdessen der Zähler *Verbrauch seit Aschebox leeren* verwendet; dass der beim Leeren auf null zurückspringt, ist unkritisch, weil Home Assistant über Rücksprünge hinweg korrekt weitersummiert.
+Grundlage ist der **Gesamtverbrauch** deiner Anlage (`Zählerstände -> Gesamtverbrauch`) mal dem eingestellten Heizwert. Dieser Zähler springt nie zurück.
 
-Es entsteht immer **genau ein** Energiesensor - je nach Anlage `sensor.eta_heizung_pellet_energieverbrauch_gesamt` oder `sensor.eta_heizung_pellet_energieverbrauch`. Zwei würden sich im Energie-Dashboard doppelt zählen lassen.
+Der Zähler *Verbrauch seit Aschebox leeren* wird dafür **nicht** verwendet: Er sagt, wann die Aschebox zu leeren ist, und hat mit dem Verbrauch der Anlage nichts zu tun. Führt eine Anlage den Gesamtverbrauch nicht, zeigt der Energiesensor `-` - dann bietet sich im Energie-Dashboard auch keine Quelle an, die nie etwas liefert.
 
 > ⚠️ Ändere den Heizwert möglichst nur einmal beim Einrichten. Bei einer nachträglichen Änderung springt der Sensorwert, und Home Assistant wertet einen Sprung nach unten als Zählerrücksetzung - der Gesamtverbrauch fällt dadurch einmalig zu hoch aus.
 

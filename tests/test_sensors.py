@@ -619,7 +619,7 @@ async def test_aschebox_erinnerung_bleibt_aus_ohne_werte(hass, entry, menu_xml):
     assert melder.is_on is False
 
 
-async def test_es_gibt_immer_genau_einen_energiesensor(hass, entry, menu_xml):
+async def test_es_gibt_genau_einen_energiesensor(hass, entry, menu_xml):
     """Zwei würden sich im Energie-Dashboard doppelt zählen lassen."""
     from homeassistant.components.sensor import SensorDeviceClass
 
@@ -631,19 +631,24 @@ async def test_es_gibt_immer_genau_einen_energiesensor(hass, entry, menu_xml):
             if getattr(e, "device_class", None) == SensorDeviceClass.ENERGY
             and str(e.translation_key).startswith("pellet_")
         ]
-        assert len(energie) == 1, [e.translation_key for e in energie]
+        assert len(energie) <= 1, [e.translation_key for e in energie]
 
 
-async def test_ohne_gesamtverbrauch_bleibt_es_beim_ascheboxzaehler(hass, entry, menu_xml):
-    """Ältere Anlagen kennen den Gesamtverbrauch nicht."""
+async def test_ohne_gesamtverbrauch_kein_energiewert(hass, entry, menu_xml):
+    """Die Aschebox misst ihren eigenen Füllstand, nicht den Verbrauch.
+
+    Sie als Ersatzgrundlage zu nehmen, hieße zwei verschiedene Dinge in
+    einen Topf zu werfen. Ohne Gesamtverbrauch gibt es deshalb keinen
+    Energiewert - und im Energie-Dashboard nichts Auswählbares, das
+    nie etwas liefert.
+    """
     hass.session.menu = menu_xml.replace('name="Gesamtverbrauch"', 'name="Weg"')
-    coordinator, by_name = await setup_integration(hass, entry)
+    _, by_name = await setup_integration(hass, entry)
 
-    assert "Pellet Energieverbrauch gesamt" not in by_name
-    energie = by_name["Pellet Energieverbrauch"]
-    assert energie.native_value == pytest.approx(
-        coordinator.data["aschebox_verbrauch"].value * coordinator.pellet_kwh_per_kg
-    )
+    energie = by_name["Pellet Energieverbrauch gesamt"]
+    assert energie.native_value == "-"
+    assert energie.device_class is None
+    assert energie.state_class is None
 
 
 async def test_lager_entsteht_nur_bei_angekreuzter_komponente(hass, entry):

@@ -263,9 +263,6 @@
       "lager_zustand": {
         "name": "Lager Austragung"
       },
-      "pellet_energie": {
-        "name": "Pellet Energieverbrauch"
-      },
       "pellet_energie_gesamt": {
         "name": "Pellet Energieverbrauch gesamt"
       },
