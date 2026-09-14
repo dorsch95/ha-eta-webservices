@@ -3,11 +3,15 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Diese benutzerdefinierte Integration ermöglicht es, Daten von **ETA Heizsystemen** (Pelletkessel, Stückholzkessel, Hackgut, Puffer- und Solarspeicher sowie Frischwassermodule) komplett lokal über die integrierten RESTful Webservices (ETAtouch) auszulesen.
+Diese benutzerdefinierte Integration liest **ETA Heizsysteme** (Pelletkessel, Stückholzkessel, Hackgut, Pufferspeicher und Frischwassermodule) komplett lokal über die integrierten RESTful Webservices (ETAtouch) aus. Es wird nichts an die Heizung geschrieben und nichts ins Internet gesendet.
 
-⚡ Das Anlagenschema wird direkt im UI-Setup ausgewählt und die passenden Grafiken werden vollautomatisch im Hintergrund generiert.
+⚡ Du kreuzt im Setup an, welche Komponenten deine Anlage hat. Die passenden Grafiken landen automatisch auf deiner Festplatte, und eine einzige Dashboard-Karte deckt alle Anlagen ab.
 
-🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Sollte ein Messwert an einer Anlage abweichend benannt sein, wird automatisch auf eine hinterlegte Standard-URI zurückgefallen.
+📈 Der Pelletverbrauch steht als Energiewert bereit und lässt sich ins **Energie-Dashboard** von Home Assistant aufnehmen.
+
+🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Sollte ein Messwert an einer Anlage abweichend benannt sein, wird automatisch auf eine hinterlegte Standard-URI zurückgefallen; findet sich zu einer ganzen Komponente nichts, meldet sich Home Assistant mit einem Reparatur-Hinweis.
+
+> ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
 ---
 
@@ -15,11 +19,14 @@ Diese benutzerdefinierte Integration ermöglicht es, Daten von **ETA Heizsysteme
 
 Damit Home Assistant auf die Daten zugreifen kann, müssen die Webservices auf der Steuerung deiner Heizung aktiviert werden:
 
-1. Registriere deinen Kessel (falls noch nicht geschehen) auf dem Portal [meinETA](https://meineta.at).
-2. Gehe am Touch-Display deiner Heizung auf **Einstellungen** -> **Webservices**.
-3. Schalte dort den **LAN-Zugriff** frei.
-4. Gehe zu **Systemeinstellungen** -> **meinETA Zugang** und activiere die **Webservices**.
-5. Die API der Heizung ist nun lokal unter `http://<DEINE-ETA-IP>:8080/user/var` erreichbar.
+1. Registriere deine Anlage auf dem Portal [meinETA](https://meineta.at), falls noch nicht geschehen.
+2. Gehe am Touch-Display deiner Heizung unten links auf den **Werkzeugkasten** (Einstellungen).
+3. Öffne **Internet & Schnittstellen** -> **meinETA Zugang**.
+4. Aktiviere dort die **Webservices**.
+
+Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` erreichbar. Du kannst das im Browser prüfen: Erscheint eine XML-Seite mit dem Menübaum deiner Anlage, ist alles bereit.
+
+> 🔒 Die Webservices laufen unverschlüsselt und ohne Anmeldung - das gibt ETA so vor. Wer in deinem Heimnetz ist, kann die Werte mitlesen. Die Heizung gehört deshalb weder ins Internet noch ins Gäste-WLAN.
 
 ---
 
@@ -61,11 +68,14 @@ Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Gerät
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
 * **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
-* **🗑️ Aschebox:** Verbrauch seit letzter Leerung (kg) und der eingestellte Schwellwert, ab dem geleert werden soll (kg), jeweils als eigener Sensor - plus ein dritter, kombinierter Sensor `sensor.eta_heizung_aschebox_status` mit dem Format "459/1000kg" für die Dashboard-Anzeige.
-* **🛢️ Pufferspeicher:** Puffer-Ladezustand (%), sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage zwischen 3 und 8 Fühlern). Die Integration erkennt die tatsächliche Anzahl automatisch über den Menübaum; Fühler 1 hat zusätzlich das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
-* **♨️ Heizkreis 1:** Vorlauftemperatur, Anforderung (Zustandstext wie *Aus*, *Heizbetrieb* etc.).
-* **♨️ Heizkreis 2** (nur bei Schema *2x Heizkreis*, sofern ein FUB "HK2" gefunden wird): Vorlauftemperatur, Anforderung.
-* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur, sowie Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls die Anlage keinen entsprechenden Fühler hat.
+* **🗑️ Aschebox:** Verbrauch seit der letzten Leerung (kg) und der Schwellwert, ab dem geleert werden soll (kg) - plus ein kombinierter Sensor `sensor.eta_heizung_aschebox_status` im Format "459/1000kg" für die Dashboard-Anzeige.
+* **📊 Verbrauch:** Verbrauch seit der letzten Entaschung (kg) und der umgerechnete Energieverbrauch (kWh). Beide Zähler liefern Langzeitstatistik, sind also über Monate auswertbar.
+* **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
+* **♨️ Heizkreis 1 und 2:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*).
+* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls deine Anlage keinen entsprechenden Fühler hat.
+* **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
+
+Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast - keine dauerhaft leeren Sensoren für Hardware, die deine Anlage nicht hat.
 
 ### Funktionsblöcke wurden umbenannt?
 
@@ -261,10 +271,29 @@ Mit `suffix` lässt sich zusätzlich etwas hinter den Wert setzen.
 
 ---
 
+## ⚡ Pelletverbrauch im Energie-Dashboard
 
-## 🩺 Wenn ein Wert fehlt
+Die Integration rechnet den Pelletverbrauch in Energie um und stellt ihn als `sensor.eta_heizung_pellet_energieverbrauch` in kWh bereit. Damit lässt er sich neben Strom und Gas ins Energie-Dashboard aufnehmen:
 
-Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Fehlt ein Wert, liegt das fast immer daran, dass ein Funktionsblock umbenannt wurde oder die Hardware an deiner Anlage nicht verbaut ist.
+**Einstellungen -> Dashboards -> Energie -> Gasverbrauch hinzufügen** und den Sensor auswählen. Danach siehst du deinen Heizverbrauch pro Tag, Monat und Jahr, bei hinterlegtem Pelletpreis auch die Kosten.
+
+Grundlage ist der Zähler *Verbrauch seit Aschebox leeren* mal dem eingestellten Heizwert. Dass dieser Zähler beim Leeren der Aschebox auf null zurückspringt, ist unkritisch - Home Assistant summiert über die Rücksprünge hinweg korrekt weiter.
+
+> ⚠️ Ändere den Heizwert möglichst nur einmal beim Einrichten. Bei einer nachträglichen Änderung springt der Sensorwert, und Home Assistant wertet einen Sprung nach unten als Zählerrücksetzung - der Gesamtverbrauch fällt dadurch einmalig zu hoch aus.
+
+---
+
+## 🔧 Wenn eine Komponente keine Werte liefert
+
+Findet die Integration im Menübaum nichts zu einer angekreuzten Komponente, legt sie eine **Reparatur** an (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und führt direkt zu den Optionen, wo du den tatsächlichen Funktionsblock-Namen eintragen kannst.
+
+Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann liegt es an der Verbindung und nicht an den Namen.
+
+---
+
+## 🩺 Wenn ein einzelner Wert fehlt
+
+Fehlt nicht eine ganze Komponente, sondern ein einzelner Messwert, hilft der Diagnose-Export weiter. Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen - fehlt einer, ist er an deiner Anlage meist anders benannt oder schlicht nicht verbaut.
 
 Unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Gerät "ETA Heizung" -> Diagnose herunterladen** bekommst du eine Datei, die für jeden Messwert zeigt:
 
@@ -288,6 +317,8 @@ pytest
 ```
 
 Dieselben Tests laufen zusammen mit `hassfest` und der HACS-Validierung bei jedem Push automatisch in GitHub Actions.
+
+Ein Teil der Tests prüft nicht den Code, sondern dieses README: dass die Dashboard-Karte nur gültige Elementtypen verwendet, dass jede darin genannte Entität wirklich entsteht, und dass sich die Entitäts-IDs einer deutschsprachigen Installation nicht ändern.
 
 ---
 
