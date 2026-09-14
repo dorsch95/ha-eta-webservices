@@ -7,7 +7,8 @@
           "host": "IP address of the heating system",
           "port": "Port (default: 8080)",
           "components": "Components present on your system",
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)"
         }
       },
       "fub_names": {
@@ -21,13 +22,24 @@
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)"
         }
+      },
+      "reconfigure": {
+        "title": "Change ETA heating system",
+        "data": {
+          "host": "IP address of the heating system",
+          "port": "Port (default: 8080)",
+          "components": "Components present on your system",
+          "scan_interval": "Polling interval (seconds)",
+          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)"
+        }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler."
     },
     "abort": {
-      "already_configured": "This ETA heating system (IP address + port) is already configured."
+      "already_configured": "This ETA heating system (IP address + port) is already configured.",
+      "reconfigure_successful": "Settings saved."
     }
   },
   "options": {
@@ -38,7 +50,8 @@
           "host": "IP address of the heating system",
           "port": "Port (default: 8080)",
           "components": "Components present on your system",
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)"
         }
       },
       "fub_names": {
@@ -65,6 +78,112 @@
         "fwm": "Fresh water / hot water module",
         "hk1": "Heating circuit 1",
         "hk2": "Heating circuit 2"
+      }
+    }
+  },
+  "issues": {
+    "component_not_found": {
+      "title": "Component \"{component}\" not found",
+      "description": "The menu of your ETA heating system contains no values for the component \"{component}\". Its function block is probably named differently on your controller (expected roles: {fub_names}).\n\nOpen **Settings -> Devices & Services -> ETA Heiztechnik Web Service -> Configure** and enter the actual name, or untick the component if your system does not have it."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "aschebox_schwelle": {
+        "name": "Empty ash box after"
+      },
+      "aschebox_status": {
+        "name": "Ash box status"
+      },
+      "aschebox_verbrauch": {
+        "name": "Consumption since ash box emptied"
+      },
+      "aussentemperatur": {
+        "name": "Outside temperature"
+      },
+      "entaschung_verbrauch": {
+        "name": "Consumption since de-ashing"
+      },
+      "fwm_warmwasser": {
+        "name": "Hot water temperature"
+      },
+      "fwm_zirkulation": {
+        "name": "Circulation temperature"
+      },
+      "heizkreis2_anforderung": {
+        "name": "Heating circuit 2 demand"
+      },
+      "heizkreis2_vorlauf": {
+        "name": "Heating circuit 2 flow temperature"
+      },
+      "heizkreis_anforderung": {
+        "name": "Heating circuit demand"
+      },
+      "heizkreis_vorlauf": {
+        "name": "Heating circuit flow temperature"
+      },
+      "kessel_druck": {
+        "name": "Boiler pressure"
+      },
+      "kessel_soll": {
+        "name": "Boiler target temperature"
+      },
+      "kessel_temperatur": {
+        "name": "Boiler temperature"
+      },
+      "komponente_fwm": {
+        "name": "Hot water module component"
+      },
+      "komponente_hk1": {
+        "name": "Heating circuit 1 component"
+      },
+      "komponente_hk2": {
+        "name": "Heating circuit 2 component"
+      },
+      "komponente_kessel": {
+        "name": "Boiler component"
+      },
+      "komponente_puffer": {
+        "name": "Buffer tank component"
+      },
+      "pellet_energie": {
+        "name": "Pellet energy consumption"
+      },
+      "pellet_tagesbehälter": {
+        "name": "Pellet day hopper level"
+      },
+      "puffer_fuehler_1": {
+        "name": "Buffer sensor 1"
+      },
+      "puffer_fuehler_2": {
+        "name": "Buffer sensor 2"
+      },
+      "puffer_fuehler_3": {
+        "name": "Buffer sensor 3"
+      },
+      "puffer_fuehler_4": {
+        "name": "Buffer sensor 4"
+      },
+      "puffer_fuehler_5": {
+        "name": "Buffer sensor 5"
+      },
+      "puffer_fuehler_6": {
+        "name": "Buffer sensor 6"
+      },
+      "puffer_fuehler_7": {
+        "name": "Buffer sensor 7"
+      },
+      "puffer_fuehler_8": {
+        "name": "Buffer sensor 8"
+      },
+      "puffer_ladezustand": {
+        "name": "Buffer charge level"
+      },
+      "restsauerstoff": {
+        "name": "Residual oxygen"
+      },
+      "ruecklauf_temperatur": {
+        "name": "Return temperature"
       }
     }
   }

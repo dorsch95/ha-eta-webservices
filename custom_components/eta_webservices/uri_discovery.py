@@ -29,6 +29,7 @@ DISCOVERY_PATHS = {
     "kessel_soll": ("kessel", ["Kessel", "Kessel", "Kessel Soll"]),
     "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
     "aschebox_verbrauch": ("kessel", ["Ausgänge", "Zählerstände", "Verbrauch seit Aschebox leeren"]),
+    "entaschung_verbrauch": ("kessel", ["Ausgänge", "Zählerstände", "Verbrauch seit Entaschung"]),
     "aschebox_schwelle": ("kessel", ["Kessel", "Entaschung", "Aschebox leeren nach"]),
     "aussentemperatur": ("sys", ["Außentemperatur", "Außentemperaturfühler"]),
     "puffer_ladezustand": ("pufferflex", ["Puffer", "Ladezustand"]),

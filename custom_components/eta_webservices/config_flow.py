@@ -26,11 +26,15 @@ from .const import (
     COMPONENTS,
     CONF_COMPONENTS,
     CONF_FUB_NAMES,
+    CONF_PELLET_KWH_PER_KG,
     CONF_SCAN_INTERVAL,
+    DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_PELLET_KWH_PER_KG,
     MAX_SCAN_INTERVAL,
+    MIN_PELLET_KWH_PER_KG,
     MIN_SCAN_INTERVAL,
     components_from_config,
     fub_role_default,
@@ -82,6 +86,15 @@ def _connection_schema(current: dict[str, Any]) -> vol.Schema:
                 cv.positive_int,
                 vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
             ),
+            vol.Required(
+                CONF_PELLET_KWH_PER_KG,
+                default=current.get(
+                    CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG
+                ),
+            ): vol.All(
+                vol.Coerce(float),
+                vol.Range(min=MIN_PELLET_KWH_PER_KG, max=MAX_PELLET_KWH_PER_KG),
+            ),
         }
     )
 
@@ -109,6 +122,36 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Erlaubt das Ändern der Einstellungen aus dem Integrationsmenü."""
+        eintrag = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            if await _test_connection(
+                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+            ):
+                return self.async_update_reload_and_abort(
+                    eintrag,
+                    data_updates={
+                        **user_input,
+                        CONF_COMPONENTS: normalize_components(
+                            user_input.get(CONF_COMPONENTS)
+                        ),
+                    },
+                )
+            errors["base"] = "cannot_connect"
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=_connection_schema(
+                user_input or {**eintrag.data, **eintrag.options}
+            ),
+            errors=errors,
+        )
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

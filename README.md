@@ -45,11 +45,12 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
 4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1, Heizkreis 2). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
-5. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-6. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-7. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
+5. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deiner Lieferscheinung ein anderer Wert, trage ihn hier ein.
+6. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
+7. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+8. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
 
-Host, Port, **Abfrageintervall**, die Komponenten und die FUB-Namen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
+Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Über das Drei-Punkte-Menü der Integration geht es alternativ mit **Neu konfigurieren**.
 
 > 💡 Das **Abfrageintervall** legt fest, wie oft die Anlage ausgelesen wird (Standard 30 Sekunden, erlaubt sind 10 bis 600). Alle Werte werden pro Zyklus parallel geholt, die Steuerung wird dabei aber bewusst nur mit wenigen gleichzeitigen Anfragen belastet.
 
@@ -86,6 +87,9 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt automatisch genau die Komponenten an, die du im Setup ausgewählt hast - fehlende Komponenten werden ausgeblendet, und die übrigen rücken nach.
 
 Erstelle eine neue Karte vom Typ **Manuell** (oben rechts auf Code-Editor umschalten) und füge den YAML-Code ein. Es ist **nichts zu löschen und nichts anzupassen**.
+
+> ℹ️ Die Entitäts-IDs unten gelten für eine **deutschsprachige** Home-Assistant-Installation. Home Assistant bildet Entitäts-IDs aus dem übersetzten Namen; bei englischer Spracheinstellung heißt die Kesseltemperatur entsprechend `sensor.eta_heizung_boiler_temperature`. Deine bestehenden Entitäten behalten ihre ID in jedem Fall.
+
 
 <details>
 <summary><b>Wie das funktioniert</b> (aufklappen)</summary>

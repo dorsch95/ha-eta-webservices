@@ -21,6 +21,7 @@ from .const import (
     normalize_components,
     puffer_fuehler_info,
 )
+from .repairs import async_check_components
 from .uri_discovery import async_discover_uris
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,6 +92,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         client: ETAApiClient,
         scan_interval: int,
         components: list[str],
+        pellet_kwh_per_kg: float,
     ) -> None:
         super().__init__(
             hass,
@@ -101,8 +103,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         )
         self.client = client
         self.components = normalize_components(components)
+        self.pellet_kwh_per_kg = pellet_kwh_per_kg
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
+        self.components_without_data: list[str] = []
 
         self.device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -124,6 +128,13 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         )
         self.sensor_defs = build_sensor_defs(
             self.discovered_uris, indices, self.components
+        )
+        self.components_without_data = async_check_components(
+            self.hass,
+            self.config_entry.entry_id,
+            self.components,
+            set(self.discovered_uris),
+            menu_readable=bool(self.discovered_uris),
         )
 
     async def _async_update_data(self) -> dict[str, ETAValue]:

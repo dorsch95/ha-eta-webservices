@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import COMPONENTS, OPTIONAL_SENSORS
+from .const import OPTIONAL_SENSORS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 
 
@@ -33,6 +37,7 @@ async def async_setup_entry(
     )
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
+    entities.append(ETAPelletEnergySensor(coordinator))
     entities.extend(
         ETAComponentMarkerSensor(coordinator, key) for key in coordinator.components
     )
@@ -69,7 +74,7 @@ class ETAMeasurementSensor(ETABaseSensor):
         info: dict,
     ) -> None:
         super().__init__(coordinator, key)
-        self._attr_name = info["name"]
+        self._attr_translation_key = info["translation_key"]
         self._attr_icon = info["icon"]
         self._attr_device_class = info.get("device_class")
         self._attr_state_class = info.get("state_class")
@@ -140,7 +145,7 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
     """
 
     _attr_icon = "mdi:trash-can"
-    _attr_name = "Aschebox Status"
+    _attr_translation_key = "aschebox_status"
 
     def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
         super().__init__(coordinator, "aschebox_status")
@@ -153,6 +158,37 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
             return None
         try:
             return f"{float(verbrauch.value):.0f}/{float(schwelle.value):.0f}kg"
+        except (TypeError, ValueError):
+            return None
+
+
+class ETAPelletEnergySensor(ETABaseSensor):
+    """Rechnet den Pelletverbrauch in Energie um.
+
+    Das Energie-Dashboard von Home Assistant nimmt nur Quellen an, die
+    Energie in kWh als aufsummierenden Zähler liefern - Kilogramm Pellets
+    versteht es nicht. Grundlage ist der Verbrauchszähler seit dem letzten
+    Leeren der Aschebox; dass der beim Leeren auf null zurückspringt, ist
+    unkritisch, weil total_increasing genau dafür gedacht ist.
+    """
+
+    _attr_icon = "mdi:lightning-bolt"
+    _attr_translation_key = "pellet_energie"
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = "kWh"
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator, "pellet_energie")
+
+    @property
+    def native_value(self):
+        verbrauch = self.coordinator.data.get("aschebox_verbrauch")
+        if verbrauch is None:
+            return None
+        try:
+            return float(verbrauch.value) * self.coordinator.pellet_kwh_per_kg
         except (TypeError, ValueError):
             return None
 
@@ -175,7 +211,7 @@ class ETAComponentMarkerSensor(ETABaseSensor):
     def __init__(self, coordinator: ETADataUpdateCoordinator, component: str) -> None:
         super().__init__(coordinator, f"komponente_{component}")
         self._component = component
-        self._attr_name = f"Komponente {COMPONENTS[component]['name']}"
+        self._attr_translation_key = f"komponente_{component}"
 
     @property
     def available(self) -> bool:

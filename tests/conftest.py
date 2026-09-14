@@ -20,6 +20,28 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "custom_components"))
 
 FIXTURES = Path(__file__).parent / "fixtures"
+UEBERSETZUNGEN = (
+    Path(__file__).resolve().parents[1]
+    / "custom_components"
+    / "eta_webservices"
+    / "translations"
+)
+
+
+def entity_name(entity, sprache: str = "de") -> str:
+    """Löst den Anzeigenamen einer Entität aus den Übersetzungen auf.
+
+    Home Assistant setzt den Namen zur Laufzeit aus translation_key und der
+    Sprachdatei zusammen. Die Tests laufen ohne laufende Instanz, bilden das
+    hier also nach - sonst ließe sich nicht prüfen, welche Entity-IDs bei
+    einer Installation tatsächlich entstehen.
+    """
+    import json
+
+    daten = json.loads(
+        (UEBERSETZUNGEN / f"{sprache}.json").read_text(encoding="utf-8")
+    )
+    return daten["entity"]["sensor"][entity.translation_key]["name"]
 
 RESPONSE_LATENCY = 0.01
 
@@ -174,6 +196,32 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
         lambda _hass, *args, **kwargs: instance.session,
     )
     return instance
+
+
+@pytest.fixture(autouse=True)
+def reparaturen(monkeypatch) -> dict[str, list]:
+    """Fängt die Reparatur-Hinweise ab.
+
+    Die Issue-Registry von Home Assistant braucht eine laufende Instanz mit
+    Speicher. Für die Tests genügt es festzuhalten, welche Hinweise angelegt
+    und welche wieder entfernt werden - genau das ist die Logik dieser
+    Integration.
+    """
+    protokoll: dict[str, list] = {"angelegt": [], "entfernt": []}
+
+    def anlegen(hass, domain, issue_id, **kwargs):
+        protokoll["angelegt"].append((issue_id, kwargs.get("translation_placeholders")))
+
+    def entfernen(hass, domain, issue_id):
+        protokoll["entfernt"].append(issue_id)
+
+    monkeypatch.setattr(
+        "eta_webservices.repairs.issue_registry.async_create_issue", anlegen
+    )
+    monkeypatch.setattr(
+        "eta_webservices.repairs.issue_registry.async_delete_issue", entfernen
+    )
+    return protokoll
 
 
 @pytest.fixture

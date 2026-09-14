@@ -13,7 +13,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import ETAApiClient
 from .const import (
     CONF_FUB_NAMES,
+    CONF_PELLET_KWH_PER_KG,
     CONF_SCAN_INTERVAL,
+    DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_SCAN_INTERVAL,
     PLATFORMS,
     components_from_config,
@@ -55,6 +57,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     components = components_from_config(config)
     fub_name_overrides = config.get(CONF_FUB_NAMES, {})
     scan_interval = config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    pellet_kwh_per_kg = config.get(
+        CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG
+    )
 
     try:
         await hass.async_add_executor_job(
@@ -65,7 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     coordinator = ETADataUpdateCoordinator(
-        hass, entry, client, scan_interval, components
+        hass, entry, client, scan_interval, components, pellet_kwh_per_kg
     )
 
     await coordinator.async_discover(fub_name_overrides)

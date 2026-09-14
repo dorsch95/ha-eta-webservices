@@ -8,13 +8,15 @@ import eta_webservices
 from eta_webservices import sensor as sensor_platform
 from eta_webservices.const import OPTIONAL_SENSORS
 
+from .conftest import entity_name
+
 
 async def setup_integration(hass, entry):
     assert await eta_webservices.async_setup_entry(hass, entry) is True
     coordinator = entry.runtime_data
     entities: list = []
     await sensor_platform.async_setup_entry(hass, entry, entities.extend)
-    return coordinator, {entity.name: entity for entity in entities}
+    return coordinator, {entity_name(entity): entity for entity in entities}
 
 
 async def test_setup_legt_entitaeten_an(hass, entry):
@@ -202,7 +204,9 @@ async def test_marker_je_gewaehlter_komponente(hass, entry):
 
     coordinator, by_name = await setup_integration(hass, entry)
     for key in coordinator.components:
-        marker = by_name[f"Komponente {COMPONENTS[key]['name']}"]
+        marker = next(
+            e for e in by_name.values() if e.translation_key == f"komponente_{key}"
+        )
         assert marker.native_value == key
         assert marker.entity_category == "diagnostic"
 
@@ -241,3 +245,82 @@ async def test_altes_anlagenschema_laeuft_weiter(hass, entry):
     assert coordinator.components == ["kessel", "puffer", "fwm", "hk1"]
     assert "Heizkreis Vorlauftemperatur" in by_name
     assert "Komponente Heizkreis 2" not in by_name
+
+
+async def test_verbrauchszaehler_liefern_langzeitstatistik(hass, entry):
+    from homeassistant.components.sensor import SensorStateClass
+
+    _, by_name = await setup_integration(hass, entry)
+    for name in ("Aschebox Verbrauch seit Leerung", "Verbrauch seit Entaschung"):
+        sensor = by_name[name]
+        assert sensor.state_class == SensorStateClass.TOTAL_INCREASING
+        assert sensor.native_unit_of_measurement == "kg"
+
+
+async def test_verbrauchszaehler_sind_mit_ihrer_geraeteklasse_vertraeglich(hass, entry):
+    from homeassistant.components.sensor.const import (
+        DEVICE_CLASS_STATE_CLASSES,
+        DEVICE_CLASS_UNITS,
+    )
+
+    _, by_name = await setup_integration(hass, entry)
+    for sensor in by_name.values():
+        if sensor.device_class is None:
+            continue
+        erlaubte = DEVICE_CLASS_STATE_CLASSES.get(sensor.device_class)
+        if erlaubte is not None and sensor.state_class is not None:
+            assert sensor.state_class in erlaubte, sensor.translation_key
+        einheiten = DEVICE_CLASS_UNITS.get(sensor.device_class)
+        if einheiten and sensor.native_unit_of_measurement is not None:
+            assert sensor.native_unit_of_measurement in einheiten, sensor.translation_key
+
+
+async def test_pellet_energie_rechnet_kilogramm_in_kwh(hass, entry):
+    from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+
+    coordinator, by_name = await setup_integration(hass, entry)
+    energie = by_name["Pellet Energieverbrauch"]
+
+    kilogramm = coordinator.data["aschebox_verbrauch"].value
+    assert energie.native_value == pytest.approx(
+        kilogramm * coordinator.pellet_kwh_per_kg
+    )
+    assert energie.device_class == SensorDeviceClass.ENERGY
+    assert energie.state_class == SensorStateClass.TOTAL_INCREASING
+    assert energie.native_unit_of_measurement == "kWh"
+
+
+async def test_pellet_energie_folgt_dem_eingestellten_heizwert(hass, entry):
+    entry.data["pellet_kwh_per_kg"] = 5.0
+    coordinator, by_name = await setup_integration(hass, entry)
+    assert coordinator.pellet_kwh_per_kg == 5.0
+    assert by_name["Pellet Energieverbrauch"].native_value == pytest.approx(
+        coordinator.data["aschebox_verbrauch"].value * 5.0
+    )
+
+
+async def test_reparaturhinweis_bei_nicht_gefundener_komponente(
+    hass, entry, menu_xml, reparaturen
+):
+    hass.session.menu = menu_xml.replace('name="FWM"', 'name="Warmwasser"')
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert "fwm" in coordinator.components_without_data
+    angelegt = [i for i, _ in reparaturen["angelegt"]]
+    assert "testeintrag_fwm_nicht_gefunden" in angelegt
+    assert "testeintrag_kessel_nicht_gefunden" not in angelegt
+
+
+async def test_kein_reparaturhinweis_wenn_alles_gefunden(hass, entry, reparaturen):
+    coordinator, _ = await setup_integration(hass, entry)
+    assert coordinator.components_without_data == []
+    assert reparaturen["angelegt"] == []
+    assert reparaturen["entfernt"]
+
+
+async def test_kein_reparaturhinweis_ohne_lesbaren_menuebaum(hass, entry, reparaturen):
+    hass.session.fail_uris = {"/user/menu"}
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.components_without_data == []
+    assert reparaturen["angelegt"] == []

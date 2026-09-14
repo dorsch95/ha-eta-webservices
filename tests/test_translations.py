@@ -56,3 +56,22 @@ def test_fub_felder_sind_uebersetzt():
     for role in FUB_ROLE_DEFAULT_NAMES:
         assert f"config.step.fub_names.data.{role}" in erwartet
         assert f"options.step.fub_names.data.{role}" in erwartet
+
+
+def test_jede_entitaet_ist_in_allen_sprachen_benannt():
+    import json
+
+    from eta_webservices.const import (
+        DISCOVERY_ONLY_SENSORS,
+        OPTIONAL_SENSORS,
+        STATIC_URIs,
+    )
+
+    schluessel = {
+        info["translation_key"]
+        for tabelle in (STATIC_URIs, DISCOVERY_ONLY_SENSORS, OPTIONAL_SENSORS)
+        for info in tabelle.values()
+    }
+    for pfad in TRANSLATIONS:
+        namen = json.loads(pfad.read_text(encoding="utf-8"))["entity"]["sensor"]
+        assert schluessel <= set(namen), pfad.name

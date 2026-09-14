@@ -7,7 +7,8 @@
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
           "components": "An deiner Anlage vorhandene Komponenten",
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)"
         }
       },
       "fub_names": {
@@ -21,13 +22,24 @@
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)"
         }
+      },
+      "reconfigure": {
+        "title": "ETA Heizung ändern",
+        "data": {
+          "host": "IP-Adresse der Heizung",
+          "port": "Port (Standard: 8080)",
+          "components": "An deiner Anlage vorhandene Komponenten",
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)"
+        }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
     },
     "abort": {
-      "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet."
+      "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
+      "reconfigure_successful": "Einstellungen gespeichert."
     }
   },
   "options": {
@@ -38,7 +50,8 @@
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
           "components": "An deiner Anlage vorhandene Komponenten",
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)"
         }
       },
       "fub_names": {
@@ -65,6 +78,112 @@
         "fwm": "Frischwassermodul / Warmwasser",
         "hk1": "Heizkreis 1",
         "hk2": "Heizkreis 2"
+      }
+    }
+  },
+  "issues": {
+    "component_not_found": {
+      "title": "Komponente \"{component}\" nicht gefunden",
+      "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** und trage den tatsächlichen Namen ein - oder hake die Komponente ab, falls deine Anlage sie nicht hat."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "aschebox_schwelle": {
+        "name": "Aschebox Leeren nach"
+      },
+      "aschebox_status": {
+        "name": "Aschebox Status"
+      },
+      "aschebox_verbrauch": {
+        "name": "Aschebox Verbrauch seit Leerung"
+      },
+      "aussentemperatur": {
+        "name": "Außentemperatur"
+      },
+      "entaschung_verbrauch": {
+        "name": "Verbrauch seit Entaschung"
+      },
+      "fwm_warmwasser": {
+        "name": "FWM Warmwassertemperatur"
+      },
+      "fwm_zirkulation": {
+        "name": "FWM Zirkulation"
+      },
+      "heizkreis2_anforderung": {
+        "name": "Heizkreis 2 Anforderung"
+      },
+      "heizkreis2_vorlauf": {
+        "name": "Heizkreis 2 Vorlauftemperatur"
+      },
+      "heizkreis_anforderung": {
+        "name": "Heizkreis Anforderung"
+      },
+      "heizkreis_vorlauf": {
+        "name": "Heizkreis Vorlauftemperatur"
+      },
+      "kessel_druck": {
+        "name": "Kesseldruck"
+      },
+      "kessel_soll": {
+        "name": "Kessel Solltemperatur"
+      },
+      "kessel_temperatur": {
+        "name": "Kesseltemperatur"
+      },
+      "komponente_fwm": {
+        "name": "Komponente FWM"
+      },
+      "komponente_hk1": {
+        "name": "Komponente Heizkreis 1"
+      },
+      "komponente_hk2": {
+        "name": "Komponente Heizkreis 2"
+      },
+      "komponente_kessel": {
+        "name": "Komponente Kessel"
+      },
+      "komponente_puffer": {
+        "name": "Komponente Pufferspeicher"
+      },
+      "pellet_energie": {
+        "name": "Pellet Energieverbrauch"
+      },
+      "pellet_tagesbehälter": {
+        "name": "Pellet Inhalt Tagesbehälter"
+      },
+      "puffer_fuehler_1": {
+        "name": "Puffer Fühler 1"
+      },
+      "puffer_fuehler_2": {
+        "name": "Puffer Fühler 2"
+      },
+      "puffer_fuehler_3": {
+        "name": "Puffer Fühler 3"
+      },
+      "puffer_fuehler_4": {
+        "name": "Puffer Fühler 4"
+      },
+      "puffer_fuehler_5": {
+        "name": "Puffer Fühler 5"
+      },
+      "puffer_fuehler_6": {
+        "name": "Puffer Fühler 6"
+      },
+      "puffer_fuehler_7": {
+        "name": "Puffer Fühler 7"
+      },
+      "puffer_fuehler_8": {
+        "name": "Puffer Fühler 8"
+      },
+      "puffer_ladezustand": {
+        "name": "Puffer Ladezustand"
+      },
+      "restsauerstoff": {
+        "name": "Restsauerstoff"
+      },
+      "ruecklauf_temperatur": {
+        "name": "Rücklauftemperatur"
       }
     }
   }
