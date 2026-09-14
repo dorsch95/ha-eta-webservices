@@ -220,6 +220,25 @@ Vier weitere Werte gibt es nur, wenn deine Solaranlage eine **Wärmemengenmessun
 
 ---
 
+## 🪵 Was dein Kesseltyp liefert
+
+Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, entscheidet die Anlage. Was sie nicht führt, zeigt `-`.
+
+| | Gesamtverbrauch | Wärmemengenmessung |
+|---|---|---|
+| **Pellets** | immer | je nach Anlage |
+| **Hackgut** | nein | je nach Anlage |
+| **Stückholz** | nein | je nach Anlage |
+| **Solar** | – | je nach Anlage |
+
+**Ohne Gesamtverbrauch** gibt es keinen Energiewert für das Energie-Dashboard - Hackgut- und Stückholzkessel messen ihren Verbrauch nicht. Die Sensoren heißen trotzdem "Pellet...", weil die Umrechnung über den Heizwert an Pellets hängt; bei anderen Brennstoffen bleiben sie leer.
+
+**Ohne Wärmemengenmessung** fehlen an der Solaranlage Leistung, Wärmemenge und die Erträge. Die Kollektortemperatur gibt es immer.
+
+Du musst nichts davon auswählen: Die Integration sieht im Menübaum deiner Anlage nach.
+
+---
+
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 
 Die Integration rechnet den Pelletverbrauch in Energie um und stellt ihn als `sensor.eta_heizung_pellet_energieverbrauch_gesamt` in kWh bereit. Damit lässt er sich neben Strom und Gas ins Energie-Dashboard aufnehmen:
@@ -247,6 +266,8 @@ Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die H
 Schalter sind **standardmäßig ausgeschaltet** - sie schreiben in die Heizungssteuerung, und dazu soll niemand durch ein Update kommen. Einschalten kannst du sie beim Einrichten oder später unter **Konfigurieren**; dabei erscheint ein Hinweis, was das bedeutet.
 
 Ist der Schreibzugriff freigegeben und findet die Integration an einem Funktionsblock eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel` sowie `switch.eta_heizung_heizkreis_1` bis `switch.eta_heizung_heizkreis_4`.
+
+In der Dashboard-Karte erscheinen sie als **antippbares Symbol unten rechts** in der jeweiligen Kachel; die Betriebsart steht als Text darüber und öffnet beim Antippen die Auswahl. Beides erscheint nur, wenn es die Entität wirklich gibt - ohne freigegebenen Schreibzugriff bleibt die Kachel wie bisher.
 
 Ein Schalter entsteht nur, wenn **alle** folgenden Punkte zutreffen:
 

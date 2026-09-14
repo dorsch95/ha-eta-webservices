@@ -51,11 +51,31 @@ def raster(karte):
     return [variante["card"] for variante in varianten(karte)]
 
 
+def abgesichert(karte):
+    """Entitäten, die in einer eigenen Bedingung stecken und fehlen dürfen."""
+    return {
+        innen["entity"]
+        for element in alle_elemente(karte)
+        if element["type"] == "conditional"
+        for innen in element["elements"]
+    }
+
+
 def alle_elemente(karte):
+    """Alle Elemente der Karte, auch die in Bedingungen verschachtelten.
+
+    Ohne den Abstieg in "conditional" blieben genau die Elemente
+    ungeprüft, die nicht immer entstehen - Schalter und Betriebsart.
+    """
+
+    def absteigen(elemente):
+        for element in elemente:
+            yield element
+            yield from absteigen(element.get("elements", []))
+
     for gitter in raster(karte):
         for unterkarte in gitter["cards"]:
-            for element in unterkarte["card"]["elements"]:
-                yield element
+            yield from absteigen(unterkarte["card"]["elements"])
 
 
 def test_alle_yaml_bloecke_im_readme_sind_gueltig():
@@ -128,22 +148,63 @@ def test_readme_verweist_auf_die_kartendatei():
 
 
 async def test_jede_referenzierte_entitaet_existiert(hass, entry, karte):
+    import json
+
     from homeassistant.util import slugify
+
+    from .conftest import UEBERSETZUNGEN
 
     from .test_sensors import setup_integration
 
+    from eta_webservices import select as select_platform
+    from eta_webservices import switch as switch_platform
+
     entry.data["components"] = list(COMPONENTS)
+    entry.data["enable_switches"] = True
     _, by_name = await setup_integration(hass, entry)
     vorhanden = {f"sensor.{slugify('ETA Heizung ' + name)}" for name in by_name}
+
+    for bereich, platform in (("switch", switch_platform), ("select", select_platform)):
+        gesammelt: list = []
+        await platform.async_setup_entry(hass, entry, gesammelt.extend)
+        namen = json.loads(
+            (UEBERSETZUNGEN / "de.json").read_text(encoding="utf-8")
+        )["entity"][bereich]
+        vorhanden |= {
+            f"{bereich}.{slugify('ETA Heizung ' + namen[e.translation_key]['name'])}"
+            for e in gesammelt
+        }
 
     referenziert = {
         unterkarte["conditions"][0]["entity"]
         for gitter in raster(karte)
         for unterkarte in gitter["cards"]
-    } | {element["entity"] for element in alle_elemente(karte) if "entity" in element}
+    } | {
+        element["entity"]
+        for element in alle_elemente(karte)
+        if "entity" in element and element["type"] != "conditional"
+    }
 
-    fehlend = sorted(referenziert - vorhanden)
+    fehlend = sorted(referenziert - vorhanden - abgesichert(karte))
     assert not fehlend, f"README verweist auf nicht existierende Entitäten: {fehlend}"
+
+
+def test_nicht_immer_vorhandene_elemente_sind_abgesichert(karte):
+    """Wer eine Entität nennt, die fehlen kann, muss sie absichern.
+
+    Schalter und Betriebsart entstehen nur bei freigegebenem
+    Schreibzugriff und nur, wo die Anlage die Tasten hergibt. In der
+    Kachel müssen sie deshalb in einer Bedingung stecken, die genau
+    ihre eigene Entität prüft - sonst steht dort "Entität nicht
+    gefunden".
+    """
+    for element in alle_elemente(karte):
+        if element["type"] != "conditional":
+            continue
+        bedingung = element["conditions"][0]
+        assert bedingung["state_not"] == "unknown"
+        for innen in element["elements"]:
+            assert innen["entity"] == bedingung["entity"], innen
 
 
 ABSICHTLICHE_BEISPIELE = {

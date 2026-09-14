@@ -66,6 +66,61 @@ def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
     return element
 
 
+def nur_wenn_vorhanden(element):
+    """Blendet ein Element aus, wenn es seine Entität nicht gibt.
+
+    Schalter und Betriebsart entstehen nur, wenn der Nutzer das
+    Schalten freigegeben hat und die Anlage die Tasten hergibt. Ohne
+    diese Bedingung stünde sonst "Entität nicht gefunden" in der
+    Kachel; eine fehlende Entität wertet Home Assistant als "unknown".
+    """
+    return {
+        "type": "conditional",
+        "conditions": [
+            {
+                "condition": "state",
+                "entity": element["entity"],
+                "state_not": "unknown",
+            }
+        ],
+        "elements": [element],
+    }
+
+
+def schalter(entity, top, left, groesse=30):
+    """Ein antippbares Symbol, das den Schalter umlegt."""
+    return nur_wenn_vorhanden(
+        {
+            "type": "state-icon",
+            "entity": f"switch.eta_heizung_{entity}",
+            "tap_action": {"action": "toggle"},
+            "style": {
+                "top": f"{top}%",
+                "left": f"{left}%",
+                "--mdc-icon-size": f"{groesse}px",
+            },
+        }
+    )
+
+
+def betriebsart(entity, top, schrift):
+    """Die Betriebsart als Text; ein Tippen öffnet die Auswahl."""
+    return nur_wenn_vorhanden(
+        {
+            "type": "state-label",
+            "entity": f"select.eta_heizung_{entity}",
+            "prefix": "Modus: ",
+            "tap_action": {"action": "more-info"},
+            "style": {
+                "top": f"{top}%",
+                "left": "50%",
+                "color": FARBEN["hell"],
+                "font-size": f"{schrift}%",
+            },
+        }
+    )
+
+
 def komponente(marker, zustand, bild, elemente):
     return {
         "type": "conditional",
@@ -97,6 +152,7 @@ def grid(spalten, schrift, kurz):
         )
         for entity, lang_text, kurz_text, farbe, top in KESSEL_ZEILEN
     ]
+    kessel.append(schalter("kessel", 92, 86))
     return {
         "type": "grid",
         "columns": spalten,
@@ -134,6 +190,8 @@ def grid(spalten, schrift, kurz):
                     label("heizkreis_vorlauftemperatur", "HK1: " if kurz else "Vorlauf HK1: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", None, "hell", 15, 50, schrift - 5),
+                    betriebsart("heizkreis_1_betriebsart", 23, schrift - 5),
+                    schalter("heizkreis_1", 92, 86),
                 ],
             ),
             komponente(
@@ -144,6 +202,8 @@ def grid(spalten, schrift, kurz):
                     label("heizkreis_2_vorlauftemperatur", "HK2: " if kurz else "Vorlauf HK2: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", None, "hell", 15, 50, schrift - 5),
+                    betriebsart("heizkreis_2_betriebsart", 23, schrift - 5),
+                    schalter("heizkreis_2", 92, 86),
                 ],
             ),
             komponente(
@@ -154,6 +214,8 @@ def grid(spalten, schrift, kurz):
                     label("heizkreis_3_vorlauftemperatur", "HK3: " if kurz else "Vorlauf HK3: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", None, "hell", 15, 50, schrift - 5),
+                    betriebsart("heizkreis_3_betriebsart", 23, schrift - 5),
+                    schalter("heizkreis_3", 92, 86),
                 ],
             ),
             komponente(
@@ -164,6 +226,8 @@ def grid(spalten, schrift, kurz):
                     label("heizkreis_4_vorlauftemperatur", "HK4: " if kurz else "Vorlauf HK4: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", None, "hell", 15, 50, schrift - 5),
+                    betriebsart("heizkreis_4_betriebsart", 23, schrift - 5),
+                    schalter("heizkreis_4", 92, 86),
                 ],
             ),
             komponente(
