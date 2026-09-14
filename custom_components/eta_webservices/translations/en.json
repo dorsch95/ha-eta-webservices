@@ -8,7 +8,9 @@
           "port": "Port (default: 8080)",
           "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)",
-          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)"
+          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
+          "enable_errors": "Read fault messages from the heating system",
+          "enable_switches": "Allow switching the boiler and heating circuits"
         }
       },
       "fub_names": {
@@ -30,8 +32,14 @@
           "port": "Port (default: 8080)",
           "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)",
-          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)"
+          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
+          "enable_errors": "Read fault messages from the heating system",
+          "enable_switches": "Allow switching the boiler and heating circuits"
         }
+      },
+      "switch_warning": {
+        "title": "Switching writes to your heating system",
+        "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
       }
     },
     "error": {
@@ -51,7 +59,9 @@
           "port": "Port (default: 8080)",
           "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)",
-          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)"
+          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
+          "enable_errors": "Read fault messages from the heating system",
+          "enable_switches": "Allow switching the boiler and heating circuits"
         }
       },
       "fub_names": {
@@ -65,6 +75,10 @@
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)"
         }
+      },
+      "switch_warning": {
+        "title": "Switching writes to your heating system",
+        "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
       }
     },
     "error": {
@@ -133,6 +147,9 @@
       },
       "kessel_temperatur": {
         "name": "Boiler temperature"
+      },
+      "kessel_zustand": {
+        "name": "Boiler state"
       },
       "komponente_fwm": {
         "name": "Hot water module component"

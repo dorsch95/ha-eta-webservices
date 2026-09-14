@@ -102,6 +102,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         scan_interval: int,
         components: list[str],
         pellet_kwh_per_kg: float,
+        enable_switches: bool = False,
+        enable_errors: bool = True,
     ) -> None:
         super().__init__(
             hass,
@@ -113,6 +115,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.client = client
         self.components = normalize_components(components)
         self.pellet_kwh_per_kg = pellet_kwh_per_kg
+        self.enable_switches = enable_switches
+        self.enable_errors = enable_errors
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
         self.components_without_data: list[str] = []
@@ -197,6 +201,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         nirgends geraten, weil ein falscher Wert hier in die
         Heizungssteuerung geschrieben würde.
         """
+        if not self.enable_switches:
+            return
+
         aktiv = set(self.components)
         for key, definition in SWITCHES.items():
             if definition["component"] not in aktiv:
@@ -345,6 +352,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Ein Fehlschlag hier darf den Abfragezyklus nicht kippen - die
         Messwerte sind wichtiger als die Fehlerliste.
         """
+        if not self.enable_errors:
+            return
         try:
             self.errors = await self.client.async_get_errors()
         except ETAApiError as err:

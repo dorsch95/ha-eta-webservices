@@ -54,10 +54,11 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
 4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1, Heizkreis 2). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
-5. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deiner Lieferscheinung ein anderer Wert, trage ihn hier ein.
-6. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-7. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-8. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
+5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
+6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deiner Lieferscheinung ein anderer Wert, trage ihn hier ein.
+7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
+8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+9. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Über das Drei-Punkte-Menü der Integration geht es alternativ mit **Neu konfigurieren**.
 
@@ -69,13 +70,13 @@ Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Gerät
 
 Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
 
-* **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg).
+* **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg) sowie der **Kesselzustand** als Text (*Heizen*, *Aus* usw.).
 * **🗑️ Aschebox:** Verbrauch seit der letzten Leerung (kg) und der Schwellwert, ab dem geleert werden soll (kg) - plus ein kombinierter Sensor `sensor.eta_heizung_aschebox_status` im Format "459/1000kg" für die Dashboard-Anzeige.
 * **📊 Verbrauch:** Verbrauch seit der letzten Entaschung (kg) und der umgerechnete Energieverbrauch (kWh). Beide Zähler liefern Langzeitstatistik, sind also über Monate auswertbar.
 * **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
 * **♨️ Heizkreis 1 und 2:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*).
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls deine Anlage keinen entsprechenden Fühler hat.
-* **🚨 Aktive Fehler:** Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
+* **🚨 Aktive Fehler** (im Setup abwählbar): Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
 * **🔌 Schalter** für Kessel und Heizkreise, sofern deine Anlage sie zulässt - siehe unten.
 * **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
 
@@ -194,7 +195,9 @@ Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die H
 
 ## 🔌 Kessel und Heizkreise schalten
 
-Findet die Integration an einem Funktionsblock eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel`, `switch.eta_heizung_heizkreis_1` und `switch.eta_heizung_heizkreis_2`.
+Schalter sind **standardmäßig ausgeschaltet** - sie schreiben in die Heizungssteuerung, und dazu soll niemand durch ein Update kommen. Einschalten kannst du sie beim Einrichten oder später unter **Konfigurieren**; dabei erscheint ein Hinweis, was das bedeutet.
+
+Ist der Schreibzugriff freigegeben und findet die Integration an einem Funktionsblock eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel`, `switch.eta_heizung_heizkreis_1` und `switch.eta_heizung_heizkreis_2`.
 
 Ein Schalter entsteht nur, wenn **alle** folgenden Punkte zutreffen:
 

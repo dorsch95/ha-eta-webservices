@@ -38,7 +38,8 @@ async def async_setup_entry(
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
     entities.append(ETAPelletEnergySensor(coordinator))
-    entities.append(ETAErrorSensor(coordinator))
+    if coordinator.enable_errors:
+        entities.append(ETAErrorSensor(coordinator))
     entities.extend(
         ETAComponentMarkerSensor(coordinator, key) for key in coordinator.components
     )

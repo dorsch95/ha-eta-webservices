@@ -31,6 +31,7 @@ DISCOVERY_PATHS = {
     "aschebox_verbrauch": ("kessel", ["Ausgänge", "Zählerstände", "Verbrauch seit Aschebox leeren"]),
     "entaschung_verbrauch": ("kessel", ["Ausgänge", "Zählerstände", "Verbrauch seit Entaschung"]),
     "aschebox_schwelle": ("kessel", ["Kessel", "Entaschung", "Aschebox leeren nach"]),
+    "kessel_zustand": ("kessel", ["Kessel", "Kessel-Zustand detailliert"]),
     "aussentemperatur": ("sys", ["Außentemperatur", "Außentemperaturfühler"]),
     "puffer_ladezustand": ("pufferflex", ["Puffer", "Ladezustand"]),
     "heizkreis_vorlauf": ("hk", ["Eingänge", "Vorlauf"]),

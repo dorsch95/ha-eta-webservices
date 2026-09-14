@@ -8,7 +8,9 @@
           "port": "Port (Standard: 8080)",
           "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)",
-          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)"
+          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
+          "enable_errors": "Störungsmeldungen der Anlage auslesen",
+          "enable_switches": "Kessel und Heizkreise schalten dürfen"
         }
       },
       "fub_names": {
@@ -30,8 +32,14 @@
           "port": "Port (Standard: 8080)",
           "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)",
-          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)"
+          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
+          "enable_errors": "Störungsmeldungen der Anlage auslesen",
+          "enable_switches": "Kessel und Heizkreise schalten dürfen"
         }
+      },
+      "switch_warning": {
+        "title": "Schalten schreibt in deine Heizung",
+        "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
       }
     },
     "error": {
@@ -51,7 +59,9 @@
           "port": "Port (Standard: 8080)",
           "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)",
-          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)"
+          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
+          "enable_errors": "Störungsmeldungen der Anlage auslesen",
+          "enable_switches": "Kessel und Heizkreise schalten dürfen"
         }
       },
       "fub_names": {
@@ -65,6 +75,10 @@
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)"
         }
+      },
+      "switch_warning": {
+        "title": "Schalten schreibt in deine Heizung",
+        "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
       }
     },
     "error": {
@@ -133,6 +147,9 @@
       },
       "kessel_temperatur": {
         "name": "Kesseltemperatur"
+      },
+      "kessel_zustand": {
+        "name": "Kessel Zustand"
       },
       "komponente_fwm": {
         "name": "Komponente FWM"

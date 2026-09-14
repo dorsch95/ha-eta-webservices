@@ -25,9 +25,13 @@ from .api import ETAApiClient
 from .const import (
     COMPONENTS,
     CONF_COMPONENTS,
+    CONF_ENABLE_ERRORS,
+    CONF_ENABLE_SWITCHES,
     CONF_FUB_NAMES,
     CONF_PELLET_KWH_PER_KG,
     CONF_SCAN_INTERVAL,
+    DEFAULT_ENABLE_ERRORS,
+    DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -86,6 +90,14 @@ def _connection_schema(current: dict[str, Any]) -> vol.Schema:
                 cv.positive_int,
                 vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
             ),
+            vol.Required(
+                CONF_ENABLE_ERRORS,
+                default=current.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
+            ): cv.boolean,
+            vol.Required(
+                CONF_ENABLE_SWITCHES,
+                default=current.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
+            ): cv.boolean,
             vol.Required(
                 CONF_PELLET_KWH_PER_KG,
                 default=current.get(
@@ -172,6 +184,8 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
                         user_input.get(CONF_COMPONENTS)
                     ),
                 }
+                if self._data.get(CONF_ENABLE_SWITCHES):
+                    return await self.async_step_switch_warning()
                 return await self.async_step_fub_names()
             errors["base"] = "cannot_connect"
 
@@ -180,6 +194,20 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=_connection_schema(user_input or {}),
             errors=errors,
         )
+
+    async def async_step_switch_warning(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Lässt den Schreibzugriff ausdrücklich bestätigen.
+
+        Schalter greifen in die Heizungssteuerung ein. Diese Seite
+        erscheint nur, wenn sie eingeschaltet werden - wer sie
+        abgewählt lässt, bekommt keine Warnung zu lesen, die ihn nichts
+        angeht.
+        """
+        if user_input is not None:
+            return await self.async_step_fub_names()
+        return self.async_show_form(step_id="switch_warning")
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None
@@ -231,6 +259,11 @@ class ETAOptionsFlow(OptionsFlowWithReload):
                         user_input.get(CONF_COMPONENTS)
                     ),
                 }
+                if self._data.get(CONF_ENABLE_SWITCHES) and not {
+                    **self.config_entry.data,
+                    **self.config_entry.options,
+                }.get(CONF_ENABLE_SWITCHES):
+                    return await self.async_step_switch_warning()
                 return await self.async_step_fub_names()
             errors["base"] = "cannot_connect"
 
@@ -239,6 +272,14 @@ class ETAOptionsFlow(OptionsFlowWithReload):
             data_schema=_connection_schema(user_input or self._current),
             errors=errors,
         )
+
+    async def async_step_switch_warning(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wie im Einrichtungsdialog: Schreibzugriff bestätigen lassen."""
+        if user_input is not None:
+            return await self.async_step_fub_names()
+        return self.async_show_form(step_id="switch_warning")
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None

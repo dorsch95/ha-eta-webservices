@@ -95,3 +95,51 @@ def test_fub_formular_uebernimmt_eigene_namen():
     schema = _fub_names_schema(["kessel"], {"kessel": "Pelletskessel"})
     defaults = {str(key): key.default() for key in schema.schema}
     assert defaults["kessel"] == "Pelletskessel"
+
+
+def test_formular_hat_beide_freigaben():
+    felder = [str(k) for k in _connection_schema({}).schema]
+    assert "enable_switches" in felder
+    assert "enable_errors" in felder
+
+
+def test_schalter_sind_standardmaessig_aus():
+    """Ein Update darf niemandem ungefragt Schreibzugriff geben."""
+    marker = {str(k): k for k in _connection_schema({}).schema}
+    assert marker["enable_switches"].default() is False
+    assert marker["enable_errors"].default() is True
+
+
+def test_bestehende_einstellung_bleibt_erhalten():
+    marker = {
+        str(k): k
+        for k in _connection_schema({"enable_switches": True}).schema
+    }
+    assert marker["enable_switches"].default() is True
+
+
+def test_warnschritt_ist_in_allen_sprachen_beschrieben():
+    import json
+    from pathlib import Path
+
+    basis = Path(__file__).resolve().parents[1] / "custom_components" / "eta_webservices"
+    for datei in ("strings.json", "translations/de.json", "translations/en.json"):
+        daten = json.loads((basis / datei).read_text(encoding="utf-8"))
+        for bereich in ("config", "options"):
+            schritt = daten[bereich]["step"]["switch_warning"]
+            assert schritt["title"]
+            assert len(schritt["description"]) > 200, datei
+
+
+def test_warnung_nennt_die_wesentlichen_punkte():
+    import json
+    from pathlib import Path
+
+    basis = Path(__file__).resolve().parents[1] / "custom_components" / "eta_webservices"
+    text = json.loads(
+        (basis / "translations" / "de.json").read_text(encoding="utf-8")
+    )["config"]["step"]["switch_warning"]["description"].lower()
+
+    assert "frostschutz" in text
+    assert "auskühlen" in text
+    assert "konfigurieren" in text

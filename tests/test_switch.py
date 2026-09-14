@@ -207,3 +207,26 @@ async def test_beide_komponenten_bekommen_ihren_schalter(hass, entry):
     assert "kessel_schalter" in coordinator.switch_defs
     assert "heizkreis_schalter" in coordinator.switch_defs
     assert set(schalter) == {"Kessel", "Heizkreis 1"}
+
+
+async def test_ohne_freigabe_entsteht_kein_schalter(hass, entry):
+    """Schalter sind standardmäßig aus - Schreibzugriff will gewollt sein."""
+    entry.data["enable_switches"] = False
+    coordinator, schalter = await schalter_von(hass, entry)
+    assert coordinator.switch_defs == {}
+    assert schalter == {}
+
+
+async def test_standard_ist_ohne_schalter(hass, entry):
+    """Ein Eintrag ohne die Option bekommt keine Schalter untergeschoben."""
+    entry.data.pop("enable_switches")
+    coordinator, schalter = await schalter_von(hass, entry)
+    assert coordinator.switch_defs == {}
+    assert schalter == {}
+
+
+async def test_ohne_freigabe_wird_gar_nicht_erst_nachgefragt(hass, entry):
+    """Ist der Schreibzugriff aus, spart das auch die varinfo-Abfragen."""
+    entry.data["enable_switches"] = False
+    coordinator, _ = await schalter_von(hass, entry)
+    assert not any(k.endswith("_schalter") for k in coordinator.sensor_defs)

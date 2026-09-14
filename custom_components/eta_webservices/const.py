@@ -9,6 +9,17 @@ PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
 CONF_SCHEMA = "schema"
 CONF_COMPONENTS = "components"
 CONF_PELLET_KWH_PER_KG = "pellet_kwh_per_kg"
+CONF_ENABLE_SWITCHES = "enable_switches"
+CONF_ENABLE_ERRORS = "enable_errors"
+
+DEFAULT_ENABLE_SWITCHES = False
+"""Schalter sind standardmäßig aus.
+
+Sie schreiben in die Heizungssteuerung. Wer das will, soll es bewusst
+einschalten - nicht durch ein Update dazu kommen.
+"""
+
+DEFAULT_ENABLE_ERRORS = True
 CONF_FUB_NAMES = "fub_names"
 CONF_SCAN_INTERVAL = "scan_interval"
 
@@ -286,6 +297,13 @@ def puffer_fuehler_info(index, is_last):
 
 
 DISCOVERY_ONLY_SENSORS = {
+    "kessel_zustand": {
+        "component": "kessel",
+        "name": "Kessel Zustand",
+        "translation_key": "kessel_zustand",
+        "icon": "mdi:fire",
+        "is_string": True,
+    },
     "heizkreis2_vorlauf": {
         "component": "hk2",
         "name": "Heizkreis 2 Vorlauftemperatur",

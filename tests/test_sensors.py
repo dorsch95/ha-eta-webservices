@@ -415,3 +415,32 @@ async def test_gueltige_zustaende_werden_erfasst(hass, entry):
     coordinator, _ = await setup_integration(hass, entry)
     assert "heizkreis_anforderung" in coordinator.varinfo
     assert coordinator.varinfo["heizkreis_anforderung"]["writable"] is False
+
+
+async def test_stoerungsmeldungen_lassen_sich_abschalten(hass, entry):
+    entry.data["enable_errors"] = False
+    coordinator, by_name = await setup_integration(hass, entry)
+    await coordinator.async_refresh()
+
+    assert "Aktive Fehler" not in by_name
+    assert coordinator.errors == []
+
+
+async def test_abgeschaltete_stoerungsmeldungen_kosten_keine_abfrage(hass, entry):
+    entry.data["enable_errors"] = False
+    coordinator, _ = await setup_integration(hass, entry)
+
+    vorher = hass.session.count
+    await coordinator.async_refresh()
+    assert hass.session.count - vorher <= 1
+
+
+async def test_kesselzustand_wird_als_text_gelesen(hass, entry):
+    """Der Kesselzustand ist ein Text wie "Heizen", keine Kennzahl."""
+    coordinator, by_name = await setup_integration(hass, entry)
+    assert "kessel_zustand" in coordinator.sensor_defs
+
+    sensor = by_name["Kessel Zustand"]
+    assert sensor.native_value == "Heizen"
+    assert sensor.native_unit_of_measurement is None
+    assert sensor.state_class is None
