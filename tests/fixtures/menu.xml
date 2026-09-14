@@ -146,5 +146,37 @@
 <object uri="/120/10221/0/0/12769" name="Ertrag gestern"/>
 </object>
 </fub>
+<fub uri="/120/10103" name="HK3">
+<object uri="/120/10103/0/0/10990" name="Eingänge">
+<object uri="/120/10103/0/11063/0" name="Vorlauf"/>
+</object>
+<object uri="/120/10103/0/0/12182" name="Sonstiges">
+<object uri="/120/10103/0/0/12080" name="Ein/Aus Taste"/>
+<object uri="/120/10103/0/0/12125" name="Heizen Taste"/>
+<object uri="/120/10103/0/0/12126" name="Auto Taste"/>
+<object uri="/120/10103/0/0/12230" name="Absenken Taste"/>
+</object>
+<object uri="/120/10103/0/0/10991" name="Ausgänge">
+<object uri="/120/10103/0/11123/0" name="Heizkreispumpe">
+<object uri="/120/10103/0/11123/2001" name="Anforderung"/>
+</object>
+</object>
+</fub>
+<fub uri="/120/10104" name="HK4">
+<object uri="/120/10104/0/0/10990" name="Eingänge">
+<object uri="/120/10104/0/11064/0" name="Vorlauf"/>
+</object>
+<object uri="/120/10104/0/0/12182" name="Sonstiges">
+<object uri="/120/10104/0/0/12080" name="Ein/Aus Taste"/>
+<object uri="/120/10104/0/0/12125" name="Heizen Taste"/>
+<object uri="/120/10104/0/0/12126" name="Auto Taste"/>
+<object uri="/120/10104/0/0/12230" name="Absenken Taste"/>
+</object>
+<object uri="/120/10104/0/0/10991" name="Ausgänge">
+<object uri="/120/10104/0/11124/0" name="Heizkreispumpe">
+<object uri="/120/10104/0/11124/2001" name="Anforderung"/>
+</object>
+</object>
+</fub>
 </menu>
 </eta>

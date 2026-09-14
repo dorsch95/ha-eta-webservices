@@ -147,6 +147,26 @@ def grid(spalten, schrift, kurz):
                 ],
             ),
             komponente(
+                "heizkreis_3",
+                "hk3",
+                "heizkreis",
+                [
+                    label("heizkreis_3_vorlauftemperatur", "HK3: " if kurz else "Vorlauf HK3: ",
+                          "kessel", 8, 50, schrift),
+                    label("heizkreis_3_anforderung", None, "hell", 15, 50, schrift - 5),
+                ],
+            ),
+            komponente(
+                "heizkreis_4",
+                "hk4",
+                "heizkreis",
+                [
+                    label("heizkreis_4_vorlauftemperatur", "HK4: " if kurz else "Vorlauf HK4: ",
+                          "kessel", 8, 50, schrift),
+                    label("heizkreis_4_anforderung", None, "hell", 15, 50, schrift - 5),
+                ],
+            ),
+            komponente(
                 "solar",
                 "solar",
                 "solar",

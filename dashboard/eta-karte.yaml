@@ -204,6 +204,54 @@ cards:
     - type: conditional
       conditions:
       - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_3
+        state: hk3
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/heizkreis.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_3_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 90%
+          prefix: 'HK3: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_3_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 85%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_4
+        state: hk4
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/heizkreis.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_4_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 90%
+          prefix: 'HK4: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_4_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 85%
+    - type: conditional
+      conditions:
+      - condition: state
         entity: sensor.eta_heizung_komponente_solar
         state: solar
       card:
@@ -438,6 +486,54 @@ cards:
     - type: conditional
       conditions:
       - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_3
+        state: hk3
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/heizkreis.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_3_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 95%
+          prefix: 'Vorlauf HK3: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_3_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 90%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_4
+        state: hk4
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/heizkreis.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_4_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 95%
+          prefix: 'Vorlauf HK4: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_4_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 90%
+    - type: conditional
+      conditions:
+      - condition: state
         entity: sensor.eta_heizung_komponente_solar
         state: solar
       card:
@@ -664,6 +760,54 @@ cards:
           prefix: 'Vorlauf HK2: '
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_2_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_3
+        state: hk3
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/heizkreis.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_3_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 100%
+          prefix: 'Vorlauf HK3: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_3_anforderung
+          style:
+            top: 15%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_4
+        state: hk4
+      card:
+        type: picture-elements
+        image: /local/community/ha-eta-webservices/heizkreis.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_4_vorlauftemperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#e8615f'
+            font-size: 100%
+          prefix: 'Vorlauf HK4: '
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_4_anforderung
           style:
             top: 15%
             left: 50%

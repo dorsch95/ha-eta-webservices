@@ -23,7 +23,9 @@
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)",
-          "solar": "FUB name: Solar thermal system (Solar)"
+          "solar": "FUB name: Solar thermal system (Solar)",
+          "hk3": "FUB name: heating circuit 3 (HK3)",
+          "hk4": "FUB name: heating circuit 4 (HK4)"
         }
       },
       "reconfigure": {
@@ -75,7 +77,9 @@
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)",
-          "solar": "FUB name: Solar thermal system (Solar)"
+          "solar": "FUB name: Solar thermal system (Solar)",
+          "hk3": "FUB name: heating circuit 3 (HK3)",
+          "hk4": "FUB name: heating circuit 4 (HK4)"
         }
       },
       "switch_warning": {
@@ -94,7 +98,9 @@
         "fwm": "Fresh water / hot water module",
         "hk1": "Heating circuit 1",
         "hk2": "Heating circuit 2",
-        "solar": "Solar thermal system"
+        "solar": "Solar thermal system",
+        "hk3": "Heating circuit 3",
+        "hk4": "Heating circuit 4"
       }
     }
   },
@@ -141,6 +147,18 @@
       "heizkreis2_vorlauf": {
         "name": "Heating circuit 2 flow temperature"
       },
+      "heizkreis3_anforderung": {
+        "name": "Heating circuit 3 demand"
+      },
+      "heizkreis3_vorlauf": {
+        "name": "Heating circuit 3 flow temperature"
+      },
+      "heizkreis4_anforderung": {
+        "name": "Heating circuit 4 demand"
+      },
+      "heizkreis4_vorlauf": {
+        "name": "Heating circuit 4 flow temperature"
+      },
       "heizkreis_anforderung": {
         "name": "Heating circuit demand"
       },
@@ -167,6 +185,12 @@
       },
       "komponente_hk2": {
         "name": "Heating circuit 2 component"
+      },
+      "komponente_hk3": {
+        "name": "Heating circuit 3 component"
+      },
+      "komponente_hk4": {
+        "name": "Heating circuit 4 component"
       },
       "komponente_kessel": {
         "name": "Boiler component"
@@ -235,6 +259,12 @@
     "switch": {
       "heizkreis2_schalter": {
         "name": "Heating circuit 2"
+      },
+      "heizkreis3_schalter": {
+        "name": "Heating circuit 3"
+      },
+      "heizkreis4_schalter": {
+        "name": "Heating circuit 4"
       },
       "heizkreis_schalter": {
         "name": "Heating circuit 1"

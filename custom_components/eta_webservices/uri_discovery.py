@@ -37,6 +37,10 @@ DISCOVERY_PATHS = {
     "heizkreis_anforderung": ("hk", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "heizkreis2_vorlauf": ("hk2", ["Eingänge", "Vorlauf"]),
     "heizkreis2_anforderung": ("hk2", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
+    "heizkreis3_vorlauf": ("hk3", ["Eingänge", "Vorlauf"]),
+    "heizkreis3_anforderung": ("hk3", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
+    "heizkreis4_vorlauf": ("hk4", ["Eingänge", "Vorlauf"]),
+    "heizkreis4_anforderung": ("hk4", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     "fwm_zirkulation": ("fwm", ["Eingänge", "Zirkulation"]),
     "solar_kollektor": ("solar", ["Eingänge", "Kollektor"]),
@@ -85,6 +89,8 @@ SWITCH_ROLES = {
     "kessel_schalter": "kessel",
     "heizkreis_schalter": "hk",
     "heizkreis2_schalter": "hk2",
+    "heizkreis3_schalter": "hk3",
+    "heizkreis4_schalter": "hk4",
 }
 
 

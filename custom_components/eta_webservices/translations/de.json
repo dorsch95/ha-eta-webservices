@@ -23,7 +23,9 @@
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
-          "solar": "FUB-Name: Solaranlage (Solar)"
+          "solar": "FUB-Name: Solaranlage (Solar)",
+          "hk3": "FUB-Name: Heizkreis 3 (HK3)",
+          "hk4": "FUB-Name: Heizkreis 4 (HK4)"
         }
       },
       "reconfigure": {
@@ -75,7 +77,9 @@
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
-          "solar": "FUB-Name: Solaranlage (Solar)"
+          "solar": "FUB-Name: Solaranlage (Solar)",
+          "hk3": "FUB-Name: Heizkreis 3 (HK3)",
+          "hk4": "FUB-Name: Heizkreis 4 (HK4)"
         }
       },
       "switch_warning": {
@@ -94,7 +98,9 @@
         "fwm": "Frischwassermodul / Warmwasser",
         "hk1": "Heizkreis 1",
         "hk2": "Heizkreis 2",
-        "solar": "Solaranlage"
+        "solar": "Solaranlage",
+        "hk3": "Heizkreis 3",
+        "hk4": "Heizkreis 4"
       }
     }
   },
@@ -141,6 +147,18 @@
       "heizkreis2_vorlauf": {
         "name": "Heizkreis 2 Vorlauftemperatur"
       },
+      "heizkreis3_anforderung": {
+        "name": "Heizkreis 3 Anforderung"
+      },
+      "heizkreis3_vorlauf": {
+        "name": "Heizkreis 3 Vorlauftemperatur"
+      },
+      "heizkreis4_anforderung": {
+        "name": "Heizkreis 4 Anforderung"
+      },
+      "heizkreis4_vorlauf": {
+        "name": "Heizkreis 4 Vorlauftemperatur"
+      },
       "heizkreis_anforderung": {
         "name": "Heizkreis Anforderung"
       },
@@ -167,6 +185,12 @@
       },
       "komponente_hk2": {
         "name": "Komponente Heizkreis 2"
+      },
+      "komponente_hk3": {
+        "name": "Komponente Heizkreis 3"
+      },
+      "komponente_hk4": {
+        "name": "Komponente Heizkreis 4"
       },
       "komponente_kessel": {
         "name": "Komponente Kessel"
@@ -235,6 +259,12 @@
     "switch": {
       "heizkreis2_schalter": {
         "name": "Heizkreis 2"
+      },
+      "heizkreis3_schalter": {
+        "name": "Heizkreis 3"
+      },
+      "heizkreis4_schalter": {
+        "name": "Heizkreis 4"
       },
       "heizkreis_schalter": {
         "name": "Heizkreis 1"

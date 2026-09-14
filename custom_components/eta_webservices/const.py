@@ -73,6 +73,18 @@ COMPONENTS = {
         "roles": ["hk2"],
         "discovery_prefixes": ["heizkreis2_"],
     },
+    "hk3": {
+        "name": "Heizkreis 3",
+        "image": "heizkreis",
+        "roles": ["hk3"],
+        "discovery_prefixes": ["heizkreis3_"],
+    },
+    "hk4": {
+        "name": "Heizkreis 4",
+        "image": "heizkreis",
+        "roles": ["hk4"],
+        "discovery_prefixes": ["heizkreis4_"],
+    },
     "solar": {
         "name": "Solar",
         "image": "solar",
@@ -105,6 +117,16 @@ SWITCHES = {
     "heizkreis2_schalter": {
         "component": "hk2",
         "translation_key": "heizkreis2_schalter",
+        "icon": "mdi:radiator",
+    },
+    "heizkreis3_schalter": {
+        "component": "hk3",
+        "translation_key": "heizkreis3_schalter",
+        "icon": "mdi:radiator",
+    },
+    "heizkreis4_schalter": {
+        "component": "hk4",
+        "translation_key": "heizkreis4_schalter",
         "icon": "mdi:radiator",
     },
 }
@@ -274,6 +296,38 @@ SENSORS = {
         "icon": "mdi:heat-wave",
         "is_string": True,
     },
+    "heizkreis3_vorlauf": {
+        "component": "hk3",
+        "name": "Heizkreis 3 Vorlauftemperatur",
+        "translation_key": "heizkreis3_vorlauf",
+        "icon": "mdi:thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "heizkreis3_anforderung": {
+        "component": "hk3",
+        "name": "Heizkreis 3 Anforderung",
+        "translation_key": "heizkreis3_anforderung",
+        "icon": "mdi:heat-wave",
+        "is_string": True,
+    },
+    "heizkreis4_vorlauf": {
+        "component": "hk4",
+        "name": "Heizkreis 4 Vorlauftemperatur",
+        "translation_key": "heizkreis4_vorlauf",
+        "icon": "mdi:thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "heizkreis4_anforderung": {
+        "component": "hk4",
+        "name": "Heizkreis 4 Anforderung",
+        "translation_key": "heizkreis4_anforderung",
+        "icon": "mdi:heat-wave",
+        "is_string": True,
+    },
     "solar_kollektor": {
         "component": "solar",
         "name": "Solar Kollektortemperatur",
@@ -364,6 +418,8 @@ FUB_ROLE_DEFAULT_NAMES = {
     "fwm": ["FWM", "WW"],
     "hk": ["HK", "HK1"],
     "hk2": ["HK2"],
+    "hk3": ["HK3"],
+    "hk4": ["HK4"],
     "solar": ["Solar"],
 }
 
