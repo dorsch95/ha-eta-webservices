@@ -6,7 +6,7 @@
         "data": {
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
-          "schema": "Anlagenschema",
+          "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)"
         }
       },
@@ -37,7 +37,7 @@
         "data": {
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
-          "schema": "Anlagenschema",
+          "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)"
         }
       },

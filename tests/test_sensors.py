@@ -22,7 +22,7 @@ async def test_setup_legt_entitaeten_an(hass, entry):
     assert coordinator.sensor_defs
     assert "Kesseltemperatur" in by_name
     assert "Aschebox Status" in by_name
-    assert "Anlagenbild Pfad" in by_name
+    assert "Komponente Kessel" in by_name
 
 
 async def test_messwert_hat_feste_einheit_und_geraet(hass, entry):
@@ -196,3 +196,49 @@ async def test_ohne_menuebaum_entstehen_nur_die_drei_sicheren_fuehler(hass, entr
         if not info.get("uri") and key not in OPTIONAL_SENSORS
     ]
     assert not ohne_uri
+
+
+async def test_marker_je_gewaehlter_komponente(hass, entry):
+    from eta_webservices.const import COMPONENTS
+
+    coordinator, by_name = await setup_integration(hass, entry)
+    for key in coordinator.components:
+        marker = by_name[f"Komponente {COMPONENTS[key]['name']}"]
+        assert marker.native_value == key
+        assert marker.entity_category == "diagnostic"
+
+
+async def test_marker_bleibt_bei_stoerung_verfuegbar(hass, entry):
+    coordinator, by_name = await setup_integration(hass, entry)
+    marker = by_name["Komponente FWM"]
+    coordinator.last_update_success = False
+    assert marker.available is True
+
+
+async def test_abgewaehlte_komponente_erzeugt_keine_entitaeten(hass, entry):
+    entry.data["components"] = ["kessel", "puffer"]
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert "Komponente FWM" not in by_name
+    assert not [n for n in by_name if n.startswith("FWM")]
+    assert not [n for n in by_name if n.startswith("Heizkreis")]
+    assert not [k for k in coordinator.sensor_defs if k.startswith("fwm")]
+    assert "Puffer Fühler 1" in by_name
+
+
+async def test_ohne_puffer_keine_fuehler(hass, entry):
+    entry.data["components"] = ["kessel"]
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert not [n for n in by_name if n.startswith("Puffer")]
+    assert "Kesseltemperatur" in by_name
+
+
+async def test_altes_anlagenschema_laeuft_weiter(hass, entry):
+    entry.data.pop("components")
+    entry.data["schema"] = "Kessel + Puffer + 1x Heizkreis + FWM"
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert coordinator.components == ["kessel", "puffer", "fwm", "hk1"]
+    assert "Heizkreis Vorlauftemperatur" in by_name
+    assert "Komponente Heizkreis 2" not in by_name

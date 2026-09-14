@@ -12,13 +12,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import ETAApiClient, ETAValue
 from .const import (
-    CONF_SCHEMA,
+    COMPONENTS,
     DISCOVERY_ONLY_SENSORS,
     DOMAIN,
     OPTIONAL_SENSORS,
     PUFFER_FUEHLER_FALLBACK_URIS,
-    SCHEMAS,
     STATIC_URIs,
+    normalize_components,
     puffer_fuehler_info,
 )
 from .uri_discovery import async_discover_uris
@@ -26,7 +26,7 @@ from .uri_discovery import async_discover_uris
 _LOGGER = logging.getLogger(__name__)
 
 
-def build_sensor_defs(discovered_uris, puffer_fuehler_indices):
+def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
     """Stellt zusammen, welche Sensoren diese Anlage hat und unter welcher URI.
 
     Für die Basissensoren hat eine im Menübaum gefundene URI immer Vorrang
@@ -34,19 +34,27 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices):
     numerischen URIs unterscheiden sich von Anlage zu Anlage. Pufferfühler
     werden dynamisch erkannt (3 bis 8 Stück), und optionale Sensoren werden
     immer angelegt - auch ohne URI, damit Dashboard-Karten sie gefahrlos
-    referenzieren können.
+    referenzieren können. Messwerte von Komponenten, die der Nutzer nicht
+    ausgewählt hat, entstehen erst gar nicht - sonst stünden auf jeder
+    Anlage Entitäten herum, die dauerhaft nichts liefern.
     """
+    aktiv = set(normalize_components(components))
     sensor_defs = {
         key: {**info, "uri": discovered_uris.get(key) or info["uri"]}
         for key, info in STATIC_URIs.items()
+        if info["component"] in aktiv
     }
 
     for key, info in DISCOVERY_ONLY_SENSORS.items():
-        if key in discovered_uris:
+        if info["component"] in aktiv and key in discovered_uris:
             sensor_defs[key] = {**info, "uri": discovered_uris[key]}
 
     for key, info in OPTIONAL_SENSORS.items():
-        sensor_defs[key] = {**info, "uri": discovered_uris.get(key)}
+        if info["component"] in aktiv:
+            sensor_defs[key] = {**info, "uri": discovered_uris.get(key)}
+
+    if "puffer" not in aktiv:
+        return sensor_defs
 
     indices = puffer_fuehler_indices or list(
         range(1, len(PUFFER_FUEHLER_FALLBACK_URIS) + 1)
@@ -79,7 +87,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         entry: ConfigEntry,
         client: ETAApiClient,
         scan_interval: int,
-        schema: str,
+        components: list[str],
     ) -> None:
         super().__init__(
             hass,
@@ -89,7 +97,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             update_interval=timedelta(seconds=scan_interval),
         )
         self.client = client
-        self.schema = schema
+        self.components = normalize_components(components)
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
 
@@ -97,21 +105,23 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             identifiers={(DOMAIN, entry.entry_id)},
             name="ETA Heizung",
             manufacturer="ETA",
-            model=schema,
+            model=" + ".join(self.components),
             configuration_url=client.base_url,
         )
 
     @property
-    def system_image_path(self) -> str:
-        """Bildschlüssel des gewählten Anlagenschemas (ohne Dateiendung)."""
-        return SCHEMAS.get(self.schema, "kessel_puffer")
+    def component_images(self) -> list[str]:
+        """Bildschlüssel der aktiven Komponenten, in Anzeigereihenfolge."""
+        return [COMPONENTS[key]["image"] for key in self.components]
 
     async def async_discover(self, fub_name_overrides: dict[str, str]) -> None:
         """Ermittelt einmalig die URIs aller Messwerte dieser Anlage."""
         self.discovered_uris, indices = await async_discover_uris(
             self.client, fub_name_overrides
         )
-        self.sensor_defs = build_sensor_defs(self.discovered_uris, indices)
+        self.sensor_defs = build_sensor_defs(
+            self.discovered_uris, indices, self.components
+        )
 
     async def _async_update_data(self) -> dict[str, ETAValue]:
         """Liest alle bekannten Messwerte und mischt sie in den Bestand.

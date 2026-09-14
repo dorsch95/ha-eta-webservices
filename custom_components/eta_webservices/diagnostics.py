@@ -16,7 +16,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_FUB_NAMES, CONF_SCHEMA, DOMAIN
+from .const import CONF_COMPONENTS, CONF_FUB_NAMES, DOMAIN
 from .coordinator import ETADataUpdateCoordinator
 from .uri_discovery import DISCOVERY_PATHS
 
@@ -45,7 +45,7 @@ async def async_get_config_entry_diagnostics(
     return {
         "konfiguration": {
             CONF_HOST: REDACTED,
-            CONF_SCHEMA: {**entry.data, **entry.options}.get(CONF_SCHEMA),
+            CONF_COMPONENTS: coordinator.components,
             CONF_FUB_NAMES: {**entry.data, **entry.options}.get(CONF_FUB_NAMES, {}),
             "abfrageintervall": (
                 coordinator.update_interval.total_seconds()

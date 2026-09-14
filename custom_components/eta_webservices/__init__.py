@@ -15,10 +15,10 @@ from .api import ETAApiClient
 from .const import (
     CONF_FUB_NAMES,
     CONF_SCAN_INTERVAL,
-    CONF_SCHEMA,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     PLATFORMS,
+    components_from_config,
 )
 from .coordinator import ETADataUpdateCoordinator
 from .images import IMAGES_DATA
@@ -28,8 +28,8 @@ _LOGGER = logging.getLogger(__name__)
 WWW_SUBDIR = ("community", "ha-eta-webservices")
 
 
-def _write_schema_images(www_root: str) -> None:
-    """Schreibt die Anlagengrafiken nach www/ - läuft komplett im Executor.
+def _write_component_images(www_root: str) -> None:
+    """Schreibt die Komponentengrafiken nach www/ - läuft komplett im Executor.
 
     Dateisystemzugriffe und das Dekodieren von rund 2 MB Base64 dürfen den
     Event Loop nicht blockieren, deshalb liegt hier alles in einer Funktion.
@@ -54,19 +54,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     config = {**entry.data, **entry.options}
     host = config[CONF_HOST]
     port = config[CONF_PORT]
-    schema = config.get(CONF_SCHEMA, "Kessel + Puffer")
+    components = components_from_config(config)
     fub_name_overrides = config.get(CONF_FUB_NAMES, {})
     scan_interval = config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
     try:
         await hass.async_add_executor_job(
-            _write_schema_images, hass.config.path("www")
+            _write_component_images, hass.config.path("www")
         )
     except OSError as err:
-        _LOGGER.error("Anlagengrafiken konnten nicht geschrieben werden: %s", err)
+        _LOGGER.error("Komponentengrafiken konnten nicht geschrieben werden: %s", err)
 
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
-    coordinator = ETADataUpdateCoordinator(hass, entry, client, scan_interval, schema)
+    coordinator = ETADataUpdateCoordinator(
+        hass, entry, client, scan_interval, components
+    )
 
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()

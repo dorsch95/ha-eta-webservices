@@ -13,17 +13,19 @@ import homeassistant.helpers.config_validation as cv
 
 from .api import ETAApiClient
 from .const import (
+    COMPONENTS,
+    CONF_COMPONENTS,
     CONF_FUB_NAMES,
     CONF_SCAN_INTERVAL,
-    CONF_SCHEMA,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
-    SCHEMA_FUB_ROLES,
-    SCHEMAS,
+    components_from_config,
     fub_role_default,
+    fub_roles_for_components,
+    normalize_components,
 )
 
 
@@ -33,8 +35,22 @@ async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     return await client.async_test_connection()
 
 
+_WAEHLBARE_KOMPONENTEN = [
+    key for key, info in COMPONENTS.items() if not info.get("required")
+]
+
+
 def _connection_schema(current: dict[str, Any]) -> vol.Schema:
-    """Formular für Host, Port, Anlagenschema und Abfrageintervall."""
+    """Formular für Host, Port, Komponenten und Abfrageintervall.
+
+    Statt einer Liste fertiger Anlagenschemata wird hier angekreuzt, was an
+    der Anlage vorhanden ist. Der Kessel steht nicht zur Wahl, den hat jede
+    Anlage.
+    """
+    vorauswahl = [
+        key for key in normalize_components(components_from_config(current))
+        if key in _WAEHLBARE_KOMPONENTEN
+    ]
     return vol.Schema(
         {
             vol.Required(CONF_HOST, default=current.get(CONF_HOST)): cv.string,
@@ -42,8 +58,10 @@ def _connection_schema(current: dict[str, Any]) -> vol.Schema:
                 CONF_PORT, default=current.get(CONF_PORT, DEFAULT_PORT)
             ): cv.port,
             vol.Required(
-                CONF_SCHEMA, default=current.get(CONF_SCHEMA, "Kessel + Puffer")
-            ): vol.In(list(SCHEMAS)),
+                CONF_COMPONENTS, default=vorauswahl
+            ): cv.multi_select(
+                {key: COMPONENTS[key]["name"] for key in _WAEHLBARE_KOMPONENTEN}
+            ),
             vol.Required(
                 CONF_SCAN_INTERVAL,
                 default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
@@ -92,7 +110,12 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             if await _test_connection(self.hass, host, port):
-                self._data = user_input
+                self._data = {
+                    **user_input,
+                    CONF_COMPONENTS: normalize_components(
+                        user_input.get(CONF_COMPONENTS)
+                    ),
+                }
                 return await self.async_step_fub_names()
             errors["base"] = "cannot_connect"
 
@@ -105,11 +128,11 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        roles = SCHEMA_FUB_ROLES.get(self._data[CONF_SCHEMA], [])
+        roles = fub_roles_for_components(self._data[CONF_COMPONENTS])
 
         if user_input is not None:
             return self.async_create_entry(
-                title=f"ETA Heizung ({self._data[CONF_SCHEMA]})",
+                title="ETA Heizung",
                 data={
                     **self._data,
                     CONF_FUB_NAMES: {role: user_input[role] for role in roles},
@@ -146,7 +169,12 @@ class ETAOptionsFlow(OptionsFlow):
             if await _test_connection(
                 self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
             ):
-                self._data = user_input
+                self._data = {
+                    **user_input,
+                    CONF_COMPONENTS: normalize_components(
+                        user_input.get(CONF_COMPONENTS)
+                    ),
+                }
                 return await self.async_step_fub_names()
             errors["base"] = "cannot_connect"
 
@@ -159,7 +187,7 @@ class ETAOptionsFlow(OptionsFlow):
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        roles = SCHEMA_FUB_ROLES.get(self._data[CONF_SCHEMA], [])
+        roles = fub_roles_for_components(self._data[CONF_COMPONENTS])
 
         if user_input is not None:
             return self.async_create_entry(

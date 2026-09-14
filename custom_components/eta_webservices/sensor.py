@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, OPTIONAL_SENSORS
+from .const import COMPONENTS, DOMAIN, OPTIONAL_SENSORS
 from .coordinator import ETADataUpdateCoordinator
 
 
@@ -34,7 +34,9 @@ async def async_setup_entry(
     )
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
-    entities.append(ETASystemImageSensor(coordinator))
+    entities.extend(
+        ETAComponentMarkerSensor(coordinator, key) for key in coordinator.components
+    )
 
     async_add_entities(entities)
 
@@ -156,19 +158,30 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
             return None
 
 
-class ETASystemImageSensor(ETABaseSensor):
-    """Gibt den Bildschlüssel des gewählten Anlagenschemas aus."""
+class ETAComponentMarkerSensor(ETABaseSensor):
+    """Meldet, dass eine Anlagenkomponente eingerichtet ist.
 
-    _attr_icon = "mdi:image"
-    _attr_name = "Anlagenbild Pfad"
+    Dashboard-Karten blenden ihre Komponenten über diese Entität ein. Eine
+    Bedingung auf einen echten Messwert taugt dafür nicht: Home Assistant
+    wertet eine gar nicht existierende Entität als "unknown" aus - denselben
+    Zustand, den ein vorhandener Messwert kurz nach dem Start hat. Dieser
+    Marker liefert stattdessen konstant den Komponentenschlüssel und bleibt
+    auch bei einer gestörten Abfrage verfügbar, damit die Komponente nicht
+    bei jedem Aussetzer aus dem Dashboard verschwindet.
+    """
+
+    _attr_icon = "mdi:puzzle-outline"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
-        super().__init__(coordinator, "image")
-        self._attr_unique_id = (
-            f"eta_style_{coordinator.config_entry.entry_id}_image"
-        )
+    def __init__(self, coordinator: ETADataUpdateCoordinator, component: str) -> None:
+        super().__init__(coordinator, f"komponente_{component}")
+        self._component = component
+        self._attr_name = f"Komponente {COMPONENTS[component]['name']}"
+
+    @property
+    def available(self) -> bool:
+        return True
 
     @property
     def native_value(self):
-        return self.coordinator.system_image_path
+        return self._component

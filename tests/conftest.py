@@ -181,7 +181,7 @@ def entry() -> FakeConfigEntry:
         {
             "host": "192.0.2.10",
             "port": 8080,
-            "schema": "Kessel + Puffer + 1x Heizkreis + FWM",
+            "components": ["kessel", "puffer", "hk1", "hk2", "fwm"],
             "scan_interval": 30,
         }
     )

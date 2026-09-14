@@ -6,7 +6,7 @@
         "data": {
           "host": "IP address of the heating system",
           "port": "Port (default: 8080)",
-          "schema": "System layout",
+          "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)"
         }
       },
@@ -37,7 +37,7 @@
         "data": {
           "host": "IP address of the heating system",
           "port": "Port (default: 8080)",
-          "schema": "System layout",
+          "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)"
         }
       },

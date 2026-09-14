@@ -44,12 +44,12 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Heiztechnik Web Service**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. Wähle im **Dropdown-Menü dein passendes Anlagenschema** aus (z. B. *Kessel + Puffer + 1x Heizkreis + FWM*).
+4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1, Heizkreis 2). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
 5. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-6. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach gewähltem Schema mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-7. Klicke auf **Absenden**. Die passenden Hintergrundbilder werden automatisch auf deiner Festplatte generiert.
+6. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+7. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
 
-Host, Port, **Abfrageintervall**, Anlagenschema und die FUB-Namen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
+Host, Port, **Abfrageintervall**, die Komponenten und die FUB-Namen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
 
 > 💡 Das **Abfrageintervall** legt fest, wie oft die Anlage ausgelesen wird (Standard 30 Sekunden, erlaubt sind 10 bis 600). Alle Werte werden pro Zyklus parallel geholt, die Steuerung wird dabei aber bewusst nur mit wenigen gleichzeitigen Anfragen belastet.
 
@@ -81,1146 +81,182 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 
 ---
 
-## 📺 Dashboard-Vorlage für Lovelace (Bild-Elemente)
+## 📺 Dashboard-Vorlage für Lovelace
 
-Durch die automatische Base64-Bildgenerierung musst du keine Grafiken mehr manuell auf deinen Server kopieren. Jede Anlagengrafik hat die Messwert-Beschriftungen (z. B. "Kessel:", "Ladezustand:", "Vorlauf HK1:") bereits fest eingebrannt – es fehlt nur noch der Wert daneben. Die folgenden Karten wurden anhand einer pixelgenauen Analyse der jeweiligen Grafik erstellt, damit die Werte exakt neben ihrer Beschriftung erscheinen.
+Es gibt **eine** Karte für alle Anlagen. Sie zeigt automatisch genau die Komponenten an, die du im Setup ausgewählt hast - fehlende Komponenten werden ausgeblendet, und die übrigen rücken nach.
 
-Wähle unten die Karte passend zu deinem im Setup gewählten Anlagenschema, erstelle eine neue Karte vom Typ **Manuell** (Umschalten auf Code-Editor) und füge den YAML-Code ein.
+Erstelle eine neue Karte vom Typ **Manuell** (oben rechts auf Code-Editor umschalten) und füge den YAML-Code ein. Es ist **nichts zu löschen und nichts anzupassen**.
 
-> ℹ️ Die Außentemperatur hat kein eigenes Beschriftungsfeld auf den Grafiken. Sie wird deshalb unabhängig vom Schema oben rechts in der Ecke mit einem kleinen Haus-Symbol (`mdi:home-thermometer-outline`) dargestellt, statt eine der Grafiken anzupassen.
+<details>
+<summary><b>Wie das funktioniert</b> (aufklappen)</summary>
 
-> ⚠️ `picture-elements`-Karten unterstützen **kein** `type: markdown`-Element (nur `state-label`, `state-icon`, `icon`, `image`, `conditional`, `service-button`, `state-badge`) - eine frühere Version dieser README hat das fälschlich verwendet, was zu "Konfigurationsfehler: Unknown type encountered" führte. Die Karten unten nutzen nur gültige Elementtypen.
+Die Karte ist ein `grid` mit vier Spalten. Jede Komponente ist eine eigene `picture-elements`-Karte, eingepackt in eine `conditional`-Karte, die auf eine Marker-Entität prüft (`sensor.eta_heizung_komponente_*`). Diese Marker legt die Integration nur für die Komponenten an, die du ausgewählt hast.
 
-Die **Puffer-Fühler** sind ein Sonderfall: Je nach Anlage hat PufferFlex zwischen 3 und 8 Fühlern. Da `state-label` keine bedingte Anzeige kann, enthält jede Puffer-Karte pauschal **8 übereinander gestapelte `state-label`-Elemente** (Fühler 1 oben bis Fühler 8 unten, passend zur physischen Anordnung im Pufferspeicher). Hat deine Anlage weniger als 8 Fühler, zeigt Home Assistant für die überzähligen Positionen ein kleines Warndreieck ("Entität nicht gefunden") statt einer leeren Fläche - **lösche die Elemente für die Fühler, die du nicht hast, aus dem YAML** (schau vorher unter Entwicklerwerkzeuge → Zustände nach, wie viele `sensor.eta_heizung_puffer_fuhler_N`-Entitäten es bei dir gibt).
+Blendet `conditional` eine Karte aus, setzt Home Assistant `display: none` - die Karte fällt aus dem Grid-Layout, und die verbleibenden Komponenten rutschen nach links. Weil das Grid feste Spalten hat, bleibt jede Komponente dabei gleich groß.
 
-**Aschebox** wird über einen eigenen Sensor (`sensor.eta_heizung_aschebox_status`) bereitgestellt, der die Kombination "459/1000kg" bereits serverseitig in der Integration berechnet - die Karte muss dafür nur eine ganz normale `state-label`-Zeile referenzieren. Bei **FWM/WW** stehen Warmwasser- und Zirkulationstemperatur als zwei einzelne `state-label`-Zeilen übereinander; der Zirkulations-Sensor existiert immer und zeigt "-", wenn deine Anlage keinen entsprechenden Fühler hat - anders als bei den Pufferfühlern muss hier also nichts aus dem YAML gelöscht werden.
+Die Beschriftungen stecken **nicht** in den Grafiken, sondern kommen aus `prefix` der `state-label`-Elemente. Deshalb genügen vier Grafiken statt einer für jede mögliche Kombination - und du kannst jede Beschriftung im YAML frei ändern.
 
-### Kessel
+> ⚠️ `picture-elements` kennt nur diese Elementtypen: `conditional`, `icon`, `image`, `service-button` (alias `action-button`), `state-badge`, `state-icon`, `state-label`. Ein `type: markdown` gibt es **nicht** - eine frühere Version dieser README hat das fälschlich verwendet, was zu "Konfigurationsfehler: Unknown type encountered" führte.
 
-```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
-```
-
-### Kessel + Puffer
+</details>
 
 ```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel_puffer.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_ladezustand
-    style:
-      top: 12.7%
-      left: 45%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_1
-    style:
-      top: 22%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_2
-    style:
-      top: 32%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_3
-    style:
-      top: 42%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_4
-    style:
-      top: 52%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_5
-    style:
-      top: 62%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_6
-    style:
-      top: 72%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_7
-    style:
-      top: 82%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_8
-    style:
-      top: 92%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
+type: grid
+columns: 4
+square: false
+cards:
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_kessel
+        state: kessel
+    card:
+      type: picture-elements
+      image: /local/community/ha-eta-webservices/kessel.png
+      elements:
+        - type: state-label
+          entity: sensor.eta_heizung_aussentemperatur
+          prefix: "Außen: "
+          style: {top: 4%, left: 6%, transform: "translate(0, -50%)", color: "#9aa5b1", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_kesseltemperatur
+          prefix: "Kessel: "
+          style: {top: 12%, left: 6%, transform: "translate(0, -50%)", color: "#e8615f", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_kessel_solltemperatur
+          prefix: "Soll: "
+          style: {top: 19%, left: 6%, transform: "translate(0, -50%)", color: "#e2867f", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_rucklauftemperatur
+          prefix: "Rücklauf: "
+          style: {top: 26%, left: 6%, transform: "translate(0, -50%)", color: "#7b88e0", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_kesseldruck
+          prefix: "Druck: "
+          style: {top: 33%, left: 6%, transform: "translate(0, -50%)", color: "#d3a15a", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
+          prefix: "Behälter: "
+          style: {top: 40%, left: 6%, transform: "translate(0, -50%)", color: "#5fbfa8", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_aschebox_status
+          prefix: "Aschebox: "
+          style: {top: 47%, left: 6%, transform: "translate(0, -50%)", color: "#a98fd0", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_restsauerstoff
+          prefix: "Restsauerstoff: "
+          style: {top: 54%, left: 6%, transform: "translate(0, -50%)", color: "#d89a6a", font-size: 105%}
+
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_pufferspeicher
+        state: puffer
+    card:
+      type: picture-elements
+      image: /local/community/ha-eta-webservices/puffer.png
+      elements:
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_ladezustand
+          prefix: "Ladezustand: "
+          style: {top: 12%, left: 50%, color: "#d5d9de", font-size: 110%}
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_1
+          style: {top: 36%, left: 50%, color: "#ffffff", font-size: 115%}
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_2
+          style: {top: 62%, left: 50%, color: "#ffffff", font-size: 115%}
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_3
+          style: {top: 88%, left: 50%, color: "#ffffff", font-size: 115%}
+
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_fwm
+        state: fwm
+    card:
+      type: picture-elements
+      image: /local/community/ha-eta-webservices/fwm.png
+      elements:
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_warmwassertemperatur
+          prefix: "Warmwasser: "
+          style: {top: 12%, left: 50%, color: "#d5d9de", font-size: 110%}
+        - type: state-label
+          entity: sensor.eta_heizung_fwm_zirkulation
+          prefix: "Zirkulation: "
+          style: {top: 19%, left: 50%, color: "#9aa5b1", font-size: 100%}
+
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_1
+        state: hk1
+    card:
+      type: picture-elements
+      image: /local/community/ha-eta-webservices/heizkreis.png
+      elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
+          prefix: "Vorlauf HK1: "
+          style: {top: 12%, left: 50%, color: "#e8615f", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_anforderung
+          prefix: "HK1: "
+          style: {top: 19%, left: 50%, color: "#d5d9de", font-size: 100%}
+
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_heizkreis_2
+        state: hk2
+    card:
+      type: picture-elements
+      image: /local/community/ha-eta-webservices/heizkreis.png
+      elements:
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
+          prefix: "Vorlauf HK2: "
+          style: {top: 12%, left: 50%, color: "#e8615f", font-size: 105%}
+        - type: state-label
+          entity: sensor.eta_heizung_heizkreis_2_anforderung
+          prefix: "HK2: "
+          style: {top: 19%, left: 50%, color: "#d5d9de", font-size: 100%}
 ```
 
-### Kessel + Puffer + 1x Heizkreis
+### Mehr als drei Pufferfühler
+
+Die Karte oben zeigt drei Fühler. Hat deine Anlage mehr (PufferFlex kann bis zu 8), ergänze im Puffer-Block weitere Zeilen und verteile die `top`-Werte gleichmäßig zwischen 36 % und 88 %:
 
 ```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel_puffer_hk1.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_ladezustand
-    style:
-      top: 12.7%
-      left: 45%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_1
-    style:
-      top: 22%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_2
-    style:
-      top: 32%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_3
-    style:
-      top: 42%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_4
-    style:
-      top: 52%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_5
-    style:
-      top: 62%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_6
-    style:
-      top: 72%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_7
-    style:
-      top: 82%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_8
-    style:
-      top: 92%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-    style:
-      top: 12.7%
-      left: 67%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_anforderung
-    style:
-      top: 20.4%
-      left: 72%
-      font-weight: bold
-      font-size: 16px
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
+        - type: state-label
+          entity: sensor.eta_heizung_puffer_fuhler_4
+          style: {top: 75%, left: 50%, color: "#ffffff", font-size: 115%}
 ```
 
-### Kessel + Puffer + FWM
+Wie viele du hast, steht unter **Entwicklerwerkzeuge -> Zustände** (`sensor.eta_heizung_puffer_fuhler_`). Fühler 1 ist immer oben, der letzte immer unten - beide tragen das Attribut `position` mit `oben` bzw. `unten`.
+
+### Beschriftungen ändern
+
+Jede Beschriftung steht als `prefix` im YAML, nicht im Bild. Aus
 
 ```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel_puffer_fwm.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_ladezustand
-    style:
-      top: 12.7%
-      left: 45%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_1
-    style:
-      top: 22%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_2
-    style:
-      top: 32%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_3
-    style:
-      top: 42%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_4
-    style:
-      top: 52%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_5
-    style:
-      top: 62%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_6
-    style:
-      top: 72%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_7
-    style:
-      top: 82%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_8
-    style:
-      top: 92%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_fwm_warmwassertemperatur
-    style:
-      top: 9%
-      left: 65%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_fwm_zirkulation
-    style:
-      top: 16%
-      left: 65%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
+          prefix: "Kessel: "
 ```
 
-### Kessel + Puffer + 1x Heizkreis + FWM
+wird also einfach
 
 ```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel_puffer_hk1_fwm.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_ladezustand
-    style:
-      top: 12.7%
-      left: 45%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_1
-    style:
-      top: 22%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_2
-    style:
-      top: 32%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_3
-    style:
-      top: 42%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_4
-    style:
-      top: 52%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_5
-    style:
-      top: 62%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_6
-    style:
-      top: 72%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_7
-    style:
-      top: 82%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_8
-    style:
-      top: 92%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_fwm_warmwassertemperatur
-    style:
-      top: 9%
-      left: 65%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_fwm_zirkulation
-    style:
-      top: 16%
-      left: 65%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-    style:
-      top: 12.7%
-      left: 86%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_anforderung
-    style:
-      top: 20.4%
-      left: 90%
-      font-weight: bold
-      font-size: 14px
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
+          prefix: "Vorlauf Kessel: "
 ```
 
-### Kessel + Puffer + 2x Heizkreis
+Mit `suffix` lässt sich zusätzlich etwas hinter den Wert setzen.
 
-```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel_puffer_hk2.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_ladezustand
-    style:
-      top: 12.7%
-      left: 45%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_1
-    style:
-      top: 22%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_2
-    style:
-      top: 32%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_3
-    style:
-      top: 42%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_4
-    style:
-      top: 52%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_5
-    style:
-      top: 62%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_6
-    style:
-      top: 72%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_7
-    style:
-      top: 82%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_8
-    style:
-      top: 92%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-    style:
-      top: 12.7%
-      left: 67%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_anforderung
-    style:
-      top: 20.4%
-      left: 72%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-    style:
-      top: 27.0%
-      left: 67%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_2_anforderung
-    style:
-      top: 34.7%
-      left: 72%
-      font-weight: bold
-      font-size: 16px
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
-```
-
-### Kessel + Puffer + 2x Heizkreis + FWM
-
-```yaml
-type: picture-elements
-image: /local/community/ha-eta-webservices/kessel_puffer_hk2_fwm.png
-elements:
-  - type: state-label
-    entity: sensor.eta_heizung_kesseltemperatur
-    style:
-      top: 5.5%
-      left: 11%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kessel_solltemperatur
-    style:
-      top: 12.7%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_rucklauftemperatur
-    style:
-      top: 19.9%
-      left: 14%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_kesseldruck
-    style:
-      top: 27.5%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-    style:
-      top: 34.7%
-      left: 19%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_restsauerstoff
-    style:
-      top: 48.7%
-      left: 20%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_aschebox_status
-    style:
-      top: 41.3%
-      left: 15%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_ladezustand
-    style:
-      top: 12.7%
-      left: 45%
-      font-weight: bold
-      font-size: 16px
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_1
-    style:
-      top: 22%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_2
-    style:
-      top: 32%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_3
-    style:
-      top: 42%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_4
-    style:
-      top: 52%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_5
-    style:
-      top: 62%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_6
-    style:
-      top: 72%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_7
-    style:
-      top: 82%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_puffer_fuhler_8
-    style:
-      top: 92%
-      left: 38%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_fwm_warmwassertemperatur
-    style:
-      top: 9%
-      left: 65%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_fwm_zirkulation
-    style:
-      top: 16%
-      left: 65%
-      color: white
-      font-weight: bold
-      font-size: 12px
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-    style:
-      top: 12.7%
-      left: 86%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_anforderung
-    style:
-      top: 20.4%
-      left: 90%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-    style:
-      top: 27.0%
-      left: 86%
-      font-weight: bold
-      font-size: 14px
-  - type: state-label
-    entity: sensor.eta_heizung_heizkreis_2_anforderung
-    style:
-      top: 34.7%
-      left: 90%
-      font-weight: bold
-      font-size: 14px
-  - type: icon
-    icon: mdi:home-thermometer-outline
-    style:
-      top: 6%
-      left: 88%
-      color: white
-      text-shadow: 1px 1px 2px black
-  - type: state-label
-    entity: sensor.eta_heizung_aussentemperatur
-    style:
-      top: 6%
-      left: 95%
-      color: white
-      font-weight: bold
-      font-size: 14px
-      text-shadow: 1px 1px 2px black
-```
-
-> 💡 `top`/`left` verankern in Lovelace standardmäßig die **Mitte** des Elements. Solltest du eine andere Home-Assistant-Theme, Bildschirmgröße oder Kartenbreite verwenden, kannst du die Werte im visuellen Editor per Drag & Drop feinjustieren.
+> 💡 `top`/`left` verankern in Lovelace die **Mitte** des Elements. Die linksbündigen Beschriftungen im Kessel-Block nutzen deshalb `transform: "translate(0, -50%)"`. Alle Werte lassen sich im visuellen Editor per Drag & Drop feinjustieren.
 
 ---
+
 
 ## 🩺 Wenn ein Wert fehlt
 
