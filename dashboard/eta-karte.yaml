@@ -62,7 +62,7 @@ cards:
             color: '#d3a15a'
             font-size: 90%
             transform: translate(0, -50%)
-          prefix: 'Druck: '
+          prefix: 'Anlagendruck: '
         - type: state-label
           entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
           style:
@@ -71,7 +71,7 @@ cards:
             color: '#5fbfa8'
             font-size: 90%
             transform: translate(0, -50%)
-          prefix: 'Behälter: '
+          prefix: 'Tagesbehälter: '
         - type: state-label
           entity: sensor.eta_heizung_aschebox_status
           style:
@@ -296,7 +296,7 @@ cards:
             color: '#d3a15a'
             font-size: 95%
             transform: translate(0, -50%)
-          prefix: 'Druck: '
+          prefix: 'Anlagendruck: '
         - type: state-label
           entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
           style:
@@ -305,7 +305,7 @@ cards:
             color: '#5fbfa8'
             font-size: 95%
             transform: translate(0, -50%)
-          prefix: 'Behälter: '
+          prefix: 'Tagesbehälter: '
         - type: state-label
           entity: sensor.eta_heizung_aschebox_status
           style:
@@ -530,7 +530,7 @@ cards:
             color: '#d3a15a'
             font-size: 100%
             transform: translate(0, -50%)
-          prefix: 'Druck: '
+          prefix: 'Anlagendruck: '
         - type: state-label
           entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
           style:
@@ -539,7 +539,7 @@ cards:
             color: '#5fbfa8'
             font-size: 100%
             transform: translate(0, -50%)
-          prefix: 'Behälter: '
+          prefix: 'Tagesbehälter: '
         - type: state-label
           entity: sensor.eta_heizung_aschebox_status
           style:

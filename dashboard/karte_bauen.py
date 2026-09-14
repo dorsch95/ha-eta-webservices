@@ -34,8 +34,8 @@ KESSEL_ZEILEN = [
     ("kesseltemperatur", "Kessel: ", "Kessel: ", "kessel", 12),
     ("kessel_solltemperatur", "Soll: ", "Soll: ", "soll", 19),
     ("rucklauftemperatur", "Rücklauf: ", "RL: ", "ruecklauf", 26),
-    ("kesseldruck", "Druck: ", "Druck: ", "druck", 33),
-    ("pellet_inhalt_tagesbehalter", "Behälter: ", "Behälter: ", "behaelter", 40),
+    ("kesseldruck", "Anlagendruck: ", "Anlagendruck: ", "druck", 33),
+    ("pellet_inhalt_tagesbehalter", "Tagesbehälter: ", "Tagesbehälter: ", "behaelter", 40),
     ("aschebox_status", "Aschebox: ", "Asche: ", "aschebox", 47),
     ("restsauerstoff", "Restsauerstoff: ", "O₂: ", "o2", 54),
 ]
