@@ -89,6 +89,9 @@
   },
   "entity": {
     "sensor": {
+      "aktive_fehler": {
+        "name": "Aktive Fehler"
+      },
       "aschebox_schwelle": {
         "name": "Aschebox Leeren nach"
       },

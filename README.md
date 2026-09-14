@@ -19,10 +19,12 @@ Diese benutzerdefinierte Integration liest **ETA Heizsysteme** (Pelletkessel, St
 
 Damit Home Assistant auf die Daten zugreifen kann, müssen die Webservices auf der Steuerung deiner Heizung aktiviert werden:
 
-1. Registriere deine Anlage auf dem Portal [meinETA](https://meineta.at), falls noch nicht geschehen.
-2. Gehe am Touch-Display deiner Heizung unten links auf den **Werkzeugkasten** (Einstellungen).
-3. Öffne **Internet & Schnittstellen** -> **meinETA Zugang**.
-4. Aktiviere dort die **Webservices**.
+1. Stelle sicher, dass auf deiner Anlage **Systemsoftware 1.20.0 oder neuer** läuft.
+2. Registriere deine Anlage auf dem Portal [meinETA](https://meineta.at), falls noch nicht geschehen.
+3. **Beantrage dort den LAN-Zugriff** für deine Anlage. Ohne diesen Schritt bleiben die Webservices aus, auch wenn du sie am Display einschaltest.
+4. Gehe am Touch-Display deiner Heizung unten links auf den **Werkzeugkasten** (Einstellungen).
+5. Öffne **Internet & Schnittstellen** -> **meinETA Zugang**.
+6. Aktiviere dort die **Webservices**.
 
 Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` erreichbar. Du kannst das im Browser prüfen: Erscheint eine XML-Seite mit dem Menübaum deiner Anlage, ist alles bereit.
 
@@ -59,7 +61,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Über das Drei-Punkte-Menü der Integration geht es alternativ mit **Neu konfigurieren**.
 
-> 💡 Das **Abfrageintervall** legt fest, wie oft die Anlage ausgelesen wird (Standard 30 Sekunden, erlaubt sind 10 bis 600). Alle Werte werden pro Zyklus parallel geholt, die Steuerung wird dabei aber bewusst nur mit wenigen gleichzeitigen Anfragen belastet.
+> 💡 Das **Abfrageintervall** legt fest, wie oft die Anlage ausgelesen wird (Standard 30 Sekunden, erlaubt sind 10 bis 600). Die Integration legt dafür einen **Variablensatz** auf der Anlage an und liest damit alle Messwerte mit einer einzigen Anfrage statt mit einer pro Wert. Kennt deine Anlage keine Variablensätze, werden die Werte parallel einzeln gelesen - dann wird die Steuerung bewusst nur mit wenigen gleichzeitigen Anfragen belastet.
 
 ---
 
@@ -73,6 +75,7 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 * **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
 * **♨️ Heizkreis 1 und 2:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*).
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur. Der Zirkulations-Sensor existiert immer und zeigt "-", falls deine Anlage keinen entsprechenden Fühler hat.
+* **🚨 Aktive Fehler:** Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
 * **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
 
 Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast - keine dauerhaft leeren Sensoren für Hardware, die deine Anlage nicht hat.
@@ -188,6 +191,39 @@ Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die H
 
 ---
 
+## 🚨 Störungen der Heizung
+
+Die Integration liest die anstehenden Störungen direkt aus der Anlage und stellt sie als `sensor.eta_heizung_aktive_fehler` bereit. Der Zustand ist die Anzahl, die Meldungen stehen in den Attributen:
+
+```yaml
+fehler:
+  - funktionsblock: Kessel
+    meldung: Wasserdruck zu niedrig 1,20 bar
+    prioritaet: Error
+    zeit: '2026-09-14 11:02:31'
+    hinweis: Heizungswasser nachfüllen!
+```
+
+Damit lässt sich eine Benachrichtigung bauen, ohne am Kessel vorbeizugehen:
+
+```yaml
+automation:
+  - alias: ETA Störung melden
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.eta_heizung_aktive_fehler
+        above: 0
+    actions:
+      - action: notify.persistent_notification
+        data:
+          title: Störung an der Heizung
+          message: >-
+            {{ state_attr('sensor.eta_heizung_aktive_fehler', 'fehler')
+               | map(attribute='meldung') | join(', ') }}
+```
+
+---
+
 ## 🩺 Wenn ein einzelner Wert fehlt
 
 Fehlt nicht eine ganze Komponente, sondern ein einzelner Messwert, hilft der Diagnose-Export weiter. Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen - fehlt einer, ist er an deiner Anlage meist anders benannt oder schlicht nicht verbaut.
@@ -214,6 +250,8 @@ pytest
 ```
 
 Dieselben Tests laufen zusammen mit `hassfest` und der HACS-Validierung bei jedem Push automatisch in GitHub Actions.
+
+Grundlage für die Attrappe ist die offizielle Dokumentation *ETAtouch RESTful Webservices* (Version 1.2). Die Antworten der Attrappe bilden deren Beispiele nach - inklusive `advTextOffset`, an dem sich Textvariablen erkennen lassen. Eine Attrappe, die stattdessen ein erfundenes Format liefert, verdeckt genau die Fehler, um die es geht.
 
 Ein Teil der Tests prüft nicht den Code, sondern dieses README: dass die Dashboard-Karte nur gültige Elementtypen verwendet, dass jede darin genannte Entität wirklich entsteht, und dass sich die Entitäts-IDs einer deutschsprachigen Installation nicht ändern.
 

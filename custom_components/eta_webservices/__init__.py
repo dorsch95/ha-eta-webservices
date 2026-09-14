@@ -82,5 +82,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
-    """Wird aufgerufen, wenn die Integration entfernt wird."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    """Wird aufgerufen, wenn die Integration entfernt wird.
+
+    Der Variablensatz wird dabei auf der Anlage wieder freigegeben - sie
+    hält ihn im Arbeitsspeicher, und liegengebliebene Sätze belegen dort
+    dauerhaft Platz.
+    """
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        await entry.runtime_data.async_varset_aufraeumen()
+    return unload_ok

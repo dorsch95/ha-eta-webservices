@@ -19,6 +19,37 @@ class ETAApiError(Exception):
     """Fehler beim Zugriff auf die ETA-Webservices."""
 
 
+class ETANotFoundError(ETAApiError):
+    """Die Anlage kennt die angefragte Ressource nicht.
+
+    Tritt zum Beispiel auf, wenn ein Variablensatz nach einem Neustart der
+    Anlage verschwunden ist oder die Firmware /user/varinfo noch nicht
+    unterstützt.
+    """
+
+
+class ETAError:
+    """Ein aktiver Fehler der Anlage."""
+
+    __slots__ = ("fub", "msg", "priority", "time", "text")
+
+    def __init__(self, fub: str, msg: str, priority: str, time: str, text: str) -> None:
+        self.fub = fub
+        self.msg = msg
+        self.priority = priority
+        self.time = time
+        self.text = text
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "funktionsblock": self.fub,
+            "meldung": self.msg,
+            "prioritaet": self.priority,
+            "zeit": self.time,
+            "hinweis": self.text,
+        }
+
+
 class ETAValue:
     """Ein einzelner von der Anlage gelesener Messwert.
 
@@ -73,12 +104,18 @@ class ETAApiClient:
 
     async def _get_text(self, path: str, timeout: float) -> str:
         """Holt eine Ressource und gibt den Rohtext zurück."""
+        return await self._request("GET", path, timeout)
+
+    async def _request(self, methode: str, path: str, timeout: float) -> str:
+        """Führt eine HTTP-Anfrage aus und gibt den Rohtext zurück."""
         url = f"{self.base_url}{path}"
         try:
-            async with self._session.get(
-                url, timeout=aiohttp.ClientTimeout(total=timeout)
+            async with self._session.request(
+                methode, url, timeout=aiohttp.ClientTimeout(total=timeout)
             ) as response:
-                if response.status != 200:
+                if response.status == 404:
+                    raise ETANotFoundError(f"{url} ist der Anlage nicht bekannt")
+                if response.status not in (200, 201):
                     raise ETAApiError(f"HTTP {response.status} für {url}")
                 return await response.text()
         except asyncio.TimeoutError as err:
@@ -98,6 +135,144 @@ class ETAApiClient:
             )
         except Exception as err:
             raise ETAApiError(f"XML konnte nicht geparst werden: {err}") from err
+
+    async def async_get_api_version(self) -> str | None:
+        """Liest die Version der Webservice-Schnittstelle.
+
+        Daran hängt, was die Anlage kann: Zeitfenster lassen sich ab 1.1
+        setzen, /user/varinfo gibt es ab 1.2.
+        """
+        try:
+            xml_text = await self._get_text("/user/api", REQUEST_TIMEOUT)
+            parsed = await self._parse_xml(xml_text)
+        except ETAApiError as err:
+            _LOGGER.debug("ETA: API-Version nicht lesbar: %s", err)
+            return None
+
+        root = next(iter(parsed.values()), None)
+        if isinstance(root, dict):
+            api = root.get("api")
+            if isinstance(api, dict):
+                return api.get("@version")
+        return None
+
+    async def async_get_errors(self) -> list[ETAError]:
+        """Liest die aktuell anstehenden Fehler der Anlage."""
+        xml_text = await self._get_text("/user/errors", REQUEST_TIMEOUT)
+        parsed = await self._parse_xml(xml_text)
+
+        root = next(iter(parsed.values()), None)
+        if not isinstance(root, dict):
+            return []
+        errors_node = root.get("errors")
+        if not isinstance(errors_node, dict):
+            return []
+
+        gefunden: list[ETAError] = []
+        for fub in _as_list(errors_node.get("fub")):
+            if not isinstance(fub, dict):
+                continue
+            name = fub.get("@name", "")
+            for eintrag in _as_list(fub.get("error")):
+                if not isinstance(eintrag, dict):
+                    continue
+                gefunden.append(
+                    ETAError(
+                        fub=name,
+                        msg=eintrag.get("@msg", ""),
+                        priority=eintrag.get("@priority", ""),
+                        time=eintrag.get("@time", ""),
+                        text=(eintrag.get("#text") or "").strip(),
+                    )
+                )
+        return gefunden
+
+    async def async_get_varinfo(self, uri: str) -> dict[str, Any] | None:
+        """Liest die Beschreibung einer Variable.
+
+        Liefert unter anderem die gültigen Werte einer Textvariable und ob
+        sie überhaupt geschrieben werden darf. Ältere Anlagen kennen die
+        Ressource nicht - dann ist das Ergebnis None.
+        """
+        try:
+            xml_text = await self._get_text(f"/user/varinfo{uri}", REQUEST_TIMEOUT)
+            parsed = await self._parse_xml(xml_text)
+        except ETAApiError as err:
+            _LOGGER.debug("ETA: varinfo für %s nicht verfügbar: %s", uri, err)
+            return None
+
+        root = next(iter(parsed.values()), None)
+        if not isinstance(root, dict):
+            return None
+        var_info = root.get("varInfo")
+        if not isinstance(var_info, dict):
+            return None
+        variable = var_info.get("variable")
+        if not isinstance(variable, dict):
+            return None
+
+        gueltige = []
+        werte = variable.get("validValues")
+        if isinstance(werte, dict):
+            for eintrag in _as_list(werte.get("value")):
+                if isinstance(eintrag, dict) and eintrag.get("@strValue"):
+                    gueltige.append(eintrag["@strValue"])
+
+        return {
+            "name": variable.get("@name"),
+            "full_name": variable.get("@fullName"),
+            "unit": variable.get("@unit", ""),
+            "type": variable.get("type"),
+            "writable": variable.get("@isWritable") == "1",
+            "valid_values": gueltige,
+        }
+
+    async def async_create_varset(self, name: str, uris: list[str]) -> None:
+        """Legt einen Variablensatz an und füllt ihn.
+
+        Damit lassen sich anschließend alle Werte mit einer einzigen
+        Anfrage lesen statt mit einer pro Messwert - für die schwache
+        Steuerung ein erheblicher Unterschied.
+        """
+        await self._request("PUT", f"/user/vars/{name}", REQUEST_TIMEOUT)
+        for uri in uris:
+            await self._request("PUT", f"/user/vars/{name}{uri}", REQUEST_TIMEOUT)
+
+    async def async_delete_varset(self, name: str) -> None:
+        """Räumt einen Variablensatz wieder ab.
+
+        Die Anlage hält die Sätze nur im Arbeitsspeicher; wer sie liegen
+        lässt, belegt dort dauerhaft Platz.
+        """
+        try:
+            await self._request("DELETE", f"/user/vars/{name}", REQUEST_TIMEOUT)
+        except ETAApiError as err:
+            _LOGGER.debug("ETA: Variablensatz %s nicht entfernt: %s", name, err)
+
+    async def async_get_varset(self, name: str) -> dict[str, ETAValue]:
+        """Liest alle Werte eines Variablensatzes auf einmal.
+
+        Der Schlüssel ist die URI der Variable, so wie die Anlage sie im
+        Attribut uri zurückmeldet.
+        """
+        xml_text = await self._get_text(f"/user/vars/{name}", MENU_TIMEOUT)
+        parsed = await self._parse_xml(xml_text)
+
+        root = next(iter(parsed.values()), None)
+        if not isinstance(root, dict):
+            raise ETAApiError("Antwort enthält kein <vars>-Element")
+        vars_node = root.get("vars")
+        if not isinstance(vars_node, dict):
+            raise ETAApiError("Antwort enthält kein <vars>-Element")
+
+        werte: dict[str, ETAValue] = {}
+        for variable in _as_list(vars_node.get("variable")):
+            if not isinstance(variable, dict):
+                continue
+            uri = variable.get("@uri", "")
+            if uri:
+                werte[_normalisierte_uri(uri)] = _parse_value_node(variable)
+        return werte
 
     async def async_test_connection(self) -> bool:
         """Prüft, ob die Anlage erreichbar ist und Webservices aktiv sind."""
@@ -149,6 +324,24 @@ class ETAApiClient:
             *(fetch(key, uri) for key, uri in uris.items())
         )
         return {key: value for key, value in results if value is not None}
+
+
+def _as_list(node: Any) -> list:
+    """Macht aus einem einzelnen Knoten oder einer Liste immer eine Liste."""
+    if node is None:
+        return []
+    if isinstance(node, list):
+        return node
+    return [node]
+
+
+def _normalisierte_uri(uri: str) -> str:
+    """Bringt eine URI auf die Form, die auch im Menübaum steht.
+
+    Der Menübaum liefert "/120/10101/0/11109/0", ein Variablensatz
+    dieselbe Adresse ohne führenden Schrägstrich.
+    """
+    return uri if uri.startswith("/") else f"/{uri}"
 
 
 def _ganzzahl(node: dict, schluessel: str) -> int | None:

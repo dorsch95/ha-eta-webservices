@@ -38,6 +38,7 @@ async def async_setup_entry(
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
     entities.append(ETAPelletEnergySensor(coordinator))
+    entities.append(ETAErrorSensor(coordinator))
     entities.extend(
         ETAComponentMarkerSensor(coordinator, key) for key in coordinator.components
     )
@@ -160,6 +161,34 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
             return f"{float(verbrauch.value):.0f}/{float(schwelle.value):.0f}kg"
         except (TypeError, ValueError):
             return None
+
+
+class ETAErrorSensor(ETABaseSensor):
+    """Zeigt, wie viele Fehler an der Anlage anstehen.
+
+    Die Meldungen selbst stehen in den Attributen, mit Funktionsblock,
+    Priorität und Zeitpunkt - so, wie die Anlage sie unter /user/errors
+    ausgibt. Damit lässt sich eine Benachrichtigung bauen, ohne am Kessel
+    vorbeizugehen.
+    """
+
+    _attr_translation_key = "aktive_fehler"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator, "aktive_fehler")
+
+    @property
+    def icon(self) -> str:
+        return "mdi:alert-circle" if self.coordinator.errors else "mdi:check-circle"
+
+    @property
+    def native_value(self) -> int:
+        return len(self.coordinator.errors)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"fehler": [fehler.as_dict() for fehler in self.coordinator.errors]}
 
 
 class ETAPelletEnergySensor(ETABaseSensor):

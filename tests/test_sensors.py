@@ -324,3 +324,94 @@ async def test_kein_reparaturhinweis_ohne_lesbaren_menuebaum(hass, entry, repara
 
     assert coordinator.components_without_data == []
     assert reparaturen["angelegt"] == []
+
+
+async def test_sammelabfrage_braucht_nur_eine_anfrage_pro_zyklus(hass, entry):
+    """Statt einer Anfrage je Messwert genügt der Anlage eine einzige."""
+    coordinator, _ = await setup_integration(hass, entry)
+    assert len(coordinator.abfragbare_uris) > 15
+
+    vorher = hass.session.count
+    await coordinator.async_refresh()
+    anfragen = hass.session.count - vorher
+
+    assert anfragen <= 2, f"{anfragen} Anfragen statt Sammelabfrage plus Fehlerliste"
+    assert coordinator.data["kessel_temperatur"].display == pytest.approx(55.5)
+
+
+async def test_neustart_der_anlage_legt_den_variablensatz_neu_an(hass, entry):
+    """Variablensätze überleben keinen Neustart der Heizung.
+
+    Danach muss die Integration den Satz neu anlegen und darf in der
+    Zwischenzeit keine Werte verlieren.
+    """
+    coordinator, _ = await setup_integration(hass, entry)
+    assert hass.session.varsets
+
+    hass.session.varsets.clear()
+    await coordinator.async_refresh()
+
+    assert hass.session.varsets, "Variablensatz wurde nicht neu angelegt"
+    assert coordinator.data["kessel_temperatur"].display == pytest.approx(55.5)
+
+
+async def test_ohne_variablensaetze_wird_einzeln_gelesen(hass, entry):
+    """Ältere Anlagen kennen keine Variablensätze - dann eben einzeln."""
+    hass.session.varset_unterstuetzt = False
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert coordinator.data["kessel_temperatur"].display == pytest.approx(55.5)
+    assert by_name["Kesseltemperatur"].native_value == pytest.approx(55.5)
+
+
+async def test_variablensatz_wird_beim_entladen_freigegeben(hass, entry):
+    import eta_webservices
+
+    await setup_integration(hass, entry)
+    assert hass.session.varsets
+
+    await eta_webservices.async_unload_entry(hass, entry)
+    assert not hass.session.varsets, "Variablensatz blieb auf der Anlage liegen"
+
+
+async def test_fehlersensor_zaehlt_und_beschreibt(hass, entry):
+    from .test_api import FEHLER_XML
+
+    hass.session.errors_xml = FEHLER_XML
+    coordinator, by_name = await setup_integration(hass, entry)
+    await coordinator.async_refresh()
+
+    sensor = by_name["Aktive Fehler"]
+    assert sensor.native_value == 2
+    assert sensor.icon == "mdi:alert-circle"
+    meldungen = [f["meldung"] for f in sensor.extra_state_attributes["fehler"]]
+    assert "Wasserdruck zu niedrig 0,00 bar" in meldungen
+
+
+async def test_fehlersensor_ohne_fehler(hass, entry):
+    _, by_name = await setup_integration(hass, entry)
+    sensor = by_name["Aktive Fehler"]
+    assert sensor.native_value == 0
+    assert sensor.icon == "mdi:check-circle"
+
+
+async def test_unlesbare_fehlerliste_kippt_den_zyklus_nicht(hass, entry):
+    coordinator, _ = await setup_integration(hass, entry)
+    hass.session.fail_uris = {"/user/errors"}
+
+    await coordinator.async_refresh()
+
+    assert coordinator.data["kessel_temperatur"].display == pytest.approx(55.5)
+
+
+async def test_api_version_steht_am_geraet(hass, entry):
+    coordinator, _ = await setup_integration(hass, entry)
+    assert coordinator.api_version == "1.2"
+    assert coordinator.device_info["sw_version"] == "Webservices 1.2"
+
+
+async def test_gueltige_zustaende_werden_erfasst(hass, entry):
+    coordinator, _ = await setup_integration(hass, entry)
+    info = coordinator.varinfo["heizkreis_anforderung"]
+    assert info["valid_values"] == ["Aus", "Heizbetrieb"]
+    assert info["writable"] is True

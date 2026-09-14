@@ -34,6 +34,7 @@ ERWARTETE_IDS = {
     "kessel_druck": "sensor.eta_heizung_kesseldruck",
     "kessel_soll": "sensor.eta_heizung_kessel_solltemperatur",
     "kessel_temperatur": "sensor.eta_heizung_kesseltemperatur",
+    "aktive_fehler": "sensor.eta_heizung_aktive_fehler",
     "pellet_energie": "sensor.eta_heizung_pellet_energieverbrauch",
     "pellet_tagesbehaelter": "sensor.eta_heizung_pellet_inhalt_tagesbehalter",
     "puffer_fuehler_1": "sensor.eta_heizung_puffer_fuhler_1",

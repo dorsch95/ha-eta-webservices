@@ -106,3 +106,85 @@ async def test_einzelner_fehler_kippt_den_zyklus_nicht(hass):
     values = await client.async_get_values(uris)
     assert "s7" not in values
     assert len(values) == 9
+
+
+FEHLER_XML = (
+    '<eta version="1.0"><errors uri="/user/errors">'
+    '<fub uri="/264/10891" name="Kessel">'
+    '<error msg="Wasserdruck zu niedrig 0,00 bar" priority="Error" '
+    'time="2026-09-14 12:48:12">Heizungswasser nachfüllen!</error>'
+    '<error msg="Abgasfühler unterbrochen" priority="Warning" '
+    'time="2026-09-14 12:47:50">Fühler oder Kabel defekt</error>'
+    "</fub>"
+    '<fub uri="/120/10101" name="HK1"/>'
+    "</errors></eta>"
+)
+
+
+async def test_api_version_wird_gelesen(hass):
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    assert await client.async_get_api_version() == "1.2"
+
+
+async def test_fehlende_api_version_ist_kein_fehler(hass):
+    hass.session.fail_uris = {"/user/api"}
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    assert await client.async_get_api_version() is None
+
+
+async def test_aktive_fehler_werden_gelesen(hass):
+    hass.session.errors_xml = FEHLER_XML
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    fehler = await client.async_get_errors()
+
+    assert len(fehler) == 2
+    assert fehler[0].fub == "Kessel"
+    assert fehler[0].msg == "Wasserdruck zu niedrig 0,00 bar"
+    assert fehler[0].priority == "Error"
+    assert "nachfüllen" in fehler[0].text
+    assert set(fehler[0].as_dict()) == {
+        "funktionsblock",
+        "meldung",
+        "prioritaet",
+        "zeit",
+        "hinweis",
+    }
+
+
+async def test_funktionsblock_ohne_fehler_liefert_nichts(hass):
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    assert await client.async_get_errors() == []
+
+
+async def test_varinfo_liefert_die_gueltigen_zustaende(hass):
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    info = await client.async_get_varinfo("/120/10101/0/11124/2001")
+
+    assert info["valid_values"] == ["Aus", "Heizbetrieb"]
+    assert info["writable"] is True
+    assert info["type"] == "TEXT"
+
+
+async def test_varinfo_fehlt_auf_aelteren_anlagen(hass):
+    hass.session.varinfo_unterstuetzt = False
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    assert await client.async_get_varinfo("/1/2/3/4/5") is None
+
+
+async def test_variablensatz_liefert_alle_werte_in_einer_anfrage(hass):
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    uris = ["/120/10101/0/11109/0", "/120/10101/0/11160/0"]
+    await client.async_create_varset("testsatz", uris)
+
+    vorher = hass.session.count
+    werte = await client.async_get_varset("testsatz")
+
+    assert set(werte) == set(uris)
+    assert hass.session.count - vorher == 1
+    assert werte[uris[0]].display == pytest.approx(55.5)
+
+
+async def test_verschwundener_variablensatz_meldet_sich_deutlich(hass):
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    with pytest.raises(ETAApiError):
+        await client.async_get_varset("gibtesnicht")

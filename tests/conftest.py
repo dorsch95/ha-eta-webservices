@@ -99,29 +99,116 @@ class FakeSession:
     davon gleichzeitig liefen - damit lässt sich die Parallelisierung prüfen.
     """
 
+    LEERE_FEHLER = (
+        '<eta version="1.0"><errors uri="/user/errors">'
+        '<fub uri="/264/10891" name="Kessel"/></errors></eta>'
+    )
+
     def __init__(self, menu: str) -> None:
         self.menu = menu
         self.count = 0
         self.peak_parallel = 0
         self._inflight = 0
         self.fail_uris: set[str] = set()
+        self.varsets: dict[str, list[str]] = {}
+        self.varset_unterstuetzt = True
+        self.errors_xml = self.LEERE_FEHLER
+        self.varinfo_unterstuetzt = True
 
-    def get(self, url: str, timeout=None):
-        self.count += 1
+    def _ausfall_pruefen(self, url: str) -> None:
+        """Simuliert Netzwerkfehler - für jeden Endpunkt gleichermaßen."""
         for fragment in self.fail_uris:
             if fragment in url:
                 raise ConnectionError(f"simulierter Netzwerkfehler für {url}")
+
+    def request(self, methode: str, url: str, timeout=None):
+        """Bildet aiohttp.ClientSession.request nach.
+
+        Alle Anfragen der Integration laufen hier durch, deshalb wird nur
+        an dieser Stelle gezählt - sonst käme je nach Endpunkt eine
+        andere Zahl heraus.
+        """
+        self.count += 1
+        self._ausfall_pruefen(url)
+        if methode in ("PUT", "DELETE"):
+            return self._varset_aendern(methode, url)
+        return self.get(url, timeout)
+
+    def _varset_aendern(self, methode: str, url: str):
+        pfad = url.split("/user/vars/", 1)[1]
+        name, _, uri = pfad.partition("/")
+        if methode == "PUT":
+            if uri:
+                self.varsets.setdefault(name, []).append(f"/{uri}")
+            else:
+                self.varsets[name] = []
+        else:
+            self.varsets.pop(name, None)
+        return self._tracked('<eta version="1.0"><success uri="/u"/></eta>')
+
+    def get(self, url: str, timeout=None):
+        self._ausfall_pruefen(url)
+        if "/user/vars/" in url:
+            return self._varset_lesen(url)
+        if "/user/varinfo" in url:
+            return self._varinfo(url)
+        if url.endswith("/user/errors"):
+            return self._tracked(self.errors_xml)
+        if url.endswith("/user/api"):
+            return self._tracked(
+                '<eta version="1.0"><api version="1.2"/></eta>'
+            )
         if "/user/menu" in url:
             return self._tracked(self.menu)
-        if "12013" in url:
-            return self._tracked(var_xml(value="2370", unit="kg", scale="100"))
-        if "12120" in url:
-            return self._tracked(var_xml(value="1000", unit="kg"))
-        if "2001" in url:
-            return self._tracked(
-                var_xml(value="950", str_value="Heizbetrieb", text_offset="950")
+        return self._tracked(var_xml(**self._wert_fuer(url)))
+
+    @staticmethod
+    def _wert_fuer(uri: str) -> dict:
+        """Der Messwert, den die Anlage zu dieser URI liefert.
+
+        Wird sowohl für die Einzelabfrage als auch für den Variablensatz
+        benutzt, damit beide Wege dieselben Werte liefern - sonst würde
+        ein Test je nach Abfrageart etwas anderes sehen.
+        """
+        if "12013" in uri:
+            return {"value": "2370", "str_value": "23,70", "unit": "kg", "scale": "100"}
+        if "12120" in uri:
+            return {"value": "1000", "str_value": "1000", "unit": "kg"}
+        if "2001" in uri:
+            return {"value": "950", "str_value": "Heizbetrieb", "text_offset": "950"}
+        return {"value": "555", "str_value": "55,5", "unit": "°C", "scale": "10"}
+
+    def _varset_lesen(self, url: str):
+        name = url.split("/user/vars/", 1)[1]
+        if not self.varset_unterstuetzt or name not in self.varsets:
+            return FakeResponse("", status=404)
+        eintraege = ""
+        for uri in self.varsets[name]:
+            w = self._wert_fuer(uri)
+            eintraege += (
+                f'<variable uri="{uri.lstrip("/")}" '
+                f'strValue="{w.get("str_value", "")}" unit="{w.get("unit", "")}" '
+                f'decPlaces="1" scaleFactor="{w.get("scale", "1")}" '
+                f'advTextOffset="{w.get("text_offset", "0")}">'
+                f'{w.get("value", "")}</variable>'
             )
-        return self._tracked(var_xml(value="555", unit="°C", scale="10"))
+        return self._tracked(
+            f'<eta version="1.0"><vars uri="/user/vars/{name}">'
+            f"{eintraege}</vars></eta>"
+        )
+
+    def _varinfo(self, url: str):
+        if not self.varinfo_unterstuetzt:
+            return FakeResponse("", status=404)
+        return self._tracked(
+            '<eta version="1.0"><varInfo uri="/u">'
+            '<variable uri="/u" name="Anforderung" fullName="HK > Anforderung" '
+            'unit="" decPlaces="0" scaleFactor="1" advTextOffset="950" '
+            'isWritable="1"><type>TEXT</type><validValues>'
+            '<value strValue="Aus">949</value>'
+            '<value strValue="Heizbetrieb">950</value>'
+            "</validValues></variable></varInfo></eta>"
+        )
 
     def _tracked(self, text: str):
         session = self
