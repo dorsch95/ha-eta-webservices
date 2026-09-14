@@ -1,13 +1,17 @@
 {
   "domain": "eta_webservices",
   "name": "ETA Heiztechnik Web Service",
-  "codeowners": ["@dorsch95"],
+  "codeowners": [
+    "@dorsch95"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/dorsch95/ha-eta-webservices",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/dorsch95/ha-eta-webservices/issues",
-  "requirements": ["xmltodict==0.13.0"],
-  "version": "0.16.0"
+  "requirements": [
+    "xmltodict==0.13.0"
+  ],
+  "version": "0.17.0"
 }
