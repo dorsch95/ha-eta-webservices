@@ -90,3 +90,70 @@ async def test_ertragszweig_wird_auch_verschachtelt_gefunden(hass, menu_xml):
     uris, _ = await discover(hass)
     assert uris["solar_waermemenge"] == "/120/10221/0/0/12349"
     assert uris["solar_ertrag_gestern"] == "/120/10221/0/0/12769"
+
+
+KESSEL_LEISTUNG = """<object uri="/264/10891/0/0/12379" name="Leistung">
+<object uri="/264/10891/0/0/12349" name="Wärmemenge"/>
+<object uri="/264/10891/0/0/12350" name="Ertrag heute"/>
+<object uri="/264/10891/0/0/12769" name="Ertrag gestern"/>
+</object>
+"""
+"""Denselben Zweig gibt es auch an anderen Funktionsblöcken."""
+
+
+async def test_leistung_anderer_funktionsbloecke_wird_nicht_verwechselt(hass, menu_xml):
+    """Auch die Namenssuche darf den Solar-Funktionsblock nicht verlassen."""
+    hass.session.menu = menu_xml.replace(
+        '<fub uri="/264/10891" name="Kessel">',
+        '<fub uri="/264/10891" name="Kessel">\n' + KESSEL_LEISTUNG,
+        1,
+    )
+    uris, _ = await discover(hass)
+    for key in ("solar_leistung", "solar_waermemenge", "solar_ertrag_heute"):
+        assert uris[key].startswith("/120/10221/"), (key, uris[key])
+
+
+async def test_namenssuche_bleibt_im_solar_funktionsblock(hass, menu_xml):
+    """Der Solarzweig liegt verschachtelt, der Kessel hat einen eigenen.
+
+    Das ist der Fall, in dem eine Suche über den bloßen Namen sonst den
+    falschen Funktionsblock erwischt: Der feste Pfad greift bei Solar
+    nicht mehr, und "Wärmemenge" steht gleichzeitig am Kessel.
+    """
+    menu = menu_xml.replace(
+        '<fub uri="/264/10891" name="Kessel">',
+        '<fub uri="/264/10891" name="Kessel">\n' + KESSEL_LEISTUNG,
+        1,
+    )
+    verschachtelt = (
+        '<object uri="/120/10221/0/0/13000" name="Sonstiges">\n'
+        + SOLAR_ERTRAG
+        + "</object>\n"
+    )
+    hass.session.menu = menu.replace(SOLAR_ERTRAG, verschachtelt, 1)
+
+    uris, _ = await discover(hass)
+    assert uris["solar_waermemenge"] == "/120/10221/0/0/12349"
+    assert uris["solar_ertrag_heute"] == "/120/10221/0/0/12350"
+    assert uris["solar_ertrag_gestern"] == "/120/10221/0/0/12769"
+
+
+async def test_umbenannte_solaranlage_mit_fremder_leistung(hass, menu_xml):
+    """Heißt der FUB anders, zählt allein der im Setup eingetragene Name."""
+    menu = menu_xml.replace(
+        '<fub uri="/264/10891" name="Kessel">',
+        '<fub uri="/264/10891" name="Kessel">\n' + KESSEL_LEISTUNG,
+        1,
+    )
+    hass.session.menu = menu.replace(
+        '<fub uri="/120/10221" name="Solar">',
+        '<fub uri="/120/10221" name="Solarthermie Dach">',
+        1,
+    )
+
+    ohne_angabe, _ = await discover(hass)
+    assert not [key for key in ohne_angabe if key.startswith("solar_")]
+
+    mit_angabe, _ = await discover(hass, {"solar": "Solarthermie Dach"})
+    assert mit_angabe["solar_kollektor"] == "/120/10221/0/11139/0"
+    assert mit_angabe["solar_waermemenge"] == "/120/10221/0/0/12349"
