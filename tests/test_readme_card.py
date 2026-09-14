@@ -16,7 +16,9 @@ import yaml
 
 from eta_webservices.const import COMPONENTS
 
-README = Path(__file__).resolve().parents[1] / "README.md"
+WURZEL = Path(__file__).resolve().parents[1]
+README = WURZEL / "README.md"
+KARTE = WURZEL / "dashboard" / "eta-karte.yaml"
 
 GUELTIGE_ELEMENTTYPEN = {
     "conditional",
@@ -37,33 +39,67 @@ def yaml_bloecke():
 
 @pytest.fixture(scope="module")
 def karte():
-    for block in yaml_bloecke():
-        if isinstance(block, dict) and block.get("type") == "grid":
-            return block
-    pytest.fail("keine grid-Karte im README gefunden")
+    return yaml.safe_load(KARTE.read_text(encoding="utf-8"))
+
+
+def varianten(karte):
+    """Die drei Bildschirm-Varianten der Karte."""
+    return karte["cards"]
+
+
+def raster(karte):
+    return [variante["card"] for variante in varianten(karte)]
 
 
 def alle_elemente(karte):
-    for unterkarte in karte["cards"]:
-        for element in unterkarte["card"]["elements"]:
-            yield element
+    for gitter in raster(karte):
+        for unterkarte in gitter["cards"]:
+            for element in unterkarte["card"]["elements"]:
+                yield element
 
 
-def test_alle_yaml_bloecke_sind_gueltig():
+def test_alle_yaml_bloecke_im_readme_sind_gueltig():
     assert yaml_bloecke()
 
 
-def test_je_komponente_genau_eine_karte(karte):
-    marker = [
-        unterkarte["conditions"][0]["state"] for unterkarte in karte["cards"]
-    ]
-    assert marker == list(COMPONENTS)
+def test_karte_hat_drei_bildschirm_varianten(karte):
+    assert karte["type"] == "vertical-stack"
+    abfragen = [v["conditions"][0]["media_query"] for v in varianten(karte)]
+    assert len(abfragen) == 3
+    for variante in varianten(karte):
+        assert variante["conditions"][0]["condition"] == "screen"
+
+
+def test_varianten_decken_jede_breite_genau_einmal_ab(karte):
+    """Ohne Lücke und ohne Überlappung - sonst ist die Karte leer oder doppelt."""
+    import re as regex
+
+    grenzen = []
+    for variante in varianten(karte):
+        abfrage = variante["conditions"][0]["media_query"]
+        minimum = regex.search(r"min-width:\s*(\d+)px", abfrage)
+        maximum = regex.search(r"max-width:\s*(\d+)px", abfrage)
+        grenzen.append(
+            (int(minimum.group(1)) if minimum else 0,
+             int(maximum.group(1)) if maximum else 10000)
+        )
+    grenzen.sort()
+    assert grenzen[0][0] == 0
+    for (_, bis), (ab, _) in zip(grenzen, grenzen[1:]):
+        assert ab == bis + 1, f"Lücke oder Überlappung bei {bis}/{ab}"
+
+
+def test_je_variante_und_komponente_genau_eine_karte(karte):
+    for gitter in raster(karte):
+        marker = [u["conditions"][0]["state"] for u in gitter["cards"]]
+        assert marker == list(COMPONENTS)
 
 
 def test_karten_verweisen_auf_die_richtige_grafik(karte):
-    for komponente, unterkarte in zip(COMPONENTS, karte["cards"]):
-        erwartet = f"{COMPONENTS[komponente]['image']}.png"
-        assert unterkarte["card"]["image"].endswith(erwartet)
+    for gitter in raster(karte):
+        for komponente, unterkarte in zip(COMPONENTS, gitter["cards"]):
+            erwartet = f"{COMPONENTS[komponente]['image']}.png"
+            assert unterkarte["card"]["image"].endswith(erwartet)
 
 
 def test_nur_gueltige_elementtypen(karte):
@@ -71,8 +107,24 @@ def test_nur_gueltige_elementtypen(karte):
         assert element["type"] in GUELTIGE_ELEMENTTYPEN
 
 
-def test_spaltenzahl_reicht_fuer_alle_komponenten(karte):
-    assert karte["columns"] >= 4
+def test_schmale_varianten_haben_weniger_spalten(karte):
+    """Je schmaler die Ansicht, desto weniger Spalten - sonst wird geschnitten."""
+    import re as regex
+
+    paare = []
+    for gitter, variante in zip(raster(karte), varianten(karte)):
+        abfrage = variante["conditions"][0]["media_query"]
+        minimum = regex.search(r"min-width:\s*(\d+)px", abfrage)
+        paare.append((int(minimum.group(1)) if minimum else 0, gitter["columns"]))
+    paare.sort()
+    spalten = [s for _, s in paare]
+    assert spalten == sorted(spalten), f"Spaltenzahl nicht aufsteigend: {paare}"
+
+
+def test_readme_verweist_auf_die_kartendatei():
+    text = README.read_text(encoding="utf-8")
+    assert "dashboard/eta-karte.yaml" in text
+    assert "Panel" in text
 
 
 async def test_jede_referenzierte_entitaet_existiert(hass, entry, karte):
@@ -85,7 +137,9 @@ async def test_jede_referenzierte_entitaet_existiert(hass, entry, karte):
     vorhanden = {f"sensor.{slugify('ETA Heizung ' + name)}" for name in by_name}
 
     referenziert = {
-        unterkarte["conditions"][0]["entity"] for unterkarte in karte["cards"]
+        unterkarte["conditions"][0]["entity"]
+        for gitter in raster(karte)
+        for unterkarte in gitter["cards"]
     } | {element["entity"] for element in alle_elemente(karte) if "entity" in element}
 
     fehlend = sorted(referenziert - vorhanden)
@@ -127,7 +181,12 @@ def test_jede_genannte_entitaet_kann_entstehen():
         f"sensor.{slugify('ETA Heizung ' + eintrag['name'])}"
         for eintrag in namen.values()
     }
-    genannt = set(re.findall(r"sensor\.eta_heizung_[a-z0-9_]+", readme_text()))
+    genannt = set(
+        re.findall(
+            r"sensor\.eta_heizung_[a-z0-9_]+",
+            readme_text() + KARTE.read_text(encoding="utf-8"),
+        )
+    )
 
     genannt = {name for name in genannt if not name.endswith("_")}
     unbekannt = sorted(genannt - moeglich - ABSICHTLICHE_BEISPIELE)
@@ -174,8 +233,33 @@ def test_genannte_bilder_werden_ausgeliefert():
 
     from eta_webservices.images import IMAGES_DATA
 
-    for bild in re.findall(r"ha-eta-webservices/([a-z0-9_]+)\.png", readme_text()):
+    text = readme_text() + KARTE.read_text(encoding="utf-8")
+    bilder = set(re.findall(r"ha-eta-webservices/([a-z0-9_]+)\.png", text))
+    assert bilder, "keine Bildverweise gefunden"
+    for bild in bilder:
         assert bild in IMAGES_DATA, bild
+
+
+def test_kartendatei_ist_aktuell():
+    """Die Karte muss zu ihrem Erzeugungsskript passen.
+
+    Sonst laufen eine von Hand geänderte Karte und das Skript auseinander,
+    und der nächste Lauf des Skripts wirft die Änderung weg.
+    """
+    import subprocess
+    import sys
+
+    vorher = KARTE.read_text(encoding="utf-8")
+    subprocess.run(
+        [sys.executable, str(WURZEL / "dashboard" / "karte_bauen.py")],
+        check=True,
+        capture_output=True,
+    )
+    nachher = KARTE.read_text(encoding="utf-8")
+    assert vorher == nachher, (
+        "eta-karte.yaml weicht von karte_bauen.py ab - "
+        "Skript ausführen oder Änderung dort nachziehen"
+    )
 
 
 def test_fub_standardnamen_stehen_in_der_tabelle():

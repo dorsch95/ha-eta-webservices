@@ -94,19 +94,40 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 
 ## 📺 Dashboard-Vorlage für Lovelace
 
-Es gibt **eine** Karte für alle Anlagen. Sie zeigt automatisch genau die Komponenten an, die du im Setup ausgewählt hast - fehlende Komponenten werden ausgeblendet, und die übrigen rücken nach.
+Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Erstelle eine neue Karte vom Typ **Manuell** (oben rechts auf Code-Editor umschalten) und füge den YAML-Code ein. Es ist **nichts zu löschen und nichts anzupassen**.
+Die Karte ist lang (sie enthält jede Komponente dreimal, einmal je Bildschirmgröße), deshalb steht sie als eigene Datei im Repo:
 
-> ℹ️ Die Entitäts-IDs unten gelten für eine **deutschsprachige** Home-Assistant-Installation. Home Assistant bildet Entitäts-IDs aus dem übersetzten Namen; bei englischer Spracheinstellung heißt die Kesseltemperatur entsprechend `sensor.eta_heizung_boiler_temperature`. Deine bestehenden Entitäten behalten ihre ID in jedem Fall.
+**➡️ [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml)** — Inhalt kopieren und wie unten beschrieben einfügen.
 
+### Einrichten
+
+1. Lege im Dashboard eine **neue Ansicht** an (Stift oben rechts, dann `+`).
+2. Wähle als Ansichtstyp **Panel (1 Karte)**. Das ist wichtig: In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, und die Beschriftungen werden abgeschnitten.
+3. Füge in dieser Ansicht eine Karte vom Typ **Manuell** ein und ersetze den Inhalt durch den aus `eta-karte.yaml`.
+
+Es ist nichts zu löschen und nichts anzupassen.
+
+### Wie sich die Karte anpasst
+
+Je schmaler die Ansicht, desto weniger Spalten - sonst wird jede Kachel so schmal, dass die Beschriftungen abgeschnitten werden:
+
+| Breite | Spalten | Beschriftungen |
+|---|---|---|
+| unter 768 px (Handy) | 2 | gekürzt (`RL:`, `Asche:`, `O₂:`) |
+| 768 bis 1039 px (Tablet) | 3 | vollständig |
+| ab 1040 px (Desktop) | 4 | vollständig |
+
+Alle drei Varianten sind in einer echten Home-Assistant-Instanz bei 412, 900, 1100 und 1400 Pixel Breite geprüft worden.
 
 <details>
 <summary><b>Wie das funktioniert</b> (aufklappen)</summary>
 
-Die Karte ist ein `grid` mit vier Spalten. Jede Komponente ist eine eigene `picture-elements`-Karte, eingepackt in eine `conditional`-Karte, die auf eine Marker-Entität prüft (`sensor.eta_heizung_komponente_*`). Diese Marker legt die Integration nur für die Komponenten an, die du ausgewählt hast.
+Die Karte ist ein `vertical-stack` aus drei `conditional`-Karten mit `condition: screen`. Nur die passt zur aktuellen Fensterbreite wird angezeigt, die anderen beiden blendet Home Assistant aus.
 
-Blendet `conditional` eine Karte aus, setzt Home Assistant `display: none` - die Karte fällt aus dem Grid-Layout, und die verbleibenden Komponenten rutschen nach links. Weil das Grid feste Spalten hat, bleibt jede Komponente dabei gleich groß.
+Jede Variante ist ein `grid` mit fester Spaltenzahl. Darin ist jede Komponente wiederum eine `conditional`-Karte, die auf eine Marker-Entität prüft (`sensor.eta_heizung_komponente_*`). Diese Marker legt die Integration nur für die Komponenten an, die du ausgewählt hast.
+
+Blendet `conditional` eine Komponente aus, setzt Home Assistant `display: none` - die Karte fällt aus dem Grid-Layout, und die verbleibenden Komponenten rücken nach. Weil das Grid feste Spalten hat, bleibt jede Komponente dabei gleich groß.
 
 Die Beschriftungen stecken **nicht** in den Grafiken, sondern kommen aus `prefix` der `state-label`-Elemente. Deshalb genügen vier Grafiken statt einer für jede mögliche Kombination - und du kannst jede Beschriftung im YAML frei ändern.
 
@@ -114,162 +135,38 @@ Die Beschriftungen stecken **nicht** in den Grafiken, sondern kommen aus `prefix
 
 </details>
 
-```yaml
-type: grid
-columns: 4
-square: false
-cards:
-  - type: conditional
-    conditions:
-      - condition: state
-        entity: sensor.eta_heizung_komponente_kessel
-        state: kessel
-    card:
-      type: picture-elements
-      image: /local/community/ha-eta-webservices/kessel.png
-      elements:
-        - type: state-label
-          entity: sensor.eta_heizung_aussentemperatur
-          prefix: "Außen: "
-          style: {top: 4%, left: 6%, transform: "translate(0, -50%)", color: "#9aa5b1", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_kesseltemperatur
-          prefix: "Kessel: "
-          style: {top: 12%, left: 6%, transform: "translate(0, -50%)", color: "#e8615f", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_kessel_solltemperatur
-          prefix: "Soll: "
-          style: {top: 19%, left: 6%, transform: "translate(0, -50%)", color: "#e2867f", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_rucklauftemperatur
-          prefix: "Rücklauf: "
-          style: {top: 26%, left: 6%, transform: "translate(0, -50%)", color: "#7b88e0", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_kesseldruck
-          prefix: "Druck: "
-          style: {top: 33%, left: 6%, transform: "translate(0, -50%)", color: "#d3a15a", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-          prefix: "Behälter: "
-          style: {top: 40%, left: 6%, transform: "translate(0, -50%)", color: "#5fbfa8", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_aschebox_status
-          prefix: "Aschebox: "
-          style: {top: 47%, left: 6%, transform: "translate(0, -50%)", color: "#a98fd0", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_restsauerstoff
-          prefix: "Restsauerstoff: "
-          style: {top: 54%, left: 6%, transform: "translate(0, -50%)", color: "#d89a6a", font-size: 105%}
-
-  - type: conditional
-    conditions:
-      - condition: state
-        entity: sensor.eta_heizung_komponente_pufferspeicher
-        state: puffer
-    card:
-      type: picture-elements
-      image: /local/community/ha-eta-webservices/puffer.png
-      elements:
-        - type: state-label
-          entity: sensor.eta_heizung_puffer_ladezustand
-          prefix: "Ladezustand: "
-          style: {top: 12%, left: 50%, color: "#d5d9de", font-size: 110%}
-        - type: state-label
-          entity: sensor.eta_heizung_puffer_fuhler_1
-          style: {top: 36%, left: 50%, color: "#ffffff", font-size: 115%}
-        - type: state-label
-          entity: sensor.eta_heizung_puffer_fuhler_2
-          style: {top: 62%, left: 50%, color: "#ffffff", font-size: 115%}
-        - type: state-label
-          entity: sensor.eta_heizung_puffer_fuhler_3
-          style: {top: 88%, left: 50%, color: "#ffffff", font-size: 115%}
-
-  - type: conditional
-    conditions:
-      - condition: state
-        entity: sensor.eta_heizung_komponente_fwm
-        state: fwm
-    card:
-      type: picture-elements
-      image: /local/community/ha-eta-webservices/fwm.png
-      elements:
-        - type: state-label
-          entity: sensor.eta_heizung_fwm_warmwassertemperatur
-          prefix: "Warmwasser: "
-          style: {top: 12%, left: 50%, color: "#d5d9de", font-size: 110%}
-        - type: state-label
-          entity: sensor.eta_heizung_fwm_zirkulation
-          prefix: "Zirkulation: "
-          style: {top: 19%, left: 50%, color: "#9aa5b1", font-size: 100%}
-
-  - type: conditional
-    conditions:
-      - condition: state
-        entity: sensor.eta_heizung_komponente_heizkreis_1
-        state: hk1
-    card:
-      type: picture-elements
-      image: /local/community/ha-eta-webservices/heizkreis.png
-      elements:
-        - type: state-label
-          entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
-          prefix: "Vorlauf HK1: "
-          style: {top: 12%, left: 50%, color: "#e8615f", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_heizkreis_anforderung
-          prefix: "HK1: "
-          style: {top: 19%, left: 50%, color: "#d5d9de", font-size: 100%}
-
-  - type: conditional
-    conditions:
-      - condition: state
-        entity: sensor.eta_heizung_komponente_heizkreis_2
-        state: hk2
-    card:
-      type: picture-elements
-      image: /local/community/ha-eta-webservices/heizkreis.png
-      elements:
-        - type: state-label
-          entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
-          prefix: "Vorlauf HK2: "
-          style: {top: 12%, left: 50%, color: "#e8615f", font-size: 105%}
-        - type: state-label
-          entity: sensor.eta_heizung_heizkreis_2_anforderung
-          prefix: "HK2: "
-          style: {top: 19%, left: 50%, color: "#d5d9de", font-size: 100%}
-```
+> ℹ️ Die Entitäts-IDs in der Karte gelten für eine **deutschsprachige** Home-Assistant-Installation. Home Assistant bildet Entitäts-IDs aus dem übersetzten Namen; bei englischer Spracheinstellung heißt die Kesseltemperatur entsprechend `sensor.eta_heizung_boiler_temperature`. Deine bestehenden Entitäten behalten ihre ID in jedem Fall.
 
 ### Mehr als drei Pufferfühler
 
-Die Karte oben zeigt drei Fühler. Hat deine Anlage mehr (PufferFlex kann bis zu 8), ergänze im Puffer-Block weitere Zeilen und verteile die `top`-Werte gleichmäßig zwischen 36 % und 88 %:
+Die Karte zeigt drei Fühler. Hat deine Anlage mehr (PufferFlex kann bis zu 8), ergänze in **jedem** der drei Puffer-Blöcke weitere Zeilen und verteile die `top`-Werte gleichmäßig zwischen 36 % und 88 %:
 
 ```yaml
-        - type: state-label
-          entity: sensor.eta_heizung_puffer_fuhler_4
-          style: {top: 75%, left: 50%, color: "#ffffff", font-size: 115%}
+- type: state-label
+  entity: sensor.eta_heizung_puffer_fuhler_4
+  style:
+    top: 75%
+    left: 50%
+    color: '#ffffff'
+    font-size: 110%
 ```
 
 Wie viele du hast, steht unter **Entwicklerwerkzeuge -> Zustände** (`sensor.eta_heizung_puffer_fuhler_`). Fühler 1 ist immer oben, der letzte immer unten - beide tragen das Attribut `position` mit `oben` bzw. `unten`.
 
 ### Beschriftungen ändern
 
-Jede Beschriftung steht als `prefix` im YAML, nicht im Bild. Aus
+Jede Beschriftung steht als `prefix` im YAML, nicht im Bild. Aus `prefix: 'Kessel: '` wird also einfach `prefix: 'Vorlauf Kessel: '`. Mit `suffix` lässt sich zusätzlich etwas hinter den Wert setzen.
 
-```yaml
-          prefix: "Kessel: "
+Denk daran, die Änderung in allen drei Bildschirm-Varianten zu machen - oder passe [`dashboard/karte_bauen.py`](dashboard/karte_bauen.py) an und erzeuge die Datei neu:
+
+```bash
+python dashboard/karte_bauen.py
 ```
 
-wird also einfach
-
-```yaml
-          prefix: "Vorlauf Kessel: "
-```
-
-Mit `suffix` lässt sich zusätzlich etwas hinter den Wert setzen.
-
-> 💡 `top`/`left` verankern in Lovelace die **Mitte** des Elements. Die linksbündigen Beschriftungen im Kessel-Block nutzen deshalb `transform: "translate(0, -50%)"`. Alle Werte lassen sich im visuellen Editor per Drag & Drop feinjustieren.
+> 💡 `top`/`left` verankern in Lovelace die **Mitte** des Elements. Die linksbündigen Beschriftungen im Kessel-Block nutzen deshalb `transform: 'translate(0, -50%)'`. Alle Werte lassen sich im visuellen Editor per Drag & Drop feinjustieren.
 
 ---
+
 
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 
