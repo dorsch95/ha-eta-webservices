@@ -100,7 +100,7 @@ Ein einzelner Aussetzer ändert nichts: Der letzte bekannte Wert bleibt stehen, 
 
 In einer Automatisierung abfragbar:
 
-```yaml
+```jinja2
 {{ state_attr('sensor.eta_heizung_kesseldruck', 'status') == 'nicht_vorhanden' }}
 ```
 

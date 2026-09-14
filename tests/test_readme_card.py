@@ -162,7 +162,7 @@ def readme_text() -> str:
 
 
 def test_jede_genannte_entitaet_kann_entstehen():
-    """Jede sensor.*-Erwähnung im README muss einer echten Entität entsprechen.
+    """Jede Entitäts-Erwähnung im README muss einer echten Entität entsprechen.
 
     Betrifft auch den Fließtext, nicht nur die Karte - ein Tippfehler in
     einer Anleitung kostet den Nutzer genauso viel Zeit wie einer im YAML.
@@ -174,16 +174,17 @@ def test_jede_genannte_entitaet_kann_entstehen():
 
     from .conftest import UEBERSETZUNGEN
 
-    namen = json.loads(
+    entitaeten = json.loads(
         (UEBERSETZUNGEN / "de.json").read_text(encoding="utf-8")
-    )["entity"]["sensor"]
+    )["entity"]
     moeglich = {
-        f"sensor.{slugify('ETA Heizung ' + eintrag['name'])}"
+        f"{bereich}.{slugify('ETA Heizung ' + eintrag['name'])}"
+        for bereich, namen in entitaeten.items()
         for eintrag in namen.values()
     }
     genannt = set(
         re.findall(
-            r"sensor\.eta_heizung_[a-z0-9_]+",
+            r"\b(?:binary_sensor|sensor)\.eta_heizung_[a-z0-9_]+",
             readme_text() + KARTE.read_text(encoding="utf-8"),
         )
     )
