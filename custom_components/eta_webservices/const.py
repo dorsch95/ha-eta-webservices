@@ -1,7 +1,22 @@
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import Platform
 
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
+
+PLATFORMS = [Platform.SENSOR]
+
+CONF_SCHEMA = "schema"
+CONF_FUB_NAMES = "fub_names"
+CONF_SCAN_INTERVAL = "scan_interval"
+
+DEFAULT_SCAN_INTERVAL = 30
+MIN_SCAN_INTERVAL = 10
+MAX_SCAN_INTERVAL = 600
+
+REQUEST_TIMEOUT = 8
+MENU_TIMEOUT = 20
+MAX_PARALLEL_REQUESTS = 5
 
 SCHEMAS = {
     "Kessel": "kessel",

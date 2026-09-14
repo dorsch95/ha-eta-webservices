@@ -11,11 +11,12 @@ namen, die im Setup vom Nutzer überschrieben werden können, falls seine
 Anlage abweicht.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 
-import xmltodict
-
+from .api import ETAApiError
 from .const import FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,22 +72,28 @@ def _find_fub(fubs, fub_name):
     return None
 
 
-def _find_fub_for_role(fubs, role, fub_name_overrides):
-    """Löst eine FUB-Rolle (z.B. "pufferflex") zum tatsächlichen FUB-Knoten auf.
+def _resolve_fubs_by_role(fubs, fub_name_overrides):
+    """Ordnet jeder FUB-Rolle einmalig den passenden FUB-Knoten zu.
 
     Ein vom Nutzer im Setup angegebener Name hat immer Vorrang vor den
     ETA-Standardnamen, da FUBs am Gerät umbenannt werden können.
     """
-    override = (fub_name_overrides or {}).get(role)
-    candidates = [override] if override else FUB_ROLE_DEFAULT_NAMES.get(role, [])
-    for name in candidates:
-        fub = _find_fub(fubs, name)
-        if fub is not None:
-            return fub
-    return None
+    overrides = fub_name_overrides or {}
+    resolved = {}
+
+    for role, default_names in FUB_ROLE_DEFAULT_NAMES.items():
+        override = overrides.get(role)
+        candidates = [override] if override else default_names
+        for name in candidates:
+            fub = _find_fub(fubs, name)
+            if fub is not None:
+                resolved[role] = fub
+                break
+
+    return resolved
 
 
-def _discover_puffer_fuehler(fubs, fub_name_overrides):
+def _discover_puffer_fuehler(fub):
     """Ermittelt die tatsächlich vorhandenen Pufferfühler (1 bis N).
 
     PufferFlex kann je nach Anlage zwischen 3 und PUFFER_FUEHLER_MAX Fühler
@@ -94,7 +101,6 @@ def _discover_puffer_fuehler(fubs, fub_name_overrides):
     Da die Anzahl variiert, werden die "Eingänge" von PufferFlex nach allen
     Objekten durchsucht, deren Name mit "Fühler <Zahl>" beginnt.
     """
-    fub = _find_fub_for_role(fubs, "pufferflex", fub_name_overrides)
     if fub is None:
         return {}
     eingaenge = _find_path(fub, ["Eingänge"])
@@ -115,7 +121,7 @@ def _discover_puffer_fuehler(fubs, fub_name_overrides):
     return found
 
 
-async def async_discover_uris(session, host, port, fub_name_overrides=None):
+async def async_discover_uris(client, fub_name_overrides=None):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
@@ -126,37 +132,21 @@ async def async_discover_uris(session, host, port, fub_name_overrides=None):
     Nicht gefundene Schlüssel fehlen im Ergebnis - der Aufrufer soll dafür
     auf die Standard-URI zurückfallen (sofern vorhanden).
     """
-    url = f"http://{host}:{port}/user/menu"
     discovered = {}
 
     try:
-        async with session.get(url, timeout=10) as response:
-            if response.status != 200:
-                _LOGGER.warning(
-                    "ETA Menüabfrage (%s) fehlgeschlagen mit Status %s - "
-                    "verwende Standard-URIs",
-                    url,
-                    response.status,
-                )
-                return discovered, []
-            xml_text = await response.text()
-    except Exception as err:
+        parsed = await client.async_get_menu()
+    except ETAApiError as err:
         _LOGGER.warning(
-            "ETA Menü konnte nicht abgerufen werden (%s) - verwende Standard-URIs: %s",
-            url,
-            err,
+            "ETA Menü konnte nicht gelesen werden - verwende Standard-URIs: %s", err
         )
         return discovered, []
 
-    try:
-        parsed = xmltodict.parse(xml_text, process_namespaces=False)
-        fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
-    except Exception as err:
-        _LOGGER.warning("ETA Menü konnte nicht geparst werden: %s", err)
-        return discovered, []
+    fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
+    fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
 
     for key, (role, path) in DISCOVERY_PATHS.items():
-        fub = _find_fub_for_role(fubs, role, fub_name_overrides)
+        fub = fubs_by_role.get(role)
         if fub is None:
             continue
         found = _find_path(fub, path)
@@ -165,7 +155,7 @@ async def async_discover_uris(session, host, port, fub_name_overrides=None):
             if uri:
                 discovered[key] = uri
 
-    puffer_fuehler = _discover_puffer_fuehler(fubs, fub_name_overrides)
+    puffer_fuehler = _discover_puffer_fuehler(fubs_by_role.get("pufferflex"))
     puffer_fuehler_indices = sorted(puffer_fuehler)
     for index, uri in puffer_fuehler.items():
         discovered[f"puffer_fuehler_{index}"] = uri

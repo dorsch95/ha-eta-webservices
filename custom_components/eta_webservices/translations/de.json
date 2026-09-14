@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ETA Heiztechnik verbinden",
+        "data": {
+          "host": "IP-Adresse der Heizung",
+          "port": "Port (Standard: 8080)",
+          "schema": "Anlagenschema",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      },
+      "fub_names": {
+        "title": "Funktionsblock-Namen bestätigen",
+        "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen vorausgefüllt.",
+        "data": {
+          "kessel": "FUB-Name: Kessel",
+          "sys": "FUB-Name: Sys (für Außentemperatur)",
+          "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
+          "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
+          "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
+          "hk2": "FUB-Name: Heizkreis 2 (HK2)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
+    },
+    "abort": {
+      "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ETA Heiztechnik bearbeiten",
+        "data": {
+          "host": "IP-Adresse der Heizung",
+          "port": "Port (Standard: 8080)",
+          "schema": "Anlagenschema",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      },
+      "fub_names": {
+        "title": "Funktionsblock-Namen bestätigen",
+        "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind mit den ETA-Standardnamen bzw. deinen bisherigen Angaben vorausgefüllt.",
+        "data": {
+          "kessel": "FUB-Name: Kessel",
+          "sys": "FUB-Name: Sys (für Außentemperatur)",
+          "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
+          "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
+          "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
+          "hk2": "FUB-Name: Heizkreis 2 (HK2)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
+    }
+  }
+}

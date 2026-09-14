@@ -49,7 +49,9 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 6. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach gewähltem Schema mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
 7. Klicke auf **Absenden**. Die passenden Hintergrundbilder werden automatisch auf deiner Festplatte generiert.
 
-Host, Port, Anlagenschema und die FUB-Namen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
+Host, Port, **Abfrageintervall**, Anlagenschema und die FUB-Namen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen.
+
+> 💡 Das **Abfrageintervall** legt fest, wie oft die Anlage ausgelesen wird (Standard 30 Sekunden, erlaubt sind 10 bis 600). Alle Werte werden pro Zyklus parallel geholt, die Steuerung wird dabei aber bewusst nur mit wenigen gleichzeitigen Anfragen belastet.
 
 ---
 
@@ -1217,6 +1219,20 @@ elements:
 ```
 
 > 💡 `top`/`left` verankern in Lovelace standardmäßig die **Mitte** des Elements. Solltest du eine andere Home-Assistant-Theme, Bildschirmgröße oder Kartenbreite verwenden, kannst du die Werte im visuellen Editor per Drag & Drop feinjustieren.
+
+---
+
+## 🧪 Entwicklung
+
+Die Testsuite läuft gegen ein echtes Home Assistant, aber ohne laufende Instanz und ohne echte Heizung - die Anlage wird durch einen aufgezeichneten Menübaum ersetzt:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements_test.txt
+pytest
+```
+
+Dieselben Tests laufen zusammen mit `hassfest` und der HACS-Validierung bei jedem Push automatisch in GitHub Actions.
 
 ---
 
