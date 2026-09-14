@@ -9,7 +9,7 @@ Diese benutzerdefinierte Integration liest **ETA Heizsysteme** (Pelletkessel, St
 
 📈 Der Pelletverbrauch steht als Energiewert bereit und lässt sich ins **Energie-Dashboard** von Home Assistant aufnehmen.
 
-🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Sollte ein Messwert an einer Anlage abweichend benannt sein, wird automatisch auf eine hinterlegte Standard-URI zurückgefallen; findet sich zu einer ganzen Komponente nichts, meldet sich Home Assistant mit einem Reparatur-Hinweis.
+🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Im Code steht **keine einzige feste URI**: Was der Menübaum deiner Anlage nicht hergibt, bekommt auch keine Entität - eine Adresse von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen. Findet sich zu einer ganzen Komponente nichts, meldet sich Home Assistant mit einem Reparatur-Hinweis.
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
@@ -210,7 +210,7 @@ Grundlage ist der Zähler *Verbrauch seit Aschebox leeren* mal dem eingestellten
 
 Findet die Integration im Menübaum nichts zu einer angekreuzten Komponente, legt sie eine **Reparatur** an (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und führt direkt zu den Optionen, wo du den tatsächlichen Funktionsblock-Namen eintragen kannst.
 
-Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann liegt es an der Verbindung und nicht an den Namen.
+Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann liegt es an der Verbindung und nicht an den Namen. Home Assistant meldet in dem Fall stattdessen "Wird eingerichtet" und versucht es von selbst weiter, denn ohne Menübaum ist keine einzige Adresse bekannt.
 
 ---
 
@@ -281,7 +281,6 @@ Fehlt nicht eine ganze Komponente, sondern ein einzelner Messwert, hilft der Dia
 
 Unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Gerät "ETA Heizung" -> Diagnose herunterladen** bekommst du eine Datei, die für jeden Messwert zeigt:
 
-* ob seine Adresse im Menübaum **gefunden** wurde (`"quelle": "menuebaum"`) oder auf den Standardwert zurückgefallen ist (`"quelle": "standard"`),
 * welche Adresse tatsächlich abgefragt wird,
 * welcher Wert zuletzt angekommen ist,
 * und unter `"nicht_gefunden"` eine Liste aller Werte ohne Treffer.

@@ -63,14 +63,13 @@ def test_entity_id_bleibt_unveraendert(key, entity_id):
 
 def test_neue_entitaeten_sind_hier_eingetragen():
     from eta_webservices.const import (
-        DISCOVERY_ONLY_SENSORS,
         OPTIONAL_SENSORS,
-        STATIC_URIs,
+        SENSORS,
     )
 
     bekannt = {
         info["translation_key"]
-        for tabelle in (STATIC_URIs, DISCOVERY_ONLY_SENSORS, OPTIONAL_SENSORS)
+        for tabelle in (SENSORS, OPTIONAL_SENSORS)
         for info in tabelle.values()
     }
     neu = sorted(bekannt - set(ERWARTETE_IDS))

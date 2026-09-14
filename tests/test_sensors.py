@@ -123,26 +123,25 @@ async def test_alle_optionalen_sensoren_existieren_immer(hass, entry):
         assert key in coordinator.sensor_defs
 
 
-async def test_gefundene_uri_schlaegt_die_fest_hinterlegte(hass, entry, menu_xml):
-    from eta_webservices.const import STATIC_URIs
-
+async def test_jede_uri_stammt_aus_dem_menuebaum(hass, entry, menu_xml):
+    """Keine Adresse darf aus dem Code kommen, nur aus dieser Anlage."""
     abweichend = "/999/99999/0/11109/0"
-    hass.session.menu = menu_xml.replace(
-        STATIC_URIs["kessel_temperatur"]["uri"], abweichend
-    )
+    hass.session.menu = menu_xml.replace("/264/10891/0/11109/0", abweichend)
     coordinator, _ = await setup_integration(hass, entry)
+
     assert coordinator.sensor_defs["kessel_temperatur"]["uri"] == abweichend
+    for key, info in coordinator.sensor_defs.items():
+        if info.get("uri") and info.get("platform") != "switch":
+            assert info["uri"] in coordinator.discovered_uris.values(), key
 
 
-async def test_fest_hinterlegte_uri_greift_ohne_fund(hass, entry, menu_xml):
-    from eta_webservices.const import STATIC_URIs
-
+async def test_ohne_fund_entsteht_kein_sensor(hass, entry, menu_xml):
+    """Lieber keine Entität als eine mit geratener Adresse."""
     hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
-    coordinator, _ = await setup_integration(hass, entry)
-    assert (
-        coordinator.sensor_defs["kessel_temperatur"]["uri"]
-        == STATIC_URIs["kessel_temperatur"]["uri"]
-    )
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert "kessel_temperatur" not in coordinator.sensor_defs
+    assert "Kesseltemperatur" not in by_name
 
 
 async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
@@ -150,7 +149,7 @@ async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
 
     from eta_webservices.diagnostics import async_get_config_entry_diagnostics
 
-    await setup_integration(hass, entry)
+    coordinator, _ = await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
 
     assert bericht["konfiguration"]["host"] == REDACTED
@@ -160,7 +159,7 @@ async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
     assert bericht["letzte_abfrage"]["erfolgreich"] is True
 
     kessel = bericht["messwerte"]["kessel_temperatur"]
-    assert kessel["quelle"] == "menuebaum"
+    assert kessel["uri"] == coordinator.discovered_uris["kessel_temperatur"]
     assert kessel["rolle"] == "kessel"
     assert kessel["letzter_wert"] == pytest.approx(55.5)
 
@@ -173,7 +172,7 @@ async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
     bericht = await async_get_config_entry_diagnostics(hass, entry)
 
     assert "kessel_temperatur" in bericht["erkennung"]["nicht_gefunden"]
-    assert bericht["messwerte"]["kessel_temperatur"]["quelle"] == "standard"
+    assert "kessel_temperatur" not in bericht["messwerte"]
 
 
 async def test_diagnose_ist_serialisierbar(hass, entry):
@@ -186,17 +185,19 @@ async def test_diagnose_ist_serialisierbar(hass, entry):
     assert json.dumps(bericht)
 
 
-async def test_ohne_menuebaum_entstehen_nur_die_drei_sicheren_fuehler(hass, entry):
+async def test_ohne_menuebaum_ist_die_integration_nicht_bereit(hass, entry):
+    """Ohne Menübaum gibt es nichts abzufragen - also lieber später wieder.
+
+    Früher sprangen hier fest hinterlegte URIs ein. Die stammen aber von
+    einer fremden Anlage, und die numerischen Adressen unterscheiden sich
+    von Anlage zu Anlage. Home Assistant soll es stattdessen erneut
+    versuchen, statt eine Integration ohne brauchbare Werte aufzusetzen.
+    """
+    from homeassistant.exceptions import ConfigEntryNotReady
+
     hass.session.fail_uris = {"/user/menu"}
-    coordinator, by_name = await setup_integration(hass, entry)
-    fuehler = [name for name in by_name if name.startswith("Puffer Fühler")]
-    assert len(fuehler) == 3
-    ohne_uri = [
-        key
-        for key, info in coordinator.sensor_defs.items()
-        if not info.get("uri") and key not in OPTIONAL_SENSORS
-    ]
-    assert not ohne_uri
+    with pytest.raises(ConfigEntryNotReady):
+        await setup_integration(hass, entry)
 
 
 async def test_marker_je_gewaehlter_komponente(hass, entry):
@@ -319,10 +320,13 @@ async def test_kein_reparaturhinweis_wenn_alles_gefunden(hass, entry, reparature
 
 
 async def test_kein_reparaturhinweis_ohne_lesbaren_menuebaum(hass, entry, reparaturen):
-    hass.session.fail_uris = {"/user/menu"}
-    coordinator, _ = await setup_integration(hass, entry)
+    """Ein unlesbarer Menübaum ist kein Namensproblem, also kein Hinweis."""
+    from homeassistant.exceptions import ConfigEntryNotReady
 
-    assert coordinator.components_without_data == []
+    hass.session.fail_uris = {"/user/menu"}
+    with pytest.raises(ConfigEntryNotReady):
+        await setup_integration(hass, entry)
+
     assert reparaturen["angelegt"] == []
 
 

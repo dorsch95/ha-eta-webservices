@@ -1,11 +1,11 @@
 """Diagnosedaten zum Herunterladen aus der Geräteansicht.
 
 Das häufigste Problem dieser Integration ist "ein Wert fehlt". Die Ursache
-liegt fast immer im Menübaum der Anlage: ein umbenannter Funktionsblock,
-eine abweichende Firmware oder schlicht nicht vorhandene Hardware. Der
-Diagnose-Export zeigt deshalb für jeden Messwert, ob seine URI im Menübaum
-gefunden wurde, welche URI tatsächlich abgefragt wird und ob zuletzt ein
-Wert ankam - damit lässt sich ein Fehlerbericht ohne Rückfragen einordnen.
+liegt immer im Menübaum der Anlage: ein umbenannter Funktionsblock, eine
+abweichende Firmware oder schlicht nicht vorhandene Hardware. Da jede URI
+aus diesem Menübaum stammt, zeigt der Export unter "nicht_gefunden"
+genau die Messwerte, zu denen nichts gefunden wurde - dazu je Messwert
+die abgefragte URI und den zuletzt angekommenen Wert.
 """
 
 from __future__ import annotations
@@ -36,7 +36,6 @@ async def async_get_config_entry_diagnostics(
         messwerte[key] = {
             "name": info.get("name"),
             "uri": info.get("uri"),
-            "quelle": "menuebaum" if key in coordinator.discovered_uris else "standard",
             "rolle": DISCOVERY_PATHS.get(key, (None, None))[0],
             "letzter_wert": None if reading is None else reading.display,
             "einheit": info.get("default_unit"),

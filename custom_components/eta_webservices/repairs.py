@@ -24,13 +24,13 @@ def async_check_components(
     entry_id: str,
     components: list[str],
     discovered_keys: set[str],
-    menu_readable: bool,
 ) -> list[str]:
     """Meldet Komponenten, für die im Menübaum nichts gefunden wurde.
 
-    War der Menübaum gar nicht lesbar, wird nichts gemeldet: dann liegt es
-    an der Verbindung und nicht an den Funktionsblock-Namen, und ein
-    Hinweis je Komponente wäre nur Lärm.
+    Der Aufrufer kommt nur hierher, wenn der Menübaum gelesen werden
+    konnte. Findet sich darin zu einer angekreuzten Komponente nichts,
+    liegt es also an den Funktionsblock-Namen - und genau das sagt der
+    Hinweis.
     """
     ohne_treffer = []
 
@@ -41,7 +41,7 @@ def async_check_components(
             for key in discovered_keys
             for vorsilbe in COMPONENTS[component]["discovery_prefixes"]
         )
-        if menu_readable and not gefunden:
+        if not gefunden:
             ohne_treffer.append(component)
             issue_registry.async_create_issue(
                 hass,

@@ -126,10 +126,9 @@ LEGACY_SCHEMA_COMPONENTS = {
 }
 """Übersetzt die festen Anlagenschemata bis Version 0.14 in Komponenten."""
 
-STATIC_URIs = {
+SENSORS = {
     "kessel_temperatur": {
         "component": "kessel",
-        "uri": "/264/10891/0/11109/0",
         "name": "Kesseltemperatur",
         "translation_key": "kessel_temperatur",
         "icon": "mdi:thermometer",
@@ -139,7 +138,6 @@ STATIC_URIs = {
     },
     "ruecklauf_temperatur": {
         "component": "kessel",
-        "uri": "/264/10891/0/11160/0",
         "name": "Rücklauftemperatur",
         "translation_key": "ruecklauf_temperatur",
         "icon": "mdi:thermometer",
@@ -149,7 +147,6 @@ STATIC_URIs = {
     },
     "kessel_druck": {
         "component": "kessel",
-        "uri": "/264/10891/0/0/12180",
         "name": "Kesseldruck",
         "translation_key": "kessel_druck",
         "icon": "mdi:gauge",
@@ -159,7 +156,6 @@ STATIC_URIs = {
     },
     "pellet_tagesbehälter": {
         "component": "kessel",
-        "uri": "/264/10891/0/0/12011",
         "name": "Pellet Inhalt Tagesbehälter",
         "translation_key": "pellet_tagesbehaelter",
         "icon": "mdi:weight-kilogram",
@@ -169,7 +165,6 @@ STATIC_URIs = {
     },
     "aussentemperatur": {
         "component": "kessel",
-        "uri": "/120/10241/0/11127/0",
         "name": "Außentemperatur",
         "translation_key": "aussentemperatur",
         "icon": "mdi:thermometer",
@@ -179,7 +174,6 @@ STATIC_URIs = {
     },
     "kessel_soll": {
         "component": "kessel",
-        "uri": "/264/10891/0/0/13953",
         "name": "Kessel Solltemperatur",
         "translation_key": "kessel_soll",
         "icon": "mdi:thermostat",
@@ -189,7 +183,6 @@ STATIC_URIs = {
     },
     "restsauerstoff": {
         "component": "kessel",
-        "uri": "/264/10891/0/11108/2060",
         "name": "Restsauerstoff",
         "translation_key": "restsauerstoff",
         "icon": "mdi:percent",
@@ -199,7 +192,6 @@ STATIC_URIs = {
     },
     "aschebox_verbrauch": {
         "component": "kessel",
-        "uri": "/264/10891/0/0/12013",
         "name": "Aschebox Verbrauch seit Leerung",
         "translation_key": "aschebox_verbrauch",
         "icon": "mdi:trash-can",
@@ -209,7 +201,6 @@ STATIC_URIs = {
     },
     "entaschung_verbrauch": {
         "component": "kessel",
-        "uri": "/264/10891/0/0/12012",
         "name": "Verbrauch seit Entaschung",
         "translation_key": "entaschung_verbrauch",
         "icon": "mdi:fire",
@@ -219,7 +210,6 @@ STATIC_URIs = {
     },
     "aschebox_schwelle": {
         "component": "kessel",
-        "uri": "/264/10891/0/0/12120",
         "name": "Aschebox Leeren nach",
         "translation_key": "aschebox_schwelle",
         "icon": "mdi:trash-can-outline",
@@ -229,7 +219,6 @@ STATIC_URIs = {
     },
     "puffer_ladezustand": {
         "component": "puffer",
-        "uri": "/120/10601/0/0/12528",
         "name": "Puffer Ladezustand",
         "translation_key": "puffer_ladezustand",
         "icon": "mdi:battery-charging-60",
@@ -239,7 +228,6 @@ STATIC_URIs = {
     },
     "heizkreis_vorlauf": {
         "component": "hk1",
-        "uri": "/120/10101/0/11060/0",
         "name": "Heizkreis Vorlauftemperatur",
         "translation_key": "heizkreis_vorlauf",
         "icon": "mdi:thermometer",
@@ -249,7 +237,6 @@ STATIC_URIs = {
     },
     "heizkreis_anforderung": {
         "component": "hk1",
-        "uri": "/120/10101/0/11124/2001",
         "name": "Heizkreis Anforderung",
         "translation_key": "heizkreis_anforderung",
         "icon": "mdi:heat-wave",
@@ -257,7 +244,6 @@ STATIC_URIs = {
     },
     "fwm_warmwasser": {
         "component": "fwm",
-        "uri": "/79/10531/0/11148/0",
         "name": "FWM Warmwassertemperatur",
         "translation_key": "fwm_warmwasser",
         "icon": "mdi:water-thermometer",
@@ -265,44 +251,6 @@ STATIC_URIs = {
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     },
-}
-
-PUFFER_FUEHLER_MAX = 8
-
-PUFFER_FUEHLER_FALLBACK_URIS = [
-    "/120/10601/0/11327/0",
-    "/120/10601/0/11328/0",
-    "/120/10601/0/11329/0",
-]
-"""Rückfallebene, falls der Menübaum nicht gelesen werden kann.
-
-PufferFlex hat immer mindestens drei Fühler (oben, Mitte, unten); mehr
-werden nur angelegt, wenn sie im Menübaum tatsächlich gefunden wurden -
-sonst entstünden Entitäten, die dauerhaft ohne Wert bleiben.
-"""
-
-
-def puffer_fuehler_info(index, is_last):
-    """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
-    if index == 1:
-        position = "oben"
-    elif is_last:
-        position = "unten"
-    else:
-        position = None
-    return {
-        "name": f"Puffer Fühler {index}",
-        "translation_key": f"puffer_fuehler_{index}",
-        "component": "puffer",
-        "position": position,
-        "icon": "mdi:thermometer-lines",
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "°C",
-    }
-
-
-DISCOVERY_ONLY_SENSORS = {
     "kessel_zustand": {
         "component": "kessel",
         "name": "Kessel Zustand",
@@ -371,15 +319,28 @@ DISCOVERY_ONLY_SENSORS = {
         "default_unit": "kWh",
     },
 }
-"""Messwerte, die es nur gibt, wenn der Menübaum sie hergibt.
 
-Ohne gefundene URI entsteht hier keine Entität. Das ist bei Solar der
-Kern der Sache: Wärmemenge, Ertrag heute und Ertrag gestern liefert nur
-eine Anlage mit Wärmemengenmessung. Wer keine hat, soll nicht drei
-Entitäten geschenkt bekommen, die für immer leer bleiben - und niemand
-soll sie extra abwählen müssen, denn die Anlage weiß selbst, ob sie
-sie hat.
-"""
+PUFFER_FUEHLER_MAX = 8
+
+def puffer_fuehler_info(index, is_last):
+    """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
+    if index == 1:
+        position = "oben"
+    elif is_last:
+        position = "unten"
+    else:
+        position = None
+    return {
+        "name": f"Puffer Fühler {index}",
+        "translation_key": f"puffer_fuehler_{index}",
+        "component": "puffer",
+        "position": position,
+        "icon": "mdi:thermometer-lines",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    }
+
 
 OPTIONAL_SENSORS = {
     "fwm_zirkulation": {

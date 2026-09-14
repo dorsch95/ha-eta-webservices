@@ -16,7 +16,6 @@ from __future__ import annotations
 import logging
 import re
 
-from .api import ETAApiError
 from .const import FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
 
 _LOGGER = logging.getLogger(__name__)
@@ -220,18 +219,15 @@ async def async_discover_uris(client, fub_name_overrides=None):
       Messwerte (inkl. "puffer_fuehler_<n>" für jeden gefundenen Fühler).
     - puffer_fuehler_indices: sortierte Liste der tatsächlich gefundenen
       Fühler-Nummern (leer, falls nichts gefunden wurde).
-    Nicht gefundene Schlüssel fehlen im Ergebnis - der Aufrufer soll dafür
-    auf die Standard-URI zurückfallen (sofern vorhanden).
+
+    Nicht gefundene Schlüssel fehlen im Ergebnis; zu ihnen entsteht keine
+    Entität. Ist der Menübaum gar nicht lesbar, wird der ETAApiError
+    durchgereicht - ohne ihn lässt sich nichts abfragen, und eine
+    hinterlegte Adresse von einer fremden Anlage wäre geraten.
     """
     discovered = {}
 
-    try:
-        parsed = await client.async_get_menu()
-    except ETAApiError as err:
-        _LOGGER.warning(
-            "ETA Menü konnte nicht gelesen werden - verwende Standard-URIs: %s", err
-        )
-        return discovered, []
+    parsed = await client.async_get_menu()
 
     fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
     fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
