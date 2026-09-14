@@ -4,7 +4,7 @@ from homeassistant.const import Platform
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
-PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
 
 CONF_SCHEMA = "schema"
 CONF_COMPONENTS = "components"

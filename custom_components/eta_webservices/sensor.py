@@ -80,8 +80,27 @@ class ETAMeasurementSensor(ETABaseSensor):
             self._attr_native_unit_of_measurement = info.get("default_unit")
             self._attr_suggested_display_precision = 1
 
-        if position := info.get("position"):
-            self._attr_extra_state_attributes = {"position": position}
+        self._position = info.get("position")
+
+    @property
+    def available(self) -> bool:
+        """Ein Wert, der mehrfach ausbleibt, gilt als nicht erreichbar.
+
+        Der Koordinator behält den letzten bekannten Wert, damit ein
+        einzelner Timeout nichts kippt. Bleibt der Wert aber weg, soll
+        die Anzeige das sagen, statt wochenlang eine alte Zahl zu
+        zeigen.
+        """
+        if not super().available:
+            return False
+        return self.coordinator.sensor_status(self._key) != "nicht_erreichbar"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        attribute = {"status": self.coordinator.sensor_status(self._key)}
+        if self._position:
+            attribute["position"] = self._position
+        return attribute
 
     @property
     def native_value(self):

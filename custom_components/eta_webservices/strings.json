@@ -105,6 +105,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "stoerung": {
+        "name": "Fault"
+      }
+    },
     "sensor": {
       "aktive_fehler": {
         "name": "Active errors"

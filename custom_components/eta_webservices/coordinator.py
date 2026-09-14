@@ -26,6 +26,15 @@ from .uri_discovery import async_discover_uris
 
 _LOGGER = logging.getLogger(__name__)
 
+VERALTET_AB = 2
+"""So viele Abfragen darf ein Wert am Stück ausbleiben.
+
+Danach gilt der Sensor als nicht erreichbar, statt weiter den letzten
+bekannten Wert zu zeigen. Ein einzelner Timeout soll nichts kippen -
+ein Wert, der dauerhaft ausbleibt, aber auch nicht wochenlang eine alte
+Zahl vortäuschen.
+"""
+
 AUS_BEGRIFFE = {"aus", "off", "0", "nein", "no", "ausgeschaltet"}
 """Zustandsnamen, die eine ausgeschaltete Funktion bezeichnen.
 
@@ -111,6 +120,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.errors: list[ETAError] = []
         self.varinfo: dict[str, dict] = {}
         self.switch_defs: dict[str, dict] = {}
+        self.fehlzyklen: dict[str, int] = {}
         self._varset_name = f"ha{entry.entry_id}"[:32]
         self._varset_bereit = False
 
@@ -134,6 +144,21 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     def component_images(self) -> list[str]:
         """Bildschlüssel der aktiven Komponenten, in Anzeigereihenfolge."""
         return [COMPONENTS[key]["image"] for key in self.components]
+
+    def sensor_status(self, key: str) -> str:
+        """Sagt, warum ein Sensor gerade keinen frischen Wert hat.
+
+        "nicht_vorhanden" heißt: Diese Anlage kennt den Wert nicht, er
+        stand schon beim Einrichten nicht im Menübaum. "nicht_erreichbar"
+        heißt: Es gibt ihn, er kam nur zuletzt nicht an. Ohne diese
+        Unterscheidung sieht beides gleich aus.
+        """
+        info = self.sensor_defs.get(key)
+        if info is None or not info.get("uri"):
+            return "nicht_vorhanden"
+        if self.fehlzyklen.get(key, 0) >= VERALTET_AB:
+            return "nicht_erreichbar"
+        return "ok"
 
     @property
     def abfragbare_uris(self) -> dict[str, str]:
@@ -313,6 +338,12 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             )
 
         await self._fehler_lesen()
+
+        for key in uris:
+            if key in values:
+                self.fehlzyklen.pop(key, None)
+            else:
+                self.fehlzyklen[key] = self.fehlzyklen.get(key, 0) + 1
 
         merged = dict(self.data or {})
         merged.update(values)

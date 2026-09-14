@@ -52,9 +52,9 @@ async def test_pufferfuehler_kennen_ihre_position(hass, entry):
     _, by_name = await setup_integration(hass, entry)
     fuehler = [name for name in by_name if name.startswith("Puffer Fühler")]
     assert len(fuehler) >= 3
-    assert by_name["Puffer Fühler 1"].extra_state_attributes == {"position": "oben"}
+    assert by_name["Puffer Fühler 1"].extra_state_attributes["position"] == "oben"
     letzter = sorted(fuehler)[-1]
-    assert by_name[letzter].extra_state_attributes == {"position": "unten"}
+    assert by_name[letzter].extra_state_attributes["position"] == "unten"
 
 
 async def test_optionaler_sensor_zeigt_platzhalter_ohne_einheit(hass, entry, menu_xml):
@@ -518,3 +518,73 @@ async def test_solar_ohne_waermemengenmessung(hass, entry, menu_xml):
     ):
         assert by_name[name].native_value == "-", name
         assert by_name[name].state_class is None, name
+
+
+async def test_status_unterscheidet_fehlend_von_unerreichbar(hass, entry, menu_xml):
+    """"-" heißt "hat die Anlage nicht", nicht "gerade nicht lesbar"."""
+    from eta_webservices.coordinator import VERALTET_AB
+
+    hass.session.menu = menu_xml.replace('name="Kesseldruck"', 'name="Anlagendruck"')
+    hass.session.varset_unterstuetzt = False
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    fehlt = by_name["Kesseldruck"]
+    assert fehlt.extra_state_attributes["status"] == "nicht_vorhanden"
+    assert fehlt.native_value == "-"
+    assert fehlt.available is True
+
+    kessel = by_name["Kesseltemperatur"]
+    assert kessel.extra_state_attributes["status"] == "ok"
+    assert kessel.available is True
+
+    hass.session.fail_uris = {coordinator.sensor_defs["kessel_temperatur"]["uri"]}
+    for _ in range(VERALTET_AB):
+        await coordinator.async_refresh()
+
+    assert kessel.extra_state_attributes["status"] == "nicht_erreichbar"
+    assert kessel.available is False
+    assert fehlt.extra_state_attributes["status"] == "nicht_vorhanden"
+
+
+async def test_ein_einzelner_aussetzer_kippt_nichts(hass, entry):
+    """Ein einzelner Timeout darf den Sensor nicht sofort abschalten."""
+    hass.session.varset_unterstuetzt = False
+    coordinator, by_name = await setup_integration(hass, entry)
+    kessel = by_name["Kesseltemperatur"]
+    wert = kessel.native_value
+
+    hass.session.fail_uris = {coordinator.sensor_defs["kessel_temperatur"]["uri"]}
+    await coordinator.async_refresh()
+
+    assert kessel.available is True
+    assert kessel.native_value == wert
+
+
+async def test_stoerungsmelder_haengt_an_den_fehlern(hass, entry):
+    from .test_api import FEHLER_XML
+
+    from eta_webservices import binary_sensor as bs
+
+    hass.session.errors_xml = FEHLER_XML
+    coordinator, _ = await setup_integration(hass, entry)
+    await coordinator.async_refresh()
+    entities: list = []
+    await bs.async_setup_entry(hass, entry, entities.extend)
+    assert len(entities) == 1
+
+    melder = entities[0]
+    assert melder.is_on is True
+    assert melder.extra_state_attributes["anzahl"] == len(coordinator.errors)
+
+    coordinator.errors = []
+    assert melder.is_on is False
+
+
+async def test_ohne_stoerungsmeldungen_kein_melder(hass, entry):
+    from eta_webservices import binary_sensor as bs
+
+    entry.data["enable_errors"] = False
+    await setup_integration(hass, entry)
+    entities: list = []
+    await bs.async_setup_entry(hass, entry, entities.extend)
+    assert entities == []
