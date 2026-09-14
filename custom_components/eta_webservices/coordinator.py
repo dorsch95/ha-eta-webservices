@@ -13,7 +13,9 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import ETAApiClient, ETAApiError, ETAError, ETAValue
 from .const import (
+    BETRIEBSART_TASTEN,
     COMPONENTS,
+    SELECTS,
     SWITCHES,
     DOMAIN,
     PUFFER_FUEHLER_MINDEST,
@@ -120,6 +122,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.errors: list[ETAError] = []
         self.varinfo: dict[str, dict] = {}
         self.switch_defs: dict[str, dict] = {}
+        self.select_defs: dict[str, dict] = {}
         self.fehlzyklen: dict[str, int] = {}
         self._varset_name = f"ha{entry.entry_id}"[:32]
         self._varset_bereit = False
@@ -274,6 +277,86 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 roh[aus_text],
             )
 
+    async def _zweizustand_pruefen(self, key: str, uri: str) -> dict | None:
+        """Prüft an der Anlage nach, ob sich eine Taste schalten lässt.
+
+        Beschreibbar, genau zwei Zustände, und einer davon erkennbar
+        "aus" - sonst wird nicht geschaltet. Welcher Rohwert wofür
+        steht, sagt allein die Anlage; hier wird nichts geraten, weil
+        ein falscher Wert in die Heizungssteuerung ginge.
+        """
+        info = await self.client.async_get_varinfo(uri)
+        if not info or not info.get("writable"):
+            _LOGGER.debug("ETA: %s ist nicht beschreibbar", key)
+            return None
+
+        roh = info.get("raw_values") or {}
+        if len(roh) != 2:
+            _LOGGER.debug("ETA: %s hat %d Zustände statt zwei", key, len(roh))
+            return None
+
+        aus_text = next((t for t in roh if t.strip().casefold() in AUS_BEGRIFFE), None)
+        if aus_text is None:
+            _LOGGER.debug(
+                "ETA: bei %s ist unklar, welcher Zustand 'aus' bedeutet (%s)",
+                key,
+                list(roh),
+            )
+            return None
+        ein_text = next(t for t in roh if t != aus_text)
+        return {
+            "ein_text": ein_text,
+            "ein_roh": roh[ein_text],
+            "aus_text": aus_text,
+            "aus_roh": roh[aus_text],
+        }
+
+    async def _betriebsarten_pruefen(self) -> None:
+        """Baut je Heizkreis eine Auswahl aus seinen drei Tasten.
+
+        Die Anlage führt Auto, Heizen und Absenken als drei einzelne
+        Tasten, von denen im Betrieb genau eine auf "Ein" steht. Für
+        Home Assistant ist das eine Auswahl mit vier Einträgen - der
+        vierte ist "Aus" und hängt an der Ein/Aus-Taste desselben
+        Heizkreises. Ohne diese Taste gäbe es keinen Weg zurück aus
+        "Aus", deshalb entsteht die Auswahl nur zusammen mit ihr.
+        """
+        if not self.enable_switches:
+            return
+
+        aktiv = set(self.components)
+        for key, definition in SELECTS.items():
+            if definition["component"] not in aktiv:
+                continue
+            if definition["schalter"] not in self.switch_defs:
+                continue
+
+            tasten = {}
+            for modus in BETRIEBSART_TASTEN:
+                uri = self.discovered_uris.get(f"{key}_{modus}")
+                if not uri:
+                    continue
+                geprueft = await self._zweizustand_pruefen(f"{key}_{modus}", uri)
+                if geprueft:
+                    tasten[modus] = {**geprueft, "uri": uri}
+
+            if not tasten:
+                continue
+
+            self.select_defs[key] = {**definition, "tasten": tasten}
+            for modus, taste in tasten.items():
+                self.sensor_defs[f"{key}_{modus}"] = {
+                    "component": definition["component"],
+                    "translation_key": definition["translation_key"],
+                    "icon": definition["icon"],
+                    "is_string": True,
+                    "uri": taste["uri"],
+                    "platform": "select",
+                }
+            _LOGGER.info(
+                "ETA: Betriebsart %s erkannt (%s)", key, ", ".join(sorted(tasten))
+            )
+
     async def _varinfo_laden(self) -> None:
         """Holt zu den Textwerten ihre gültigen Zustände.
 
@@ -316,6 +399,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.api_version = await self.client.async_get_api_version()
         await self._varinfo_laden()
         await self._schalter_pruefen()
+        await self._betriebsarten_pruefen()
         await self._varset_anlegen()
 
     async def _async_update_data(self) -> dict[str, ETAValue]:

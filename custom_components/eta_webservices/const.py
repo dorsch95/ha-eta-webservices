@@ -4,7 +4,12 @@ from homeassistant.const import Platform
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
 
 CONF_SCHEMA = "schema"
 CONF_COMPONENTS = "components"
@@ -130,6 +135,55 @@ SWITCHES = {
         "icon": "mdi:radiator",
     },
 }
+BETRIEBSART_TASTEN = {
+    "automatik": "Auto Taste",
+    "heizen": "Heizen Taste",
+    "absenken": "Absenken Taste",
+}
+"""Die drei Tasten, die zusammen die Betriebsart eines Heizkreises ergeben.
+
+An der Anlage verhalten sie sich wie Radioknöpfe: Läuft der Heizkreis,
+steht genau eine davon auf "Ein" und sagt damit, ob er automatisch,
+dauerhaft heizend oder abgesenkt fährt. Ist der Heizkreis aus, stehen
+alle drei auf "Aus" - deshalb gehört "Aus" mit in dieselbe Auswahl und
+wird über die Ein/Aus-Taste geschaltet.
+"""
+
+BETRIEBSART_AUS = "aus"
+"""Der vierte Eintrag der Auswahl, der keiner eigenen Taste entspricht."""
+
+SELECTS = {
+    "heizkreis_betriebsart": {
+        "component": "hk1",
+        "role": "hk",
+        "schalter": "heizkreis_schalter",
+        "translation_key": "heizkreis_betriebsart",
+        "icon": "mdi:home-thermometer",
+    },
+    "heizkreis2_betriebsart": {
+        "component": "hk2",
+        "role": "hk2",
+        "schalter": "heizkreis2_schalter",
+        "translation_key": "heizkreis2_betriebsart",
+        "icon": "mdi:home-thermometer",
+    },
+    "heizkreis3_betriebsart": {
+        "component": "hk3",
+        "role": "hk3",
+        "schalter": "heizkreis3_schalter",
+        "translation_key": "heizkreis3_betriebsart",
+        "icon": "mdi:home-thermometer",
+    },
+    "heizkreis4_betriebsart": {
+        "component": "hk4",
+        "role": "hk4",
+        "schalter": "heizkreis4_schalter",
+        "translation_key": "heizkreis4_betriebsart",
+        "icon": "mdi:home-thermometer",
+    },
+}
+"""Je Heizkreis eine Auswahl der Betriebsart."""
+
 """Schaltbare Funktionen, je Komponente eine.
 
 Welche Zustände geschaltet werden, steht nicht hier: Die Rohwerte

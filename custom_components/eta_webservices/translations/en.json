@@ -116,6 +116,44 @@
         "name": "Fault"
       }
     },
+    "select": {
+      "heizkreis_betriebsart": {
+        "name": "Heating circuit 1 mode",
+        "state": {
+          "aus": "Off",
+          "automatik": "Automatic",
+          "heizen": "Heating",
+          "absenken": "Setback"
+        }
+      },
+      "heizkreis2_betriebsart": {
+        "name": "Heating circuit 2 mode",
+        "state": {
+          "aus": "Off",
+          "automatik": "Automatic",
+          "heizen": "Heating",
+          "absenken": "Setback"
+        }
+      },
+      "heizkreis3_betriebsart": {
+        "name": "Heating circuit 3 mode",
+        "state": {
+          "aus": "Off",
+          "automatik": "Automatic",
+          "heizen": "Heating",
+          "absenken": "Setback"
+        }
+      },
+      "heizkreis4_betriebsart": {
+        "name": "Heating circuit 4 mode",
+        "state": {
+          "aus": "Off",
+          "automatik": "Automatic",
+          "heizen": "Heating",
+          "absenken": "Setback"
+        }
+      }
+    },
     "sensor": {
       "aktive_fehler": {
         "name": "Active errors"

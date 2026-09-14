@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import re
 
-from .const import FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
+from .const import BETRIEBSART_TASTEN, FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,6 +84,14 @@ dort einen Rohwert hineinzuschreiben wäre in einer Heizungssteuerung
 kein Schönheitsfehler. Was die Liste findet, prüft anschließend
 /user/varinfo noch einmal nach.
 """
+
+BETRIEBSART_ROLES = {
+    "heizkreis_betriebsart": "hk",
+    "heizkreis2_betriebsart": "hk2",
+    "heizkreis3_betriebsart": "hk3",
+    "heizkreis4_betriebsart": "hk4",
+}
+"""Welcher Funktionsblock zu welcher Betriebsart-Auswahl gehört."""
 
 SWITCH_ROLES = {
     "kessel_schalter": "kessel",
@@ -254,6 +262,15 @@ async def async_discover_uris(client, fub_name_overrides=None):
         uri = _finde_schalter(fub)
         if uri:
             discovered[key] = uri
+
+    for key, role in BETRIEBSART_ROLES.items():
+        fub = fubs_by_role.get(role)
+        if fub is None:
+            continue
+        for modus, name in BETRIEBSART_TASTEN.items():
+            uri = _finde_nach_namen(fub, name)
+            if uri:
+                discovered[f"{key}_{modus}"] = uri
 
     puffer_fuehler = _discover_puffer_fuehler(fubs_by_role.get("pufferflex"))
     puffer_fuehler_indices = sorted(puffer_fuehler)

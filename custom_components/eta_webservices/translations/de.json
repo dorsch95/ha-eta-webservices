@@ -116,6 +116,44 @@
         "name": "Störung"
       }
     },
+    "select": {
+      "heizkreis_betriebsart": {
+        "name": "Heizkreis 1 Betriebsart",
+        "state": {
+          "aus": "Aus",
+          "automatik": "Automatik",
+          "heizen": "Heizen",
+          "absenken": "Absenken"
+        }
+      },
+      "heizkreis2_betriebsart": {
+        "name": "Heizkreis 2 Betriebsart",
+        "state": {
+          "aus": "Aus",
+          "automatik": "Automatik",
+          "heizen": "Heizen",
+          "absenken": "Absenken"
+        }
+      },
+      "heizkreis3_betriebsart": {
+        "name": "Heizkreis 3 Betriebsart",
+        "state": {
+          "aus": "Aus",
+          "automatik": "Automatik",
+          "heizen": "Heizen",
+          "absenken": "Absenken"
+        }
+      },
+      "heizkreis4_betriebsart": {
+        "name": "Heizkreis 4 Betriebsart",
+        "state": {
+          "aus": "Aus",
+          "automatik": "Automatik",
+          "heizen": "Heizen",
+          "absenken": "Absenken"
+        }
+      }
+    },
     "sensor": {
       "aktive_fehler": {
         "name": "Aktive Fehler"

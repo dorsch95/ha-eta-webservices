@@ -66,6 +66,9 @@
 </object>
 <object uri="/120/10101/0/0/12182" name="Sonstiges">
 <object uri="/120/10101/0/0/12080" name="Ein/Aus Taste"/>
+<object uri="/120/10101/0/0/12125" name="Heizen Taste"/>
+<object uri="/120/10101/0/0/12126" name="Auto Taste"/>
+<object uri="/120/10101/0/0/12230" name="Absenken Taste"/>
 </object>
 <object uri="/120/10101/0/0/10991" name="Ausgänge">
 <object uri="/120/10101/0/11124/0" name="Heizkreispumpe">

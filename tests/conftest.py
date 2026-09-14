@@ -117,6 +117,7 @@ class FakeSession:
         self.varinfo_unterstuetzt = True
         self.schreiben_erlaubt = True
         self.gesetzte_werte: list[tuple[str, str]] = []
+        self.geschrieben: dict[str, str] = {}
         self.schreibbar = True
 
     def _ausfall_pruefen(self, url: str) -> None:
@@ -145,8 +146,27 @@ class FakeSession:
         uri = url.split("/user/var", 1)[1]
         if not self.schreiben_erlaubt:
             return FakeResponse("", status=403)
-        self.gesetzte_werte.append((uri, daten.get("value")))
+        wert = daten.get("value")
+        self.gesetzte_werte.append((uri, wert))
+        self._merken(uri, wert)
         return self._tracked(f'<eta version="1.0"><success uri="{uri}"/></eta>')
+
+    def _merken(self, uri: str, wert: str) -> None:
+        """Behält geschriebene Werte - und schaltet Modustasten gegenseitig ab.
+
+        Auto, Heizen und Absenken verhalten sich an der Anlage wie
+        Radioknöpfe: Wird eine auf "Ein" gesetzt, fallen die anderen
+        beiden auf "Aus". Eine Attrappe, die das nicht nachbildet,
+        lässt eine Auswahl richtig aussehen, die in Wirklichkeit den
+        falschen Zustand meldet.
+        """
+        self.geschrieben[uri] = wert
+        modus_tasten = ("/12125", "/12126", "/12230")
+        if wert == "950" and uri.endswith(modus_tasten):
+            stamm = uri.rsplit("/", 1)[0]
+            for andere in modus_tasten:
+                if not uri.endswith(andere):
+                    self.geschrieben[stamm + andere] = "949"
 
     def _varset_aendern(self, methode: str, url: str):
         pfad = url.split("/user/vars/", 1)[1]
@@ -176,18 +196,26 @@ class FakeSession:
             return self._tracked(self.menu)
         return self._tracked(var_xml(**self._wert_fuer(url)))
 
-    @staticmethod
-    def _wert_fuer(uri: str) -> dict:
+    def _wert_fuer(self, uri: str) -> dict:
         """Der Messwert, den die Anlage zu dieser URI liefert.
 
         Wird sowohl für die Einzelabfrage als auch für den Variablensatz
         benutzt, damit beide Wege dieselben Werte liefern - sonst würde
-        ein Test je nach Abfrageart etwas anderes sehen.
+        ein Test je nach Abfrageart etwas anderes sehen. Geschriebene
+        Werte gehen vor, damit sich eine Änderung auch nachlesen lässt.
         """
         if "12013" in uri:
             return {"value": "2370", "str_value": "23,70", "unit": "kg", "scale": "100"}
         if "12120" in uri:
             return {"value": "1000", "str_value": "1000", "unit": "kg"}
+        if uri.endswith(("/12125", "/12126", "/12230")):
+            vorgabe = "950" if uri.endswith("/12126") else "949"
+            roh = self.geschrieben.get(uri, vorgabe)
+            return {
+                "value": roh,
+                "str_value": "Ein" if roh == "950" else "Aus",
+                "text_offset": "950",
+            }
         if "2001" in uri or "12080" in uri:
             return {"value": "950", "str_value": "Heizbetrieb", "text_offset": "950"}
         if "12000" in uri:
@@ -221,7 +249,7 @@ class FakeSession:
         """
         if not self.varinfo_unterstuetzt:
             return FakeResponse("", status=404)
-        if "12080" not in url:
+        if not any(t in url for t in ("12080", "12125", "12126", "12230")):
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
                 'name="Messwert" fullName="x" unit="°C" decPlaces="1" '
@@ -235,7 +263,7 @@ class FakeSession:
             f'isWritable="{1 if self.schreibbar else 0}">'
             "<type>TEXT</type><validValues>"
             '<value strValue="Aus">949</value>'
-            '<value strValue="Heizbetrieb">950</value>'
+            f'<value strValue="{"Ein" if "12080" not in url else "Heizbetrieb"}">950</value>'
             "</validValues></variable></varInfo></eta>"
         )
 

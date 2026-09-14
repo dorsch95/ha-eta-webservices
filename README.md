@@ -79,7 +79,7 @@ Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (
 * **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und Zirkulationstemperatur.
 * **🚨 Störung** (im Setup abwählbar): `binary_sensor.eta_heizung_storung` ist an, sobald mindestens eine Störung anliegt - damit reicht in einer Automatisierung ein Gerätetrigger, statt eine Zahl mit Null zu vergleichen.
 * **🚨 Aktive Fehler** (im Setup abwählbar): Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
-* **🔌 Schalter** für Kessel und Heizkreise, sofern deine Anlage sie zulässt - siehe unten.
+* **🔌 Schalter** für Kessel und Heizkreise sowie je Heizkreis eine **Betriebsart** (Automatik, Heizen, Absenken, Aus), sofern deine Anlage sie zulässt - siehe unten.
 * **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
 
 Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast.
@@ -262,6 +262,21 @@ logger:
 ```
 
 > ⚠️ Der Schalter greift direkt in die Heizungssteuerung ein. Im Winter einen Heizkreis oder den Kessel per Automation abzuschalten kann Räume auskühlen lassen; für den Frostschutz ist weiterhin die Anlage selbst zuständig.
+
+### Betriebsart je Heizkreis
+
+Findet die Integration am Heizkreis zusätzlich die Tasten **Auto**, **Heizen** und **Absenken**, entsteht daraus eine Auswahl: `select.eta_heizung_heizkreis_1_betriebsart` bis `..._4_betriebsart`.
+
+| Auswahl | Was geschieht |
+|---|---|
+| Automatik | Der Heizkreis folgt seinem Zeitprogramm |
+| Heizen | Dauerhaft Heizbetrieb |
+| Absenken | Dauerhaft Absenkbetrieb |
+| Aus | Der Heizkreis wird über seine Ein/Aus-Taste abgeschaltet |
+
+An der Anlage sind das vier getrennte Tasten, die sich wie Radioknöpfe verhalten: Läuft der Heizkreis, steht genau eine der drei Betriebsarten auf "Ein"; ist er aus, stehen alle drei auf "Aus". Home Assistant fasst sie zu einer Auswahl zusammen. Wählst du aus dem Zustand "Aus" heraus eine Betriebsart, wird der Heizkreis vorher eingeschaltet - sonst bliebe die Auswahl wirkungslos.
+
+Die Auswahl entsteht nur zusammen mit dem Schalter desselben Heizkreises. Ohne ihn gäbe es keinen Weg zurück aus "Aus".
 
 ---
 

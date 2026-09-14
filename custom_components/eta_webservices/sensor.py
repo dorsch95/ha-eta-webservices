@@ -28,7 +28,7 @@ async def async_setup_entry(
             coordinator, key, info
         )
         for key, info in coordinator.sensor_defs.items()
-        if info.get("platform") != "switch"
+        if "platform" not in info
     ]
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
