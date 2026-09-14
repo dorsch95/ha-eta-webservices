@@ -120,3 +120,25 @@ async def test_alle_optionalen_sensoren_existieren_immer(hass, entry):
     coordinator, _ = await setup_integration(hass, entry)
     for key in OPTIONAL_SENSORS:
         assert key in coordinator.sensor_defs
+
+
+async def test_gefundene_uri_schlaegt_die_fest_hinterlegte(hass, entry, menu_xml):
+    from eta_webservices.const import STATIC_URIs
+
+    abweichend = "/999/99999/0/11109/0"
+    hass.session.menu = menu_xml.replace(
+        STATIC_URIs["kessel_temperatur"]["uri"], abweichend
+    )
+    coordinator, _ = await setup_integration(hass, entry)
+    assert coordinator.sensor_defs["kessel_temperatur"]["uri"] == abweichend
+
+
+async def test_fest_hinterlegte_uri_greift_ohne_fund(hass, entry, menu_xml):
+    from eta_webservices.const import STATIC_URIs
+
+    hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
+    coordinator, _ = await setup_integration(hass, entry)
+    assert (
+        coordinator.sensor_defs["kessel_temperatur"]["uri"]
+        == STATIC_URIs["kessel_temperatur"]["uri"]
+    )

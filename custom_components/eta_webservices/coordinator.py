@@ -29,11 +29,17 @@ _LOGGER = logging.getLogger(__name__)
 def build_sensor_defs(discovered_uris, puffer_fuehler_indices):
     """Stellt zusammen, welche Sensoren diese Anlage hat und unter welcher URI.
 
-    Basissensoren haben feste Fallback-URIs, Pufferfühler werden dynamisch
-    erkannt (3 bis 8 Stück), und optionale Sensoren werden immer angelegt -
-    auch ohne URI, damit Dashboard-Karten sie gefahrlos referenzieren können.
+    Für die Basissensoren hat eine im Menübaum gefundene URI immer Vorrang
+    vor der fest hinterlegten - letztere gilt nur als Rückfallebene, denn die
+    numerischen URIs unterscheiden sich von Anlage zu Anlage. Pufferfühler
+    werden dynamisch erkannt (3 bis 8 Stück), und optionale Sensoren werden
+    immer angelegt - auch ohne URI, damit Dashboard-Karten sie gefahrlos
+    referenzieren können.
     """
-    sensor_defs = {key: dict(info) for key, info in STATIC_URIs.items()}
+    sensor_defs = {
+        key: {**info, "uri": discovered_uris.get(key) or info["uri"]}
+        for key, info in STATIC_URIs.items()
+    }
 
     for key, info in DISCOVERY_ONLY_SENSORS.items():
         if key in discovered_uris:
