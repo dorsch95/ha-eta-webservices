@@ -21,7 +21,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 
 Damit Home Assistant auf die Daten zugreifen kann, müssen die Webservices auf der Steuerung deiner Heizung aktiviert werden:
 
-1. Stelle sicher, dass auf deiner Anlage **Systemsoftware 1.20.0 oder neuer** läuft.
+1. Stelle sicher, dass auf deiner Anlage **Systemsoftware x.20.0 oder neuer** läuft.
 2. Registriere deine Anlage auf dem Portal [meinETA](https://meineta.at), falls noch nicht geschehen.
 3. **Beantrage dort den LAN-Zugriff** für deine Anlage. Ohne diesen Schritt bleiben die Webservices aus, auch wenn du sie am Display einschaltest.
 4. Gehe am Touch-Display deiner Heizung unten links auf den **Werkzeugkasten** (Einstellungen).
