@@ -26,7 +26,7 @@ ERWARTETE_IDS = {
     "aussentemperatur": "sensor.eta_heizung_aussentemperatur",
     "entaschung_verbrauch": "sensor.eta_heizung_verbrauch_seit_entaschung",
     "fwm_warmwasser": "sensor.eta_heizung_fwm_warmwassertemperatur",
-    "fwm_zirkulation": "sensor.eta_heizung_fwm_zirkulation",
+    "fwm_zirkulationspumpe": "sensor.eta_heizung_fwm_zirkulationspumpe",
     "heizkreis2_anforderung": "sensor.eta_heizung_heizkreis_2_anforderung",
     "heizkreis2_vorlauf": "sensor.eta_heizung_heizkreis_2_vorlauftemperatur",
     "heizkreis_anforderung": "sensor.eta_heizung_heizkreis_anforderung",

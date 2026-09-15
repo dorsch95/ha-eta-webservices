@@ -475,12 +475,12 @@ SENSORS = {
         "device_class": SensorDeviceClass.ENERGY,
         "default_unit": "kWh",
     },
-    "fwm_zirkulation": {
+    "fwm_zirkulationspumpe": {
         "component": "fwm",
-        "name": "FWM Zirkulation",
-        "translation_key": "fwm_zirkulation",
-        "icon": "mdi:water-thermometer",
-        "default_unit": "°C",
+        "name": "FWM Zirkulationspumpe",
+        "translation_key": "fwm_zirkulationspumpe",
+        "icon": "mdi:pump",
+        "is_string": True,
     },
 }
 

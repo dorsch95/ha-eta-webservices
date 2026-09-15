@@ -37,14 +37,29 @@
 <object uri="/79/10531/0/2310/0" name="Durchflusssensor">
 <object uri="/79/10531/0/0/2011" name="Sensor Typ"/>
 <object uri="/79/10531/0/0/12477" name="Impulse pro Liter"/>
-<object uri="/79/10531/0/0/14834" name="Notbetrieb ohne Durchflusssensor"/>
 </object>
 <object uri="/79/10531/0/11148/0" name="Warmwasser">
 <object uri="/79/10531/0/11148/2002" name="Zustand"/>
 </object>
-<object uri="/79/10531/0/11149/0" name="Zirkulation">
-<object uri="/79/10531/0/11149/2002" name="Zustand"/>
+<object uri="/79/10531/0/11243/0" name="Primär Vorlauf"/>
 </object>
+<object uri="/79/10531/0/0/10991" name="Ausgänge">
+<object uri="/79/10531/0/11280/0" name="Pufferpumpe">
+<object uri="/79/10531/0/11280/2001" name="Anforderung"/>
+</object>
+<object uri="/79/10531/0/11270/0" name="Beimischpumpe">
+<object uri="/79/10531/0/11270/2001" name="Anforderung"/>
+</object>
+<object uri="/79/10531/0/11149/0" name="Zirkulationspumpe">
+<object uri="/79/10531/0/11149/2001" name="Anforderung"/>
+</object>
+</object>
+<object uri="/79/10531/0/0/12010" name="Zählerstände">
+<object uri="/79/10531/0/0/12945" name="Betriebsstunden"/>
+<object uri="/79/10531/0/0/14407" name="Laufzeit Zirkulation"/>
+</object>
+<object uri="/79/10531/0/0/12182" name="Sonstiges">
+<object uri="/79/10531/0/0/12080" name="Ein/Aus Taste"/>
 </object>
 </fub>
 <fub uri="/120/10601" name="PufferFlex">

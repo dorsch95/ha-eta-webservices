@@ -57,21 +57,26 @@ async def test_pufferfuehler_kennen_ihre_position(hass, entry):
     assert by_name[letzter].extra_state_attributes["position"] == "unten"
 
 
-async def test_optionaler_sensor_zeigt_platzhalter_ohne_einheit(hass, entry, menu_xml):
+async def test_ohne_zirkulationspumpe_ein_platzhalter(hass, entry, menu_xml):
+    """Nicht jede Anlage hat eine Zirkulationspumpe."""
     hass.session.menu = menu_xml.replace(
-        '<object uri="/79/10531/0/11149/0" name="Zirkulation">', '<object uri="/79/10531/0/99999/0" name="Unbenutzt">'
+        'name="Zirkulationspumpe"', 'name="Unbenutzt"'
     )
     _, by_name = await setup_integration(hass, entry)
-    zirkulation = by_name["FWM Zirkulation"]
-    assert zirkulation.native_value == "-"
-    assert zirkulation.native_unit_of_measurement is None
+    pumpe = by_name["FWM Zirkulationspumpe"]
+    assert pumpe.native_value == "-"
+    assert pumpe.native_unit_of_measurement is None
 
 
-async def test_optionaler_sensor_liefert_wert_wenn_vorhanden(hass, entry):
-    _, by_name = await setup_integration(hass, entry)
-    zirkulation = by_name["FWM Zirkulation"]
-    assert zirkulation.native_value == pytest.approx(55.5)
-    assert zirkulation.native_unit_of_measurement == "°C"
+async def test_zirkulationspumpe_meldet_ihren_zustand(hass, entry):
+    """Gefragt ist, ob die Pumpe läuft - nicht, wie warm das Wasser ist."""
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert coordinator.sensor_defs["fwm_zirkulationspumpe"]["uri"].endswith("/2001")
+    pumpe = by_name["FWM Zirkulationspumpe"]
+    assert isinstance(pumpe.native_value, str)
+    assert pumpe.native_unit_of_measurement is None
+    assert pumpe.state_class is None
 
 
 async def test_einzelner_ausfall_behaelt_letzten_wert(hass, entry):

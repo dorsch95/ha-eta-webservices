@@ -52,7 +52,6 @@ DISCOVERY_PATHS = {
     "heizkreis4_vorlauf": ("hk4", ["Eingänge", "Vorlauf"]),
     "heizkreis4_anforderung": ("hk4", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
-    "fwm_zirkulation": ("fwm", ["Eingänge", "Zirkulation"]),
     "lager_vorrat": ("lager", ["Vorrat"]),
     "lager_warngrenze": ("lager", ["Vorrat", "Vorrat Warngrenze"]),
     "lager_maximum": ("lager", ["Vorrat", "Maximaler Vorrat"]),
@@ -63,6 +62,18 @@ DISCOVERY_PATHS = {
     "solar_ertrag_heute": ("solar", ["Leistung", "Ertrag heute"]),
     "solar_ertrag_gestern": ("solar", ["Leistung", "Ertrag gestern"]),
 }
+
+PUMPEN = {
+    "fwm_zirkulationspumpe": ("fwm", "zirkulation"),
+}
+"""Pumpen, die über ein Stichwort in ihrem Namen gesucht werden.
+
+Eine Pumpe heißt je nach Anlage "Zirkulationspumpe", "Zirkulation" oder
+ähnlich. Gesucht wird deshalb unter "Ausgänge" nach einem Namen, der
+das Stichwort enthält; geliefert wird die URI seiner "Anforderung" -
+dort steht, ob die Pumpe gerade läuft. Genauso wird die
+Heizkreispumpe gelesen, nur über einen festen Pfad.
+"""
 
 NAMENSSUCHE = {
     "solar_kollektor": "Kollektor",
@@ -191,6 +202,25 @@ def _finde_schalter(fub):
     return durchsuchen(fub)
 
 
+def _finde_pumpe(fub, stichwort):
+    """Sucht unter "Ausgänge" eine Pumpe und liefert ihre Anforderung."""
+    if fub is None:
+        return None
+    ausgaenge = _find_path(fub, ["Ausgänge"])
+    if ausgaenge is None:
+        return None
+
+    for kind in _as_list(ausgaenge.get("object")):
+        if not isinstance(kind, dict):
+            continue
+        if stichwort not in (kind.get("@name") or "").casefold():
+            continue
+        anforderung = _find_path(kind, ["Anforderung"])
+        if anforderung is not None and anforderung.get("@uri"):
+            return anforderung["@uri"]
+    return None
+
+
 def _finde_nach_namen(fub, name):
     """Sucht im ganzen Funktionsblock das erste Objekt mit diesem Namen."""
     if fub is None:
@@ -268,6 +298,11 @@ async def async_discover_uris(client, fub_name_overrides=None):
         uri = found.get("@uri") if found is not None else None
         if not uri and key in NAMENSSUCHE:
             uri = _finde_nach_namen(fub, NAMENSSUCHE[key])
+        if uri:
+            discovered[key] = uri
+
+    for key, (role, stichwort) in PUMPEN.items():
+        uri = _finde_pumpe(fubs_by_role.get(role), stichwort)
         if uri:
             discovered[key] = uri
 

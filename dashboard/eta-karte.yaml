@@ -160,7 +160,7 @@ cards:
             font-size: 95%
           prefix: 'WW: '
         - type: state-label
-          entity: sensor.eta_heizung_fwm_zirkulation
+          entity: sensor.eta_heizung_fwm_zirkulationspumpe
           style:
             top: 15%
             left: 50%
@@ -601,13 +601,13 @@ cards:
             font-size: 100%
           prefix: 'Warmwasser: '
         - type: state-label
-          entity: sensor.eta_heizung_fwm_zirkulation
+          entity: sensor.eta_heizung_fwm_zirkulationspumpe
           style:
             top: 15%
             left: 50%
             color: '#9aa5b1'
             font-size: 95%
-          prefix: 'Zirkulation: '
+          prefix: 'Zirkulationspumpe: '
     - type: conditional
       conditions:
       - condition: state
@@ -1042,13 +1042,13 @@ cards:
             font-size: 105%
           prefix: 'Warmwasser: '
         - type: state-label
-          entity: sensor.eta_heizung_fwm_zirkulation
+          entity: sensor.eta_heizung_fwm_zirkulationspumpe
           style:
             top: 15%
             left: 50%
             color: '#9aa5b1'
             font-size: 100%
-          prefix: 'Zirkulation: '
+          prefix: 'Zirkulationspumpe: '
     - type: conditional
       conditions:
       - condition: state

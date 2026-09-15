@@ -178,7 +178,8 @@ def grid(spalten, schrift, kurz):
                 [
                     label("fwm_warmwassertemperatur", "WW: " if kurz else "Warmwasser: ",
                           "hell", 8, 50, schrift + 5),
-                    label("fwm_zirkulation", "Zirk.: " if kurz else "Zirkulation: ",
+                    label("fwm_zirkulationspumpe",
+                          "Zirk.: " if kurz else "Zirkulationspumpe: ",
                           "gedaempft", 15, 50, schrift),
                 ],
             ),

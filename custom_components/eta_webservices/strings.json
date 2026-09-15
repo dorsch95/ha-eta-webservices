@@ -185,8 +185,8 @@
       "fwm_warmwasser": {
         "name": "Hot water temperature"
       },
-      "fwm_zirkulation": {
-        "name": "Circulation temperature"
+      "fwm_zirkulationspumpe": {
+        "name": "Hot water circulation pump"
       },
       "heizkreis2_anforderung": {
         "name": "Heating circuit 2 demand"

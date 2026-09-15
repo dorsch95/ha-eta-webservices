@@ -185,8 +185,8 @@
       "fwm_warmwasser": {
         "name": "FWM Warmwassertemperatur"
       },
-      "fwm_zirkulation": {
-        "name": "FWM Zirkulation"
+      "fwm_zirkulationspumpe": {
+        "name": "FWM Zirkulationspumpe"
       },
       "heizkreis2_anforderung": {
         "name": "Heizkreis 2 Anforderung"
