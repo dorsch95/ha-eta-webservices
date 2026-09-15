@@ -179,6 +179,53 @@ def puffer_schrift(anzahl, schrift):
     return schrift
 
 
+MODUS_TASTEN = [
+    ("automatik", "mdi:calendar-clock", "Auto"),
+    ("heizen", "mdi:fire", "Dauer"),
+    ("absenken", "mdi:leaf", "ECO"),
+    ("aus", "mdi:power", "Aus"),
+]
+"""Die vier Betriebsarten als antippbare Symbole, in der Reihenfolge der Anlage.
+
+Der erste Wert ist die Option der Auswahl-Entität, sie darf sich nicht
+ändern - daran hängen auch Blueprints und Automatisierungen. Angezeigt
+wird nur das Symbol; welcher Modus gerade gilt, steht als Text darüber.
+"""
+
+
+def modus_tasten(entity, top, groesse=26):
+    """Schaltet die Betriebsart direkt auf der Kachel um.
+
+    Vier Symbole nebeneinander, jedes setzt beim Antippen seine
+    Betriebsart. "Aus" ist eines davon - einen getrennten Ein/Aus-Schalter
+    gibt es am Heizkreis deshalb nicht.
+    """
+    entitaet = f"select.eta_heizung_{entity}"
+    return [
+        nur_wenn_vorhanden(
+            {
+                "type": "icon",
+                "icon": symbol,
+                "title": titel,
+                "entity": entitaet,
+                "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "select.select_option",
+                    "target": {"entity_id": entitaet},
+                    "data": {"option": modus},
+                },
+                "style": {
+                    "top": f"{top}%",
+                    "left": f"{links}%",
+                    "color": FARBEN["hell"],
+                    "--mdc-icon-size": f"{groesse}px",
+                },
+            }
+        )
+        for (modus, symbol, titel), links in zip(MODUS_TASTEN, (20, 40, 60, 80))
+    ]
+
+
 def komponente(marker, zustand, bild, elemente):
     """Eine Kachel, die nur erscheint, wenn es die Komponente gibt."""
     return {
@@ -253,6 +300,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_1_betriebsart", 23, schrift - 5),
+                    *modus_tasten("heizkreis_1_betriebsart", 90),
                 ],
             ),
             komponente(
@@ -264,6 +312,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_2_betriebsart", 23, schrift - 5),
+                    *modus_tasten("heizkreis_2_betriebsart", 90),
                 ],
             ),
             komponente(
@@ -275,6 +324,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_3_betriebsart", 23, schrift - 5),
+                    *modus_tasten("heizkreis_3_betriebsart", 90),
                 ],
             ),
             komponente(
@@ -286,6 +336,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_4_betriebsart", 23, schrift - 5),
+                    *modus_tasten("heizkreis_4_betriebsart", 90),
                 ],
             ),
             komponente(
