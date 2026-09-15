@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .api import ETAApiError
 from .const import BETRIEBSART_AUS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .switch import VERWERFEN_NACH
 
 
 async def async_setup_entry(
@@ -54,6 +55,7 @@ class ETABetriebsartSelect(
         self._attr_device_info = coordinator.device_info
         self._attr_options = [BETRIEBSART_AUS, *self._tasten]
         self._erwartet: str | None = None
+        self._widerspruch = 0
 
     def _steht_auf_ein(self, modus: str) -> bool | None:
         """Sagt, ob eine der drei Tasten gerade auf "Ein" steht."""
@@ -64,12 +66,8 @@ class ETABetriebsartSelect(
             self._tasten[modus]["ein_text"].strip().casefold()
         )
 
-    @property
-    def current_option(self) -> str | None:
-        """Die Taste, die auf "Ein" steht - oder "Aus", wenn keine."""
-        if self._erwartet is not None:
-            return self._erwartet
-
+    def _gemeldet(self) -> str | None:
+        """Die Betriebsart, die die Anlage zuletzt gemeldet hat."""
         zustaende = {modus: self._steht_auf_ein(modus) for modus in self._tasten}
         if all(zustand is None for zustand in zustaende.values()):
             return None
@@ -77,6 +75,18 @@ class ETABetriebsartSelect(
             if zustand:
                 return modus
         return BETRIEBSART_AUS
+
+    @property
+    def current_option(self) -> str | None:
+        """Die gewählte Betriebsart.
+
+        Nach dem Umschalten steht hier die erwartete, bis die Anlage sie
+        bestätigt - sie übernimmt einen Tastendruck nicht sofort in ihre
+        Antworten.
+        """
+        if self._erwartet is not None:
+            return self._erwartet
+        return self._gemeldet()
 
     async def async_select_option(self, option: str) -> None:
         """Schaltet die gewünschte Betriebsart an der Anlage.
@@ -103,6 +113,7 @@ class ETABetriebsartSelect(
             ) from err
 
         self._erwartet = option
+        self._widerspruch = 0
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
@@ -115,6 +126,16 @@ class ETABetriebsartSelect(
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Ab jetzt zählt wieder, was die Anlage meldet."""
-        self._erwartet = None
+        """Gibt die Vorwegnahme auf, sobald die Anlage bestätigt hat.
+
+        Bestätigt sie nicht, bekommt sie VERWERFEN_NACH Abfragen Zeit.
+        Danach zählt wieder, was sie meldet.
+        """
+        if self._erwartet is not None:
+            if self._gemeldet() == self._erwartet:
+                self._erwartet = None
+            else:
+                self._widerspruch += 1
+                if self._widerspruch >= VERWERFEN_NACH:
+                    self._erwartet = None
         super()._handle_coordinator_update()

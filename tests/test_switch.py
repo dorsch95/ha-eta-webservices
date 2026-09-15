@@ -179,17 +179,55 @@ async def test_schalter_meldet_sofort_zurueck(hass, entry):
     assert einer.is_on is False, "Schalter zeigt nicht sofort den neuen Zustand"
 
 
-async def test_nach_der_abfrage_gilt_wieder_die_anlage(hass, entry):
-    """Die Vorwegnahme darf einen abweichenden Anlagenzustand nicht überdecken."""
-    coordinator, schalter = await schalter_von(hass, entry)
-    if not schalter:
-        pytest.skip("im Fixture ist kein Schalter enthalten")
+async def test_traege_anlage_laesst_den_schalter_nicht_zurueckspringen(hass, entry):
+    """Der Fehler aus dem Betrieb: Schalter musste zweimal gedrückt werden.
 
+    Die Anlage übernimmt einen Schaltbefehl nicht sofort in ihre Antworten.
+    Wurde die Vorwegnahme schon bei der ersten Abfrage verworfen, sprang der
+    Schalter auf den alten Zustand zurück - obwohl der Befehl angekommen war
+    und die Heizung tatsächlich abgeschaltet hatte.
+    """
+    _, schalter = await schalter_von(hass, entry)
     einer = next(iter(schalter.values()))
+
+    hass.session.traege = True
     await einer.async_turn_off()
     assert einer.is_on is False
 
     einer._handle_coordinator_update()
+    assert einer.is_on is False, "Schalter springt zurück, obwohl geschaltet wurde"
+
+
+async def test_bestaetigung_der_anlage_beendet_die_vorwegnahme(hass, entry):
+    """Sobald die Anlage nachzieht, zählt wieder sie."""
+    _, schalter = await schalter_von(hass, entry)
+    einer = next(iter(schalter.values()))
+
+    await einer.async_turn_off()
+    einer._handle_coordinator_update()
+
+    assert einer._erwartet is None, "Vorwegnahme haftet, obwohl bestätigt"
+    assert einer.is_on is False
+
+
+async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry):
+    """Ein Befehl, den die Anlage nie ausführt, darf nicht ewig gezeigt werden.
+
+    Sonst zeigte der Schalter dauerhaft einen Zustand, den die Heizung nie
+    eingenommen hat.
+    """
+    from eta_webservices.switch import VERWERFEN_NACH
+
+    _, schalter = await schalter_von(hass, entry)
+    einer = next(iter(schalter.values()))
+
+    hass.session.traege = True
+    await einer.async_turn_off()
+
+    for _ in range(VERWERFEN_NACH):
+        assert einer.is_on is False
+        einer._handle_coordinator_update()
+
     assert einer.is_on is True, "Anlagenzustand setzt sich nicht wieder durch"
 
 

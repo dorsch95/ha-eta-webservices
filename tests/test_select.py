@@ -130,3 +130,37 @@ async def test_aus_und_zurueck(hass, entry):
     await betriebsart.async_select_option("heizen")
     await coordinator.async_refresh()
     assert betriebsart.current_option == "heizen"
+
+
+async def test_traege_anlage_laesst_die_betriebsart_nicht_zurueckspringen(hass, entry):
+    """Wie beim Schalter: Die Anlage übernimmt einen Tastendruck verzögert.
+
+    Wurde die Vorwegnahme schon bei der ersten Abfrage verworfen, sprang die
+    Auswahl auf die alte Betriebsart zurück, obwohl die Taste gedrückt war.
+    """
+    _, auswahl = await aufbauen(hass, entry)
+    betriebsart = auswahl["heizkreis_betriebsart"]
+
+    hass.session.traege = True
+    await betriebsart.async_select_option("absenken")
+    assert betriebsart.current_option == "absenken"
+
+    betriebsart._handle_coordinator_update()
+    assert betriebsart.current_option == "absenken", "Auswahl springt zurück"
+
+
+async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry):
+    """Eine Betriebsart, die die Anlage nie übernimmt, darf nicht haften."""
+    from eta_webservices.switch import VERWERFEN_NACH
+
+    _, auswahl = await aufbauen(hass, entry)
+    betriebsart = auswahl["heizkreis_betriebsart"]
+    vorher = betriebsart.current_option
+
+    hass.session.traege = True
+    await betriebsart.async_select_option("absenken")
+
+    for _ in range(VERWERFEN_NACH):
+        betriebsart._handle_coordinator_update()
+
+    assert betriebsart.current_option == vorher, "Anlage setzt sich nicht durch"

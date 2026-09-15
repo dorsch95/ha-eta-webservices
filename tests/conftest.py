@@ -118,6 +118,13 @@ class FakeSession:
         self.gesetzte_werte: list[tuple[str, str]] = []
         self.geschrieben: dict[str, str] = {}
         self.schreibbar = True
+        self.traege = False
+        """Wenn True, meldet die Anlage geschriebene Werte noch nicht zurück.
+
+        Echte Anlagen übernehmen einen Schaltbefehl nicht sofort in ihre
+        Antworten. Genau in dieser Lücke sprang der Schalter im Dashboard
+        auf den alten Zustand zurück.
+        """
 
     def _ausfall_pruefen(self, url: str) -> None:
         """Simuliert Netzwerkfehler - für jeden Endpunkt gleichermaßen."""
@@ -149,6 +156,15 @@ class FakeSession:
         self.gesetzte_werte.append((uri, wert))
         self._merken(uri, wert)
         return self._tracked(f'<eta version="1.0"><success uri="{uri}"/></eta>')
+
+    def _gemeldet(self, uri: str, vorgabe: str) -> str:
+        """Der Rohwert, den die Anlage gerade herausgibt.
+
+        Eine träge Anlage meldet noch den Zustand von vor dem Schaltbefehl.
+        """
+        if self.traege:
+            return vorgabe
+        return self.geschrieben.get(uri, vorgabe)
 
     def _merken(self, uri: str, wert: str) -> None:
         """Behält geschriebene Werte - und schaltet Modustasten gegenseitig ab.
@@ -205,13 +221,20 @@ class FakeSession:
             return {"value": "1000", "str_value": "1000", "unit": "kg"}
         if uri.endswith(("/12125", "/12126", "/12230")):
             vorgabe = "950" if uri.endswith("/12126") else "949"
-            roh = self.geschrieben.get(uri, vorgabe)
+            roh = self._gemeldet(uri, vorgabe)
             return {
                 "value": roh,
                 "str_value": "Ein" if roh == "950" else "Aus",
                 "text_offset": "950",
             }
-        if "2001" in uri or "12080" in uri:
+        if "12080" in uri:
+            roh = self._gemeldet(uri, "950")
+            return {
+                "value": roh,
+                "str_value": "Heizbetrieb" if roh == "950" else "Aus",
+                "text_offset": "950",
+            }
+        if "2001" in uri:
             return {"value": "950", "str_value": "Heizbetrieb", "text_offset": "950"}
         if "12000" in uri:
             return {"value": "1803", "str_value": "Heizen", "text_offset": "1802"}
