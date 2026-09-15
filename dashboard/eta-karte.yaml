@@ -549,20 +549,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 85%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_1
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_1
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -603,20 +589,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 85%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_2
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_2
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -657,20 +629,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 85%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_3
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_3
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -711,20 +669,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 85%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_4
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_4
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -1332,20 +1276,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 90%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_1
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_1
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -1386,20 +1316,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 90%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_2
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_2
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -1440,20 +1356,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 90%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_3
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_3
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -1494,20 +1396,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 90%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_4
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_4
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -2115,20 +2003,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 95%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_1
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_1
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -2169,20 +2043,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 95%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_2
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_2
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -2223,20 +2083,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 95%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_3
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_3
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state
@@ -2277,20 +2123,6 @@ cards:
               left: 50%
               color: '#d5d9de'
               font-size: 95%
-        - type: conditional
-          conditions:
-          - condition: state
-            entity: switch.eta_heizung_heizkreis_4
-            state_not: unknown
-          elements:
-          - type: state-icon
-            entity: switch.eta_heizung_heizkreis_4
-            tap_action:
-              action: toggle
-            style:
-              top: 92%
-              left: 86%
-              --mdc-icon-size: 30px
     - type: conditional
       conditions:
       - condition: state

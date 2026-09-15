@@ -96,7 +96,11 @@ def schalter(entity, top, left, groesse=30):
 
 
 def betriebsart(entity, top, schrift):
-    """Die Betriebsart als Text; ein Tippen öffnet die Auswahl."""
+    """Die Betriebsart als Text; ein Tippen öffnet die Auswahl.
+
+    Am Heizkreis gibt es bewusst kein Ein/Aus-Symbol daneben: "Aus" ist
+    einer der vier Einträge dieser Auswahl.
+    """
     return nur_wenn_vorhanden(
         {
             "type": "state-label",
@@ -249,7 +253,6 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_1_betriebsart", 23, schrift - 5),
-                    schalter("heizkreis_1", 92, 86),
                 ],
             ),
             komponente(
@@ -261,7 +264,6 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_2_betriebsart", 23, schrift - 5),
-                    schalter("heizkreis_2", 92, 86),
                 ],
             ),
             komponente(
@@ -273,7 +275,6 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_3_betriebsart", 23, schrift - 5),
-                    schalter("heizkreis_3", 92, 86),
                 ],
             ),
             komponente(
@@ -285,7 +286,6 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", None, "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_4_betriebsart", 23, schrift - 5),
-                    schalter("heizkreis_4", 92, 86),
                 ],
             ),
             komponente(

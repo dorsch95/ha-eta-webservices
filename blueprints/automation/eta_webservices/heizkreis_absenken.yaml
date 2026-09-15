@@ -1,8 +1,8 @@
 blueprint:
-  name: ETA Heizung - Heizkreis absenken bei offenem Fenster
+  name: ETA Heizung - Heizkreis auf ECO bei offenem Fenster
   description: >-
-    Setzt einen Heizkreis auf Absenken, solange ein Fenster oder eine Tür
-    offen steht, und danach zurück auf Automatik.
+    Setzt einen Heizkreis auf ECO, solange ein Fenster oder eine Tür offen
+    steht, und danach zurück auf Auto.
 
     Voraussetzung: Beim Einrichten der Integration muss das Schalten erlaubt
     sein, sonst gibt es die Betriebsart-Auswahl nicht.
@@ -27,7 +27,7 @@ blueprint:
             - domain: binary_sensor
     offen_seit:
       name: Erst nach
-      description: So lange muss das Fenster offen stehen, bevor abgesenkt wird.
+      description: So lange muss das Fenster offen stehen, bevor umgeschaltet wird.
       default:
         minutes: 3
       selector:
@@ -38,9 +38,9 @@ blueprint:
       selector:
         select:
           options:
-            - label: Automatik
+            - label: Auto
               value: automatik
-            - label: Heizen
+            - label: Dauer
               value: heizen
 
 mode: restart

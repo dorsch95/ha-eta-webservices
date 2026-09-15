@@ -231,11 +231,36 @@ async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, en
     assert einer.is_on is True, "Anlagenzustand setzt sich nicht wieder durch"
 
 
-async def test_beide_komponenten_bekommen_ihren_schalter(hass, entry):
+async def test_nur_der_kessel_bekommt_einen_schalter(hass, entry):
+    """Am Heizkreis gibt es stattdessen die Betriebsart-Auswahl.
+
+    Die Ein/Aus-Taste des Heizkreises wird trotzdem gesucht und geprüft -
+    die Auswahl schaltet damit auf "Aus". Sie ergibt nur keine eigene
+    Entität, sonst gäbe es zwei Bedienwege für dieselbe Sache.
+    """
     coordinator, schalter = await schalter_von(hass, entry)
+
     assert "kessel_schalter" in coordinator.switch_defs
     assert "heizkreis_schalter" in coordinator.switch_defs
-    assert set(schalter) == {"Kessel", "Heizkreis 1"}
+
+    assert set(schalter) == {"Kessel"}
+
+
+async def test_die_auswahl_kann_weiterhin_auf_aus_schalten(hass, entry):
+    """Ohne die Ein/Aus-Taste wäre "Aus" nicht erreichbar."""
+    from eta_webservices import select as select_platform
+
+    coordinator, _ = await schalter_von(hass, entry)
+    auswahlen: list = []
+    await select_platform.async_setup_entry(hass, entry, auswahlen.extend)
+    betriebsart = auswahlen[0]
+    betriebsart.async_write_ha_state = lambda: None
+
+    taste = coordinator.switch_defs["heizkreis_schalter"]
+    hass.session.gesetzte_werte.clear()
+    await betriebsart.async_select_option("aus")
+
+    assert hass.session.gesetzte_werte == [(taste["uri"], taste["aus_roh"])]
 
 
 async def test_ohne_freigabe_entsteht_kein_schalter(hass, entry):

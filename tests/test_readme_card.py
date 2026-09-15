@@ -312,13 +312,15 @@ def test_jede_genannte_entitaet_kann_entstehen():
     }
     genannt = set(
         re.findall(
-            r"\b(?:binary_sensor|sensor)\.eta_heizung_[a-z0-9_]+",
+            r"\b(?:binary_sensor|sensor|switch|select)\.eta_heizung_[a-z0-9_]+",
             readme_text() + KARTE.read_text(encoding="utf-8"),
         )
     )
 
     genannt = {name for name in genannt if not name.endswith("_")}
-    unbekannt = sorted(genannt - moeglich - ABSICHTLICHE_BEISPIELE)
+    unbekannt = sorted(
+        genannt - (moeglich - nur_intern(entitaeten)) - ABSICHTLICHE_BEISPIELE
+    )
     assert not unbekannt, f"README nennt Entitäten, die nicht entstehen: {unbekannt}"
 
 
@@ -399,6 +401,25 @@ def test_fub_standardnamen_stehen_in_der_tabelle():
         assert any(f"`{name}`" in text for name in namen), rolle
 
 
+def nur_intern(entitaeten: dict) -> set[str]:
+    """Entitäten, die zwar einen Namen haben, aber nie entstehen.
+
+    Die Ein/Aus-Tasten der Heizkreise werden gesucht und geprüft, weil die
+    Betriebsart-Auswahl sie zum Schalten auf "Aus" braucht. Eine eigene
+    Entität ergeben sie nicht - deshalb darf das README sie auch nicht
+    nennen.
+    """
+    from homeassistant.util import slugify
+
+    from eta_webservices.const import SWITCHES
+
+    return {
+        f"switch.{slugify('ETA Heizung ' + entitaeten['switch'][info['translation_key']]['name'])}"
+        for info in SWITCHES.values()
+        if info.get("nur_fuer_auswahl")
+    }
+
+
 def entitaetstabelle() -> list[str]:
     """Die Zeilen, die die Entitätsübersicht im README enthalten muss."""
     import json
@@ -426,7 +447,11 @@ def entitaetstabelle() -> list[str]:
         )
         for info in SENSORS.values()
     ]
-    zeilen += [zeile("switch", i["translation_key"], "Schalter") for i in SWITCHES.values()]
+    zeilen += [
+        zeile("switch", i["translation_key"], "Schalter")
+        for i in SWITCHES.values()
+        if not i.get("nur_fuer_auswahl")
+    ]
     zeilen += [zeile("select", i["translation_key"], "Auswahl") for i in SELECTS.values()]
     return zeilen
 

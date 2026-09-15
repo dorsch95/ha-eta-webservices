@@ -130,36 +130,36 @@
         "name": "Heating circuit 1 mode",
         "state": {
           "aus": "Off",
-          "automatik": "Automatic",
-          "heizen": "Heating",
-          "absenken": "Setback"
+          "automatik": "Auto",
+          "heizen": "Continuous",
+          "absenken": "ECO"
         }
       },
       "heizkreis2_betriebsart": {
         "name": "Heating circuit 2 mode",
         "state": {
           "aus": "Off",
-          "automatik": "Automatic",
-          "heizen": "Heating",
-          "absenken": "Setback"
+          "automatik": "Auto",
+          "heizen": "Continuous",
+          "absenken": "ECO"
         }
       },
       "heizkreis3_betriebsart": {
         "name": "Heating circuit 3 mode",
         "state": {
           "aus": "Off",
-          "automatik": "Automatic",
-          "heizen": "Heating",
-          "absenken": "Setback"
+          "automatik": "Auto",
+          "heizen": "Continuous",
+          "absenken": "ECO"
         }
       },
       "heizkreis4_betriebsart": {
         "name": "Heating circuit 4 mode",
         "state": {
           "aus": "Off",
-          "automatik": "Automatic",
-          "heizen": "Heating",
-          "absenken": "Setback"
+          "automatik": "Auto",
+          "heizen": "Continuous",
+          "absenken": "ECO"
         }
       }
     },

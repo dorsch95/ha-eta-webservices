@@ -130,36 +130,36 @@
         "name": "Heizkreis 1 Betriebsart",
         "state": {
           "aus": "Aus",
-          "automatik": "Automatik",
-          "heizen": "Heizen",
-          "absenken": "Absenken"
+          "automatik": "Auto",
+          "heizen": "Dauer",
+          "absenken": "ECO"
         }
       },
       "heizkreis2_betriebsart": {
         "name": "Heizkreis 2 Betriebsart",
         "state": {
           "aus": "Aus",
-          "automatik": "Automatik",
-          "heizen": "Heizen",
-          "absenken": "Absenken"
+          "automatik": "Auto",
+          "heizen": "Dauer",
+          "absenken": "ECO"
         }
       },
       "heizkreis3_betriebsart": {
         "name": "Heizkreis 3 Betriebsart",
         "state": {
           "aus": "Aus",
-          "automatik": "Automatik",
-          "heizen": "Heizen",
-          "absenken": "Absenken"
+          "automatik": "Auto",
+          "heizen": "Dauer",
+          "absenken": "ECO"
         }
       },
       "heizkreis4_betriebsart": {
         "name": "Heizkreis 4 Betriebsart",
         "state": {
           "aus": "Aus",
-          "automatik": "Automatik",
-          "heizen": "Heizen",
-          "absenken": "Absenken"
+          "automatik": "Auto",
+          "heizen": "Dauer",
+          "absenken": "ECO"
         }
       }
     },

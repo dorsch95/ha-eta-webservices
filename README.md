@@ -117,22 +117,18 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `select.eta_heizung_heizkreis_1_betriebsart` | Heizkreis 1 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_anforderung` | Heizkreis Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_vorlauftemperatur` | Heizkreis Vorlauftemperatur | °C |
-| `switch.eta_heizung_heizkreis_1` | Heizkreis 1 | Schalter |
 | **Heizkreis 2** | | |
 | `select.eta_heizung_heizkreis_2_betriebsart` | Heizkreis 2 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_2_anforderung` | Heizkreis 2 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_2_vorlauftemperatur` | Heizkreis 2 Vorlauftemperatur | °C |
-| `switch.eta_heizung_heizkreis_2` | Heizkreis 2 | Schalter |
 | **Heizkreis 3** | | |
 | `select.eta_heizung_heizkreis_3_betriebsart` | Heizkreis 3 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_3_anforderung` | Heizkreis 3 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_3_vorlauftemperatur` | Heizkreis 3 Vorlauftemperatur | °C |
-| `switch.eta_heizung_heizkreis_3` | Heizkreis 3 | Schalter |
 | **Heizkreis 4** | | |
 | `select.eta_heizung_heizkreis_4_betriebsart` | Heizkreis 4 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_4_anforderung` | Heizkreis 4 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_4_vorlauftemperatur` | Heizkreis 4 Vorlauftemperatur | °C |
-| `switch.eta_heizung_heizkreis_4` | Heizkreis 4 | Schalter |
 | **Pelletlager** | | |
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
 | `sensor.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen | kg |
@@ -291,9 +287,11 @@ Der Zähler *Verbrauch seit Aschebox leeren* wird dafür **nicht** verwendet: Er
 
 Schalter sind **standardmäßig ausgeschaltet** - sie schreiben in die Heizungssteuerung, und dazu soll niemand durch ein Update kommen. Einschalten kannst du sie beim Einrichten oder später unter **Konfigurieren**; dabei erscheint ein Hinweis, was das bedeutet.
 
-Ist der Schreibzugriff freigegeben und findet die Integration an einem Funktionsblock eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel` sowie `switch.eta_heizung_heizkreis_1` bis `switch.eta_heizung_heizkreis_4`.
+Ist der Schreibzugriff freigegeben und findet die Integration am Kessel eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel`.
 
-In der Dashboard-Karte erscheinen sie als **antippbares Symbol unten rechts** in der jeweiligen Kachel; die Betriebsart steht als Text darüber und öffnet beim Antippen die Auswahl. Beides erscheint nur, wenn es die Entität wirklich gibt - ohne freigegebenen Schreibzugriff bleibt die Kachel wie bisher.
+**Heizkreise bekommen keinen Ein/Aus-Schalter.** Dort gibt es stattdessen die Betriebsart-Auswahl, in der "Aus" einer von vier Einträgen ist - ein zusätzlicher Schalter daneben wäre ein zweiter Bedienweg für dieselbe Sache.
+
+In der Dashboard-Karte erscheint der Kesselschalter als **antippbares Symbol unten rechts**; auf den Heizkreis-Kacheln steht die Betriebsart als Text und öffnet beim Antippen die Auswahl. Beides erscheint nur, wenn es die Entität wirklich gibt - ohne freigegebenen Schreibzugriff bleibt die Kachel wie bisher.
 
 Ein Schalter entsteht nur, wenn **alle** folgenden Punkte zutreffen:
 
@@ -321,14 +319,16 @@ Findet die Integration am Heizkreis zusätzlich die Tasten **Auto**, **Heizen** 
 
 | Auswahl | Was geschieht |
 |---|---|
-| Automatik | Der Heizkreis folgt seinem Zeitprogramm |
-| Heizen | Dauerhaft Heizbetrieb |
-| Absenken | Dauerhaft Absenkbetrieb |
+| Auto | Der Heizkreis folgt seinem Zeitprogramm |
+| Dauer | Dauerhaft Heizbetrieb |
+| ECO | Dauerhaft Absenkbetrieb |
 | Aus | Der Heizkreis wird über seine Ein/Aus-Taste abgeschaltet |
+
+Die Bezeichnungen folgen dem Display der Anlage. In Automatisierungen zählen dagegen die internen Werte `automatik`, `heizen`, `absenken` und `aus`.
 
 An der Anlage sind das vier getrennte Tasten, die sich wie Radioknöpfe verhalten: Läuft der Heizkreis, steht genau eine der drei Betriebsarten auf "Ein"; ist er aus, stehen alle drei auf "Aus". Home Assistant fasst sie zu einer Auswahl zusammen. Wählst du aus dem Zustand "Aus" heraus eine Betriebsart, wird der Heizkreis vorher eingeschaltet - sonst bliebe die Auswahl wirkungslos.
 
-Die Auswahl entsteht nur zusammen mit dem Schalter desselben Heizkreises. Ohne ihn gäbe es keinen Weg zurück aus "Aus".
+Die Auswahl entsteht nur, wenn die Integration die Ein/Aus-Taste des Heizkreises findet - ohne sie gäbe es keinen Weg nach "Aus" und zurück. Als eigene Entität erscheint diese Taste aber nicht.
 
 ---
 

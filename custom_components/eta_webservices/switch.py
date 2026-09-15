@@ -34,11 +34,17 @@ async def async_setup_entry(
     entry: ETAConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Legt für jede schaltbare Funktion einen Schalter an."""
+    """Legt für jede schaltbare Funktion einen Schalter an.
+
+    Ausgenommen sind die Ein/Aus-Tasten der Heizkreise: Dort gibt es
+    stattdessen die Betriebsart-Auswahl, in der "Aus" einer von vier
+    Einträgen ist.
+    """
     coordinator = entry.runtime_data
     async_add_entities(
         ETASwitch(coordinator, key, definition)
         for key, definition in coordinator.switch_defs.items()
+        if not definition.get("nur_fuer_auswahl")
     )
 
 

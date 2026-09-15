@@ -125,27 +125,38 @@ SWITCHES = {
         "component": "hk1",
         "translation_key": "heizkreis_schalter",
         "icon": "mdi:radiator",
+        "nur_fuer_auswahl": True,
     },
     "heizkreis2_schalter": {
         "component": "hk2",
         "translation_key": "heizkreis2_schalter",
         "icon": "mdi:radiator",
+        "nur_fuer_auswahl": True,
     },
     "heizkreis3_schalter": {
         "component": "hk3",
         "translation_key": "heizkreis3_schalter",
         "icon": "mdi:radiator",
+        "nur_fuer_auswahl": True,
     },
     "heizkreis4_schalter": {
         "component": "hk4",
         "translation_key": "heizkreis4_schalter",
         "icon": "mdi:radiator",
+        "nur_fuer_auswahl": True,
     },
 }
 """Schaltbare Funktionen, je Komponente eine.
 
 Die zu schreibenden Rohwerte stehen nicht hier, sondern kommen aus
 /user/varinfo.
+
+"nur_fuer_auswahl" markiert die Ein/Aus-Tasten der Heizkreise. Sie werden
+gesucht und geprüft, ergeben aber keinen eigenen Schalter: Am Heizkreis
+gibt es vier Betriebsarten, von denen immer genau eine gilt, und "Aus"
+ist eine davon. Ein zusätzlicher Ein/Aus-Schalter daneben wäre ein
+zweiter Bedienweg für dieselbe Sache. Die Auswahl braucht die Taste
+trotzdem - sie schaltet damit auf "Aus".
 """
 
 BETRIEBSART_TASTEN = {
