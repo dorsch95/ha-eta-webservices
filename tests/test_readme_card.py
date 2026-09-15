@@ -520,3 +520,68 @@ def test_domain_und_geraetename_sind_unveraendert():
         wurzel / "custom_components" / "eta_webservices" / "coordinator.py"
     ).read_text(encoding="utf-8")
     assert 'name="ETA Heizung",' in koordinator
+
+
+def zugeschnitten(komponenten, fuehler):
+    """Erzeugt eine auf eine konkrete Anlage zugeschnittene Karte."""
+    from dashboard.karte_bauen import responsive_karte
+
+    return responsive_karte(komponenten, fuehler)
+
+
+def genannte_entitaeten(karte) -> set[str]:
+    """Alle Entitäten, die eine Karte überhaupt erwähnt - auch in Bedingungen."""
+    import re
+
+    import yaml
+
+    text = yaml.safe_dump(karte, allow_unicode=True, sort_keys=False)
+    return set(
+        re.findall(r"\b(?:sensor|select|switch|binary_sensor)\.eta_heizung_[a-z0-9_]+", text)
+    )
+
+
+def test_zuschnitt_laesst_fremde_komponenten_weg():
+    """Wer keinen zweiten Heizkreis hat, soll ihn auch nicht im YAML stehen haben.
+
+    Werkzeuge wie Spook lesen die Karte nach Entitäten ab und werten die
+    Bedingungen nicht aus. Sie melden deshalb jede Entität, die es auf
+    dieser Anlage nicht gibt - auch wenn sie sauber abgesichert ist.
+    """
+    karte = zugeschnitten(["kessel", "puffer", "fwm", "hk1", "lager", "solar"], 5)
+    genannt = genannte_entitaeten(karte)
+
+    assert not [e for e in genannt if "heizkreis_2" in e or "heizkreis_3" in e]
+    assert "sensor.eta_heizung_heizkreis_vorlauftemperatur" in genannt
+    assert "sensor.eta_heizung_solar_kollektortemperatur" in genannt
+
+
+def test_zuschnitt_nennt_nur_die_vorhandenen_pufferfuehler():
+    """Auch die Bedingung "Fühler N+1 fehlt" muss verschwinden.
+
+    Sie hält nur die Blöcke für verschiedene Fühlerzahlen auseinander.
+    Bleibt nur einer übrig, nennt sie sonst eine Entität, die es auf
+    dieser Anlage gerade nicht gibt.
+    """
+    genannt = genannte_entitaeten(zugeschnitten(["kessel", "puffer"], 5))
+    fuehler = sorted(int(e.rsplit("_", 1)[1]) for e in genannt if "puffer_fuhler" in e)
+
+    assert fuehler == [1, 2, 3, 4, 5]
+
+
+def test_zuschnitt_behaelt_alle_drei_bildschirmbreiten():
+    karte = zugeschnitten(["kessel", "puffer"], 3)
+    assert len(karte["cards"]) == 3
+    for variante in karte["cards"]:
+        assert variante["conditions"][0]["condition"] == "screen"
+        assert len(variante["card"]["cards"]) == 2
+
+
+def test_ohne_angaben_entsteht_die_universelle_karte():
+    """Die Karte im Repo muss zu jeder Anlage passen, ohne Nachfragen."""
+    from dashboard.karte_bauen import responsive_karte
+
+    import yaml
+
+    erzeugt = yaml.safe_dump(responsive_karte(), allow_unicode=True, sort_keys=False)
+    assert erzeugt == KARTE.read_text(encoding="utf-8")

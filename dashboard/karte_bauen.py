@@ -397,9 +397,73 @@ sind zusätzlich die Beschriftungen gekürzt.
 """
 
 
-def responsive_karte():
-    """Die fertige Karte: alle drei Breiten übereinander, eine sichtbar."""
-    return {
+MARKER = {
+    "kessel": "komponente_kessel",
+    "puffer": "komponente_pufferspeicher",
+    "fwm": "komponente_fwm",
+    "hk1": "komponente_heizkreis_1",
+    "hk2": "komponente_heizkreis_2",
+    "hk3": "komponente_heizkreis_3",
+    "hk4": "komponente_heizkreis_4",
+    "lager": "komponente_pelletlager",
+    "solar": "komponente_solar",
+}
+"""Welche Marker-Entität zu welcher Komponente gehört.
+
+Die Schlüssel sind dieselben, die im Einrichtungsdialog angekreuzt werden.
+"""
+
+
+def _passt_zur_anlage(kachel, behalten):
+    """Sagt, ob eine Kachel zu den gewählten Komponenten gehört."""
+    marker = kachel["conditions"][0]["entity"].split("eta_heizung_", 1)[1]
+    return marker in behalten
+
+
+def _ist_fuehlergruppe(element):
+    """Erkennt einen der Blöcke, die je nach Fühlerzahl greifen."""
+    return element.get("type") == "conditional" and all(
+        "puffer_fuhler" in bedingung["entity"] for bedingung in element["conditions"]
+    )
+
+
+def _fuehler_ausduennen(kachel, anzahl):
+    """Behält nur den Block für die tatsächliche Zahl der Pufferfühler.
+
+    Danach entfällt auch die Bedingung "Fühler N+1 darf es nicht geben":
+    Sie hält nur die Blöcke auseinander, und es bleibt ja nur einer. So
+    nennt die Karte am Ende ausschließlich Entitäten, die es auf dieser
+    Anlage wirklich gibt.
+    """
+    behalten = []
+    for element in kachel["card"]["elements"]:
+        if not _ist_fuehlergruppe(element):
+            behalten.append(element)
+            continue
+        if len(element["elements"]) != anzahl:
+            continue
+        element["conditions"] = [
+            bedingung
+            for bedingung in element["conditions"]
+            if bedingung.get("state_not") == "unknown"
+        ]
+        behalten.append(element)
+    kachel["card"]["elements"] = behalten
+
+
+def responsive_karte(komponenten=None, fuehler=None):
+    """Die fertige Karte: alle drei Breiten übereinander, eine sichtbar.
+
+    Ohne Angaben entsteht die universelle Karte, die jede Anlage abdeckt -
+    die gehört ins Repo, weil sie ohne Nachfragen zu jedem passt.
+
+    Wer seine Anlage kennt, kann sie zuschneiden: "komponenten" nimmt die
+    Schlüssel aus MARKER, "fuehler" die tatsächliche Zahl der
+    Pufferfühler. Das kürzt die Karte erheblich und lässt Werkzeuge wie
+    Spook verstummen, die Entitäten bemängeln, die es auf dieser Anlage
+    nicht gibt.
+    """
+    karte = {
         "type": "vertical-stack",
         "cards": [
             {
@@ -410,12 +474,57 @@ def responsive_karte():
             for abfrage, spalten, schrift, kurz in VARIANTEN
         ],
     }
+    if komponenten is None and fuehler is None:
+        return karte
+
+    behalten = {MARKER[k] for k in komponenten} if komponenten else set(MARKER.values())
+    for variante in karte["cards"]:
+        gitter = variante["card"]
+        gitter["cards"] = [k for k in gitter["cards"] if _passt_zur_anlage(k, behalten)]
+        if fuehler:
+            for kachel in gitter["cards"]:
+                _fuehler_ausduennen(kachel, fuehler)
+    return karte
+
+
+def _argumente():
+    """Liest Komponenten und Fühlerzahl von der Kommandozeile."""
+    import argparse
+
+    p = argparse.ArgumentParser(
+        description="Erzeugt die Dashboard-Karte für die ETA-Integration.",
+        epilog="Ohne Angaben entsteht die universelle Karte für jede Anlage.",
+    )
+    p.add_argument(
+        "--komponenten",
+        help="Kommaliste der vorhandenen Komponenten, z.B. "
+        "kessel,puffer,fwm,hk1,lager,solar",
+    )
+    p.add_argument(
+        "--fuehler",
+        type=int,
+        help=f"Zahl der Pufferfühler ({PUFFER_MIN} bis {PUFFER_MAX})",
+    )
+    p.add_argument("--ziel", help="Zieldatei, sonst dashboard/eta-karte.yaml")
+    return p.parse_args()
 
 
 if __name__ == "__main__":
-    ziel = pathlib.Path(__file__).with_name("eta-karte.yaml")
-    ziel.write_text(
-        yaml.safe_dump(responsive_karte(), allow_unicode=True, sort_keys=False),
-        encoding="utf-8",
+    args = _argumente()
+    komponenten = args.komponenten.split(",") if args.komponenten else None
+    if komponenten:
+        unbekannt = [k for k in komponenten if k not in MARKER]
+        if unbekannt:
+            raise SystemExit(
+                f"Unbekannte Komponente: {', '.join(unbekannt)}\n"
+                f"Möglich sind: {', '.join(MARKER)}"
+            )
+    if args.fuehler and not PUFFER_MIN <= args.fuehler <= PUFFER_MAX:
+        raise SystemExit(f"Pufferfühler müssen zwischen {PUFFER_MIN} und {PUFFER_MAX} liegen")
+
+    ziel = pathlib.Path(args.ziel) if args.ziel else pathlib.Path(__file__).with_name("eta-karte.yaml")
+    inhalt = yaml.safe_dump(
+        responsive_karte(komponenten, args.fuehler), allow_unicode=True, sort_keys=False
     )
-    print(f"{ziel.name} neu erzeugt")
+    ziel.write_text(inhalt, encoding="utf-8")
+    print(f"{ziel.name} neu erzeugt: {len(inhalt.splitlines())} Zeilen")

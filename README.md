@@ -248,6 +248,23 @@ Denk daran, die Änderung in allen drei Bildschirm-Varianten zu machen - oder pa
 python dashboard/karte_bauen.py
 ```
 
+### Kürzere Karte für die eigene Anlage
+
+Die mitgelieferte Karte passt zu **jeder** Anlage und ist deshalb lang: Sie enthält alle neun Komponenten und alle Fühlerzahlen von drei bis acht. Wer seine Anlage kennt, kann sich eine zugeschnittene erzeugen:
+
+```bash
+python dashboard/karte_bauen.py \
+  --komponenten kessel,puffer,fwm,hk1,lager,solar \
+  --fuehler 5 \
+  --ziel meine-karte.yaml
+```
+
+Aus 3239 Zeilen werden so je nach Anlage 500 bis 1200. Die Karte sieht genau gleich aus - sie nennt nur keine Entitäten mehr, die es bei dir nicht gibt.
+
+Das ist auch die Antwort, wenn dich Werkzeuge wie [Spook](https://spook.boo) auf *"unbekannte Entitäten"* hinweisen: Die universelle Karte nennt bewusst auch Heizkreis 2 bis 4 und die Pufferfühler 6 bis 8, jeweils abgesichert durch eine Bedingung. Spook liest das YAML aber nur nach Namen ab und wertet die Bedingungen nicht aus. Angezeigt wird trotzdem nichts Falsches - die zugeschnittene Karte macht die Meldung nur still.
+
+Mögliche Komponenten: `kessel`, `puffer`, `fwm`, `hk1` bis `hk4`, `lager`, `solar`. Baust du später um, einfach neu erzeugen.
+
 > 💡 `top`/`left` verankern in Lovelace die **Mitte** des Elements. Die linksbündigen Beschriftungen im Kessel-Block nutzen deshalb `transform: 'translate(0, -50%)'`. Alle Werte lassen sich im visuellen Editor per Drag & Drop feinjustieren.
 
 ---
