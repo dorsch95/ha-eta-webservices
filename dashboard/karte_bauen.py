@@ -113,6 +113,68 @@ def betriebsart(entity, top, schrift):
     )
 
 
+PUFFER_OBEN = 36
+PUFFER_UNTEN = 88
+PUFFER_MIN = 3
+PUFFER_MAX = 8
+
+
+def puffer_fuehler(anzahl, schrift):
+    """Zeigt genau dann N Fühler, wenn die Anlage N Fühler hat.
+
+    Die Integration legt je gefundenem Fühler eine Entität an - wie viele
+    das sind, weiß erst die laufende Anlage. Für jede mögliche Anzahl gibt
+    es deshalb einen Block, der genau dann greift, wenn Fühler N vorhanden
+    und Fühler N+1 nicht vorhanden ist. Home Assistant wertet eine
+    fehlende Entität als "unknown".
+
+    Die Fühler sitzen gleichmäßig verteilt zwischen Speicheroberkante und
+    -unterkante, denn Fühler 1 misst oben und der letzte unten.
+    """
+    bedingungen = [
+        {
+            "condition": "state",
+            "entity": f"sensor.eta_heizung_puffer_fuhler_{i}",
+            "state_not": "unknown",
+        }
+        for i in range(1, anzahl + 1)
+    ]
+    if anzahl < PUFFER_MAX:
+        bedingungen.append(
+            {
+                "condition": "state",
+                "entity": f"sensor.eta_heizung_puffer_fuhler_{anzahl + 1}",
+                "state": "unknown",
+            }
+        )
+
+    abstand = (PUFFER_UNTEN - PUFFER_OBEN) / (anzahl - 1)
+    return {
+        "type": "conditional",
+        "conditions": bedingungen,
+        "elements": [
+            label(
+                f"puffer_fuhler_{i}",
+                None,
+                "weiss",
+                round(PUFFER_OBEN + abstand * (i - 1), 1),
+                50,
+                schrift,
+            )
+            for i in range(1, anzahl + 1)
+        ],
+    }
+
+
+def puffer_schrift(anzahl, schrift):
+    """Je mehr Fühler, desto weniger Platz je Zeile."""
+    if anzahl <= 4:
+        return schrift + 10
+    if anzahl <= 6:
+        return schrift + 5
+    return schrift
+
+
 def komponente(marker, zustand, bild, elemente):
     """Eine Kachel, die nur erscheint, wenn es die Komponente gibt."""
     return {
@@ -160,9 +222,10 @@ def grid(spalten, schrift, kurz):
                 [
                     label("puffer_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
                           "hell", 8, 50, schrift + 5),
-                    label("puffer_fuhler_1", None, "weiss", 36, 50, schrift + 10),
-                    label("puffer_fuhler_2", None, "weiss", 62, 50, schrift + 10),
-                    label("puffer_fuhler_3", None, "weiss", 88, 50, schrift + 10),
+                    *(
+                        puffer_fuehler(anzahl, puffer_schrift(anzahl, schrift))
+                        for anzahl in range(PUFFER_MIN, PUFFER_MAX + 1)
+                    ),
                 ],
             ),
             komponente(

@@ -278,21 +278,13 @@ Die Beschriftungen stecken **nicht** in den Grafiken, sondern kommen aus `prefix
 
 > ℹ️ Die Entitäts-IDs in der Karte gelten für eine **deutschsprachige** Home-Assistant-Installation. Home Assistant bildet Entitäts-IDs aus dem übersetzten Namen; bei englischer Spracheinstellung heißt die Kesseltemperatur entsprechend `sensor.eta_heizung_boiler_temperature`. Deine bestehenden Entitäten behalten ihre ID in jedem Fall.
 
-### Mehr als drei Pufferfühler
+### Pufferfühler
 
-Die Karte zeigt drei Fühler. Hat deine Anlage mehr (PufferFlex kann bis zu 8), ergänze in **jedem** der drei Puffer-Blöcke weitere Zeilen und verteile die `top`-Werte gleichmäßig zwischen 36 % und 88 %:
+Die Karte zeigt **so viele Fühler, wie deine Anlage hat** - drei bis acht. Du musst nichts anpassen.
 
-```yaml
-- type: state-label
-  entity: sensor.eta_heizung_puffer_fuhler_4
-  style:
-    top: 75%
-    left: 50%
-    color: '#ffffff'
-    font-size: 110%
-```
+Dahinter steckt für jede mögliche Anzahl ein eigener Block, der genau dann greift, wenn Fühler *N* vorhanden und Fühler *N+1* nicht vorhanden ist. Die Fühler verteilen sich dabei gleichmäßig über die Speicherhöhe, denn Fühler 1 misst oben und der letzte unten - beide tragen das Attribut `position` mit `oben` bzw. `unten`.
 
-Wie viele du hast, steht unter **Entwicklerwerkzeuge -> Zustände** (`sensor.eta_heizung_puffer_fuhler_`). Fühler 1 ist immer oben, der letzte immer unten - beide tragen das Attribut `position` mit `oben` bzw. `unten`.
+Wie viele du hast, steht unter **Entwicklerwerkzeuge -> Zustände** (`sensor.eta_heizung_puffer_fuhler_`).
 
 ### Beschriftungen ändern
 

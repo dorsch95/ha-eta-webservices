@@ -192,17 +192,86 @@ async def test_jede_referenzierte_entitaet_existiert(hass, entry, karte):
 def test_nicht_immer_vorhandene_elemente_sind_abgesichert(karte):
     """Wer eine Entität nennt, die fehlen kann, muss sie absichern.
 
-    Schalter und Betriebsart entstehen nur bei freigegebenem
-    Schreibzugriff. Sie müssen deshalb in einer Bedingung auf genau ihre
-    eigene Entität stecken.
+    Schalter, Betriebsart und die Pufferfühler ab dem vierten entstehen
+    nicht auf jeder Anlage. Jede Entität, die in einer Bedingung genannt
+    wird, muss deshalb durch eine Bedingung derselben Gruppe als
+    vorhanden verbürgt sein - "state_not: unknown", denn Home Assistant
+    wertet eine fehlende Entität als "unknown".
     """
     for element in alle_elemente(karte):
         if element["type"] != "conditional":
             continue
-        bedingung = element["conditions"][0]
-        assert bedingung["state_not"] == "unknown"
+
+        verbuergt = {
+            bedingung["entity"]
+            for bedingung in element["conditions"]
+            if bedingung.get("state_not") == "unknown"
+        }
+        assert verbuergt, element["conditions"]
+
         for innen in element["elements"]:
-            assert innen["entity"] == bedingung["entity"], innen
+            assert innen["entity"] in verbuergt, innen
+
+
+def test_puffer_zeigt_fuer_jede_fuehleranzahl_genau_eine_gruppe(karte):
+    """Bei fünf Fühlern müssen fünf erscheinen, nicht die obersten drei.
+
+    Die Blöcke schließen sich gegenseitig aus: Der Block für N verlangt,
+    dass Fühler N vorhanden und Fühler N+1 nicht vorhanden ist. Ohne
+    diesen zweiten Teil griffen bei fünf Fühlern auch die Blöcke für drei
+    und vier, und die Beschriftungen lägen übereinander.
+    """
+    from dashboard.karte_bauen import PUFFER_MAX, PUFFER_MIN
+
+    gruppen = [
+        element
+        for element in alle_elemente(karte)
+        if element["type"] == "conditional"
+        and all(
+            "puffer_fuhler" in b["entity"] for b in element["conditions"]
+        )
+    ]
+    varianten = PUFFER_MAX - PUFFER_MIN + 1
+    assert len(gruppen) == varianten * 3, "je Bildschirmbreite eine Gruppe je Anzahl"
+
+    for anzahl in range(PUFFER_MIN, PUFFER_MAX + 1):
+        passend = [g for g in gruppen if len(g["elements"]) == anzahl]
+        assert len(passend) == 3, anzahl
+        gruppe = passend[0]
+
+        vorhanden = [
+            b["entity"] for b in gruppe["conditions"] if b.get("state_not") == "unknown"
+        ]
+        fehlend = [b["entity"] for b in gruppe["conditions"] if b.get("state") == "unknown"]
+
+        assert len(vorhanden) == anzahl
+        assert vorhanden[-1].endswith(f"_{anzahl}")
+        if anzahl < PUFFER_MAX:
+            assert fehlend == [f"sensor.eta_heizung_puffer_fuhler_{anzahl + 1}"]
+        else:
+            assert fehlend == []
+
+
+def test_puffer_fuehler_sitzen_gleichmaessig_im_speicher(karte):
+    """Fühler 1 misst oben, der letzte unten - das muss das Bild zeigen."""
+    from dashboard.karte_bauen import PUFFER_MAX, PUFFER_MIN, PUFFER_OBEN, PUFFER_UNTEN
+
+    for element in alle_elemente(karte):
+        if element["type"] != "conditional":
+            continue
+        if not all("puffer_fuhler" in b["entity"] for b in element["conditions"]):
+            continue
+
+        hoehen = [float(e["style"]["top"].rstrip("%")) for e in element["elements"]]
+        assert hoehen[0] == PUFFER_OBEN
+        assert hoehen[-1] == PUFFER_UNTEN
+        assert hoehen == sorted(hoehen), "Fühler müssen von oben nach unten laufen"
+
+        if len(hoehen) > 2:
+            abstaende = [b - a for a, b in zip(hoehen, hoehen[1:])]
+            assert max(abstaende) - min(abstaende) < 0.3, abstaende
+
+    assert PUFFER_MIN < PUFFER_MAX
 
 
 ABSICHTLICHE_BEISPIELE = {
