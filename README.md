@@ -11,7 +11,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 
 📈 Bei Pelletkesseln steht der Verbrauch als Energiewert bereit und lässt sich ins **Energie-Dashboard** von Home Assistant aufnehmen.
 
-🔎 Die internen ETA-Objekt-URIs (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Beim Einrichten ruft die Integration deshalb einmalig den Menübaum der Anlage (`/user/menu`) ab und ermittelt die passenden URIs automatisch anhand ihrer **Bezeichnungen** (z. B. "Kessel → Eingänge → Rücklauf"), die im Gegensatz zu den Zahlen-IDs stabil bleiben. Eine manuelle Eingabe von URIs ist damit nicht nötig. Im Code steht **keine einzige feste URI** - eine Adresse von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen. Was der Menübaum deiner Anlage nicht hergibt, bekommt trotzdem eine Entität; sie zeigt dann dauerhaft **"-"**. Findet sich zu einer ganzen Komponente nichts, meldet sich Home Assistant zusätzlich mit einem Reparatur-Hinweis.
+🔎 **Keine URIs von Hand.** Die internen ETA-Adressen (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Die Integration liest deshalb beim Einrichten einmalig den Menübaum (`/user/menu`) und sucht die Werte über ihre **Bezeichnungen** ("Kessel → Eingänge → Rücklauf"), die stabil bleiben. Im Code steht **keine einzige feste Adresse** - eine von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen.
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
@@ -34,15 +34,19 @@ Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` 
 
 ## 🚀 Installation via HACS
 
-Da es sich um eine benutzerdefinierte Integration handelt, fügst du sie wie folgt in HACS hinzu:
+1. **HACS** öffnen, nach **ETA Heiztechnik Web Service** suchen und **Herunterladen**.
+2. Home Assistant vollständig neu starten.
 
-1. Navigiere in Home Assistant zu **HACS** -> **Integrationen**.
-2. Klicke oben rechts auf die drei Punkte (`...`) und wähle **Benutzerdefinierte Repositories** (Custom Repositories).
-3. Füge die URL dieses GitHub-Repositories ein:
-   `https://github.com/dorsch95/ha-eta-webservices`
-4. Wähle als Kategorie **Integration** und klicke auf **Hinzufügen**.
-5. Suche nach **ETA Heiztechnik Web Service** und klicke auf **Herunterladen**.
-6. **Wichtig:** Starte Home Assistant nach dem Download vollständig neu!
+<details>
+<summary>Nicht gefunden? So fügst du das Repository von Hand hinzu</summary>
+
+Solange die Aufnahme in den HACS-Store noch läuft, geht es über ein benutzerdefiniertes Repository:
+
+1. In **HACS** oben rechts auf die drei Punkte (`...`) -> **Benutzerdefinierte Repositories**.
+2. `https://github.com/dorsch95/ha-eta-webservices` einfügen, Kategorie **Integration**, **Hinzufügen**.
+3. Danach wie oben: suchen, herunterladen, Home Assistant neu starten.
+
+</details>
 
 ---
 
@@ -68,21 +72,15 @@ Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Gerät
 
 ## 📊 Unterstützte Sensoren
 
-Alle Entitäten werden einem gemeinsamen Gerät ("ETA Heizung") zugeordnet und (sofern physisch an deiner Anlage angeschlossen bzw. per Menübaum gefunden) automatisch ausgelesen:
+Alle Entitäten hängen an einem gemeinsamen Gerät ("ETA Heizung"). Die vollständige Liste steht unten; erklärungsbedürftig sind nur diese:
 
-* **🔥 Kessel & Umgebung:** Kesseltemperatur, Kessel-Solltemperatur, Rücklauftemperatur, Kesseldruck (bar), Restsauerstoff (%), Außentemperatur, Inhalt Pellet-Tagesbehälter (kg) sowie der **Kesselzustand** als Text (*Heizen*, *Aus* usw.).
-* **🗑️ Aschebox:** Verbrauch seit der letzten Leerung (kg) und der Schwellwert, ab dem geleert werden soll (kg) - plus ein kombinierter Sensor `sensor.eta_heizung_aschebox_status` im Format "459/1000kg" für die Dashboard-Anzeige.
-* **📊 Verbrauch:** Gesamtverbrauch der Anlage (kg), Verbrauch seit der letzten Entaschung (kg) und der umgerechnete Energieverbrauch (kWh). Alle liefern Langzeitstatistik, sind also über Monate auswertbar.
-* **🌾 Pelletlager:** Vorrat im Lagerraum, die an der Anlage eingestellte Warngrenze, das Fassungsvermögen und der Zustand der Austragung. Dazu `binary_sensor.eta_heizung_pelletvorrat_niedrig`, sobald der Vorrat die Warngrenze erreicht - mit dem Füllstand in Prozent als Attribut.
-* **🛢️ Pufferspeicher:** Ladezustand (%) sowie **alle tatsächlich vorhandenen Pufferfühler** (PufferFlex hat je nach Anlage 3 bis 8). Die Anzahl erkennt die Integration selbst über den Menübaum; Fühler 1 trägt das Attribut `position: oben`, der zuletzt nummerierte `position: unten`.
-* **♨️ Heizkreis 1 bis 4:** jeweils Vorlauftemperatur und Anforderung (Zustandstext wie *Aus* oder *Heizbetrieb*). Heizkreis 3 und 4 sind für größere Anlagen gedacht; kreuze nur an, was du wirklich hast.
-* **☀️ Solaranlage:** Kollektortemperatur. Bei einer Anlage **mit Wärmemengenmessung** zusätzlich Leistung (kW), Wärmemenge (kWh), Ertrag heute und Ertrag gestern - siehe unten.
-* **🚰 Frischwasser-/Warmwassermodul (FWM oder WW):** Warmwassertemperatur und der Zustand der **Zirkulationspumpe** - also ob sie gerade läuft, nicht wie warm das Zirkulationswasser ist. Hat deine Anlage keine Zirkulationspumpe, zeigt der Sensor `-`.
-* **🚨 Störung** (im Setup abwählbar): `binary_sensor.eta_heizung_storung` ist an, sobald mindestens eine Störung anliegt - damit reicht in einer Automatisierung ein Gerätetrigger, statt eine Zahl mit Null zu vergleichen.
-* **🗑️ Aschebox leeren:** `binary_sensor.eta_heizung_aschebox_leeren` ist an, sobald seit der letzten Leerung so viel verbrannt wurde, wie an der Anlage als Schwelle eingestellt ist. Beide Werte kommen von der Heizung, hier wird nur verglichen.
-* **🚨 Aktive Fehler** (im Setup abwählbar): Anzahl der anstehenden Störungen. Die Meldungen selbst stehen in den Attributen, mit Funktionsblock, Priorität und Zeitpunkt - etwa *"Wasserdruck zu niedrig 1,20 bar"* mit dem Hinweis *"Heizungswasser nachfüllen!"*.
-* **🔌 Schalter** für Kessel und Heizkreise sowie je Heizkreis eine **Betriebsart** (Automatik, Heizen, Absenken, Aus), sofern deine Anlage sie zulässt - siehe unten.
-* **🧩 Komponenten-Marker** (Diagnose): je gewählter Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
+* **Pufferfühler:** alle tatsächlich vorhandenen (PufferFlex hat 3 bis 8). Die Anzahl erkennt die Integration selbst; Fühler 1 trägt das Attribut `position: oben`, der letzte `position: unten`.
+* **Zirkulationspumpe:** ob sie gerade läuft - nicht, wie warm das Zirkulationswasser ist.
+* **`sensor.eta_heizung_aschebox_status`:** Verbrauch und Schwelle in einem Text ("459/1000kg"), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
+* **`sensor.eta_heizung_aktive_fehler`:** Anzahl der Störungen, die Meldungen selbst in den Attributen.
+* **Drei Melder** (`binary_sensor`): Störung liegt an, Aschebox fällig, Pelletvorrat niedrig.
+* **Schalter und Betriebsart** entstehen nur bei freigegebenem Schreibzugriff - siehe unten.
+* **Komponenten-Marker** (Diagnose): je Komponente eine Entität, über die die Dashboard-Karte erkennt, was vorhanden ist.
 
 Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast.
 
@@ -95,10 +93,9 @@ Innerhalb einer angekreuzten Komponente gibt es jeden Sensor **immer**. Findet d
 
 Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalter und Betriebsart nur bei freigegebenem Schreibzugriff.
 
-**Kessel**
-
 | Entität | Bedeutung | Einheit |
 |---|---|---|
+| **Kessel** | | |
 | `sensor.eta_heizung_aschebox_leeren_nach` | Aschebox Leeren nach | kg |
 | `sensor.eta_heizung_aschebox_verbrauch_seit_leerung` | Aschebox Verbrauch seit Leerung | kg |
 | `sensor.eta_heizung_aussentemperatur` | Außentemperatur | °C |
@@ -112,87 +109,51 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_rucklauftemperatur` | Rücklauftemperatur | °C |
 | `sensor.eta_heizung_verbrauch_seit_entaschung` | Verbrauch seit Entaschung | kg |
 | `switch.eta_heizung_kessel` | Kessel | Schalter |
-
-**Pufferspeicher**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Pufferspeicher** | | |
 | `sensor.eta_heizung_puffer_ladezustand` | Puffer Ladezustand | % |
-
-**FWM**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **FWM** | | |
 | `sensor.eta_heizung_fwm_warmwassertemperatur` | FWM Warmwassertemperatur | °C |
 | `sensor.eta_heizung_fwm_zirkulationspumpe` | FWM Zirkulationspumpe | Text |
-
-**Heizkreis 1**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Heizkreis 1** | | |
 | `select.eta_heizung_heizkreis_1_betriebsart` | Heizkreis 1 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_anforderung` | Heizkreis Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_vorlauftemperatur` | Heizkreis Vorlauftemperatur | °C |
 | `switch.eta_heizung_heizkreis_1` | Heizkreis 1 | Schalter |
-
-**Heizkreis 2**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Heizkreis 2** | | |
 | `select.eta_heizung_heizkreis_2_betriebsart` | Heizkreis 2 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_2_anforderung` | Heizkreis 2 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_2_vorlauftemperatur` | Heizkreis 2 Vorlauftemperatur | °C |
 | `switch.eta_heizung_heizkreis_2` | Heizkreis 2 | Schalter |
-
-**Heizkreis 3**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Heizkreis 3** | | |
 | `select.eta_heizung_heizkreis_3_betriebsart` | Heizkreis 3 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_3_anforderung` | Heizkreis 3 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_3_vorlauftemperatur` | Heizkreis 3 Vorlauftemperatur | °C |
 | `switch.eta_heizung_heizkreis_3` | Heizkreis 3 | Schalter |
-
-**Heizkreis 4**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Heizkreis 4** | | |
 | `select.eta_heizung_heizkreis_4_betriebsart` | Heizkreis 4 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_4_anforderung` | Heizkreis 4 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_4_vorlauftemperatur` | Heizkreis 4 Vorlauftemperatur | °C |
 | `switch.eta_heizung_heizkreis_4` | Heizkreis 4 | Schalter |
-
-**Pelletlager**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Pelletlager** | | |
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
 | `sensor.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen | kg |
 | `sensor.eta_heizung_lager_vorrat` | Lager Vorrat | kg |
 | `sensor.eta_heizung_lager_warngrenze` | Lager Warngrenze | kg |
-
-**Solar**
-
-| Entität | Bedeutung | Einheit |
-|---|---|---|
+| **Solar** | | |
 | `sensor.eta_heizung_solar_ertrag_gestern` | Solar Ertrag gestern | kWh |
 | `sensor.eta_heizung_solar_ertrag_heute` | Solar Ertrag heute | kWh |
 | `sensor.eta_heizung_solar_kollektortemperatur` | Solar Kollektortemperatur | °C |
 | `sensor.eta_heizung_solar_leistung` | Solar Leistung | kW |
 | `sensor.eta_heizung_solar_warmemenge` | Solar Wärmemenge | kWh |
-
-**Unabhängig von den Komponenten**
-
-| Entität | Bedeutung |
-|---|---|
-| `sensor.eta_heizung_aschebox_status` | "459/1000kg" für die Dashboard-Anzeige |
-| `sensor.eta_heizung_pellet_energieverbrauch_gesamt` | Gesamtverbrauch in kWh fürs Energie-Dashboard |
-| `sensor.eta_heizung_aktive_fehler` | Anzahl der anstehenden Störungen |
-| `sensor.eta_heizung_puffer_fuhler_1` … `_8` | je gefundenem Pufferfühler einer |
-| `sensor.eta_heizung_komponente_*` | Marker je Komponente für die Dashboard-Karte |
-| `binary_sensor.eta_heizung_storung` | an, sobald eine Störung ansteht |
-| `binary_sensor.eta_heizung_aschebox_leeren` | an, sobald die Schwelle erreicht ist |
-| `binary_sensor.eta_heizung_pelletvorrat_niedrig` | an, sobald der Vorrat die Warngrenze erreicht |
+| **Unabhängig von den Komponenten** | | |
+| `sensor.eta_heizung_aschebox_status` | "459/1000kg" für die Dashboard-Anzeige | |
+| `sensor.eta_heizung_pellet_energieverbrauch_gesamt` | Gesamtverbrauch in kWh fürs Energie-Dashboard | |
+| `sensor.eta_heizung_aktive_fehler` | Anzahl der anstehenden Störungen | |
+| `sensor.eta_heizung_puffer_fuhler_1` … `_8` | je gefundenem Pufferfühler einer | |
+| `sensor.eta_heizung_komponente_*` | Marker je Komponente für die Dashboard-Karte | |
+| `binary_sensor.eta_heizung_storung` | an, sobald eine Störung ansteht | |
+| `binary_sensor.eta_heizung_aschebox_leeren` | an, sobald die Schwelle erreicht ist | |
+| `binary_sensor.eta_heizung_pelletvorrat_niedrig` | an, sobald der Vorrat die Warngrenze erreicht | |
 
 </details>
 
@@ -264,13 +225,9 @@ Alle drei Varianten sind in einer echten Home-Assistant-Instanz bei 412, 900, 11
 <details>
 <summary><b>Wie das funktioniert</b> (aufklappen)</summary>
 
-Die Karte ist ein `vertical-stack` aus drei `conditional`-Karten mit `condition: screen`. Angezeigt wird nur die Variante, die zur aktuellen Fensterbreite passt; die anderen beiden blendet Home Assistant aus.
+Ein `vertical-stack` aus drei `conditional`-Karten mit `condition: screen` - sichtbar ist nur die zur Fensterbreite passende. Jede davon ist ein `grid` mit fester Spaltenzahl, in dem jede Komponente wiederum eine `conditional`-Karte ist, die auf ihre Marker-Entität prüft (`sensor.eta_heizung_komponente_*`). Ausgeblendete Karten fallen per `display: none` aus dem Grid, die übrigen rücken nach und behalten dabei ihre Größe.
 
-Jede Variante ist ein `grid` mit fester Spaltenzahl. Darin ist jede Komponente wiederum eine `conditional`-Karte, die auf eine Marker-Entität prüft (`sensor.eta_heizung_komponente_*`). Diese Marker legt die Integration nur für die Komponenten an, die du ausgewählt hast.
-
-Blendet `conditional` eine Komponente aus, setzt Home Assistant `display: none` - die Karte fällt aus dem Grid-Layout, und die verbleibenden Komponenten rücken nach. Weil das Grid feste Spalten hat, bleibt jede Komponente dabei gleich groß.
-
-Die Beschriftungen stecken **nicht** in den Grafiken, sondern kommen aus `prefix` der `state-label`-Elemente. Deshalb genügt eine Grafik je Komponente statt einer für jede mögliche Kombination - und du kannst jede Beschriftung im YAML frei ändern.
+Die Beschriftungen stecken **nicht** in den Grafiken, sondern in `prefix` der `state-label`-Elemente. Deshalb genügt eine Grafik je Komponente, und jede Beschriftung lässt sich im YAML ändern.
 
 > ℹ️ `picture-elements` kennt nur diese Elementtypen: `conditional`, `icon`, `image`, `service-button` (alias `action-button`), `state-badge`, `state-icon`, `state-label`. Ein `type: markdown` gibt es dort **nicht**.
 
@@ -300,29 +257,9 @@ python dashboard/karte_bauen.py
 
 ---
 
+## 🪵 Was deine Anlage liefert
 
-## ☀️ Solaranlage
-
-Kreuzt du **Solaranlage** an, liest die Integration die **Kollektortemperatur** aus (`sensor.eta_heizung_solar_kollektortemperatur`).
-
-Vier weitere Werte gibt es nur, wenn deine Solaranlage eine **Wärmemengenmessung** hat:
-
-| Sensor | Bedeutung |
-|---|---|
-| `sensor.eta_heizung_solar_leistung` | aktuelle Leistung in kW |
-| `sensor.eta_heizung_solar_warmemenge` | Wärmemenge insgesamt in kWh |
-| `sensor.eta_heizung_solar_ertrag_heute` | Ertrag seit Mitternacht |
-| `sensor.eta_heizung_solar_ertrag_gestern` | Ertrag des Vortags |
-
-**Du musst nichts zusätzlich auswählen.** Die Integration schaut im Menübaum deiner Anlage nach, ob es diese Werte gibt. Hat deine Anlage keine Wärmemengenmessung, zeigen die vier Sensoren dauerhaft "-".
-
-`sensor.eta_heizung_solar_warmemenge` liefert Langzeitstatistik und lässt sich als **Solarertrag** ins Energie-Dashboard aufnehmen (**Einstellungen -> Dashboards -> Energie -> Solarpanel hinzufügen**).
-
----
-
-## 🪵 Was dein Kesseltyp liefert
-
-Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, entscheidet die Anlage. Was sie nicht führt, zeigt `-`.
+Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, entscheidet die Anlage. Du musst nichts zusätzlich auswählen: Sie sieht im Menübaum nach, und was nicht da ist, zeigt `-`.
 
 | | Gesamtverbrauch | Wärmemengenmessung |
 |---|---|---|
@@ -331,11 +268,9 @@ Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, ents
 | **Stückholz** | nein | je nach Anlage |
 | **Solar** | – | je nach Anlage |
 
-**Ohne Gesamtverbrauch** gibt es keinen Energiewert für das Energie-Dashboard - Hackgut- und Stückholzkessel messen ihren Verbrauch nicht. Die Sensoren heißen trotzdem "Pellet...", weil die Umrechnung über den Heizwert an Pellets hängt; bei anderen Brennstoffen bleiben sie leer.
+**Ohne Gesamtverbrauch** gibt es keinen Energiewert fürs Energie-Dashboard - Hackgut- und Stückholzkessel messen ihren Verbrauch nicht. Die Sensoren heißen trotzdem "Pellet...", weil die Umrechnung über den Heizwert an Pellets hängt.
 
-**Ohne Wärmemengenmessung** fehlen an der Solaranlage Leistung, Wärmemenge und die Erträge. Die Kollektortemperatur gibt es immer.
-
-Du musst nichts davon auswählen: Die Integration sieht im Menübaum deiner Anlage nach.
+**Bei der Solaranlage** gibt es die Kollektortemperatur immer. Leistung, Wärmemenge, Ertrag heute und Ertrag gestern nur mit **Wärmemengenmessung**. `sensor.eta_heizung_solar_warmemenge` liefert Langzeitstatistik und lässt sich als **Solarertrag** ins Energie-Dashboard aufnehmen (**Einstellungen -> Dashboards -> Energie -> Solarpanel hinzufügen**).
 
 ---
 
@@ -350,14 +285,6 @@ Grundlage ist der **Gesamtverbrauch** deiner Anlage (`Zählerstände -> Gesamtve
 Der Zähler *Verbrauch seit Aschebox leeren* wird dafür **nicht** verwendet: Er sagt, wann die Aschebox zu leeren ist, und hat mit dem Verbrauch der Anlage nichts zu tun. Führt eine Anlage den Gesamtverbrauch nicht, zeigt der Energiesensor `-` - dann bietet sich im Energie-Dashboard auch keine Quelle an, die nie etwas liefert.
 
 > ⚠️ Ändere den Heizwert möglichst nur einmal beim Einrichten. Bei einer nachträglichen Änderung springt der Sensorwert, und Home Assistant wertet einen Sprung nach unten als Zählerrücksetzung - der Gesamtverbrauch fällt dadurch einmalig zu hoch aus.
-
----
-
-## 🔧 Wenn eine Komponente keine Werte liefert
-
-Findet die Integration im Menübaum nichts zu einer angekreuzten Komponente, legt sie eine **Reparatur** an (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und führt direkt zu den Optionen, wo du den tatsächlichen Funktionsblock-Namen eintragen kannst.
-
-Der Hinweis verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann liegt es an der Verbindung und nicht an den Namen. Home Assistant meldet in dem Fall stattdessen "Wird eingerichtet" und versucht es von selbst weiter, denn ohne Menübaum ist keine einzige Adresse bekannt.
 
 ---
 
@@ -419,23 +346,14 @@ fehler:
     hinweis: Heizungswasser nachfüllen!
 ```
 
-Für Automatisierungen genügt meist `binary_sensor.eta_heizung_storung` - er ist an, sobald etwas ansteht. Wer die Meldungen im Text haben will, nimmt den Zähler:
+Für Automatisierungen genügt meist `binary_sensor.eta_heizung_storung` - er ist an, sobald etwas ansteht. Den Klartext der Meldungen liefert dieser Ausdruck:
 
-```yaml
-automation:
-  - alias: ETA Störung melden
-    triggers:
-      - trigger: numeric_state
-        entity_id: sensor.eta_heizung_aktive_fehler
-        above: 0
-    actions:
-      - action: notify.persistent_notification
-        data:
-          title: Störung an der Heizung
-          message: >-
-            {{ state_attr('sensor.eta_heizung_aktive_fehler', 'fehler')
-               | map(attribute='meldung') | join(', ') }}
+```jinja2
+{{ state_attr('sensor.eta_heizung_aktive_fehler', 'fehler')
+   | map(attribute='meldung') | join(', ') }}
 ```
+
+Fertig verpackt gibt es das als Blueprint **Störung melden** - siehe unten.
 
 ---
 
@@ -455,29 +373,21 @@ Der dritte braucht die Betriebsart-Auswahl, also einen freigegebenen Schreibzugr
 
 ---
 
-## 🩺 Wenn ein einzelner Wert fehlt
+## 🩺 Fehlersuche
 
-Fehlt nicht eine ganze Komponente, sondern ein einzelner Messwert, hilft der Diagnose-Export weiter. Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen - fehlt einer, ist er an deiner Anlage meist anders benannt oder schlicht nicht verbaut.
+Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Fehlt etwas, ist es dort meist anders benannt oder schlicht nicht verbaut.
 
-Unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Gerät "ETA Heizung" -> Diagnose herunterladen** bekommst du eine Datei, die für jeden Messwert zeigt:
+**Eine ganze Komponente ohne Werte** meldet Home Assistant selbst als **Reparatur** (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und führt direkt zu den Optionen, wo du den tatsächlichen Funktionsblock-Namen einträgst; er verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann meldet Home Assistant "Wird eingerichtet" und versucht es von selbst weiter.
 
-* welche Adresse tatsächlich abgefragt wird,
-* welcher Wert zuletzt angekommen ist,
-* und unter `"nicht_gefunden"` eine Liste aller Werte ohne Treffer.
+**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer und unter `"schreibzugriff"`, welche Schalter erkannt wurden. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) angehängt werden.
 
-Die IP-Adresse ist in dieser Datei geschwärzt, du kannst sie also bedenkenlos an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) anhängen.
-
-### Bericht direkt von der Anlage
-
-Reicht der Diagnose-Export nicht, weil die Integration den Wert gar nicht erst anlegt, fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Die Datei ist in sich geschlossen: herunterladen, auf einem beliebigen Rechner in deinem Netz ablegen und mit der IP-Adresse deiner Heizung starten. Nötig ist nur Python, keine Zusatzpakete:
+**Legt die Integration den Wert gar nicht erst an**, fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Die Datei ist in sich geschlossen - herunterladen, auf einem Rechner im selben Netz ablegen, starten. Nötig ist nur Python, keine Zusatzpakete:
 
 ```bash
 python3 eta_bericht.py 10.0.0.173
 ```
 
-Heraus kommt `eta_bericht.txt` mit der Webservice-Version, allen Funktionsblöcken, den schaltbar aussehenden Objekten samt ihrer Beschreibung (`isWritable`, mögliche Werte), den aktiven Störungen und dem vollständigen Menübaum. Die IP-Adresse ist auch hier geschwärzt.
-
-Das Skript liest nur. Einzige Ausnahme ist ein Variablensatz, den die Anlage ohnehin nur im Arbeitsspeicher hält und der am Ende wieder entfernt wird - er prüft, ob die Sammelabfrage funktioniert.
+Heraus kommt `eta_bericht.txt` mit Webservice-Version, allen Funktionsblöcken, den schaltbar aussehenden Objekten samt Beschreibung, den aktiven Störungen und dem vollständigen Menübaum - IP ebenfalls geschwärzt. Das Skript liest nur; einzige Ausnahme ist ein Variablensatz, den die Anlage ohnehin nur im Arbeitsspeicher hält und der am Ende wieder entfernt wird.
 
 ---
 
