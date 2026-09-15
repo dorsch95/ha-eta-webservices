@@ -23,9 +23,9 @@ Damit Home Assistant auf die Daten zugreifen kann, müssen die Webservices auf d
 
 1. Stelle sicher, dass auf deiner Anlage **Systemsoftware x.20.0 oder neuer** läuft.
 2. Registriere deine Anlage auf dem Portal [meinETA](https://meineta.at), falls noch nicht geschehen.
-4. Gehe am Touch-Display deiner Heizung unten links auf den **Werkzeugkasten** (Einstellungen).
-5. Öffne **Internet & Schnittstellen** -> **meinETA Zugang**.
-6. Aktiviere dort die **Webservices**.
+3. Gehe am Touch-Display deiner Heizung unten links auf den **Werkzeugkasten** (Einstellungen).
+4. Öffne **Internet & Schnittstellen** -> **meinETA Zugang**.
+5. Aktiviere dort die **Webservices**.
 
 Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` erreichbar. Du kannst das im Browser prüfen: Erscheint eine XML-Seite mit dem Menübaum deiner Anlage, ist alles bereit.
 
