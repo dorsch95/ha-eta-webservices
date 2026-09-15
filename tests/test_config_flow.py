@@ -143,3 +143,76 @@ def test_warnung_nennt_die_wesentlichen_punkte():
     assert "frostschutz" in text
     assert "auskühlen" in text
     assert "konfigurieren" in text
+
+
+class FakeEintrag:
+    """Ein bestehender Config Entry, wie ihn Neu-Konfigurieren vorfindet."""
+
+    def __init__(self, **daten):
+        self.data = {"host": "192.0.2.10", "port": 8080, **daten}
+        self.options: dict = {}
+
+
+async def reconfigure_schritt(monkeypatch, bisher, eingabe):
+    """Führt Neu-Konfigurieren aus, ohne echte Anlage und ohne Instanz."""
+    from eta_webservices import config_flow as modul
+
+    monkeypatch.setattr(modul, "_test_connection", lambda hass, host, port: _wahr())
+
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
+
+    flow = modul.ETAConfigFlow()
+    flow.hass = None
+    flow.context = {"source": SOURCE_RECONFIGURE}
+    eintrag = FakeEintrag(**bisher)
+    monkeypatch.setattr(
+        modul.ETAConfigFlow, "_get_reconfigure_entry", lambda self: eintrag
+    )
+    monkeypatch.setattr(
+        modul.ETAConfigFlow,
+        "async_show_form",
+        lambda self, **kwargs: {"type": "form", **kwargs},
+    )
+    monkeypatch.setattr(
+        modul.ETAConfigFlow,
+        "async_update_reload_and_abort",
+        lambda self, entry, **kwargs: {"type": "abort", **kwargs},
+    )
+    return flow, await flow.async_step_reconfigure(eingabe)
+
+
+async def _wahr() -> bool:
+    return True
+
+
+async def test_neu_konfigurieren_warnt_vor_dem_schreibzugriff(monkeypatch):
+    """Ohne die Warnung ließe sich das Schalten hier ungefragt einschalten."""
+    flow, ergebnis = await reconfigure_schritt(
+        monkeypatch,
+        bisher={"enable_switches": False},
+        eingabe=gueltige_eingabe(enable_switches=True),
+    )
+
+    assert ergebnis["step_id"] == "switch_warning"
+
+    bestaetigt = await flow.async_step_switch_warning({})
+    assert bestaetigt["type"] == "abort"
+    assert bestaetigt["data_updates"]["enable_switches"] is True
+
+
+async def test_neu_konfigurieren_ohne_schalter_geht_direkt_durch(monkeypatch):
+    _, ergebnis = await reconfigure_schritt(
+        monkeypatch,
+        bisher={"enable_switches": False},
+        eingabe=gueltige_eingabe(enable_switches=False),
+    )
+    assert ergebnis["type"] == "abort"
+
+
+async def test_bereits_freigegebener_schreibzugriff_warnt_nicht_erneut(monkeypatch):
+    _, ergebnis = await reconfigure_schritt(
+        monkeypatch,
+        bisher={"enable_switches": True},
+        eingabe=gueltige_eingabe(enable_switches=True),
+    )
+    assert ergebnis["type"] == "abort"

@@ -6,6 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import (
+    SOURCE_RECONFIGURE,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
@@ -142,27 +143,35 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
         eintrag = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
 
+        bisher = {**eintrag.data, **eintrag.options}
+
         if user_input is not None:
             if await _test_connection(
                 self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
             ):
-                return self.async_update_reload_and_abort(
-                    eintrag,
-                    data_updates={
-                        **user_input,
-                        CONF_COMPONENTS: normalize_components(
-                            user_input.get(CONF_COMPONENTS)
-                        ),
-                    },
-                )
+                self._data = {
+                    **user_input,
+                    CONF_COMPONENTS: normalize_components(
+                        user_input.get(CONF_COMPONENTS)
+                    ),
+                }
+                if self._data.get(CONF_ENABLE_SWITCHES) and not bisher.get(
+                    CONF_ENABLE_SWITCHES
+                ):
+                    return await self.async_step_switch_warning()
+                return self._reconfigure_uebernehmen()
             errors["base"] = "cannot_connect"
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=_connection_schema(
-                user_input or {**eintrag.data, **eintrag.options}
-            ),
+            data_schema=_connection_schema(user_input or bisher),
             errors=errors,
+        )
+
+    def _reconfigure_uebernehmen(self) -> ConfigFlowResult:
+        """Schreibt die geänderten Einstellungen zurück in den Eintrag."""
+        return self.async_update_reload_and_abort(
+            self._get_reconfigure_entry(), data_updates=self._data
         )
 
     async def async_step_user(
@@ -200,9 +209,13 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Lässt den Schreibzugriff ausdrücklich bestätigen.
 
-        Erscheint nur, wenn Schalter eingeschaltet werden.
+        Erscheint nur, wenn Schalter eingeschaltet werden - auch beim
+        Neu-Konfigurieren, sonst ließe sich der Schreibzugriff auf diesem
+        Weg ungefragt aktivieren.
         """
         if user_input is not None:
+            if self.source == SOURCE_RECONFIGURE:
+                return self._reconfigure_uebernehmen()
             return await self.async_step_fub_names()
         return self.async_show_form(step_id="switch_warning")
 
@@ -256,10 +269,9 @@ class ETAOptionsFlow(OptionsFlowWithReload):
                         user_input.get(CONF_COMPONENTS)
                     ),
                 }
-                if self._data.get(CONF_ENABLE_SWITCHES) and not {
-                    **self.config_entry.data,
-                    **self.config_entry.options,
-                }.get(CONF_ENABLE_SWITCHES):
+                if self._data.get(CONF_ENABLE_SWITCHES) and not self._current.get(
+                    CONF_ENABLE_SWITCHES
+                ):
                     return await self.async_step_switch_warning()
                 return await self.async_step_fub_names()
             errors["base"] = "cannot_connect"

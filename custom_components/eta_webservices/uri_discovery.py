@@ -248,6 +248,8 @@ def _discover_puffer_fuehler(fub):
 
     found = {}
     for child in _as_list(eingaenge.get("object")):
+        if not isinstance(child, dict):
+            continue
         match = _FUEHLER_NAME_RE.match(child.get("@name", ""))
         if not match:
             continue
@@ -314,15 +316,17 @@ async def async_discover_uris(client, fub_name_overrides=None):
     for index, uri in puffer_fuehler.items():
         discovered[f"puffer_fuehler_{index}"] = uri
 
-    total_expected = len(DISCOVERY_PATHS) + len(puffer_fuehler_indices)
+    gesucht = set(DISCOVERY_PATHS) | set(PUMPEN)
+    messwerte = (gesucht & set(discovered)) | set(puffer_fuehler)
     _LOGGER.info(
-        "ETA Webservices: %d/%d URIs automatisch über den Anlagenmenübaum erkannt "
-        "(%d Pufferfühler gefunden)",
-        len(discovered),
-        total_expected,
+        "ETA Webservices: %d von %d Messwerten im Menübaum gefunden "
+        "(%d Pufferfühler), dazu %d Schalt- und Betriebsart-Objekte",
+        len(messwerte),
+        len(gesucht) + len(puffer_fuehler_indices),
         len(puffer_fuehler_indices),
+        len(discovered) - len(messwerte),
     )
-    missing = sorted(set(DISCOVERY_PATHS) - set(discovered))
+    missing = sorted(gesucht - set(discovered))
     if missing:
         _LOGGER.debug(
             "ETA Webservices: Für folgende Messwerte wurde keine passende URI "

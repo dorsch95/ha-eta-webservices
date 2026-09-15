@@ -94,3 +94,26 @@ def test_sensoren_verweisen_auf_gueltige_uebersetzungsschluessel():
     schluessel += [puffer_fuehler_info(i, False)["translation_key"] for i in range(1, 9)]
     for eintrag in schluessel:
         assert re.fullmatch(r"[a-z0-9][a-z0-9\-_]*[a-z0-9]", eintrag), eintrag
+
+
+def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
+    """Die Schlüssel der Tabellen und der Suche müssen deckungsgleich sein.
+
+    Ein Sensor ohne Suchpfad bekäme nie eine URI, ein Suchpfad ohne Sensor
+    liefe ins Leere. Der Test fängt außerdem eine Tücke von Python ab: Zwei
+    direkt aufeinanderfolgende Zeichenketten werden stillschweigend
+    verkettet. Ein Beschreibungstext, der versehentlich vor einem Schlüssel
+    landet, verschmilzt deshalb mit ihm - der Eintrag verschwindet lautlos,
+    ohne Syntaxfehler und ohne dass sich die Anzahl der Einträge ändert.
+    """
+    from eta_webservices.const import SELECTS, SENSORS, SWITCHES
+    from eta_webservices.uri_discovery import (
+        BETRIEBSART_ROLES,
+        DISCOVERY_PATHS,
+        PUMPEN,
+        SWITCH_ROLES,
+    )
+
+    assert set(SENSORS) == set(DISCOVERY_PATHS) | set(PUMPEN)
+    assert set(SWITCHES) == set(SWITCH_ROLES)
+    assert set(SELECTS) == set(BETRIEBSART_ROLES)

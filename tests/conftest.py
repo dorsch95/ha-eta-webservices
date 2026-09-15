@@ -44,6 +44,7 @@ def entity_name(entity, sprache: str = "de") -> str:
     )
     return daten["entity"]["sensor"][entity.translation_key]["name"]
 
+
 RESPONSE_LATENCY = 0.01
 
 

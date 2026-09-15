@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant, callback
@@ -13,8 +12,6 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .api import ETAApiError
 from .const import BETRIEBSART_AUS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(

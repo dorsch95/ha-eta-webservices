@@ -14,7 +14,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import ETAApiClient, ETAApiError, ETAError, ETAValue
 from .const import (
     BETRIEBSART_TASTEN,
-    COMPONENTS,
     SELECTS,
     SWITCHES,
     DOMAIN,
@@ -130,11 +129,6 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             info["sw_version"] = f"Webservices {self.api_version}"
         return DeviceInfo(**info)
 
-    @property
-    def component_images(self) -> list[str]:
-        """Bildschlüssel der aktiven Komponenten, in Anzeigereihenfolge."""
-        return [COMPONENTS[key]["image"] for key in self.components]
-
     def sensor_status(self, key: str) -> str:
         """Sagt, warum ein Sensor gerade keinen frischen Wert hat.
 
@@ -207,39 +201,11 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             if not uri:
                 continue
 
-            info = await self.client.async_get_varinfo(uri)
-            if not info or not info.get("writable"):
-                _LOGGER.debug("ETA: %s ist nicht beschreibbar, kein Schalter", key)
+            geprueft = await self._zweizustand_pruefen(key, uri)
+            if geprueft is None:
                 continue
 
-            roh = info.get("raw_values") or {}
-            if len(roh) != 2:
-                _LOGGER.debug(
-                    "ETA: %s hat %d Zustände statt zwei, kein Schalter",
-                    key,
-                    len(roh),
-                )
-                continue
-
-            aus_text = next(
-                (t for t in roh if t.strip().casefold() in AUS_BEGRIFFE), None
-            )
-            if aus_text is None:
-                _LOGGER.debug(
-                    "ETA: bei %s ist unklar, welcher Zustand 'aus' bedeutet (%s)",
-                    key,
-                    list(roh),
-                )
-                continue
-            ein_text = next(t for t in roh if t != aus_text)
-
-            self.switch_defs[key] = {
-                **definition,
-                "uri": uri,
-                "ein_text": ein_text,
-                "ein_roh": roh[ein_text],
-                "aus_roh": roh[aus_text],
-            }
+            self.switch_defs[key] = {**definition, "uri": uri, **geprueft}
             self.sensor_defs[key] = {
                 "component": definition["component"],
                 "translation_key": definition["translation_key"],
@@ -251,10 +217,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             _LOGGER.info(
                 "ETA: Schalter %s erkannt (%s -> %s / %s -> %s)",
                 key,
-                ein_text,
-                roh[ein_text],
-                aus_text,
-                roh[aus_text],
+                geprueft["ein_text"],
+                geprueft["ein_roh"],
+                geprueft["aus_text"],
+                geprueft["aus_roh"],
             )
 
     async def _zweizustand_pruefen(self, key: str, uri: str) -> dict | None:

@@ -142,6 +142,12 @@ SWITCHES = {
         "icon": "mdi:radiator",
     },
 }
+"""Schaltbare Funktionen, je Komponente eine.
+
+Die zu schreibenden Rohwerte stehen nicht hier, sondern kommen aus
+/user/varinfo.
+"""
+
 BETRIEBSART_TASTEN = {
     "automatik": "Auto Taste",
     "heizen": "Heizen Taste",
@@ -187,12 +193,6 @@ SELECTS = {
     },
 }
 """Je Heizkreis eine Auswahl der Betriebsart."""
-
-"""Schaltbare Funktionen, je Komponente eine.
-
-Die zu schreibenden Rohwerte stehen nicht hier, sondern kommen aus
-/user/varinfo.
-"""
 
 LEGACY_SCHEMA_COMPONENTS = {
     "Kessel": ["kessel"],
@@ -489,6 +489,7 @@ PUFFER_FUEHLER_MINDEST = 3
 PufferFlex hat immer mindestens drei (oben, Mitte, unten).
 """
 
+
 def puffer_fuehler_info(index, is_last):
     """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
     if index == 1:
@@ -521,6 +522,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "lager": ["Lager"],
     "solar": ["Solar"],
 }
+
 
 def normalize_components(components):
     """Bringt eine Komponentenauswahl in eine gültige, feste Reihenfolge.
