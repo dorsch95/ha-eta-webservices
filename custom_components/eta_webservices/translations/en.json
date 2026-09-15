@@ -110,7 +110,7 @@
   "issues": {
     "component_not_found": {
       "title": "Component \"{component}\" not found",
-      "description": "The menu of your ETA heating system contains no values for the component \"{component}\". Its function block is probably named differently on your controller (expected roles: {fub_names}).\n\nOpen **Settings -> Devices & Services -> ETA Heiztechnik Web Service -> Configure** and enter the actual name, or untick the component if your system does not have it."
+      "description": "The menu of your ETA heating system contains no values for the component \"{component}\". Its function block is probably named differently on your controller (expected roles: {fub_names}).\n\nOpen **Settings -> Devices & Services -> ETA Web-Services -> Configure** and enter the actual name, or untick the component if your system does not have it."
     }
   },
   "entity": {

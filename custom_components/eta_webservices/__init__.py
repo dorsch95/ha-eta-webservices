@@ -1,4 +1,4 @@
-"""ETA Heiztechnik Web Service Integration für Home Assistant."""
+"""ETA Web-Services - Integration für Home Assistant."""
 
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "ETA Heiztechnik verbinden",
+        "title": "ETA Heizung verbinden",
         "data": {
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
@@ -57,7 +57,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "ETA Heiztechnik bearbeiten",
+        "title": "ETA Heizung bearbeiten",
         "data": {
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
@@ -110,7 +110,7 @@
   "issues": {
     "component_not_found": {
       "title": "Komponente \"{component}\" nicht gefunden",
-      "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** und trage den tatsächlichen Namen ein - oder hake die Komponente ab, falls deine Anlage sie nicht hat."
+      "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** und trage den tatsächlichen Namen ein - oder hake die Komponente ab, falls deine Anlage sie nicht hat."
     }
   },
   "entity": {

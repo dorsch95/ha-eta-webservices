@@ -1,6 +1,6 @@
 {
   "domain": "eta_webservices",
-  "name": "ETA Heiztechnik Web Service",
+  "name": "ETA Web-Services",
   "codeowners": [
     "@dorsch95"
   ],

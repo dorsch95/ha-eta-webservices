@@ -440,3 +440,58 @@ def test_entitaetsuebersicht_ist_vollstaendig():
     text = readme_text()
     fehlend = [zeile for zeile in entitaetstabelle() if zeile not in text]
     assert not fehlend, f"Nicht in der README-Übersicht: {fehlend}"
+
+
+def test_name_ist_ueberall_derselbe():
+    """manifest.json, hacs.json und README müssen denselben Namen nennen.
+
+    Der Name steht an drei Stellen und wird an einer vierten - im README -
+    dem Nutzer als Suchbegriff und als Menüpfad genannt. Läuft das
+    auseinander, sucht er in HACS nach etwas, das dort anders heißt.
+    """
+    import json
+    from pathlib import Path
+
+    wurzel = Path(__file__).resolve().parents[1]
+    manifest = json.loads(
+        (wurzel / "custom_components" / "eta_webservices" / "manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    hacs = json.loads((wurzel / "hacs.json").read_text(encoding="utf-8"))
+
+    name = manifest["name"]
+    assert hacs["name"] == name, "hacs.json nennt einen anderen Namen"
+
+    text = readme_text()
+    assert text.splitlines()[0].startswith(f"# {name}"), "README-Titel weicht ab"
+    assert f"nach **{name}** suchen" in text, "README nennt einen anderen Suchbegriff"
+
+
+def test_domain_und_geraetename_sind_unveraendert():
+    """Beide stecken in bestehenden Installationen und dürfen nicht wandern.
+
+    Die Domain steht in jedem Config Entry und in jeder unique_id, der
+    Gerätename bestimmt die Entity-IDs (sensor.eta_heizung_...). Eine
+    Umbenennung hier nimmt allen Nutzern ihre Historie, ihre Dashboards
+    und ihre Automatisierungen.
+    """
+    import json
+    from pathlib import Path
+
+    from eta_webservices.const import DOMAIN
+
+    wurzel = Path(__file__).resolve().parents[1]
+    manifest = json.loads(
+        (wurzel / "custom_components" / "eta_webservices" / "manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert DOMAIN == "eta_webservices"
+    assert manifest["domain"] == "eta_webservices"
+
+    koordinator = (
+        wurzel / "custom_components" / "eta_webservices" / "coordinator.py"
+    ).read_text(encoding="utf-8")
+    assert 'name="ETA Heizung",' in koordinator

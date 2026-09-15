@@ -1,4 +1,4 @@
-# ETA Heiztechnik Web Service Integration für Home Assistant
+# ETA Web-Services für Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -33,7 +33,7 @@ Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` 
 
 ## 🚀 Installation via HACS
 
-1. **HACS** öffnen, nach **ETA Heiztechnik Web Service** suchen und **Herunterladen**.
+1. **HACS** öffnen, nach **ETA Web-Services** suchen und **Herunterladen**.
 2. Home Assistant vollständig neu starten.
 
 <details>
@@ -54,7 +54,7 @@ Solange die Aufnahme in den HACS-Store noch läuft, geht es über ein benutzerde
 Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche einrichten:
 
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
-2. Suche nach **ETA Heiztechnik Web Service**.
+2. Suche nach **ETA Web-Services**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
 4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
@@ -63,7 +63,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
 9. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
 
-Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Über das Drei-Punkte-Menü der Integration geht es alternativ mit **Neu konfigurieren**.
+Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Über das Drei-Punkte-Menü der Integration geht es alternativ mit **Neu konfigurieren**.
 
 > 💡 Das **Abfrageintervall** legt fest, wie oft die Anlage ausgelesen wird (Standard 30 Sekunden, erlaubt sind 10 bis 600). Die Integration legt dafür einen **Variablensatz** auf der Anlage an und liest damit alle Messwerte mit einer einzigen Anfrage statt mit einer pro Wert. Kennt deine Anlage keine Variablensätze, werden die Werte parallel einzeln gelesen - dann wird die Steuerung bewusst nur mit wenigen gleichzeitigen Anfragen belastet.
 
@@ -303,7 +303,7 @@ Ein Schalter entsteht nur, wenn **alle** folgenden Punkte zutreffen:
 
 Die Rohwerte für Ein und Aus werden **nicht geraten**, sondern von der Anlage abgefragt. Trifft einer der Punkte nicht zu, entsteht kein Schalter - lieber keiner als einer, der einen falschen Wert in die Heizungssteuerung schreibt.
 
-> ℹ️ Dafür braucht deine Anlage Webservice-Version **1.2** oder neuer. Welche Version sie meldet, zeigt Home Assistant unter **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service**.
+> ℹ️ Dafür braucht die ETAtouch-Schnittstelle deiner Anlage **Version 1.2** oder neuer. Welche sie meldet, zeigt Home Assistant unter **Einstellungen -> Geräte & Dienste -> ETA Web-Services** als Softwarestand des Geräts.
 
 Erscheint kein Schalter, obwohl deine Anlage einen haben sollte, zeigt der Diagnose-Export unter `schreibzugriff`, was gefunden wurde. Den Grund nennt das **Debug-Protokoll**: Es nennt für jeden Kandidaten den Grund (*nicht beschreibbar*, *hat N Zustände statt zwei*, *unklar, welcher Zustand 'aus' bedeutet*). Dafür in der `configuration.yaml`:
 
@@ -378,7 +378,7 @@ Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage,
 
 **Eine ganze Komponente ohne Werte** meldet Home Assistant selbst als **Reparatur** (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und führt direkt zu den Optionen, wo du den tatsächlichen Funktionsblock-Namen einträgst; er verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann meldet Home Assistant "Wird eingerichtet" und versucht es von selbst weiter.
 
-**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Heiztechnik Web Service -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer und unter `"schreibzugriff"`, welche Schalter erkannt wurden. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) angehängt werden.
+**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer und unter `"schreibzugriff"`, welche Schalter erkannt wurden. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) angehängt werden.
 
 **Legt die Integration den Wert gar nicht erst an**, fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Die Datei ist in sich geschlossen - herunterladen, auf einem Rechner im selben Netz ablegen, starten. Nötig ist nur Python, keine Zusatzpakete:
 
