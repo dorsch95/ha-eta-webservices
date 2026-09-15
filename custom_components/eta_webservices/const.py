@@ -1,3 +1,12 @@
+"""Feste Tabellen der Integration.
+
+Hier steht, welche Komponenten es gibt und welche Entitäten je Komponente
+entstehen - Name, Einheit, Geräteklasse und Übersetzungsschlüssel. Was
+sich von Anlage zu Anlage unterscheidet, steht bewusst nicht hier: Die
+zugehörigen ETA-Objekt-URIs ermittelt uri_discovery zur Laufzeit aus dem
+Menübaum.
+"""
+
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import Platform
 
@@ -18,11 +27,7 @@ CONF_ENABLE_SWITCHES = "enable_switches"
 CONF_ENABLE_ERRORS = "enable_errors"
 
 DEFAULT_ENABLE_SWITCHES = False
-"""Schalter sind standardmäßig aus.
-
-Sie schreiben in die Heizungssteuerung. Wer das will, soll es bewusst
-einschalten - nicht durch ein Update dazu kommen.
-"""
+"""Schalter schreiben in die Steuerung und sind deshalb standardmäßig aus."""
 
 DEFAULT_ENABLE_ERRORS = True
 CONF_FUB_NAMES = "fub_names"
@@ -31,11 +36,10 @@ CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_PELLET_KWH_PER_KG = 4.8
 MIN_PELLET_KWH_PER_KG = 3.0
 MAX_PELLET_KWH_PER_KG = 6.0
-"""Heizwert von Holzpellets.
+"""Heizwert von Holzpellets in kWh/kg.
 
-ENplus-A1-Pellets liegen je nach Restfeuchte zwischen etwa 4,6 und 5,0
-kWh/kg; 4,8 ist der übliche Richtwert. Weil das je nach Lieferung schwankt,
-lässt sich der Wert in den Optionen anpassen.
+ENplus A1 liegt je nach Restfeuchte zwischen etwa 4,6 und 5,0; 4,8 ist der
+übliche Richtwert. In den Optionen an die eigene Lieferung anpassbar.
 """
 
 DEFAULT_SCAN_INTERVAL = 30
@@ -105,11 +109,8 @@ COMPONENTS = {
 }
 """Die wählbaren Bausteine einer Anlage.
 
-Jede Komponente bringt ihre eigene Grafik, ihre Funktionsblock-Rollen und
-ihre Messwerte mit. Neue Komponenten (z.B. Solar) werden hier ergänzt und
-bei den Sensoren über das Feld "component" zugeordnet - es gibt bewusst
-keine Tabelle fertiger Anlagenschemata mehr, sonst bräuchte jede
-Kombination aus n Komponenten einen eigenen Eintrag und ein eigenes Bild.
+Jede Komponente bringt Grafik, Funktionsblock-Rollen und Messwerte mit.
+Sensoren ordnen sich über ihr Feld "component" hier zu.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -148,11 +149,8 @@ BETRIEBSART_TASTEN = {
 }
 """Die drei Tasten, die zusammen die Betriebsart eines Heizkreises ergeben.
 
-An der Anlage verhalten sie sich wie Radioknöpfe: Läuft der Heizkreis,
-steht genau eine davon auf "Ein" und sagt damit, ob er automatisch,
-dauerhaft heizend oder abgesenkt fährt. Ist der Heizkreis aus, stehen
-alle drei auf "Aus" - deshalb gehört "Aus" mit in dieselbe Auswahl und
-wird über die Ein/Aus-Taste geschaltet.
+Sie verhalten sich wie Radioknöpfe: Läuft der Heizkreis, steht genau eine
+auf "Ein"; ist er aus, stehen alle drei auf "Aus".
 """
 
 BETRIEBSART_AUS = "aus"
@@ -192,9 +190,8 @@ SELECTS = {
 
 """Schaltbare Funktionen, je Komponente eine.
 
-Welche Zustände geschaltet werden, steht nicht hier: Die Rohwerte
-kommen aus /user/varinfo, direkt von der Anlage. Nur so lässt sich
-ausschließen, dass ein falscher Wert in die Steuerung geschrieben wird.
+Die zu schreibenden Rohwerte stehen nicht hier, sondern kommen aus
+/user/varinfo.
 """
 
 LEGACY_SCHEMA_COMPONENTS = {
@@ -489,9 +486,7 @@ PUFFER_FUEHLER_MAX = 8
 PUFFER_FUEHLER_MINDEST = 3
 """So viele Fühler bekommt ein Puffer, wenn der Menübaum keine nennt.
 
-PufferFlex hat immer mindestens drei (oben, Mitte, unten). Mehr
-entstehen nur, wenn sie tatsächlich gefunden wurden - wie viele es
-sind, weiß nur die Anlage.
+PufferFlex hat immer mindestens drei (oben, Mitte, unten).
 """
 
 def puffer_fuehler_info(index, is_last):

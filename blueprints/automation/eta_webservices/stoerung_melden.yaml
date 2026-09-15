@@ -19,7 +19,8 @@ blueprint:
       name: Benachrichtigung
       description: >-
         Was geschehen soll. Üblich ist eine Push-Nachricht an dein Handy.
-        Die Nachricht steht als {{ meldung }} bereit.
+        Verfügbar sind dort die Variablen meldung (der Störungstext) und
+        hinweis (was die Anlage zu tun empfiehlt).
       selector:
         action: {}
 
@@ -40,5 +41,8 @@ variables:
     {% else %}
     Störung an der Heizung
     {% endif %}
+  hinweis: >-
+    {% set fehler = state_attr(melder, 'fehler') or [] %}
+    {{ fehler | map(attribute='hinweis') | select | join(' ') }}
 
 actions: !input aktion

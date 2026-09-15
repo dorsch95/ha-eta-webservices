@@ -33,13 +33,7 @@ async def async_setup_entry(
 class ETAProblemBinarySensor(
     CoordinatorEntity[ETADataUpdateCoordinator], BinarySensorEntity
 ):
-    """Meldet, ob an der Anlage eine Störung ansteht.
-
-    Den Zähler gibt es schon als Sensor. Der hier ist an, sobald
-    mindestens eine Störung anliegt - damit reicht in einer
-    Automatisierung ein Gerätetrigger, statt einen Zahlenwert mit Null
-    zu vergleichen.
-    """
+    """Meldet, ob an der Anlage mindestens eine Störung ansteht."""
 
     _attr_has_entity_name = True
     _attr_translation_key = "stoerung"
@@ -70,14 +64,9 @@ class ETAAscheboxBinarySensor(
 ):
     """Meldet, wenn die Aschebox geleert werden sollte.
 
-    Die Anlage führt beides selbst: wie viel seit der letzten Leerung
-    verbrannt wurde und ab welcher Menge sie geleert werden soll. Hier
-    wird nur verglichen - eine eigene Schwelle einzuführen wäre geraten,
-    denn sie hängt an der Boxgröße und steht an der Steuerung.
-
-    Der Melder bleibt aus, solange einer der beiden Werte fehlt. Ein
-    Vergleich mit einem unbekannten Wert wäre schlimmer als keine
-    Erinnerung.
+    Verglichen werden zwei Werte der Anlage: die Menge seit der letzten
+    Leerung und die dort eingestellte Schwelle. Fehlt einer davon, bleibt
+    der Melder aus.
     """
 
     _attr_has_entity_name = True
@@ -119,9 +108,8 @@ class ETALagerBinarySensor(
 ):
     """Meldet, wenn der Vorrat im Pelletlager zur Neige geht.
 
-    Die Warngrenze steht an der Anlage und ist dort auf den eigenen
-    Lagerraum eingestellt. Sie hier zu erfinden wäre geraten - wie viel
-    Vorrat "wenig" ist, hängt an Lagergröße und Liefermenge.
+    Die Warngrenze stammt aus der Anlage, wo sie auf den eigenen
+    Lagerraum eingestellt ist.
     """
 
     _attr_has_entity_name = True

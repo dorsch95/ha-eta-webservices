@@ -10,18 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-import eta_webservices
 from eta_webservices import switch as switch_platform
 
-from .conftest import entity_name
 from .test_sensors import setup_integration
-
-
-async def setup_mit_schaltern(hass, entry):
-    coordinator = (await setup_integration(hass, entry))[0]
-    schalter: list = []
-    await switch_platform.async_setup_entry(hass, entry, schalter.extend)
-    return coordinator, {entity_name(s, "de"): s for s in schalter}
 
 
 def entity_name_switch(entity) -> str:

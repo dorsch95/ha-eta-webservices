@@ -64,8 +64,8 @@ def abgesichert(karte):
 def alle_elemente(karte):
     """Alle Elemente der Karte, auch die in Bedingungen verschachtelten.
 
-    Ohne den Abstieg in "conditional" blieben genau die Elemente
-    ungeprüft, die nicht immer entstehen - Schalter und Betriebsart.
+    Ohne den Abstieg in "conditional" blieben Schalter und Betriebsart
+    ungeprüft.
     """
 
     def absteigen(elemente):
@@ -193,10 +193,8 @@ def test_nicht_immer_vorhandene_elemente_sind_abgesichert(karte):
     """Wer eine Entität nennt, die fehlen kann, muss sie absichern.
 
     Schalter und Betriebsart entstehen nur bei freigegebenem
-    Schreibzugriff und nur, wo die Anlage die Tasten hergibt. In der
-    Kachel müssen sie deshalb in einer Bedingung stecken, die genau
-    ihre eigene Entität prüft - sonst steht dort "Entität nicht
-    gefunden".
+    Schreibzugriff. Sie müssen deshalb in einer Bedingung auf genau ihre
+    eigene Entität stecken.
     """
     for element in alle_elemente(karte):
         if element["type"] != "conditional":
@@ -330,3 +328,46 @@ def test_fub_standardnamen_stehen_in_der_tabelle():
     text = readme_text()
     for rolle, namen in FUB_ROLE_DEFAULT_NAMES.items():
         assert any(f"`{name}`" in text for name in namen), rolle
+
+
+def entitaetstabelle() -> list[str]:
+    """Die Zeilen, die die Entitätsübersicht im README enthalten muss."""
+    import json
+
+    from homeassistant.util import slugify
+
+    from eta_webservices.const import SELECTS, SENSORS, SWITCHES
+
+    from .conftest import UEBERSETZUNGEN
+
+    namen = json.loads(
+        (UEBERSETZUNGEN / "de.json").read_text(encoding="utf-8")
+    )["entity"]
+
+    def zeile(bereich, key, einheit):
+        name = namen[bereich][key]["name"]
+        eid = f"{bereich}.{slugify('ETA Heizung ' + name)}"
+        return f"| `{eid}` | {name} | {einheit} |"
+
+    zeilen = [
+        zeile(
+            "sensor",
+            info["translation_key"],
+            info.get("default_unit") or ("Text" if info.get("is_string") else "–"),
+        )
+        for info in SENSORS.values()
+    ]
+    zeilen += [zeile("switch", i["translation_key"], "Schalter") for i in SWITCHES.values()]
+    zeilen += [zeile("select", i["translation_key"], "Auswahl") for i in SELECTS.values()]
+    return zeilen
+
+
+def test_entitaetsuebersicht_ist_vollstaendig():
+    """Jede Entität muss in der Übersicht des README stehen.
+
+    Sonst beschreibt die Anleitung eine Integration, die es so nicht
+    mehr gibt.
+    """
+    text = readme_text()
+    fehlend = [zeile for zeile in entitaetstabelle() if zeile not in text]
+    assert not fehlend, f"Nicht in der README-Übersicht: {fehlend}"

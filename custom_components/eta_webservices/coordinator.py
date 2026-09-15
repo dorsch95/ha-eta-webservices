@@ -32,17 +32,14 @@ VERALTET_AB = 2
 """So viele Abfragen darf ein Wert am Stück ausbleiben.
 
 Danach gilt der Sensor als nicht erreichbar, statt weiter den letzten
-bekannten Wert zu zeigen. Ein einzelner Timeout soll nichts kippen -
-ein Wert, der dauerhaft ausbleibt, aber auch nicht wochenlang eine alte
-Zahl vortäuschen.
+bekannten Wert zu zeigen.
 """
 
 AUS_BEGRIFFE = {"aus", "off", "0", "nein", "no", "ausgeschaltet"}
 """Zustandsnamen, die eine ausgeschaltete Funktion bezeichnen.
 
-Welcher der beiden Zustände "aus" ist, lässt sich nicht am Rohwert
-ablesen - er ist bei ETA je nach Variable mal der kleinere, mal der
-größere. Deshalb wird der Klartext ausgewertet.
+Am Rohwert ist nicht ablesbar, welcher der beiden Zustände "aus" ist;
+ausgewertet wird deshalb der Klartext.
 """
 
 type ETAConfigEntry = ConfigEntry["ETADataUpdateCoordinator"]
@@ -52,20 +49,10 @@ type ETAConfigEntry = ConfigEntry["ETADataUpdateCoordinator"]
 def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
     """Stellt zusammen, welche Sensoren diese Anlage hat und unter welcher URI.
 
-    Jede URI stammt aus dem Menübaum dieser Anlage. Fest hinterlegte
-    Adressen gibt es nicht: Die numerischen URIs unterscheiden sich von
-    Anlage zu Anlage, eine Adresse von einer fremden Anlage wäre also
-    geraten - im günstigen Fall läuft die Abfrage ins Leere, im
-    ungünstigen zeigt der Sensor still den falschen Wert.
-
-    Was der Menübaum nicht hergibt, bekommt trotzdem eine Entität, nur
-    eben ohne URI: sie zeigt dann dauerhaft "-". Welche Werte eine
-    Anlage hat, lässt sich nicht sauber vorhersagen - Restsauerstoff hat
-    jeder Kessel, einen Kesseldruck nicht jeder -, und eine Entität, die
-    mal da ist und mal nicht, bricht Dashboards und Automatisierungen.
-
-    Messwerte von Komponenten, die der Nutzer nicht ausgewählt hat,
-    entstehen weiterhin gar nicht.
+    Jede URI stammt aus dem Menübaum dieser Anlage; feste Adressen gibt es
+    nicht. Was der Menübaum nicht hergibt, bekommt trotzdem eine Entität,
+    nur ohne URI - sie zeigt dann dauerhaft "-". Für nicht ausgewählte
+    Komponenten entsteht nichts.
     """
     aktiv = set(normalize_components(components))
     sensor_defs = {
@@ -151,10 +138,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     def sensor_status(self, key: str) -> str:
         """Sagt, warum ein Sensor gerade keinen frischen Wert hat.
 
-        "nicht_vorhanden" heißt: Diese Anlage kennt den Wert nicht, er
-        stand schon beim Einrichten nicht im Menübaum. "nicht_erreichbar"
-        heißt: Es gibt ihn, er kam nur zuletzt nicht an. Ohne diese
-        Unterscheidung sieht beides gleich aus.
+        "nicht_vorhanden": stand schon beim Einrichten nicht im Menübaum.
+        "nicht_erreichbar": vorhanden, kam zuletzt aber nicht an.
         """
         info = self.sensor_defs.get(key)
         if info is None or not info.get("uri"):
@@ -205,16 +190,11 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     async def _schalter_pruefen(self) -> None:
         """Prüft die gefundenen Schalt-Kandidaten an der Anlage nach.
 
-        Erkannte Schalter wandern zusätzlich in die Sensordefinitionen -
-        aber mit dem Vermerk, dass sie zur switch-Plattform gehören. So
-        wird ihr Zustand im selben Abfragezyklus mitgelesen, ohne dass
-        daneben noch ein Sensor mit demselben Wert entsteht.
-
-        Ein Kandidat wird nur dann zum Schalter, wenn die Anlage ihn als
-        beschreibbar meldet und genau zwei Zustände kennt. Welcher davon
-        "aus" bedeutet, sagt ebenfalls die Anlage - der Rohwert wird
-        nirgends geraten, weil ein falscher Wert hier in die
-        Heizungssteuerung geschrieben würde.
+        Ein Kandidat wird nur zum Schalter, wenn die Anlage ihn als
+        beschreibbar meldet und genau zwei Zustände kennt. Erkannte
+        Schalter kommen zusätzlich in die Sensordefinitionen, mit dem
+        Vermerk "platform": "switch" - so wird ihr Zustand im selben
+        Abfragezyklus mitgelesen.
         """
         if not self.enable_switches:
             return
@@ -280,10 +260,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     async def _zweizustand_pruefen(self, key: str, uri: str) -> dict | None:
         """Prüft an der Anlage nach, ob sich eine Taste schalten lässt.
 
-        Beschreibbar, genau zwei Zustände, und einer davon erkennbar
-        "aus" - sonst wird nicht geschaltet. Welcher Rohwert wofür
-        steht, sagt allein die Anlage; hier wird nichts geraten, weil
-        ein falscher Wert in die Heizungssteuerung ginge.
+        Bedingung: beschreibbar, genau zwei Zustände, einer davon
+        erkennbar "aus". Die Rohwerte stammen aus /user/varinfo.
         """
         info = await self.client.async_get_varinfo(uri)
         if not info or not info.get("writable"):
@@ -314,12 +292,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     async def _betriebsarten_pruefen(self) -> None:
         """Baut je Heizkreis eine Auswahl aus seinen drei Tasten.
 
-        Die Anlage führt Auto, Heizen und Absenken als drei einzelne
-        Tasten, von denen im Betrieb genau eine auf "Ein" steht. Für
-        Home Assistant ist das eine Auswahl mit vier Einträgen - der
-        vierte ist "Aus" und hängt an der Ein/Aus-Taste desselben
-        Heizkreises. Ohne diese Taste gäbe es keinen Weg zurück aus
-        "Aus", deshalb entsteht die Auswahl nur zusammen mit ihr.
+        Auto, Heizen und Absenken sind an der Anlage drei Tasten; der
+        vierte Eintrag "Aus" hängt an der Ein/Aus-Taste desselben
+        Heizkreises. Ohne diese Taste entsteht keine Auswahl.
         """
         if not self.enable_switches:
             return
@@ -373,10 +348,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     async def async_discover(self, fub_name_overrides: dict[str, str]) -> None:
         """Ermittelt einmalig die URIs aller Messwerte dieser Anlage.
 
-        Ohne Menübaum gibt es nichts abzufragen, denn die numerischen
-        URIs unterscheiden sich von Anlage zu Anlage. Home Assistant
-        bekommt deshalb ConfigEntryNotReady und versucht es später
-        wieder, statt eine Integration ganz ohne Entitäten aufzusetzen.
+        Ohne Menübaum gibt es nichts abzufragen; Home Assistant bekommt
+        dann ConfigEntryNotReady und versucht es später erneut.
         """
         try:
             self.discovered_uris, indices = await async_discover_uris(
@@ -436,10 +409,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     async def _werte_lesen(self, uris: dict[str, str]) -> dict[str, ETAValue]:
         """Liest alle Messwerte, wenn möglich mit einer einzigen Anfrage.
 
-        Über einen Variablensatz genügt ein Aufruf statt einem je
-        Messwert. Ist der Satz verschwunden - etwa weil die Anlage neu
-        gestartet wurde - wird er neu angelegt und für diesen Durchgang
-        einzeln gelesen.
+        Ist der Variablensatz verschwunden - etwa nach einem Neustart der
+        Anlage -, wird er neu angelegt und dieser Durchgang einzeln
+        gelesen.
         """
         if self._varset_bereit:
             try:
@@ -460,11 +432,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return await self.client.async_get_values(uris)
 
     async def _fehler_lesen(self) -> None:
-        """Holt die aktiven Fehler der Anlage.
-
-        Ein Fehlschlag hier darf den Abfragezyklus nicht kippen - die
-        Messwerte sind wichtiger als die Fehlerliste.
-        """
+        """Holt die aktiven Fehler; ein Fehlschlag kippt den Zyklus nicht."""
         if not self.enable_errors:
             return
         try:

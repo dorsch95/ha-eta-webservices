@@ -1,11 +1,8 @@
 """Diagnosedaten zum Herunterladen aus der Geräteansicht.
 
-Das häufigste Problem dieser Integration ist "ein Wert fehlt". Die Ursache
-liegt immer im Menübaum der Anlage: ein umbenannter Funktionsblock, eine
-abweichende Firmware oder schlicht nicht vorhandene Hardware. Da jede URI
-aus diesem Menübaum stammt, zeigt der Export unter "nicht_gefunden"
-genau die Messwerte, zu denen nichts gefunden wurde - dazu je Messwert
-die abgefragte URI und den zuletzt angekommenen Wert.
+Zeigt je Messwert die abgefragte URI und den zuletzt angekommenen Wert,
+dazu unter "nicht_gefunden" alle Messwerte ohne Treffer im Menübaum.
+Die IP-Adresse wird geschwärzt.
 """
 
 from __future__ import annotations
@@ -58,6 +55,7 @@ async def async_get_config_entry_diagnostics(
             TO_REDACT,
         ),
         "erkennung": {
+            "webservice_version": coordinator.api_version,
             "ueber_menuebaum_gefunden": len(coordinator.discovered_uris),
             "erwartet": len(DISCOVERY_PATHS),
             "nicht_gefunden": sorted(
@@ -68,6 +66,11 @@ async def async_get_config_entry_diagnostics(
                 for key in coordinator.discovered_uris
                 if key.startswith("puffer_fuehler_")
             ),
+        },
+        "schreibzugriff": {
+            "freigegeben": coordinator.enable_switches,
+            "schalter": sorted(coordinator.switch_defs),
+            "betriebsarten": sorted(coordinator.select_defs),
         },
         "letzte_abfrage": {
             "erfolgreich": coordinator.last_update_success,

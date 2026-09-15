@@ -45,14 +45,9 @@ async def async_setup_entry(
 def _pellet_energie(coordinator: ETADataUpdateCoordinator) -> SensorEntity:
     """Baut den Energiewert aus dem Gesamtverbrauch der Anlage.
 
-    Der Gesamtverbrauch unter "Zählerstände" ist der Zähler, den jede
-    Anlage führt, und er springt nie zurück. Der Zähler seit dem letzten
-    Leeren der Aschebox taugt dafür nicht: Er sagt, wann die Aschebox zu
-    leeren ist, und hat mit dem Verbrauch der Anlage nichts zu tun.
-
-    Führt eine Anlage den Gesamtverbrauch nicht, entsteht ein
-    Platzhalter mit "-". Sonst böte sich im Energie-Dashboard eine
-    Quelle an, die nie etwas liefert.
+    Führt eine Anlage den Gesamtverbrauch nicht - Hackgut- und
+    Stückholzkessel messen ihren Verbrauch nicht -, entsteht ein
+    Platzhalter mit "-", der sich dem Energie-Dashboard nicht anbietet.
     """
     if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
         return ETAPelletEnergySensor(
@@ -80,9 +75,8 @@ class ETABaseSensor(CoordinatorEntity[ETADataUpdateCoordinator], SensorEntity):
 class ETAMeasurementSensor(ETABaseSensor):
     """Ein von der Anlage gelesener Messwert.
 
-    Die Einheit wird bewusst fest aus der Sensordefinition genommen und nicht
-    aus der XML-Antwort: eine zwischendurch wechselnde Einheit lässt Home
-    Assistant die Langzeitstatistik einer Entität verwerfen.
+    Die Einheit stammt fest aus der Sensordefinition, nicht aus der
+    XML-Antwort: eine wechselnde Einheit verwirft die Langzeitstatistik.
     """
 
     _missing_value = None
@@ -107,13 +101,7 @@ class ETAMeasurementSensor(ETABaseSensor):
 
     @property
     def available(self) -> bool:
-        """Ein Wert, der mehrfach ausbleibt, gilt als nicht erreichbar.
-
-        Der Koordinator behält den letzten bekannten Wert, damit ein
-        einzelner Timeout nichts kippt. Bleibt der Wert aber weg, soll
-        die Anzeige das sagen, statt wochenlang eine alte Zahl zu
-        zeigen.
-        """
+        """Ein Wert, der mehrfach ausbleibt, gilt als nicht erreichbar."""
         if not super().available:
             return False
         return self.coordinator.sensor_status(self._key) != "nicht_erreichbar"
@@ -136,16 +124,11 @@ class ETAMeasurementSensor(ETABaseSensor):
 class ETAPlaceholderSensor(ETAMeasurementSensor):
     """Ein Messwert, den der Menübaum dieser Anlage nicht hergibt.
 
-    Die Entität entsteht trotzdem und zeigt dauerhaft "-". Welche Werte
-    eine Anlage hat, lässt sich nicht vorhersagen: Restsauerstoff hat
-    jeder Kessel, einen Kesseldruck nicht jeder. Eine Entität, die je
-    nach Anlage da ist oder fehlt, bricht Dashboards, Automatisierungen
-    und Statistiken - "-" sagt dasselbe, ohne etwas kaputtzumachen.
-
-    Einheit, Geräteklasse und Zustandsklasse bleiben leer: Home
-    Assistant würde einen Sensor mit numerischer Geräteklasse und dem
-    Zustand "-" sonst als fehlerhaft melden, und zwar in jedem
-    Abfragezyklus.
+    Die Entität entsteht trotzdem und zeigt dauerhaft "-", damit
+    Dashboards und Automatisierungen nicht je nach Anlage ins Leere
+    zeigen. Einheit, Geräte- und Zustandsklasse bleiben leer - Home
+    Assistant lehnt einen Sensor mit numerischer Geräteklasse und dem
+    Zustand "-" sonst ab.
     """
 
     _attr_device_class = None
@@ -173,10 +156,9 @@ class ETAPlaceholderSensor(ETAMeasurementSensor):
 class ETAAscheboxStatusSensor(ETABaseSensor):
     """Kombinierte Anzeige "Verbrauch/Schwellwert", z.B. "459/1000kg".
 
-    picture-elements-Karten können keine zwei Werte zusammenführen, deshalb
-    wird die Kombination hier serverseitig gebildet. Die Einheit steckt im
-    Text selbst - ein Textwert mit gesetzter unit_of_measurement würde von
-    Home Assistant als ungültig behandelt.
+    picture-elements-Karten können keine zwei Werte zusammenführen. Die
+    Einheit steckt im Text selbst, weil ein Textwert keine
+    unit_of_measurement tragen darf.
     """
 
     _attr_icon = "mdi:trash-can"
@@ -200,10 +182,8 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
 class ETAErrorSensor(ETABaseSensor):
     """Zeigt, wie viele Fehler an der Anlage anstehen.
 
-    Die Meldungen selbst stehen in den Attributen, mit Funktionsblock,
-    Priorität und Zeitpunkt - so, wie die Anlage sie unter /user/errors
-    ausgibt. Damit lässt sich eine Benachrichtigung bauen, ohne am Kessel
-    vorbeizugehen.
+    Die Meldungen stehen in den Attributen, mit Funktionsblock, Priorität
+    und Zeitpunkt.
     """
 
     _attr_translation_key = "aktive_fehler"
@@ -226,20 +206,10 @@ class ETAErrorSensor(ETABaseSensor):
 
 
 class ETAPelletEnergySensor(ETABaseSensor):
-    """Rechnet den Pelletverbrauch in Energie um.
+    """Rechnet den Gesamtverbrauch in Kilogramm in Energie um.
 
-    Das Energie-Dashboard von Home Assistant nimmt nur Quellen an, die
-    Energie in kWh als aufsummierenden Zähler liefern - Kilogramm
-    Pellets versteht es nicht.
-
-    Grundlage ist der Gesamtverbrauch der Anlage. Bis Version 0.16 war
-    es der Zähler seit dem letzten Leeren der Aschebox - der misst aber
-    den Füllstand der Aschebox, nicht den Verbrauch.
-
-    Deshalb ist dies eine eigene Entität und nicht die alte mit neuer
-    Grundlage: Der Sprung von "seit der letzten Leerung" auf "seit dem
-    ersten Tag" erschiene im Energie-Dashboard sonst als riesiger
-    Verbrauch in einer einzigen Stunde.
+    Das Energie-Dashboard nimmt nur Quellen an, die Energie in kWh als
+    aufsummierenden Zähler liefern.
     """
 
     _attr_icon = "mdi:lightning-bolt"
@@ -269,13 +239,9 @@ class ETAPelletEnergySensor(ETABaseSensor):
 class ETAComponentMarkerSensor(ETABaseSensor):
     """Meldet, dass eine Anlagenkomponente eingerichtet ist.
 
-    Dashboard-Karten blenden ihre Komponenten über diese Entität ein. Eine
-    Bedingung auf einen echten Messwert taugt dafür nicht: Home Assistant
-    wertet eine gar nicht existierende Entität als "unknown" aus - denselben
-    Zustand, den ein vorhandener Messwert kurz nach dem Start hat. Dieser
-    Marker liefert stattdessen konstant den Komponentenschlüssel und bleibt
-    auch bei einer gestörten Abfrage verfügbar, damit die Komponente nicht
-    bei jedem Aussetzer aus dem Dashboard verschwindet.
+    Dashboard-Karten blenden ihre Kacheln darüber ein. Der Marker liefert
+    konstant den Komponentenschlüssel und bleibt auch bei gestörter
+    Abfrage verfügbar.
     """
 
     _attr_icon = "mdi:puzzle-outline"

@@ -200,10 +200,7 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Lässt den Schreibzugriff ausdrücklich bestätigen.
 
-        Schalter greifen in die Heizungssteuerung ein. Diese Seite
-        erscheint nur, wenn sie eingeschaltet werden - wer sie
-        abgewählt lässt, bekommt keine Warnung zu lesen, die ihn nichts
-        angeht.
+        Erscheint nur, wenn Schalter eingeschaltet werden.
         """
         if user_input is not None:
             return await self.async_step_fub_names()

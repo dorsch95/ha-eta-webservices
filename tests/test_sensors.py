@@ -200,6 +200,21 @@ async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
     assert bericht["messwerte"]["kessel_temperatur"]["uri"] is None
 
 
+async def test_diagnose_nennt_version_und_schreibzugriff(hass, entry):
+    """Ohne diese Angaben lässt sich ein fehlender Schalter nicht beurteilen."""
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+
+    coordinator, _ = await setup_integration(hass, entry)
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert bericht["erkennung"]["webservice_version"] == coordinator.api_version
+    assert bericht["schreibzugriff"]["freigegeben"] is True
+    assert bericht["schreibzugriff"]["schalter"] == sorted(coordinator.switch_defs)
+    assert bericht["schreibzugriff"]["betriebsarten"] == sorted(
+        coordinator.select_defs
+    )
+
+
 async def test_diagnose_ist_serialisierbar(hass, entry):
     import json
 
@@ -211,13 +226,7 @@ async def test_diagnose_ist_serialisierbar(hass, entry):
 
 
 async def test_ohne_menuebaum_ist_die_integration_nicht_bereit(hass, entry):
-    """Ohne Menübaum gibt es nichts abzufragen - also lieber später wieder.
-
-    Früher sprangen hier fest hinterlegte URIs ein. Die stammen aber von
-    einer fremden Anlage, und die numerischen Adressen unterscheiden sich
-    von Anlage zu Anlage. Home Assistant soll es stattdessen erneut
-    versuchen, statt eine Integration ohne brauchbare Werte aufzusetzen.
-    """
+    """Ohne Menübaum gibt es nichts abzufragen - also lieber später wieder."""
     from homeassistant.exceptions import ConfigEntryNotReady
 
     hass.session.fail_uris = {"/user/menu"}
@@ -226,8 +235,6 @@ async def test_ohne_menuebaum_ist_die_integration_nicht_bereit(hass, entry):
 
 
 async def test_marker_je_gewaehlter_komponente(hass, entry):
-    from eta_webservices.const import COMPONENTS
-
     coordinator, by_name = await setup_integration(hass, entry)
     for key in coordinator.components:
         marker = next(
@@ -640,12 +647,10 @@ async def test_es_gibt_genau_einen_energiesensor(hass, entry, menu_xml):
 
 
 async def test_ohne_gesamtverbrauch_kein_energiewert(hass, entry, menu_xml):
-    """Die Aschebox misst ihren eigenen Füllstand, nicht den Verbrauch.
+    """Ohne Gesamtverbrauch gibt es keinen Energiewert.
 
-    Sie als Ersatzgrundlage zu nehmen, hieße zwei verschiedene Dinge in
-    einen Topf zu werfen. Ohne Gesamtverbrauch gibt es deshalb keinen
-    Energiewert - und im Energie-Dashboard nichts Auswählbares, das
-    nie etwas liefert.
+    Die Aschebox misst ihren eigenen Füllstand, nicht den Verbrauch, und
+    taugt deshalb nicht als Ersatzgrundlage.
     """
     hass.session.menu = menu_xml.replace('name="Gesamtverbrauch"', 'name="Weg"')
     _, by_name = await setup_integration(hass, entry)

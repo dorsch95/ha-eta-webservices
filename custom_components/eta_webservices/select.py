@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
-from .const import BETRIEBSART_AUS, BETRIEBSART_TASTEN
+from .const import BETRIEBSART_AUS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,10 +35,8 @@ class ETABetriebsartSelect(
 ):
     """Automatik, Heizen, Absenken oder Aus - für einen Heizkreis.
 
-    Die Anlage kennt dafür drei getrennte Tasten plus die Ein/Aus-Taste.
-    Hier werden sie zu einer Auswahl zusammengefasst, weil sie an der
-    Anlage ohnehin voneinander abhängen: Läuft der Heizkreis, steht
-    genau eine der drei auf "Ein"; ist er aus, stehen alle auf "Aus".
+    An der Anlage sind das drei Tasten plus die Ein/Aus-Taste: Läuft der
+    Heizkreis, steht genau eine der drei auf "Ein".
     """
 
     _attr_has_entity_name = True
@@ -86,10 +84,8 @@ class ETABetriebsartSelect(
     async def async_select_option(self, option: str) -> None:
         """Schaltet die gewünschte Betriebsart an der Anlage.
 
-        "Aus" geht über die Ein/Aus-Taste. Für die drei anderen wird die
-        zugehörige Taste auf "Ein" gesetzt; steht der Heizkreis gerade
-        auf "Aus", wird er vorher eingeschaltet - sonst bliebe die
-        Auswahl wirkungslos.
+        "Aus" geht über die Ein/Aus-Taste. Steht der Heizkreis auf "Aus",
+        wird er vor dem Setzen einer Betriebsart eingeschaltet.
         """
         if option not in self.options:
             raise HomeAssistantError(f"Unbekannte Betriebsart: {option}")

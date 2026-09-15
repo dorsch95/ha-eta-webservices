@@ -65,8 +65,6 @@ def var_xml(
     Aufbau exakt wie in der ETAtouch-Dokumentation, Abschnitt 4.1: Der
     Rohwert steht im Element selbst, nicht in einem Attribut, und
     Textvariablen sind an einem advTextOffset ungleich null zu erkennen.
-    Eine Attrappe, die stattdessen ein value-Attribut liefert, verdeckt
-    genau die Fehler, um die es hier geht.
     """
     attrs = (
         f'uri="/user/var/1/2/3/4/5" strValue="{str_value or ""}" '
@@ -156,9 +154,7 @@ class FakeSession:
 
         Auto, Heizen und Absenken verhalten sich an der Anlage wie
         Radioknöpfe: Wird eine auf "Ein" gesetzt, fallen die anderen
-        beiden auf "Aus". Eine Attrappe, die das nicht nachbildet,
-        lässt eine Auswahl richtig aussehen, die in Wirklichkeit den
-        falschen Zustand meldet.
+        beiden auf "Aus".
         """
         self.geschrieben[uri] = wert
         modus_tasten = ("/12125", "/12126", "/12230")
@@ -199,10 +195,8 @@ class FakeSession:
     def _wert_fuer(self, uri: str) -> dict:
         """Der Messwert, den die Anlage zu dieser URI liefert.
 
-        Wird sowohl für die Einzelabfrage als auch für den Variablensatz
-        benutzt, damit beide Wege dieselben Werte liefern - sonst würde
-        ein Test je nach Abfrageart etwas anderes sehen. Geschriebene
-        Werte gehen vor, damit sich eine Änderung auch nachlesen lässt.
+        Wird für Einzelabfrage und Variablensatz benutzt, damit beide
+        Wege dieselben Werte liefern. Geschriebene Werte gehen vor.
         """
         if "12013" in uri:
             return {"value": "2370", "str_value": "23,70", "unit": "kg", "scale": "100"}
@@ -349,10 +343,8 @@ class FakeHass:
     def async_run_hass_job(self, hassjob, *args, background: bool = False):
         """Bildet den Aufruf eines HassJob nach.
 
-        Wird vom Debouncer hinter async_request_refresh gebraucht - also
-        immer dann, wenn ein Schalter nach dem Schreiben den echten
-        Zustand nachlesen will. "background" steuert in Home Assistant
-        nur, wie die Aufgabe eingeplant wird, und gehört nicht an die
+        Wird vom Debouncer hinter async_request_refresh gebraucht.
+        "background" steuert nur die Einplanung und gehört nicht an die
         aufgerufene Funktion weitergereicht.
         """
         ergebnis = hassjob.target(*args)

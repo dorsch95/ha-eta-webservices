@@ -253,20 +253,15 @@ class ETAApiClient:
     async def async_create_varset(self, name: str, uris: list[str]) -> None:
         """Legt einen Variablensatz an und füllt ihn.
 
-        Damit lassen sich anschließend alle Werte mit einer einzigen
-        Anfrage lesen statt mit einer pro Messwert - für die schwache
-        Steuerung ein erheblicher Unterschied.
+        Darüber lassen sich anschließend alle Werte mit einer einzigen
+        Anfrage lesen.
         """
         await self._request("PUT", f"/user/vars/{name}", REQUEST_TIMEOUT)
         for uri in uris:
             await self._request("PUT", f"/user/vars/{name}{uri}", REQUEST_TIMEOUT)
 
     async def async_delete_varset(self, name: str) -> None:
-        """Räumt einen Variablensatz wieder ab.
-
-        Die Anlage hält die Sätze nur im Arbeitsspeicher; wer sie liegen
-        lässt, belegt dort dauerhaft Platz.
-        """
+        """Räumt einen Variablensatz wieder ab."""
         try:
             await self._request("DELETE", f"/user/vars/{name}", REQUEST_TIMEOUT)
         except ETAApiError as err:
@@ -322,19 +317,17 @@ class ETAApiClient:
         return _parse_value_node(root["value"])
 
     async def async_get_values(self, uris: dict[str, str]) -> dict[str, ETAValue]:
-        """Liest mehrere Messwerte parallel (begrenzt durch ein Semaphor).
+        """Liest mehrere Messwerte parallel.
 
-        Die ETA-Steuerung ist ein schwaches Embedded-Gerät, deshalb werden
-        nicht alle Abfragen gleichzeitig gestellt, sondern maximal
-        MAX_PARALLEL_REQUESTS auf einmal.
+        Höchstens MAX_PARALLEL_REQUESTS auf einmal, um die Steuerung nicht
+        zu überlasten.
         """
 
         async def fetch(key: str, uri: str) -> tuple[str, ETAValue | None]:
-            """Liest einen Wert und meldet Fehler als None zurück.
+            """Liest einen Wert; ein Fehlschlag ergibt None.
 
-            Die Ausnahmebehandlung ist bewusst breit: ein einzelner Messwert,
-            der unerwartete Daten liefert, darf den gesamten Abfragezyklus
-            nicht scheitern lassen.
+            Die Ausnahmebehandlung ist bewusst breit, damit ein einzelner
+            Messwert den Abfragezyklus nicht scheitern lässt.
             """
             async with self._semaphore:
                 try:
@@ -382,11 +375,10 @@ def _parse_value_node(node: Any) -> ETAValue:
         <value uri="..." strValue="Off" unit="" decPlaces="0"
                scaleFactor="1" advTextOffset="1802">1802</value>
 
-    Der Rohwert steht also im Element selbst, nicht in einem Attribut.
-    Bei Textvariablen ist dieser Rohwert nur eine interne Kennzahl - die
-    Anlage kennzeichnet sie über advTextOffset, und der lesbare Zustand
-    steht in strValue. Wer das übersieht, zeigt dem Nutzer statt
-    "Heizbetrieb" die Zahl 950 an.
+    Der Rohwert steht im Element selbst, nicht in einem Attribut. Bei
+    Textvariablen ist er nur eine interne Kennzahl; erkennbar sind sie an
+    einem advTextOffset ungleich null, der lesbare Zustand steht in
+    strValue.
     """
     if not isinstance(node, dict):
         return ETAValue(None, str(node), "", True)

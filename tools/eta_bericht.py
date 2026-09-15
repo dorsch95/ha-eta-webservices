@@ -44,10 +44,13 @@ INTERESSANTE_NAMEN = (
 
 
 class Anlage:
+    """Eine ETA-Heizung im Netz; jede Abfrage liest nur."""
+
     def __init__(self, host: str, port: int = 8080) -> None:
         self.basis = f"http://{host}:{port}"
 
     def hole(self, pfad: str, methode: str = "GET") -> str | None:
+        """Ruft einen Pfad ab; Fehler kommen als Text zurück, statt zu werfen."""
         anfrage = urllib.request.Request(self.basis + pfad, method=methode)
         try:
             with urllib.request.urlopen(anfrage, timeout=15) as antwort:
@@ -59,16 +62,12 @@ class Anlage:
 
 
 def ist_fehler(text: str | None) -> bool:
+    """Erkennt die Fehlertexte, die hole() statt einer Antwort liefert."""
     return text is None or text.startswith("__")
 
 
 def lesbar(text: str | None) -> str:
-    """Bricht eine XML-Antwort auf mehrere Zeilen um.
-
-    Die Anlage antwortet in einer einzigen langen Zeile. Das ist auf
-    dem Bildschirm unlesbar, deshalb wird eingerückt - schlägt das
-    fehl, bleibt der Originaltext stehen.
-    """
+    """Bricht eine XML-Antwort zum Lesen auf mehrere Zeilen um."""
     if not text:
         return "keine Antwort"
     if ist_fehler(text):
@@ -89,12 +88,7 @@ def objekte(knoten):
 
 
 def hauptprogramm(host: str, port: int) -> None:
-    """Sammelt den Bericht und schreibt ihn in jedem Fall.
-
-    Alles, was bis zu einem Abbruch zusammengekommen ist, landet in der
-    Datei - eine Anlage, die mittendrin nicht mehr antwortet, soll den
-    halben Bericht nicht mitnehmen.
-    """
+    """Sammelt den Bericht und schreibt ihn auch bei einem Abbruch."""
     zeilen: list[str] = []
     try:
         _sammeln(Anlage(host, port), zeilen)
@@ -106,6 +100,7 @@ def hauptprogramm(host: str, port: int) -> None:
 
 
 def _sammeln(anlage: Anlage, zeilen: list[str]) -> None:
+    """Fragt die Anlage Abschnitt für Abschnitt ab und protokolliert mit."""
 
     def sag(text: str = "") -> None:
         zeilen.append(text)

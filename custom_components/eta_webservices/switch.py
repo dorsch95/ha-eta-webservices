@@ -1,10 +1,8 @@
 """Schalter für Kessel und Heizkreise.
 
-Ein Schalter entsteht nur, wenn die Anlage die zugehörige Variable
-ausdrücklich als beschreibbar meldet und genau zwei gültige Zustände
-kennt. Die Rohwerte für Ein und Aus stammen aus /user/varinfo, werden
-also nicht geraten - in eine Heizungssteuerung einen falschen Wert zu
-schreiben wäre keine Kleinigkeit.
+Ein Schalter entsteht nur, wenn die Anlage die Variable als beschreibbar
+meldet und genau zwei Zustände kennt. Die Rohwerte für Ein und Aus
+stammen aus /user/varinfo.
 """
 
 from __future__ import annotations
@@ -67,11 +65,8 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
     def is_on(self) -> bool | None:
         """Der Zustand, den die Anlage meldet.
 
-        Direkt nach dem Schalten steht hier der erwartete Zustand: Home
-        Assistant fragt die Anlage erst mit kurzer Verzögerung erneut ab,
-        und ohne diese Vorwegnahme würde der Schalter im Dashboard
-        zurückspringen und erst Sekunden später umspringen. Sobald echte
-        Daten eintreffen, gilt wieder, was die Anlage sagt.
+        Direkt nach dem Schalten steht hier der erwartete Zustand, damit
+        der Schalter nicht bis zur nächsten Abfrage zurückspringt.
         """
         if self._erwartet is not None:
             return self._erwartet
@@ -92,13 +87,7 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
         await self._setzen(self._aus_roh, False)
 
     async def _setzen(self, roh_wert: str, erwartet: bool) -> None:
-        """Schreibt den Rohwert und liest danach neu ein.
-
-        Ohne das Nachlesen stünde der Schalter bis zum nächsten
-        Abfragezyklus auf dem gewünschten statt auf dem tatsächlichen
-        Zustand - und ein von der Anlage abgelehnter Befehl fiele gar
-        nicht auf.
-        """
+        """Schreibt den Rohwert und liest danach neu ein."""
         try:
             await self.coordinator.client.async_set_value(self._uri, roh_wert)
         except ETAApiError as err:

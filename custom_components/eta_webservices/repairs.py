@@ -1,10 +1,8 @@
 """Reparatur-Hinweise für Komponenten ohne Messwerte.
 
-Wenn jemand eine Komponente auswählt, deren Funktionsblock an der Anlage
-anders heißt, bleiben deren Werte still leer - das ist der mit Abstand
-häufigste Fehlerfall dieser Integration. Home Assistant zeigt dafür einen
-Reparatur-Hinweis mit direktem Weg zu den Optionen an, statt dass der
-Nutzer erst im Protokoll oder im Diagnose-Export suchen muss.
+Heißt der Funktionsblock einer ausgewählten Komponente an der Anlage
+anders, bleiben ihre Werte leer. Der Hinweis führt direkt zu den
+Optionen, wo sich der tatsächliche Name eintragen lässt.
 """
 
 from __future__ import annotations
@@ -27,10 +25,8 @@ def async_check_components(
 ) -> list[str]:
     """Meldet Komponenten, für die im Menübaum nichts gefunden wurde.
 
-    Der Aufrufer kommt nur hierher, wenn der Menübaum gelesen werden
-    konnte. Findet sich darin zu einer angekreuzten Komponente nichts,
-    liegt es also an den Funktionsblock-Namen - und genau das sagt der
-    Hinweis.
+    Wird nur bei lesbarem Menübaum aufgerufen; eine leere Komponente
+    liegt dann an den Funktionsblock-Namen.
     """
     ohne_treffer = []
 

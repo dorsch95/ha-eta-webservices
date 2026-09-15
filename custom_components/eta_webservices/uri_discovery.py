@@ -1,14 +1,10 @@
-"""Automatische Ermittlung der ETA-Objekt-URIs anhand stabiler Namen.
+"""Ermittelt die ETA-Objekt-URIs anhand der Namen im Menübaum.
 
-Die numerischen URIs (z.B. /264/10891/0/11109/0) unterscheiden sich je nach
-Anlagenkonfiguration und Firmware-Version. Die Bezeichnungen im Menübaum
-(abrufbar unter /user/menu) bleiben dagegen stabil - mit einer Ausnahme: die
-Namen der Funktionsblöcke (FUB, z.B. "Kessel", "PufferFlex", "HK") können
-vom Nutzer an der Steuerung umbenannt werden. Deshalb wird jeder Messwert
-nicht direkt einem FUB-Namen zugeordnet, sondern einer FUB-*Rolle*
-("kessel", "pufferflex", "hk", ...). Für jede Rolle gibt es ETA-Standard-
-namen, die im Setup vom Nutzer überschrieben werden können, falls seine
-Anlage abweicht.
+Die numerischen URIs unterscheiden sich je nach Anlage und Firmware, die
+Bezeichnungen unter /user/menu bleiben stabil. Ausnahme sind die Namen der
+Funktionsblöcke (FUB), die an der Steuerung geändert werden können. Jeder
+Messwert hängt deshalb an einer FUB-*Rolle* ("kessel", "hk", ...), der beim
+Einrichten ein tatsächlicher Name zugeordnet wird.
 """
 
 from __future__ import annotations
@@ -68,11 +64,9 @@ PUMPEN = {
 }
 """Pumpen, die über ein Stichwort in ihrem Namen gesucht werden.
 
-Eine Pumpe heißt je nach Anlage "Zirkulationspumpe", "Zirkulation" oder
-ähnlich. Gesucht wird deshalb unter "Ausgänge" nach einem Namen, der
-das Stichwort enthält; geliefert wird die URI seiner "Anforderung" -
-dort steht, ob die Pumpe gerade läuft. Genauso wird die
-Heizkreispumpe gelesen, nur über einen festen Pfad.
+Je nach Anlage heißt eine Pumpe "Zirkulationspumpe", "Zirkulation" oder
+ähnlich. Gesucht wird unter "Ausgänge"; geliefert wird die URI ihrer
+"Anforderung", die den Laufzustand meldet.
 """
 
 NAMENSSUCHE = {
@@ -84,11 +78,9 @@ NAMENSSUCHE = {
 }
 """Zweiter Versuch über den bloßen Objektnamen, falls der Pfad nicht passt.
 
-Bei Solar liegt der Ertragszweig je nach Anlage unterschiedlich tief im
-Menü. Die Namen selbst sind dagegen eindeutig, deshalb wird hier - und
-nur hier - der ganze Funktionsblock danach durchsucht, wenn der feste
-Pfad ins Leere läuft. Für die übrigen Messwerte bleibt es beim festen
-Pfad: dort gibt es Namen wie "Vorlauf", die mehrfach vorkommen.
+Nur für diese Schlüssel, weil ihr Zweig je nach Anlage unterschiedlich
+tief im Menü liegt. Für die übrigen bleibt es beim festen Pfad - Namen
+wie "Vorlauf" kommen mehrfach vor.
 """
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
@@ -180,9 +172,8 @@ def _resolve_fubs_by_role(fubs, fub_name_overrides):
 def _finde_schalter(fub):
     """Sucht im ganzen Funktionsblock nach einem Ein/Aus-Objekt.
 
-    Der Pfad dorthin heißt je nach Firmware anders, der Name des Objekts
-    selbst ist dagegen eindeutig - deshalb wird hier über den Namen
-    gesucht statt über einen festen Pfad.
+    Gesucht wird über den Namen, weil der Pfad dorthin je nach Firmware
+    abweicht.
     """
     if fub is None:
         return None
@@ -273,15 +264,12 @@ async def async_discover_uris(client, fub_name_overrides=None):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
-    - discovered: Dict {schluessel: uri} für alle erfolgreich gefundenen
-      Messwerte (inkl. "puffer_fuehler_<n>" für jeden gefundenen Fühler).
-    - puffer_fuehler_indices: sortierte Liste der tatsächlich gefundenen
-      Fühler-Nummern (leer, falls nichts gefunden wurde).
+    - discovered: {schluessel: uri} aller gefundenen Messwerte, inklusive
+      "puffer_fuehler_<n>" je gefundenem Fühler.
+    - puffer_fuehler_indices: sortierte Nummern der gefundenen Fühler.
 
-    Nicht gefundene Schlüssel fehlen im Ergebnis; zu ihnen entsteht keine
-    Entität. Ist der Menübaum gar nicht lesbar, wird der ETAApiError
-    durchgereicht - ohne ihn lässt sich nichts abfragen, und eine
-    hinterlegte Adresse von einer fremden Anlage wäre geraten.
+    Nicht gefundene Schlüssel fehlen im Ergebnis. Ist der Menübaum nicht
+    lesbar, wird der ETAApiError durchgereicht.
     """
     discovered = {}
 

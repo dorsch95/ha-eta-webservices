@@ -1,6 +1,6 @@
 """Erzeugt eta-karte.yaml, die fertige Dashboard-Karte.
 
-Die Karte enthält dieselben fünf Komponenten dreimal - einmal je
+Die Karte enthält jede Komponente dreimal - einmal je
 Bildschirmbreite. Von Hand wäre das nicht zu pflegen, deshalb wird sie
 hier aus einer einzigen Beschreibung erzeugt. Nach Änderungen einfach
 dieses Skript ausführen:
@@ -42,12 +42,7 @@ KESSEL_ZEILEN = [
 
 
 def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
-    """Eine Beschriftungszeile der Kachel.
-
-    Jede Entität einer angekreuzten Komponente existiert immer, auch
-    wenn der Menübaum den Wert nicht hergibt - dann steht dort "-".
-    Deshalb braucht die Zeile keine Bedingung.
-    """
+    """Eine Beschriftungszeile der Kachel."""
     stil = {
         "top": f"{top}%",
         "left": f"{left}%",
@@ -69,10 +64,7 @@ def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
 def nur_wenn_vorhanden(element):
     """Blendet ein Element aus, wenn es seine Entität nicht gibt.
 
-    Schalter und Betriebsart entstehen nur, wenn der Nutzer das
-    Schalten freigegeben hat und die Anlage die Tasten hergibt. Ohne
-    diese Bedingung stünde sonst "Entität nicht gefunden" in der
-    Kachel; eine fehlende Entität wertet Home Assistant als "unknown".
+    Home Assistant wertet eine fehlende Entität als "unknown".
     """
     return {
         "type": "conditional",
@@ -122,6 +114,7 @@ def betriebsart(entity, top, schrift):
 
 
 def komponente(marker, zustand, bild, elemente):
+    """Eine Kachel, die nur erscheint, wenn es die Komponente gibt."""
     return {
         "type": "conditional",
         "conditions": [
@@ -140,6 +133,7 @@ def komponente(marker, zustand, bild, elemente):
 
 
 def grid(spalten, schrift, kurz):
+    """Alle Kacheln nebeneinander, für eine der drei Bildschirmbreiten."""
     kessel = [
         label(
             entity,
@@ -290,6 +284,7 @@ sind zusätzlich die Beschriftungen gekürzt.
 
 
 def responsive_karte():
+    """Die fertige Karte: alle drei Breiten übereinander, eine sichtbar."""
     return {
         "type": "vertical-stack",
         "cards": [
