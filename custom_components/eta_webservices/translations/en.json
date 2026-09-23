@@ -25,6 +25,7 @@
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
+          "pvm": "FUB name: PV heating module (PVM)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
           "hk4": "FUB name: heating circuit 4 (HK4)",
           "lager": "FUB name: pellet store (Lager)"
@@ -75,6 +76,7 @@
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
+          "pvm": "FUB name: PV heating module (PVM)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
           "hk4": "FUB name: heating circuit 4 (HK4)",
           "lager": "FUB name: pellet store (Lager)"
@@ -95,6 +97,7 @@
         "hk1": "Heating circuit 1",
         "hk2": "Heating circuit 2",
         "solar": "Solar thermal system",
+        "pvm": "PV heating module (PVM)",
         "hk3": "Heating circuit 3",
         "hk4": "Heating circuit 4",
         "lager": "Pellet store"
@@ -242,6 +245,9 @@
       "komponente_puffer": {
         "name": "Buffer tank component"
       },
+      "komponente_pvm": {
+        "name": "PV heating module component"
+      },
       "komponente_solar": {
         "name": "Solar component"
       },
@@ -298,6 +304,30 @@
       },
       "puffer_ladezustand": {
         "name": "Buffer charge level"
+      },
+      "pvm_ertrag_gestern": {
+        "name": "PV heating module yield yesterday"
+      },
+      "pvm_ertrag_heute": {
+        "name": "PV heating module yield today"
+      },
+      "pvm_gesamtenergie": {
+        "name": "PV heating module total energy"
+      },
+      "pvm_heizstab": {
+        "name": "PV heating module heating element"
+      },
+      "pvm_temperatur_mitte": {
+        "name": "PV heating module temperature middle"
+      },
+      "pvm_temperatur_oben": {
+        "name": "PV heating module temperature top"
+      },
+      "pvm_temperatur_unten": {
+        "name": "PV heating module temperature bottom"
+      },
+      "pvm_zustand": {
+        "name": "PV heating module status"
       },
       "restsauerstoff": {
         "name": "Residual oxygen"

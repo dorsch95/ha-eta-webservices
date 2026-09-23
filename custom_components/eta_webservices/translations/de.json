@@ -25,6 +25,7 @@
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
+          "pvm": "FUB-Name: PV-Heizmodul (PVM)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
           "lager": "FUB-Name: Pelletlager (Lager)"
@@ -75,6 +76,7 @@
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
+          "pvm": "FUB-Name: PV-Heizmodul (PVM)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
           "lager": "FUB-Name: Pelletlager (Lager)"
@@ -95,6 +97,7 @@
         "hk1": "Heizkreis 1",
         "hk2": "Heizkreis 2",
         "solar": "Solaranlage",
+        "pvm": "PV-Heizmodul (PVM)",
         "hk3": "Heizkreis 3",
         "hk4": "Heizkreis 4",
         "lager": "Pelletlager"
@@ -242,6 +245,9 @@
       "komponente_puffer": {
         "name": "Komponente Pufferspeicher"
       },
+      "komponente_pvm": {
+        "name": "Komponente PV-Heizmodul"
+      },
       "komponente_solar": {
         "name": "Komponente Solar"
       },
@@ -298,6 +304,30 @@
       },
       "puffer_ladezustand": {
         "name": "Puffer Ladezustand"
+      },
+      "pvm_ertrag_gestern": {
+        "name": "PV-Heizmodul Ertrag gestern"
+      },
+      "pvm_ertrag_heute": {
+        "name": "PV-Heizmodul Ertrag heute"
+      },
+      "pvm_gesamtenergie": {
+        "name": "PV-Heizmodul Gesamtenergie"
+      },
+      "pvm_heizstab": {
+        "name": "PV-Heizmodul Heizstab"
+      },
+      "pvm_temperatur_mitte": {
+        "name": "PV-Heizmodul Temperatur Mitte"
+      },
+      "pvm_temperatur_oben": {
+        "name": "PV-Heizmodul Temperatur oben"
+      },
+      "pvm_temperatur_unten": {
+        "name": "PV-Heizmodul Temperatur unten"
+      },
+      "pvm_zustand": {
+        "name": "PV-Heizmodul Zustand"
       },
       "restsauerstoff": {
         "name": "Restsauerstoff"

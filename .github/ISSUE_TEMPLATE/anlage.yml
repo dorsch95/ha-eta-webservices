@@ -7,7 +7,7 @@ body:
       value: |
         Die Integration findet die Werte über die **Namen im Menübaum** deiner Anlage. Anlagen unterscheiden sich,
         und jede weitere hilft, die Suche besser zu machen - besonders mit Solar, Pelletlager, Hackgut,
-        Stückholz oder mehreren Heizkreisen.
+        Stückholz, PV-Heizmodul, SH TWIN oder mehreren Heizkreisen.
 
         Die **Diagnose-Datei** enthält den vollständigen Menübaum, sonst ist nichts nötig:
         **Einstellungen → Geräte & Dienste → ETA Web-Services → Gerät "ETA Heizung" → Diagnose herunterladen**.

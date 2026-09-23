@@ -1175,6 +1175,39 @@ cards:
             color: '#d5d9de'
             font-size: 85%
           prefix: 'Heute: '
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_pv_heizmodul
+        state: pvm
+      card:
+        type: picture-elements
+        image: /eta_webservices/grafiken/pvm.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_heizstab
+          style:
+            top: 8%
+            left: 50%
+            color: '#e0b63f'
+            font-size: 90%
+          prefix: 'Stab: '
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_temperatur_oben
+          style:
+            top: 15%
+            left: 50%
+            color: '#e8615f'
+            font-size: 85%
+          prefix: 'Oben: '
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_ertrag_heute
+          style:
+            top: 22%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 85%
+          prefix: 'Heute: '
 - type: conditional
   conditions:
   - condition: screen
@@ -2350,6 +2383,39 @@ cards:
             color: '#d5d9de'
             font-size: 90%
           prefix: 'Heute: '
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_pv_heizmodul
+        state: pvm
+      card:
+        type: picture-elements
+        image: /eta_webservices/grafiken/pvm.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_heizstab
+          style:
+            top: 8%
+            left: 50%
+            color: '#e0b63f'
+            font-size: 95%
+          prefix: 'Heizstab: '
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_temperatur_oben
+          style:
+            top: 15%
+            left: 50%
+            color: '#e8615f'
+            font-size: 90%
+          prefix: 'Oben: '
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_ertrag_heute
+          style:
+            top: 22%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 90%
+          prefix: 'Heute: '
 - type: conditional
   conditions:
   - condition: screen
@@ -3519,6 +3585,39 @@ cards:
           prefix: 'Leistung: '
         - type: state-label
           entity: sensor.eta_heizung_solar_ertrag_heute
+          style:
+            top: 22%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+          prefix: 'Heute: '
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_pv_heizmodul
+        state: pvm
+      card:
+        type: picture-elements
+        image: /eta_webservices/grafiken/pvm.png
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_heizstab
+          style:
+            top: 8%
+            left: 50%
+            color: '#e0b63f'
+            font-size: 100%
+          prefix: 'Heizstab: '
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_temperatur_oben
+          style:
+            top: 15%
+            left: 50%
+            color: '#e8615f'
+            font-size: 95%
+          prefix: 'Oben: '
+        - type: state-label
+          entity: sensor.eta_heizung_pv_heizmodul_ertrag_heute
           style:
             top: 22%
             left: 50%

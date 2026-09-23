@@ -359,3 +359,51 @@ async def test_kennungen_passen_zum_echten_menuebaum(hass):
     for key, kennung in KENNUNGEN.items():
         if key in uris:
             assert uris[key].endswith("/" + kennung), key
+
+
+PVM = "/168/10961"
+"""Der Funktionsblock des PV-Heizmoduls im Test-Menübaum."""
+
+
+async def test_pv_heizmodul_werte_werden_gefunden(hass):
+    uris, _ = await discover(hass)
+    assert uris["pvm_heizstab"] == f"{PVM}/0/0/14120"
+    assert uris["pvm_temperatur_oben"] == f"{PVM}/0/11718/0"
+    assert uris["pvm_temperatur_mitte"] == f"{PVM}/0/11719/0"
+    assert uris["pvm_temperatur_unten"] == f"{PVM}/0/11720/0"
+    assert uris["pvm_zustand"] == f"{PVM}/0/0/15219"
+    assert uris["pvm_gesamtenergie"] == f"{PVM}/0/0/15500"
+    assert uris["pvm_ertrag_heute"] == f"{PVM}/0/0/12350"
+    assert uris["pvm_ertrag_gestern"] == f"{PVM}/0/0/12769"
+
+
+async def test_ertrag_von_solar_und_pv_heizmodul_bleibt_getrennt(hass):
+    """Beide Blöcke führen "Ertrag heute" - jeder bekommt seinen eigenen."""
+    uris, _ = await discover(hass)
+    assert uris["solar_ertrag_heute"].startswith("/120/10221/")
+    assert uris["pvm_ertrag_heute"].startswith(f"{PVM}/")
+
+
+async def test_pv_heizmodul_ohne_funktionsblock_liefert_nichts(hass, menu_xml):
+    hass.session.menu = menu_xml.replace(
+        f'<fub uri="{PVM}" name="PVM">', f'<fub uri="{PVM}" name="Heizstab Keller">'
+    )
+    uris, _ = await discover(hass)
+    assert not [key for key in uris if key.startswith("pvm_")]
+    assert uris["solar_ertrag_heute"].startswith("/120/10221/")
+
+
+async def test_pv_heizmodul_heizstab_notfalls_ueber_die_kennung(hass, menu_xml):
+    hass.session.menu = menu_xml.replace('name="Heizstab"/>', 'name="Heizstab Leistung"/>')
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    ueber_kennung: set = set()
+    uris, _ = await async_discover_uris(client, {}, ueber_kennung)
+    assert uris["pvm_heizstab"] == f"{PVM}/0/0/14120"
+    assert ueber_kennung == {"pvm_heizstab"}
+
+
+async def test_pv_heizmodul_bekommt_nichts_zum_schreiben(hass):
+    """Die Überschussreserve ist einstellbar - die Integration fasst sie nicht an."""
+    uris, _ = await discover(hass)
+    assert f"{PVM}/0/0/15200" not in uris.values()
+    assert not [key for key, uri in uris.items() if uri.startswith(f"{PVM}/") and not key.startswith("pvm_")]

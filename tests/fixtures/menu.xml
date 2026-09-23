@@ -212,5 +212,32 @@
 <object uri="/264/10201/0/0/12790" name="Maximaler Vorrat"/>
 </object>
 </fub>
+<fub uri="/168/10961" name="PVM">
+<object uri="/168/10961/0/0/10990" name="Eingänge">
+<object uri="/168/10961/0/11033/0" name="STB"/>
+<object uri="/168/10961/0/11718/0" name="Temperatur oben"/>
+<object uri="/168/10961/0/11719/0" name="Temperatur mitte"/>
+<object uri="/168/10961/0/11720/0" name="Temperatur unten"/>
+<object uri="/168/10961/0/11715/0" name="Temperatur Kühlkörper"/>
+<object uri="/168/10961/0/11000/0" name="Boardtemperatur"/>
+</object>
+<object uri="/168/10961/0/0/10991" name="Ausgänge">
+<object uri="/168/10961/0/11322/0" name="Hauptrelais"/>
+<object uri="/168/10961/0/11714/0" name="Lüfter Kühlkörper"/>
+<object uri="/168/10961/0/0/14120" name="Heizstab"/>
+<object uri="/168/10961/0/11184/0" name="Ladepumpe"/>
+</object>
+<object uri="/168/10961/0/0/12010" name="Zählerstände">
+<object uri="/168/10961/0/0/15500" name="Gesamtenergie Heizstab"/>
+<object uri="/168/10961/0/0/12350" name="Ertrag heute"/>
+<object uri="/168/10961/0/0/12769" name="Ertrag gestern"/>
+</object>
+<object uri="/168/10961/0/0/19391" name="PV-Heizmodul">
+<object uri="/168/10961/0/0/15219" name="PV Modul -Zustand detailliert"/>
+<object uri="/168/10961/0/0/15200" name="Überschussreserve"/>
+<object uri="/168/10961/0/0/12241" name="Vorlauf"/>
+<object uri="/168/10961/0/11720/0" name="Temperatur unten"/>
+</object>
+</fub>
 </menu>
 </eta>

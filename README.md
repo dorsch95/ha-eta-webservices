@@ -3,7 +3,7 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Diese Integration liest **ETA Heizsysteme** komplett lokal über die integrierten RESTful Webservices (ETAtouch) aus - Pellet-, Stückholz- und Hackgutkessel samt Pufferspeicher, Frischwassermodul, Heizkreisen, Solaranlage und Pelletlager. Es geht nichts ins Internet.
+Diese Integration liest **ETA Heizsysteme** komplett lokal über die integrierten RESTful Webservices (ETAtouch) aus - Pellet-, Stückholz- und Hackgutkessel samt Pufferspeicher, Frischwassermodul, Heizkreisen, Solaranlage, PV-Heizmodul und Pelletlager. Es geht nichts ins Internet.
 
 Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch auch schalten; das muss beim Einrichten ausdrücklich freigegeben werden.
 
@@ -18,7 +18,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
 
-**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tank, fresh water module, heating circuits, solar and pellet store) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
+**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tank, fresh water module, heating circuits, solar, PV heating module and pellet store) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
 
 - Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
@@ -69,7 +69,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Web-Services**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
+4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, PV-Heizmodul, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein.
 7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
@@ -153,6 +153,15 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_solar_kollektortemperatur` | Solar Kollektortemperatur | °C |
 | `sensor.eta_heizung_solar_leistung` | Solar Leistung | kW |
 | `sensor.eta_heizung_solar_warmemenge` | Solar Wärmemenge | kWh |
+| **PV-Heizmodul** | | |
+| `sensor.eta_heizung_pv_heizmodul_ertrag_gestern` | PV-Heizmodul Ertrag gestern | kWh |
+| `sensor.eta_heizung_pv_heizmodul_ertrag_heute` | PV-Heizmodul Ertrag heute | kWh |
+| `sensor.eta_heizung_pv_heizmodul_gesamtenergie` | PV-Heizmodul Gesamtenergie | kWh |
+| `sensor.eta_heizung_pv_heizmodul_heizstab` | PV-Heizmodul Heizstab | kW |
+| `sensor.eta_heizung_pv_heizmodul_temperatur_mitte` | PV-Heizmodul Temperatur Mitte | °C |
+| `sensor.eta_heizung_pv_heizmodul_temperatur_oben` | PV-Heizmodul Temperatur oben | °C |
+| `sensor.eta_heizung_pv_heizmodul_temperatur_unten` | PV-Heizmodul Temperatur unten | °C |
+| `sensor.eta_heizung_pv_heizmodul_zustand` | PV-Heizmodul Zustand | Text |
 | **Unabhängig von den Komponenten** | | |
 | `sensor.eta_heizung_aschebox_status` | "459/1000kg" für die Dashboard-Anzeige | |
 | `sensor.eta_heizung_pellet_energieverbrauch_gesamt` | Gesamtverbrauch in kWh fürs Energie-Dashboard | |
@@ -199,6 +208,7 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 | Heizkreis 4 | `HK4` oder `HK 4` |
 | Pelletlager | `Lager` |
 | Solaranlage | `Solar` |
+| PV-Heizmodul | `PVM` |
 | Außentemperatur | `Sys` |
 
 Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufende Nummer an, zum Beispiel `HK 1.1`, `FWM 1.1` oder `WW 1.1`. Solche Namen - und alle Namen, die du selbst vergeben hast (etwa "Fußboden" statt `HK2`) - trägst du beim Einrichten oder unter **Konfigurieren** ein. Den genauen Namen zeigt das Display deiner Heizung als Reiter über dem Funktionsblock.
@@ -283,6 +293,8 @@ Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, ents
 **Ohne Gesamtverbrauch** gibt es keinen Energiewert fürs Energie-Dashboard - Hackgut- und Stückholzkessel messen ihren Verbrauch nicht. Die Sensoren heißen trotzdem "Pellet...", weil die Umrechnung über den Heizwert an Pellets hängt.
 
 **Bei der Solaranlage** gibt es die Kollektortemperatur immer. Leistung, Wärmemenge, Ertrag heute und Ertrag gestern nur mit **Wärmemengenmessung**. `sensor.eta_heizung_solar_warmemenge` liefert Langzeitstatistik, etwa für eine Statistik-Karte. Ins Energie-Dashboard gehört sie nicht: Dessen Bereich *Solarpanel* ist für Strom aus einer PV-Anlage gedacht, und Home Assistant würde die Wärme mit deinem Stromverbrauch verrechnen.
+
+**Das PV-Heizmodul (PVM)** ist keine Solaranlage: Es heizt mit überschüssigem Strom deiner PV-Anlage über einen Heizstab ins Wasser. Die Integration liest die Leistung des Heizstabs, die Temperaturen oben, Mitte und unten, den Zustand, die Gesamtenergie und den Ertrag von heute und gestern - geschrieben wird nichts. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist Strom, den der Heizstab verbraucht hat; im Energie-Dashboard gehört er unter **Einzelne Geräte**. Die Namen stammen vom Display, an einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 
 ---
 

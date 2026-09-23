@@ -381,6 +381,19 @@ def grid(spalten, schrift, kurz):
                             ),
                 ],
             ),
+            komponente(
+                "pv_heizmodul",
+                "pvm",
+                "pvm",
+                [
+                    label("pv_heizmodul_heizstab", "Stab: " if kurz else "Heizstab: ",
+                          "solar", 8, 50, schrift),
+                    label("pv_heizmodul_temperatur_oben", "Oben: ",
+                          "kessel", 15, 50, schrift - 5),
+                    label("pv_heizmodul_ertrag_heute", "Heute: ",
+                          "hell", 22, 50, schrift - 5),
+                ],
+            ),
         ],
     }
 
@@ -408,6 +421,7 @@ MARKER = {
     "hk4": "komponente_heizkreis_4",
     "lager": "komponente_pelletlager",
     "solar": "komponente_solar",
+    "pvm": "komponente_pv_heizmodul",
 }
 """Welche Marker-Entität zu welcher Komponente gehört.
 

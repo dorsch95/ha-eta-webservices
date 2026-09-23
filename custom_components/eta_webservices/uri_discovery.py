@@ -57,6 +57,14 @@ DISCOVERY_PATHS = {
     "solar_waermemenge": ("solar", ["Leistung", "Wärmemenge"]),
     "solar_ertrag_heute": ("solar", ["Leistung", "Ertrag heute"]),
     "solar_ertrag_gestern": ("solar", ["Leistung", "Ertrag gestern"]),
+    "pvm_heizstab": ("pvm", ["Ausgänge", "Heizstab"]),
+    "pvm_temperatur_oben": ("pvm", ["Eingänge", "Temperatur oben"]),
+    "pvm_temperatur_mitte": ("pvm", ["Eingänge", "Temperatur mitte"]),
+    "pvm_temperatur_unten": ("pvm", ["Eingänge", "Temperatur unten"]),
+    "pvm_zustand": ("pvm", ["PV-Heizmodul", "PV Modul -Zustand detailliert"]),
+    "pvm_gesamtenergie": ("pvm", ["Zählerstände", "Gesamtenergie Heizstab"]),
+    "pvm_ertrag_heute": ("pvm", ["Zählerstände", "Ertrag heute"]),
+    "pvm_ertrag_gestern": ("pvm", ["Zählerstände", "Ertrag gestern"]),
 }
 
 PUMPEN = {
@@ -140,6 +148,13 @@ KENNUNGEN = {
     "solar_waermemenge": "0/0/12349",
     "solar_ertrag_heute": "0/0/12350",
     "solar_ertrag_gestern": "0/0/12769",
+    "pvm_heizstab": "0/0/14120",
+    "pvm_temperatur_oben": "0/11718/0",
+    "pvm_temperatur_mitte": "0/11719/0",
+    "pvm_temperatur_unten": "0/11720/0",
+    "pvm_zustand": "0/0/15219",
+    "pvm_ertrag_heute": "0/0/12350",
+    "pvm_ertrag_gestern": "0/0/12769",
 }
 """Zweiter Weg zu einem Messwert: die hinteren drei Zahlen seiner URI.
 
@@ -151,10 +166,13 @@ Namenspfad nichts, etwa weil ein Zweig anders liegt oder das Display auf
 eine andere Sprache eingestellt ist, wird innerhalb des Funktionsblocks
 nach dieser Kennung gesucht - nie außerhalb.
 
-Aufgenommen sind nur Kennungen, die in einem echten Menübaum mit ihrem
+Aufgenommen sind Kennungen, die in einem echten Menübaum mit ihrem
 Namen stehen. Heizkreis 2 bis 4 sind derselbe Funktionsblock-Typ wie
-Heizkreis 1 und tragen deshalb dieselben. Nur Messwerte: Tasten und
-Schalter werden weiter ausschließlich über ihren Namen gefunden.
+Heizkreis 1 und tragen deshalb dieselben. Einzige Ausnahme ist das
+PV-Heizmodul: Von ihm gibt es noch keinen echten Menübaum, seine
+Kennungen sind unbelegt. Greift eine davon, steht das in der Diagnose
+unter "ueber_kennung_gefunden". Nur Messwerte: Tasten und Schalter
+werden weiter ausschließlich über ihren Namen gefunden.
 """
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)

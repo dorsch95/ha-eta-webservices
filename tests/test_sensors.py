@@ -652,6 +652,29 @@ async def test_solar_ohne_waermemengenmessung(hass, entry, menu_xml):
         assert by_name[name].state_class is None, name
 
 
+async def test_pv_heizmodul_entsteht_nur_bei_angekreuzter_komponente(hass, entry):
+    _, by_name = await setup_integration(hass, entry)
+    assert not [name for name in by_name if "PV-Heizmodul" in name]
+
+
+async def test_pv_heizmodul_liefert_nur_lesende_werte(hass, entry):
+    entry.data["components"] = ["kessel", "pvm"]
+    entry.data["enable_switches"] = True
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert "Komponente PV-Heizmodul" in by_name
+    assert by_name["PV-Heizmodul Heizstab"].native_unit_of_measurement == "kW"
+    assert by_name["PV-Heizmodul Temperatur oben"].native_unit_of_measurement == "°C"
+    assert by_name["PV-Heizmodul Gesamtenergie"].state_class == "total_increasing"
+    assert coordinator.sensor_defs["pvm_heizstab"]["uri"] == "/168/10961/0/0/14120"
+    assert not [
+        key
+        for key in coordinator.discovered_uris
+        if coordinator.discovered_uris[key].startswith("/168/10961/")
+        and not key.startswith("pvm_")
+    ]
+
+
 async def test_status_unterscheidet_fehlend_von_unerreichbar(hass, entry, menu_xml):
     """"-" heißt "hat die Anlage nicht", nicht "gerade nicht lesbar"."""
     from eta_webservices.coordinator import VERALTET_AB
