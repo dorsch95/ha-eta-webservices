@@ -761,3 +761,50 @@ def test_lagerbilder_gibt_es():
             assert bild.size == (255, 501), datei
     with Image.open(GRAFIKEN / "lager_schnecke.webp") as schnecke:
         assert schnecke.n_frames > 1
+
+
+def _auflagen(kachel):
+    return [
+        e for e in kachel["card"]["elements"]
+        if e["type"] == "conditional" and e["elements"][0]["type"] == "image"
+    ]
+
+
+def test_heizkreise_fliessen_bei_anforderung(karte):
+    from eta_webservices.karte import HEIZKREIS_OHNE_FLUSS
+
+    for gitter in raster(karte):
+        heizkreise = [k for k in gitter["cards"] if k["card"]["image"].endswith("/heizkreis.png")]
+        assert len(heizkreise) == 4
+        for kachel in heizkreise:
+            (fluss,) = _auflagen(kachel)
+            assert fluss["elements"][0]["image"].endswith("/heizkreis_fluss.webp")
+            assert fluss["conditions"][1]["state_not"] == HEIZKREIS_OHNE_FLUSS
+            assert fluss["conditions"][1]["entity"].endswith("_anforderung")
+
+
+@pytest.mark.parametrize("bild, entitaet", [
+    ("solar", "sensor.eta_heizung_solar_leistung"),
+    ("pvm", "sensor.eta_heizung_pv_heizmodul_heizstab"),
+])
+def test_solar_und_pvm_bewegen_sich_nur_mit_leistung(karte, bild, entitaet):
+    for gitter in raster(karte):
+        kachel = next(k for k in gitter["cards"] if k["card"]["image"].endswith(f"/{bild}.png"))
+        ruhe, aktiv = _auflagen(kachel)
+        assert ruhe["elements"][0]["image"].endswith(f"/{bild}_ruhe.png")
+        assert aktiv["elements"][0]["image"].endswith(f"/{bild}_aktiv.webp")
+        assert ruhe["conditions"][1] == {"condition": "numeric_state", "entity": entitaet, "below": 0.05}
+        assert aktiv["conditions"][1] == {"condition": "numeric_state", "entity": entitaet, "above": 0.05}
+
+
+def test_bewegte_auflagen_gibt_es():
+    from PIL import Image
+
+    from eta_webservices import GRAFIKEN
+
+    for datei in ("heizkreis_fluss.webp", "solar_aktiv.webp", "solar_ruhe.png",
+                  "pvm_aktiv.webp", "pvm_ruhe.png"):
+        with Image.open(GRAFIKEN / datei) as bild:
+            assert bild.size == (255, 501), datei
+            if datei.endswith(".webp"):
+                assert bild.n_frames > 1, datei

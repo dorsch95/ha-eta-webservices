@@ -220,7 +220,7 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck.
+Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck.
 
 ### Einrichten
 

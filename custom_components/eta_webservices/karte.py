@@ -412,6 +412,42 @@ def lager_auflagen():
     return elemente
 
 
+HEIZKREIS_OHNE_FLUSS = ["Aus", "-", "unavailable"]
+"""Anforderungen, bei denen im Heizkreis nichts fließt.
+
+"-" meldet die Integration, wenn die Anlage die Anforderung nicht führt.
+"""
+
+
+def heizkreis_fluss(entitaet):
+    """Helle Pulse wandern durch den Heizkreis, solange er angefordert ist."""
+    entitaet = f"sensor.eta_heizung_{entitaet}"
+    return auflage(
+        "heizkreis_fluss.webp",
+        entitaet,
+        [{"condition": "state", "entity": entitaet, "state_not": HEIZKREIS_OHNE_FLUSS}],
+    )
+
+
+LEISTUNG_AB = 0.05
+"""Ab dieser Leistung in kW gilt Solar bzw. Heizstab als in Betrieb."""
+
+
+def aktiv_oder_ruhe(bild, entitaet):
+    """Motiv bewegt, solange Leistung anliegt, sonst blass.
+
+    Meldet die Anlage keine Leistung, greift keine der beiden Auflagen
+    und es bleibt beim Grundbild.
+    """
+    entitaet = f"sensor.eta_heizung_{entitaet}"
+    return [
+        auflage(f"{bild}_ruhe.png", entitaet,
+                [{"condition": "numeric_state", "entity": entitaet, "below": LEISTUNG_AB}]),
+        auflage(f"{bild}_aktiv.webp", entitaet,
+                [{"condition": "numeric_state", "entity": entitaet, "above": LEISTUNG_AB}]),
+    ]
+
+
 def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     """Eine Kachel, die nur erscheint, wenn es die Komponente gibt.
 
@@ -493,6 +529,7 @@ def grid(spalten, schrift, kurz):
                 "hk1",
                 "heizkreis",
                 [
+                    heizkreis_fluss("heizkreis_anforderung"),
                     label("heizkreis_vorlauftemperatur", "HK1: " if kurz else "Vorlauf HK1: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -505,6 +542,7 @@ def grid(spalten, schrift, kurz):
                 "hk2",
                 "heizkreis",
                 [
+                    heizkreis_fluss("heizkreis_2_anforderung"),
                     label("heizkreis_2_vorlauftemperatur", "HK2: " if kurz else "Vorlauf HK2: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -517,6 +555,7 @@ def grid(spalten, schrift, kurz):
                 "hk3",
                 "heizkreis",
                 [
+                    heizkreis_fluss("heizkreis_3_anforderung"),
                     label("heizkreis_3_vorlauftemperatur", "HK3: " if kurz else "Vorlauf HK3: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -529,6 +568,7 @@ def grid(spalten, schrift, kurz):
                 "hk4",
                 "heizkreis",
                 [
+                    heizkreis_fluss("heizkreis_4_anforderung"),
                     label("heizkreis_4_vorlauftemperatur", "HK4: " if kurz else "Vorlauf HK4: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -552,6 +592,7 @@ def grid(spalten, schrift, kurz):
                 "solar",
                 "solar",
                 [
+                    *aktiv_oder_ruhe("solar", "solar_leistung"),
                     label(
                                 "solar_kollektortemperatur",
                                 "Koll.: " if kurz else "Kollektor: ",
@@ -583,6 +624,7 @@ def grid(spalten, schrift, kurz):
                 "pvm",
                 "pvm",
                 [
+                    *aktiv_oder_ruhe("pvm", "pv_heizmodul_heizstab"),
                     label("pv_heizmodul_heizstab", "Stab: " if kurz else "Heizstab: ",
                           "solar", 8, 50, schrift),
                     label("pv_heizmodul_temperatur_oben", "Oben: ",

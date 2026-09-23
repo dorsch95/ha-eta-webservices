@@ -655,6 +655,29 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: &id001
+            - Aus
+            - '-'
+            - unavailable
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
           style:
@@ -900,6 +923,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
           style:
@@ -1145,6 +1188,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_3_vorlauftemperatur
           style:
@@ -1390,6 +1453,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_4_vorlauftemperatur
           style:
@@ -1803,6 +1886,46 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/solar.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_solar_leistung
+            below: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_ruhe.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_solar_leistung
+            above: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_solar_kollektortemperatur
           style:
@@ -1836,6 +1959,46 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/pvm.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            below: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_ruhe.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            above: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_pv_heizmodul_heizstab
           style:
@@ -2515,6 +2678,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
           style:
@@ -2760,6 +2943,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
           style:
@@ -3005,6 +3208,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_3_vorlauftemperatur
           style:
@@ -3250,6 +3473,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_4_vorlauftemperatur
           style:
@@ -3663,6 +3906,46 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/solar.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_solar_leistung
+            below: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_ruhe.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_solar_leistung
+            above: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_solar_kollektortemperatur
           style:
@@ -3696,6 +3979,46 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/pvm.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            below: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_ruhe.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            above: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_pv_heizmodul_heizstab
           style:
@@ -4375,6 +4698,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_vorlauftemperatur
           style:
@@ -4620,6 +4963,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_2_vorlauftemperatur
           style:
@@ -4865,6 +5228,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_3_vorlauftemperatur
           style:
@@ -5110,6 +5493,26 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/heizkreis.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_heizkreis_4_vorlauftemperatur
           style:
@@ -5523,6 +5926,46 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/solar.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_solar_leistung
+            below: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_ruhe.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_solar_leistung
+            above: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_solar_kollektortemperatur
           style:
@@ -5556,6 +5999,46 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/pvm.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            below: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_ruhe.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            above: 0.05
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_pv_heizmodul_heizstab
           style:
