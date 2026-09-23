@@ -194,37 +194,69 @@ wird nur das Symbol; welcher Modus gerade gilt, steht als Text darüber.
 """
 
 
+AKTIV = "var(--state-active-color, #ffc107)"
+"""Die Farbe, in der Home Assistant eingeschaltete Symbole zeigt.
+
+Dieselbe wie beim Ein/Aus-Symbol des Kessels, damit beide Kacheln
+gleich aussehen - auch mit einem eigenen Theme.
+"""
+
+
 def modus_tasten(entity, top, groesse=26):
     """Schaltet die Betriebsart direkt auf der Kachel um.
 
     Vier Symbole nebeneinander, jedes setzt beim Antippen seine
     Betriebsart. "Aus" ist eines davon - einen getrennten Ein/Aus-Schalter
     gibt es am Heizkreis deshalb nicht.
+
+    Das Symbol der gerade geltenden Betriebsart leuchtet wie das
+    eingeschaltete Kessel-Symbol. Dafür gibt es jedes Symbol zweimal, je
+    mit einer Bedingung: leuchtend, wenn die Auswahl auf seiner Betriebsart
+    steht, sonst hell. Nie beide zugleich - übereinanderliegende Symbole
+    bekämen sonst einen grauen Rand.
     """
     entitaet = f"select.eta_heizung_{entity}"
-    return [
-        nur_wenn_vorhanden(
-            {
-                "type": "icon",
-                "icon": symbol,
-                "title": titel,
-                "entity": entitaet,
-                "tap_action": {
-                    "action": "perform-action",
-                    "perform_action": "select.select_option",
-                    "target": {"entity_id": entitaet},
-                    "data": {"option": modus},
-                },
-                "style": {
-                    "top": f"{top}%",
-                    "left": f"{links}%",
-                    "color": FARBEN["hell"],
-                    "--mdc-icon-size": f"{groesse}px",
-                },
+    elemente = []
+    for (modus, symbol, titel), links in zip(MODUS_TASTEN, (20, 40, 60, 80)):
+        for aktiv in (True, False):
+            stil = {
+                "top": f"{top}%",
+                "left": f"{links}%",
+                "color": AKTIV if aktiv else FARBEN["hell"],
+                "--mdc-icon-size": f"{groesse}px",
             }
-        )
-        for (modus, symbol, titel), links in zip(MODUS_TASTEN, (20, 40, 60, 80))
-    ]
+            if aktiv:
+                stil["filter"] = f"drop-shadow(0 0 6px {AKTIV})"
+            bedingungen = [
+                {"condition": "state", "entity": entitaet, "state_not": "unknown"},
+                (
+                    {"condition": "state", "entity": entitaet, "state": modus}
+                    if aktiv
+                    else {"condition": "state", "entity": entitaet, "state_not": modus}
+                ),
+            ]
+            elemente.append(
+                {
+                    "type": "conditional",
+                    "conditions": bedingungen,
+                    "elements": [
+                        {
+                            "type": "icon",
+                            "icon": symbol,
+                            "title": titel,
+                            "entity": entitaet,
+                            "tap_action": {
+                                "action": "perform-action",
+                                "perform_action": "select.select_option",
+                                "target": {"entity_id": entitaet},
+                                "data": {"option": modus},
+                            },
+                            "style": stil,
+                        }
+                    ],
+                }
+            )
+    return elemente
 
 
 def komponente(marker, zustand, bild, elemente):

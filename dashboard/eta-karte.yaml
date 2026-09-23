@@ -650,6 +650,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -672,6 +701,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -694,6 +752,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -716,6 +803,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -778,6 +894,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -800,6 +945,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -822,6 +996,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -844,6 +1047,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -906,6 +1138,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -928,6 +1189,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -950,6 +1240,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -972,6 +1291,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -1034,6 +1382,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -1056,6 +1433,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -1078,6 +1484,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -1100,6 +1535,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -1858,6 +2322,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -1880,6 +2373,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -1902,6 +2424,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -1924,6 +2475,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -1986,6 +2566,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -2008,6 +2617,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -2030,6 +2668,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -2052,6 +2719,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -2114,6 +2810,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -2136,6 +2861,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -2158,6 +2912,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -2180,6 +2963,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -2242,6 +3054,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -2264,6 +3105,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -2286,6 +3156,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -2308,6 +3207,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -3066,6 +3994,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -3088,6 +4045,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -3110,6 +4096,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -3132,6 +4147,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_1_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_1_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -3194,6 +4238,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -3216,6 +4289,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -3238,6 +4340,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -3260,6 +4391,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_2_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_2_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -3322,6 +4482,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -3344,6 +4533,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -3366,6 +4584,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -3388,6 +4635,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_3_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_3_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power
@@ -3450,6 +4726,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: automatik
+          elements:
+          - type: icon
+            icon: mdi:calendar-clock
+            title: Auto
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: automatik
+            style:
+              top: 90%
+              left: 20%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: automatik
           elements:
           - type: icon
             icon: mdi:calendar-clock
@@ -3472,6 +4777,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: heizen
+          elements:
+          - type: icon
+            icon: mdi:fire
+            title: Dauer
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: heizen
+            style:
+              top: 90%
+              left: 40%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: heizen
           elements:
           - type: icon
             icon: mdi:fire
@@ -3494,6 +4828,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: absenken
+          elements:
+          - type: icon
+            icon: mdi:leaf
+            title: ECO
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: absenken
+            style:
+              top: 90%
+              left: 60%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: absenken
           elements:
           - type: icon
             icon: mdi:leaf
@@ -3516,6 +4879,35 @@ cards:
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
             state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state: aus
+          elements:
+          - type: icon
+            icon: mdi:power
+            title: Aus
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.eta_heizung_heizkreis_4_betriebsart
+              data:
+                option: aus
+            style:
+              top: 90%
+              left: 80%
+              color: 'var(--state-active-color, #ffc107)'
+              --mdc-icon-size: 26px
+              filter: 'drop-shadow(0 0 6px var(--state-active-color, #ffc107))'
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: unknown
+          - condition: state
+            entity: select.eta_heizung_heizkreis_4_betriebsart
+            state_not: aus
           elements:
           - type: icon
             icon: mdi:power

@@ -619,3 +619,31 @@ def test_twin_bringt_keine_eigene_kachel():
     mit_twin = zugeschnitten(["kessel", "twin", "puffer"], 5)
     ohne_twin = zugeschnitten(["kessel", "puffer"], 5)
     assert mit_twin == ohne_twin
+
+
+def test_geltende_betriebsart_leuchtet(karte):
+    """Je Betriebsart genau ein leuchtendes und ein helles Symbol.
+
+    Die beiden schließen sich aus: leuchtend nur bei genau dieser
+    Betriebsart, hell bei jeder anderen.
+    """
+    from eta_webservices.karte import AKTIV, MODUS_TASTEN
+
+    gruppen = [
+        element
+        for element in alle_elemente(karte)
+        if element["type"] == "conditional"
+        and element["elements"][0].get("tap_action", {}).get("perform_action")
+        == "select.select_option"
+    ]
+    for modus, _, _ in MODUS_TASTEN:
+        je_modus = [
+            g for g in gruppen if g["elements"][0]["tap_action"]["data"]["option"] == modus
+        ]
+        leuchtend = [g for g in je_modus if any(b.get("state") == modus for b in g["conditions"])]
+        hell = [g for g in je_modus if any(b.get("state_not") == modus for b in g["conditions"])]
+        assert leuchtend and hell and len(leuchtend) == len(hell), modus
+        for gruppe in leuchtend:
+            assert gruppe["elements"][0]["style"]["color"] == AKTIV
+        for gruppe in hell:
+            assert gruppe["elements"][0]["style"]["color"] != AKTIV
