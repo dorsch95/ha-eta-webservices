@@ -1631,6 +1631,149 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/lager.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 87.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_100.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 62.5
+            below: 87.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_75.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 37.5
+            below: 62.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_50.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 12.5
+            below: 37.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_25.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            below: 12.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_leer.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state: Fördern
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_austragung
+            image: /eta_webservices/grafiken/lager_schnecke.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            state_not: unknown
+          - condition: state
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            state: 'on'
+          elements:
+          - type: image
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            image: /eta_webservices/grafiken/lager_warnung.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_lager_vorrat
           style:
@@ -3344,6 +3487,149 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/lager.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 87.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_100.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 62.5
+            below: 87.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_75.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 37.5
+            below: 62.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_50.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 12.5
+            below: 37.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_25.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            below: 12.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_leer.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state: Fördern
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_austragung
+            image: /eta_webservices/grafiken/lager_schnecke.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            state_not: unknown
+          - condition: state
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            state: 'on'
+          elements:
+          - type: image
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            image: /eta_webservices/grafiken/lager_warnung.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_lager_vorrat
           style:
@@ -5057,6 +5343,149 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/lager.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 87.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_100.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 62.5
+            below: 87.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_75.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 37.5
+            below: 62.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_50.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            above: 12.5
+            below: 37.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_25.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_fullstand
+            state_not: unknown
+          - condition: numeric_state
+            entity: sensor.eta_heizung_lager_fullstand
+            below: 12.5
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_fullstand
+            image: /eta_webservices/grafiken/lager_leer.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state: Fördern
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_austragung
+            image: /eta_webservices/grafiken/lager_schnecke.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            state_not: unknown
+          - condition: state
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            state: 'on'
+          elements:
+          - type: image
+            entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
+            image: /eta_webservices/grafiken/lager_warnung.png
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_lager_vorrat
           style:

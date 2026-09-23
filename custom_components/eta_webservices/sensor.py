@@ -33,6 +33,8 @@ async def async_setup_entry(
     ]
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
+    if "lager_vorrat" in coordinator.sensor_defs:
+        entities.append(ETALagerFuellstandSensor(coordinator))
     entities.append(_pellet_energie(coordinator))
     if coordinator.enable_errors:
         entities.append(ETAErrorSensor(coordinator))
@@ -195,6 +197,38 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
             return f"{float(verbrauch.value):.0f}/{float(schwelle.value):.0f}kg"
         except (TypeError, ValueError):
             return None
+
+
+class ETALagerFuellstandSensor(ETABaseSensor):
+    """Wie voll das Pelletlager ist, in Prozent vom maximalen Vorrat.
+
+    Beide Werte stammen aus der Anlage: "Vorrat" und "Maximaler Vorrat",
+    den der Nutzer dort für seinen Lagerraum eingestellt hat. Die
+    Lager-Kachel wählt danach ihr Bild.
+    """
+
+    _attr_icon = "mdi:silo"
+    _attr_translation_key = "lager_fuellstand"
+    _attr_native_unit_of_measurement = "%"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator, "lager_fuellstand")
+
+    @property
+    def native_value(self):
+        vorrat = self.coordinator.data.get("lager_vorrat")
+        maximum = self.coordinator.data.get("lager_maximum")
+        if vorrat is None or maximum is None:
+            return None
+        try:
+            vorrat_kg, maximum_kg = float(vorrat.value), float(maximum.value)
+        except (TypeError, ValueError):
+            return None
+        if maximum_kg <= 0:
+            return None
+        return round(max(0.0, vorrat_kg / maximum_kg * 100))
 
 
 class ETAErrorSensor(ETABaseSensor):

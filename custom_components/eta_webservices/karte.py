@@ -345,6 +345,73 @@ def kessel_zustandsbilder():
     return bilder
 
 
+def auflage(bild, entitaet, bedingungen):
+    """Ein Bild so groß wie die Kachel, das nur unter diesen Bedingungen erscheint.
+
+    Die Auflagen liegen vor den Beschriftungen in der Elementliste, damit
+    die Schrift darüber bleibt. Antippen tut nichts - sonst verdeckte das
+    Bild die ganze Kachel mit einem Dialog.
+    """
+    return {
+        "type": "conditional",
+        "conditions": [
+            {"condition": "state", "entity": entitaet, "state_not": "unknown"},
+            *bedingungen,
+        ],
+        "elements": [
+            {
+                "type": "image",
+                "entity": entitaet,
+                "image": f"{BILDPFAD}/{bild}",
+                "tap_action": {"action": "none"},
+                "hold_action": {"action": "none"},
+                "style": {"top": "50%", "left": "50%", "width": "100%"},
+            }
+        ],
+    }
+
+
+LAGER_FUELLSTAND = "sensor.eta_heizung_lager_fullstand"
+LAGER_STUFEN = [
+    ("lager_100.png", 87.5, None),
+    ("lager_75.png", 62.5, 87.5),
+    ("lager_50.png", 37.5, 62.5),
+    ("lager_25.png", 12.5, 37.5),
+    ("lager_leer.png", None, 12.5),
+]
+"""Welches Lagerbild bei welchem Füllstand in Prozent gilt (über, unter).
+
+Der Füllstand ist ganzzahlig, die Grenzen liegen deshalb auf halben
+Prozent - jeder Wert fällt in genau eine Stufe.
+"""
+
+LAGER_FOERDERN = "Fördern"
+"""Austragung-Zustand, bei dem sich die Förderschnecke dreht."""
+
+
+def lager_auflagen():
+    """Füllstufe, drehende Schnecke und Warnung für die Lager-Kachel."""
+    elemente = []
+    for bild, ueber, unter in LAGER_STUFEN:
+        grenze = {"condition": "numeric_state", "entity": LAGER_FUELLSTAND}
+        if ueber is not None:
+            grenze["above"] = ueber
+        if unter is not None:
+            grenze["below"] = unter
+        elemente.append(auflage(bild, LAGER_FUELLSTAND, [grenze]))
+    austragung = "sensor.eta_heizung_lager_austragung"
+    elemente.append(
+        auflage("lager_schnecke.webp", austragung,
+                [{"condition": "state", "entity": austragung, "state": LAGER_FOERDERN}])
+    )
+    warnung = "binary_sensor.eta_heizung_pelletvorrat_niedrig"
+    elemente.append(
+        auflage("lager_warnung.png", warnung,
+                [{"condition": "state", "entity": warnung, "state": "on"}])
+    )
+    return elemente
+
+
 def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     """Eine Kachel, die nur erscheint, wenn es die Komponente gibt.
 
@@ -474,6 +541,7 @@ def grid(spalten, schrift, kurz):
                 "lager",
                 "lager",
                 [
+                    *lager_auflagen(),
                     label("lager_vorrat", "Vorrat: ", "behaelter", 8, 50, schrift + 5),
                     label("lager_warngrenze", "Ab: " if kurz else "Warnung ab: ",
                           "gedaempft", 15, 50, schrift),

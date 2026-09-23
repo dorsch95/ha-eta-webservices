@@ -690,6 +690,25 @@ async def test_pv_heizmodul_liefert_nur_lesende_werte(hass, entry):
     ]
 
 
+async def test_lager_fuellstand_in_prozent(hass, entry):
+    """Vorrat 3420 kg bei 6000 kg maximalem Vorrat sind 57 Prozent."""
+    from eta_webservices.api import ETAValue
+
+    entry.data["components"] = ["kessel", "lager"]
+    coordinator, by_name = await setup_integration(hass, entry)
+    fuellstand = by_name["Lager Füllstand"]
+    assert fuellstand.native_unit_of_measurement == "%"
+
+    def wert(zahl):
+        return ETAValue(zahl, str(zahl), "kg", False, 0)
+
+    coordinator.data["lager_vorrat"] = wert(3420)
+    coordinator.data["lager_maximum"] = wert(6000)
+    assert fuellstand.native_value == 57
+    coordinator.data["lager_maximum"] = wert(0)
+    assert fuellstand.native_value is None
+
+
 async def test_status_unterscheidet_fehlend_von_unerreichbar(hass, entry, menu_xml):
     """"-" heißt "hat die Anlage nicht", nicht "gerade nicht lesbar"."""
     from eta_webservices.coordinator import VERALTET_AB

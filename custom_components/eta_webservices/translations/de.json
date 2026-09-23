@@ -254,6 +254,9 @@
       "komponente_twin": {
         "name": "Komponente TWIN"
       },
+      "lager_fuellstand": {
+        "name": "Lager Füllstand"
+      },
       "lager_maximum": {
         "name": "Lager Fassungsvermögen"
       },

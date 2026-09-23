@@ -715,3 +715,49 @@ def test_kessel_kachel_wechselt_mit_dem_zustand(karte):
         for zustand in ("Störung", "Störung beim Entaschen", "Wartung"):
             assert kessel["state_image"][zustand].endswith("/kessel_stoerung.webp")
         assert kessel["state_image"]["Bereit"].endswith("/kessel_aus.png")
+
+
+def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
+    """Je Füllstand genau ein Bild, dazu Schnecke und Warnung als Auflage."""
+    from eta_webservices.karte import LAGER_STUFEN
+
+    for gitter in raster(karte):
+        lager = next(k for k in gitter["cards"] if k["card"]["image"].endswith("/lager.png"))
+        bilder = [
+            e["elements"][0]["image"].rsplit("/", 1)[1]
+            for e in lager["card"]["elements"]
+            if e["type"] == "conditional" and e["elements"][0]["type"] == "image"
+        ]
+        assert bilder == [b for b, _, _ in LAGER_STUFEN] + [
+            "lager_schnecke.webp",
+            "lager_warnung.png",
+        ]
+        erstes_label = next(
+            i for i, e in enumerate(lager["card"]["elements"]) if e["type"] == "state-label"
+        )
+        assert erstes_label == len(bilder), "Beschriftungen müssen über den Bildern liegen"
+
+
+@pytest.mark.parametrize("prozent", range(0, 121))
+def test_jeder_fuellstand_trifft_genau_eine_stufe(prozent):
+    from eta_webservices.karte import LAGER_STUFEN
+
+    treffer = [
+        bild
+        for bild, ueber, unter in LAGER_STUFEN
+        if (ueber is None or prozent > ueber) and (unter is None or prozent < unter)
+    ]
+    assert len(treffer) == 1, (prozent, treffer)
+
+
+def test_lagerbilder_gibt_es():
+    from PIL import Image
+
+    from eta_webservices import GRAFIKEN
+
+    for datei in ("lager_100.png", "lager_75.png", "lager_50.png", "lager_25.png",
+                  "lager_leer.png", "lager_warnung.png", "lager_schnecke.webp"):
+        with Image.open(GRAFIKEN / datei) as bild:
+            assert bild.size == (255, 501), datei
+    with Image.open(GRAFIKEN / "lager_schnecke.webp") as schnecke:
+        assert schnecke.n_frames > 1

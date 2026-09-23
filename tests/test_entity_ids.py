@@ -38,6 +38,7 @@ ERWARTETE_IDS = {
     "kessel_soll": "sensor.eta_heizung_kessel_solltemperatur",
     "kessel_temperatur": "sensor.eta_heizung_kesseltemperatur",
     "kessel_zustand": "sensor.eta_heizung_kessel_zustand",
+    "lager_fuellstand": "sensor.eta_heizung_lager_fullstand",
     "lager_maximum": "sensor.eta_heizung_lager_fassungsvermogen",
     "lager_vorrat": "sensor.eta_heizung_lager_vorrat",
     "lager_warngrenze": "sensor.eta_heizung_lager_warngrenze",
