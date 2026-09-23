@@ -391,6 +391,50 @@ async def test_neustart_der_anlage_legt_den_variablensatz_neu_an(hass, entry):
     assert coordinator.data["kessel_temperatur"].display == pytest.approx(55.5)
 
 
+async def test_nach_einem_ausfall_kehrt_die_sammelabfrage_zurueck(hass, entry):
+    """Ein einziger Aussetzer darf die Sammelabfrage nicht dauerhaft abschalten.
+
+    Bis 0.20 las die Integration danach bis zum nächsten Neustart von Home
+    Assistant jeden Wert einzeln - 30 Anfragen je Abfrage statt 2.
+    """
+    from eta_webservices.coordinator import VARSET_WARTEZYKLEN
+
+    coordinator, _ = await setup_integration(hass, entry)
+
+    hass.session.fail_uris = {"/user/"}
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success is False
+
+    hass.session.fail_uris = set()
+    for _ in range(VARSET_WARTEZYKLEN + 1):
+        await coordinator.async_refresh()
+
+    vorher = hass.session.count
+    await coordinator.async_refresh()
+    assert hass.session.count - vorher <= 2
+    assert coordinator.data["kessel_temperatur"].display == pytest.approx(55.5)
+
+
+async def test_ohne_variablensaetze_wird_nicht_bei_jeder_abfrage_neu_versucht(
+    hass, entry
+):
+    """Kennt die Anlage keine Variablensätze, bleibt es bei seltenen Versuchen."""
+    from eta_webservices.coordinator import VARSET_WARTEZYKLEN
+
+    hass.session.varset_unterstuetzt = False
+    coordinator, _ = await setup_integration(hass, entry)
+    einzeln = len(coordinator.abfragbare_uris)
+
+    vorher = hass.session.count
+    for _ in range(VARSET_WARTEZYKLEN):
+        await coordinator.async_refresh()
+    anfragen = hass.session.count - vorher
+
+    fehlerliste = VARSET_WARTEZYKLEN
+    versuche = anfragen - fehlerliste - VARSET_WARTEZYKLEN * einzeln
+    assert versuche <= 3, f"{versuche} zusätzliche Anfragen für Variablensätze"
+
+
 async def test_ohne_variablensaetze_wird_einzeln_gelesen(hass, entry):
     """Ältere Anlagen kennen keine Variablensätze - dann eben einzeln."""
     hass.session.varset_unterstuetzt = False

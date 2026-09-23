@@ -34,6 +34,15 @@ Danach gilt der Sensor als nicht erreichbar, statt weiter den letzten
 bekannten Wert zu zeigen.
 """
 
+VARSET_WARTEZYKLEN = 10
+"""Nach so vielen Abfragen wird ein gescheiterter Variablensatz neu angelegt.
+
+Scheitert das Anlegen - die Anlage startet gerade neu, das Netz hakt oder
+sie kennt gar keine Variablensätze -, wird so lange einzeln gelesen. Ohne
+neuen Versuch bliebe es dabei bis zum nächsten Neustart von Home
+Assistant, mit einer Anfrage je Messwert statt einer für alle.
+"""
+
 AUS_BEGRIFFE = {"aus", "off", "0", "nein", "no", "ausgeschaltet"}
 """Zustandsnamen, die eine ausgeschaltete Funktion bezeichnen.
 
@@ -112,6 +121,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.fehlzyklen: dict[str, int] = {}
         self._varset_name = f"ha{entry.entry_id}"[:32]
         self._varset_bereit = False
+        self._varset_bewaehrt = False
+        self._varset_wartezyklen = 0
 
         self._device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -164,6 +175,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             await self.client.async_delete_varset(self._varset_name)
             await self.client.async_create_varset(self._varset_name, uris)
             self._varset_bereit = True
+            self._varset_bewaehrt = False
             _LOGGER.debug(
                 "ETA: Variablensatz %s mit %d Messwerten angelegt",
                 self._varset_name,
@@ -171,6 +183,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             )
         except ETAApiError as err:
             self._varset_bereit = False
+            self._varset_wartezyklen = VARSET_WARTEZYKLEN
             _LOGGER.info(
                 "ETA: Sammelabfrage nicht möglich, lese einzeln weiter: %s", err
             )
@@ -375,25 +388,39 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     async def _werte_lesen(self, uris: dict[str, str]) -> dict[str, ETAValue]:
         """Liest alle Messwerte, wenn möglich mit einer einzigen Anfrage.
 
-        Ist der Variablensatz verschwunden - etwa nach einem Neustart der
-        Anlage -, wird er neu angelegt und dieser Durchgang einzeln
-        gelesen.
+        Ist ein Variablensatz, der schon Werte geliefert hat, verschwunden -
+        etwa nach einem Neustart der Anlage -, wird er sofort neu angelegt
+        und dieser Durchgang einzeln gelesen. Scheitert das Anlegen oder
+        liefert ein frisch angelegter Satz nichts, folgt der nächste Versuch
+        erst nach VARSET_WARTEZYKLEN Abfragen.
         """
+        if not self._varset_bereit:
+            if self._varset_wartezyklen > 0:
+                self._varset_wartezyklen -= 1
+            else:
+                await self._varset_anlegen()
+
         if self._varset_bereit:
             try:
                 nach_uri = await self.client.async_get_varset(self._varset_name)
             except ETAApiError as err:
-                _LOGGER.info("ETA: Variablensatz neu anlegen (%s)", err)
                 self._varset_bereit = False
-                await self._varset_anlegen()
+                if self._varset_bewaehrt:
+                    _LOGGER.info("ETA: Variablensatz neu anlegen (%s)", err)
+                    await self._varset_anlegen()
+                else:
+                    _LOGGER.info("ETA: Variablensatz nicht lesbar (%s)", err)
+                    self._varset_wartezyklen = VARSET_WARTEZYKLEN
             else:
                 werte = {
                     key: nach_uri[uri] for key, uri in uris.items() if uri in nach_uri
                 }
                 if werte:
+                    self._varset_bewaehrt = True
                     return werte
                 _LOGGER.info("ETA: Variablensatz lieferte nichts, lese einzeln")
                 self._varset_bereit = False
+                self._varset_wartezyklen = VARSET_WARTEZYKLEN
 
         return await self.client.async_get_values(uris)
 
