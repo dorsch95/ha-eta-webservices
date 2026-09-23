@@ -83,6 +83,15 @@ tief im Menü liegt. Für die übrigen bleibt es beim festen Pfad - Namen
 wie "Vorlauf" kommen mehrfach vor.
 """
 
+AUSWEICHPFADE = {
+    "fwm_warmwasser": [["Eingänge", "Warmwasserspeicher"]],
+}
+"""Weitere Namenspfade, falls der Hauptpfad im Funktionsblock fehlt.
+
+Ein reiner Warmwasserspeicher (Funktionsblock "WW") nennt seinen Fühler
+"Warmwasserspeicher", das Frischwassermodul "Warmwasser".
+"""
+
 KENNUNGEN = {
     "kessel_temperatur": "0/11109/0",
     "ruecklauf_temperatur": "0/11160/0",
@@ -202,13 +211,25 @@ def _resolve_fubs_by_role(fubs, fub_name_overrides):
 
     Ein vom Nutzer im Setup angegebener Name hat immer Vorrang vor den
     ETA-Standardnamen, da FUBs am Gerät umbenannt werden können.
+
+    Das Formular speichert auch unveränderte Vorbelegungen. Ist der
+    gespeicherte Name selbst ein Standardname der Rolle, werden deshalb
+    danach die übrigen Standardnamen probiert - sonst bliebe etwa "HK 2"
+    unentdeckt, nur weil das Formular "HK2" vorbelegt hat. Ein wirklich
+    eigener Name gilt dagegen allein.
     """
     overrides = fub_name_overrides or {}
     resolved = {}
 
     for role, default_names in FUB_ROLE_DEFAULT_NAMES.items():
         override = overrides.get(role)
-        candidates = [override] if override else default_names
+        standard = {name.casefold() for name in default_names}
+        if not override:
+            candidates = default_names
+        elif override.casefold() in standard:
+            candidates = [override, *default_names]
+        else:
+            candidates = [override]
         for name in candidates:
             fub = _find_fub(fubs, name)
             if fub is not None:
@@ -362,6 +383,11 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
             continue
         found = _find_path(fub, path)
         uri = found.get("@uri") if found is not None else None
+        for ausweichpfad in AUSWEICHPFADE.get(key, []):
+            if uri:
+                break
+            found = _find_path(fub, ausweichpfad)
+            uri = found.get("@uri") if found is not None else None
         if not uri and key in NAMENSSUCHE:
             uri = _finde_nach_namen(fub, NAMENSSUCHE[key])
         if not uri and key in KENNUNGEN:

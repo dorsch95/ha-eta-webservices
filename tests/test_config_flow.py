@@ -87,7 +87,7 @@ def test_fub_formular_ist_mit_standardnamen_vorbelegt():
     schema = _fub_names_schema(["kessel", "sys", "hk", "hk2"], {})
     defaults = {str(key): key.default() for key in schema.schema}
     assert defaults["kessel"] == "Kessel"
-    assert defaults["hk"] == "HK1"
+    assert defaults["hk"] == "HK"
     assert defaults["hk2"] == "HK2"
 
 

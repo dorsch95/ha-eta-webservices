@@ -537,10 +537,10 @@ FUB_ROLE_DEFAULT_NAMES = {
     "sys": ["Sys"],
     "pufferflex": ["PufferFlex", "Puffer"],
     "fwm": ["FWM", "WW"],
-    "hk": ["HK", "HK1"],
-    "hk2": ["HK2"],
-    "hk3": ["HK3"],
-    "hk4": ["HK4"],
+    "hk": ["HK", "HK1", "HK 1"],
+    "hk2": ["HK2", "HK 2"],
+    "hk3": ["HK3", "HK 3"],
+    "hk4": ["HK4", "HK 4"],
     "lager": ["Lager"],
     "solar": ["Solar"],
 }
@@ -585,9 +585,8 @@ def fub_roles_for_components(components):
 def fub_role_default(role, roles_in_schema):
     """Liefert den sinnvollsten Standardnamen für ein Formularfeld.
 
-    Bei zwei Heizkreisen heißt der erste laut ETA-Konvention "HK1" statt
-    "HK" - das wird hier als Vorbelegung berücksichtigt.
+    Auch bei mehreren Heizkreisen heißt der erste am Display "HK". Ob die
+    Anlage "HK", "HK1" oder "HK 1" liefert, fängt die Erkennung über die
+    übrigen Standardnamen ab.
     """
-    if role == "hk" and "hk2" in roles_in_schema:
-        return "HK1"
     return FUB_ROLE_DEFAULT_NAMES[role][0]

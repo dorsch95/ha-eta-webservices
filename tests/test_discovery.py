@@ -40,9 +40,44 @@ async def test_falscher_fub_name_liefert_keine_kesselwerte(hass, menu_xml):
     assert "kessel_temperatur" not in uris
 
 
+async def test_heizkreis_mit_leerzeichen_trotz_vorbelegung(hass, menu_xml):
+    """Das Display zeigt "HK 2", das Formular hat "HK2" gespeichert."""
+    hass.session.menu = menu_xml.replace('name="HK2"', 'name="HK 2"')
+    uris, _ = await discover(hass, {"hk": "HK1", "hk2": "HK2"})
+    assert uris["heizkreis2_vorlauf"] == "/120/10102/0/11060/0"
+    assert uris["heizkreis_vorlauf"].startswith("/120/10101/")
+
+
+@pytest.mark.parametrize("name", ["HK", "HK1", "HK 1"])
+async def test_erster_heizkreis_in_jeder_schreibweise(hass, menu_xml, name):
+    hass.session.menu = menu_xml.replace(
+        '<fub uri="/120/10101" name="HK">', f'<fub uri="/120/10101" name="{name}">'
+    )
+    uris, _ = await discover(hass, {"hk": "HK"})
+    assert uris["heizkreis_vorlauf"] == "/120/10101/0/11060/0"
+
+
+async def test_eigener_name_hat_keinen_ausweichnamen(hass, menu_xml):
+    hass.session.menu = menu_xml.replace('name="HK2"', 'name="HK 2"')
+    uris, _ = await discover(hass, {"hk2": "Wohnung"})
+    assert "heizkreis2_vorlauf" not in uris
+
+
+async def test_warmwasserspeicher_statt_frischwassermodul(hass, menu_xml):
+    """Ein reiner Speicher heißt "WW", sein Fühler "Warmwasserspeicher"."""
+    hass.session.menu = menu_xml.replace(
+        '<fub uri="/79/10531" name="FWM">', '<fub uri="/79/10531" name="WW">'
+    ).replace('name="Warmwasser">', 'name="Warmwasserspeicher">')
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    ueber_kennung = set()
+    uris, _ = await async_discover_uris(client, {"fwm": "FWM"}, ueber_kennung)
+    assert uris["fwm_warmwasser"] == "/79/10531/0/11148/0"
+    assert "fwm_warmwasser" not in ueber_kennung
+
+
 def test_standardnamen_je_rolle():
     assert fub_role_default("kessel", ["kessel"]) == "Kessel"
-    assert fub_role_default("hk", ["kessel", "hk", "hk2"]) == "HK1"
+    assert fub_role_default("hk", ["kessel", "hk", "hk2"]) == "HK"
     assert fub_role_default("hk", ["kessel", "hk"]) == "HK"
 
 
