@@ -329,5 +329,17 @@
         "name": "Kessel"
       }
     }
+  },
+  "services": {
+    "karte_erzeugen": {
+      "name": "Dashboard-Karte erzeugen",
+      "description": "Liefert die Dashboard-Karte zugeschnitten auf deine Anlage - mit genau deinen Komponenten, Pufferfühlern und Entitäten. Die Antwort als manuelle Karte einfügen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ETA-Heizung",
+          "description": "Nur nötig, wenn mehrere ETA-Heizungen eingerichtet sind."
+        }
+      }
+    }
   }
 }

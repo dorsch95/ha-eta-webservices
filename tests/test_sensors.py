@@ -140,10 +140,19 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
         async def async_register_static_paths(self, pfade):
             self.pfade.extend(pfade)
 
+    class Dienste:
+        def __init__(self) -> None:
+            self.angemeldet: list = []
+
+        def async_register(self, domain, name, *args, **kwargs):
+            self.angemeldet.append((domain, name))
+
     class Hass:
         http = Http()
+        services = Dienste()
 
     assert await eta_webservices.async_setup(Hass(), {}) is True
+    assert Hass.services.angemeldet == [("eta_webservices", "karte_erzeugen")]
 
     (pfad,) = Hass.http.pfade
     assert pfad.url_path == URL_GRAFIKEN

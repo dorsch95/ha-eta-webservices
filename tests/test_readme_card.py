@@ -221,7 +221,7 @@ def test_puffer_zeigt_fuer_jede_fuehleranzahl_genau_eine_gruppe(karte):
     diesen zweiten Teil griffen bei fünf Fühlern auch die Blöcke für drei
     und vier, und die Beschriftungen lägen übereinander.
     """
-    from dashboard.karte_bauen import PUFFER_MAX, PUFFER_MIN
+    from eta_webservices.karte import PUFFER_MAX, PUFFER_MIN
 
     gruppen = [
         element
@@ -254,7 +254,7 @@ def test_puffer_zeigt_fuer_jede_fuehleranzahl_genau_eine_gruppe(karte):
 
 def test_puffer_fuehler_sitzen_gleichmaessig_im_speicher(karte):
     """Fühler 1 misst oben, der letzte unten - das muss das Bild zeigen."""
-    from dashboard.karte_bauen import PUFFER_MAX, PUFFER_MIN, PUFFER_OBEN, PUFFER_UNTEN
+    from eta_webservices.karte import PUFFER_MAX, PUFFER_MIN, PUFFER_OBEN, PUFFER_UNTEN
 
     for element in alle_elemente(karte):
         if element["type"] != "conditional":
@@ -386,17 +386,11 @@ def test_jede_komponente_hat_ihre_kachel():
         assert struct.unpack(">II", daten[16:24]) == (255, 501), info["image"]
 
 
-def test_kartenskript_kennt_die_bildadresse():
-    import importlib.util
-
+def test_karte_kennt_die_bildadresse():
     from eta_webservices.const import URL_GRAFIKEN
+    from eta_webservices.karte import BILDPFAD
 
-    spec = importlib.util.spec_from_file_location(
-        "karte_bauen", KARTE.parent / "karte_bauen.py"
-    )
-    modul = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(modul)
-    assert modul.BILDPFAD == URL_GRAFIKEN
+    assert BILDPFAD == URL_GRAFIKEN
 
 
 def test_kartendatei_ist_aktuell():
@@ -552,7 +546,7 @@ def test_domain_und_geraetename_sind_unveraendert():
 
 def zugeschnitten(komponenten, fuehler):
     """Erzeugt eine auf eine konkrete Anlage zugeschnittene Karte."""
-    from dashboard.karte_bauen import responsive_karte
+    from eta_webservices.karte import responsive_karte
 
     return responsive_karte(komponenten, fuehler)
 
@@ -607,7 +601,7 @@ def test_zuschnitt_behaelt_alle_drei_bildschirmbreiten():
 
 def test_ohne_angaben_entsteht_die_universelle_karte():
     """Die Karte im Repo muss zu jeder Anlage passen, ohne Nachfragen."""
-    from dashboard.karte_bauen import responsive_karte
+    from eta_webservices.karte import responsive_karte
 
     import yaml
 

@@ -33,6 +33,7 @@ from .const import (
     URL_GRAFIKEN,
     components_from_config,
 )
+from .aktionen import async_aktionen_registrieren
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import deutsche_namen
 
@@ -44,7 +45,7 @@ GRAFIKEN = Path(__file__).parent / "grafiken"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Stellt die Kachelgrafiken unter URL_GRAFIKEN bereit.
+    """Stellt die Kachelgrafiken unter URL_GRAFIKEN bereit und meldet die Aktionen an.
 
     Bis Version 0.20 wurden sie bei jedem Start in den www-Ordner des
     Nutzers geschrieben. Jetzt liefert Home Assistant sie direkt aus dem
@@ -54,6 +55,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await hass.http.async_register_static_paths(
         [StaticPathConfig(URL_GRAFIKEN, str(GRAFIKEN), cache_headers=False)]
     )
+    async_aktionen_registrieren(hass)
     return True
 
 

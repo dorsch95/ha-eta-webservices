@@ -329,5 +329,17 @@
         "name": "Boiler"
       }
     }
+  },
+  "services": {
+    "karte_erzeugen": {
+      "name": "Create dashboard card",
+      "description": "Returns the dashboard card tailored to your heating system - with exactly your components, buffer sensors and entities. Paste the response as a manual card.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ETA heating system",
+          "description": "Only needed when more than one ETA heating system is set up."
+        }
+      }
+    }
   }
 }

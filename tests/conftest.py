@@ -330,16 +330,32 @@ class FakeEntityRegistry:
     """Das Entity-Register, soweit das Aufräumen verwaister Entitäten es nutzt."""
 
     class Eintrag:
-        def __init__(self, entity_id: str, unique_id: str, config_entry_id: str):
+        def __init__(
+            self,
+            entity_id: str,
+            unique_id: str,
+            config_entry_id: str,
+            translation_key: str | None = None,
+        ):
             self.entity_id = entity_id
+            self.domain = entity_id.split(".", 1)[0]
             self.unique_id = unique_id
             self.config_entry_id = config_entry_id
+            self.translation_key = translation_key
 
     def __init__(self) -> None:
         self.eintraege: dict[str, FakeEntityRegistry.Eintrag] = {}
 
-    def anlegen(self, entity_id: str, unique_id: str, config_entry_id: str) -> None:
-        self.eintraege[entity_id] = self.Eintrag(entity_id, unique_id, config_entry_id)
+    def anlegen(
+        self,
+        entity_id: str,
+        unique_id: str,
+        config_entry_id: str,
+        translation_key: str | None = None,
+    ) -> None:
+        self.eintraege[entity_id] = self.Eintrag(
+            entity_id, unique_id, config_entry_id, translation_key
+        )
 
     def async_remove(self, entity_id: str) -> None:
         self.eintraege.pop(entity_id)
@@ -363,6 +379,10 @@ class FakeHass:
     class ConfigEntries:
         def __init__(self) -> None:
             self.forwarded: list = []
+            self.geladen: list = []
+
+        def async_loaded_entries(self, domain):
+            return list(self.geladen)
 
         async def async_forward_entry_setups(self, entry, platforms):
             self.forwarded.append((entry, platforms))
