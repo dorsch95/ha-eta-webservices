@@ -76,8 +76,8 @@ class ETAAscheboxBinarySensor(ETABaseBinarySensor):
     """Meldet, wenn die Aschebox geleert werden sollte.
 
     Verglichen werden zwei Werte der Anlage: die Menge seit der letzten
-    Leerung und die dort eingestellte Schwelle. Fehlt einer davon, bleibt
-    der Melder aus.
+    Leerung und die dort eingestellte Schwelle. Fehlt einer davon, ist der
+    Zustand unbekannt - "OK" wäre eine Behauptung ohne Grundlage.
     """
 
     _attr_translation_key = "aschebox_faellig"
@@ -87,10 +87,12 @@ class ETAAscheboxBinarySensor(ETABaseBinarySensor):
         super().__init__(coordinator, "aschebox_faellig")
 
     @property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         verbrauch = self._zahl("aschebox_verbrauch")
         schwelle = self._zahl("aschebox_schwelle")
-        if verbrauch is None or schwelle is None or schwelle <= 0:
+        if verbrauch is None or schwelle is None:
+            return None
+        if schwelle <= 0:
             return False
         return verbrauch >= schwelle
 
@@ -106,7 +108,8 @@ class ETALagerBinarySensor(ETABaseBinarySensor):
     """Meldet, wenn der Vorrat im Pelletlager zur Neige geht.
 
     Die Warngrenze stammt aus der Anlage, wo sie auf den eigenen
-    Lagerraum eingestellt ist.
+    Lagerraum eingestellt ist. Fehlt Vorrat oder Grenze, ist der Zustand
+    unbekannt.
     """
 
     _attr_translation_key = "lager_niedrig"
@@ -116,10 +119,12 @@ class ETALagerBinarySensor(ETABaseBinarySensor):
         super().__init__(coordinator, "lager_niedrig")
 
     @property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         vorrat = self._zahl("lager_vorrat")
         grenze = self._zahl("lager_warngrenze")
-        if vorrat is None or grenze is None or grenze <= 0:
+        if vorrat is None or grenze is None:
+            return None
+        if grenze <= 0:
             return False
         return vorrat <= grenze
 

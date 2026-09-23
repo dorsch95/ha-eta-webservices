@@ -683,8 +683,8 @@ async def test_aschebox_erinnerung_vergleicht_die_werte_der_anlage(hass, entry):
     assert melder.is_on is (verbrauch >= schwelle)
 
 
-async def test_aschebox_erinnerung_bleibt_aus_ohne_werte(hass, entry, menu_xml):
-    """Lieber keine Erinnerung als eine, die auf Geratenem beruht."""
+async def test_aschebox_erinnerung_ist_ohne_werte_unbekannt(hass, entry, menu_xml):
+    """Ohne Schwelle weiß der Melder nichts - weder "fällig" noch "OK"."""
     from eta_webservices import binary_sensor as bs
 
     hass.session.menu = menu_xml.replace(
@@ -696,7 +696,7 @@ async def test_aschebox_erinnerung_bleibt_aus_ohne_werte(hass, entry, menu_xml):
     melder = next(e for e in entities if e.translation_key == "aschebox_faellig")
 
     assert melder.extra_state_attributes["schwelle"] is None
-    assert melder.is_on is False
+    assert melder.is_on is None
 
 
 async def test_es_gibt_genau_einen_energiesensor(hass, entry, menu_xml):
@@ -753,7 +753,7 @@ async def test_lagervorrat_und_warnung(hass, entry):
     assert warnung.is_on is (attribute["vorrat"] <= attribute["warngrenze"])
 
 
-async def test_lagerwarnung_bleibt_aus_ohne_grenze(hass, entry, menu_xml):
+async def test_lagerwarnung_ist_ohne_grenze_unbekannt(hass, entry, menu_xml):
     from eta_webservices import binary_sensor as bs
 
     hass.session.menu = menu_xml.replace('name="Vorrat Warngrenze"', 'name="Weg"')
@@ -764,7 +764,7 @@ async def test_lagerwarnung_bleibt_aus_ohne_grenze(hass, entry, menu_xml):
     warnung = next(e for e in entities if e.translation_key == "lager_niedrig")
 
     assert warnung.extra_state_attributes["warngrenze"] is None
-    assert warnung.is_on is False
+    assert warnung.is_on is None
 
 
 async def test_lager_austragung_ist_klartext(hass, entry):
