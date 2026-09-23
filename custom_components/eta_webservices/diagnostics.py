@@ -5,10 +5,11 @@ dazu unter "nicht_gefunden" alle Messwerte ohne Treffer im Menübaum und
 unter "menuebaum" den vollständigen Menübaum der Anlage. Unter
 "zustandstexte" stehen alle Texte, die die Zustands-Sensoren annehmen
 können - so lässt sich etwa die Kessel-Kachel auf einen anderen
-Kesseltyp abstimmen. Mit dieser einen
-Datei lässt sich die Integration an eine abweichende Anlage anpassen -
-ohne dass jemand eta_bericht.py starten muss. Die IP-Adresse wird
-geschwärzt; im Menübaum steht sie nicht.
+Kesseltyp abstimmen. Unter "prognose" steht, was die Verbrauchsprognose
+gelernt hat, samt den letzten Tagen und ihrer Schätzung dafür. Mit dieser
+einen Datei lässt sich die Integration an eine abweichende Anlage
+anpassen - ohne dass jemand eta_bericht.py starten muss. Die IP-Adresse
+wird geschwärzt; im Menübaum steht sie nicht.
 """
 
 from __future__ import annotations
@@ -50,6 +51,63 @@ def menue_als_text(parsed: dict[str, Any]) -> list[str]:
             zeilen.append(f"{fub.get('@name', '?')}  {fub.get('@uri', '')}")
             ablaufen(fub, 1)
     return zeilen
+
+
+def prognose_diagnose(coordinator) -> dict[str, Any]:
+    """Was die Verbrauchsprognose gelernt hat und womit sie rechnet."""
+    prognose = coordinator.prognose
+    if prognose is None:
+        return {"aktiv": False}
+    ergebnis = prognose.data
+    ausgabe: dict[str, Any] = {
+        "aktiv": True,
+        "wetter_gewaehlt": (
+            "automatisch" if prognose.wetter_wahl is None else prognose.wetter_wahl or "keine"
+        ),
+        "wetter_genutzt": prognose.wetter_id,
+        "vorhersage_tage": prognose.vorhersage_tage,
+    }
+    if ergebnis is None:
+        return {**ausgabe, "status": "noch nicht gerechnet"}
+    modell = ergebnis.modell
+    return {
+        **ausgabe,
+        "status": ergebnis.status,
+        "lerntage": ergebnis.lerntage,
+        "heiztage": ergebnis.heiztage,
+        "modell": None if modell is None else {
+            "grundlast": round(modell.grundlast, 3),
+            "faktor": round(modell.faktor, 3),
+            "heizgrenze": modell.heizgrenze,
+            "streuung": round(modell.streuung, 3),
+            "ausreisser": modell.ausreisser,
+            "korrektur": round(modell.korrektur, 3),
+        },
+        "standort_abweichung": round(ergebnis.klima_abweichung, 2),
+        "treffsicherheit": ergebnis.treffsicherheit,
+        "verglichene_tage": ergebnis.verglichene_tage,
+        "reicht_bis": [
+            str(d) if d else None
+            for d in (ergebnis.reicht_fruehestens, ergebnis.reicht_bis, ergebnis.reicht_spaetestens)
+        ],
+        "bestellen_bis": [
+            str(d) if d else None
+            for d in (
+                ergebnis.bestellen_fruehestens,
+                ergebnis.bestellen_bis,
+                ergebnis.bestellen_spaetestens,
+            )
+        ],
+        "letzte_tage": [
+            {
+                "datum": str(tag.datum),
+                "kg": round(tag.verbrauch, 1),
+                "temperatur": round(tag.temperatur, 1),
+                "modell_kg": None if modell is None else round(modell.verbrauch(tag.temperatur), 1),
+            }
+            for tag in ergebnis.letzte_tage
+        ],
+    }
 
 
 async def async_get_config_entry_diagnostics(
@@ -133,5 +191,6 @@ async def async_get_config_entry_diagnostics(
         },
         "messwerte": messwerte,
         "zustandstexte": zustandstexte,
+        "prognose": prognose_diagnose(coordinator),
         "menuebaum": menuebaum,
     }

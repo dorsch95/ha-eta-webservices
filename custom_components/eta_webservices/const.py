@@ -44,16 +44,24 @@ CONF_FUB_NAMES = "fub_names"
 CONF_SCAN_INTERVAL = "scan_interval"
 
 DEFAULT_PELLET_KWH_PER_KG = 4.8
-MIN_PELLET_KWH_PER_KG = 3.0
-MAX_PELLET_KWH_PER_KG = 6.0
-CONF_PELLET_PREIS = "pellet_preis"
-DEFAULT_PELLET_PREIS = 0.0
-MAX_PELLET_PREIS = 2000.0
-"""Pelletpreis in Euro je Tonne. 0 heißt: keine Kosten berechnen."""
 """Heizwert von Holzpellets in kWh/kg.
 
 ENplus A1 liegt je nach Restfeuchte zwischen etwa 4,6 und 5,0; 4,8 ist der
 übliche Richtwert. In den Optionen an die eigene Lieferung anpassbar.
+"""
+MIN_PELLET_KWH_PER_KG = 3.0
+MAX_PELLET_KWH_PER_KG = 6.0
+
+CONF_PELLET_PREIS = "pellet_preis"
+"""Pelletpreis in Euro je Tonne. 0 heißt: keine Kosten berechnen."""
+DEFAULT_PELLET_PREIS = 0.0
+MAX_PELLET_PREIS = 2000.0
+
+CONF_WETTER = "wetter"
+"""Wetter-Entität, deren Vorhersage die Verbrauchsprognose nutzt.
+
+Fehlt der Eintrag, sucht sich die Integration selbst eine; leer heißt:
+keine Vorhersage, nur das langjährige Mittel.
 """
 
 DEFAULT_SCAN_INTERVAL = 30

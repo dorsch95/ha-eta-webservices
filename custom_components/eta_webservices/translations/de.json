@@ -11,7 +11,11 @@
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
-          "enable_switches": "Kessel und Heizkreise schalten dürfen"
+          "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "wetter": "Wettervorhersage für die Pelletprognose"
+        },
+        "data_description": {
+          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },
       "fub_names": {
@@ -63,7 +67,11 @@
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
-          "enable_switches": "Kessel und Heizkreise schalten dürfen"
+          "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "wetter": "Wettervorhersage für die Pelletprognose"
+        },
+        "data_description": {
+          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },
       "fub_names": {
@@ -256,11 +264,20 @@
       "komponente_twin": {
         "name": "Komponente TWIN"
       },
+      "lager_bestellen_bis": {
+        "name": "Lager bestellen bis"
+      },
       "lager_fuellstand": {
         "name": "Lager Füllstand"
       },
       "lager_maximum": {
         "name": "Lager Fassungsvermögen"
+      },
+      "lager_reicht_bis": {
+        "name": "Lager reicht bis"
+      },
+      "lager_reichweite": {
+        "name": "Lager Reichweite"
       },
       "lager_vorrat": {
         "name": "Lager Vorrat"
@@ -285,6 +302,15 @@
       },
       "pellet_kosten_woche": {
         "name": "Pelletkosten diese Woche"
+      },
+      "pellet_prognose_morgen": {
+        "name": "Pelletprognose morgen"
+      },
+      "pellet_prognose_status": {
+        "name": "Pelletprognose Status"
+      },
+      "pellet_prognose_treffsicherheit": {
+        "name": "Pelletprognose Treffsicherheit"
       },
       "pellet_tagesbehaelter": {
         "name": "Pellet Inhalt Tagesbehälter"

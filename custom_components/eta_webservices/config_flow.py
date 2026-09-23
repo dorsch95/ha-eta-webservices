@@ -16,12 +16,15 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
 )
 
 from .api import ETAApiClient
+from .prognose_koordinator import einzige_wetter_entitaet
 from .const import (
     COMPONENTS,
     CONF_COMPONENTS,
@@ -31,6 +34,7 @@ from .const import (
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
     CONF_SCAN_INTERVAL,
+    CONF_WETTER,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
@@ -69,8 +73,20 @@ def _verbindung_felder(current: dict[str, Any]) -> dict:
     }
 
 
-def _einstellung_felder(current: dict[str, Any]) -> dict:
-    """Komponenten, Abfrageintervall, Freigaben und Heizwert.
+def wetter_vorschlag(hass: HomeAssistant, current: dict[str, Any]) -> str | None:
+    """Die Wetter-Entität, die im Formular vorausgewählt ist.
+
+    Wer schon eine gewählt oder das Feld bewusst geleert hat, bekommt das
+    wieder angezeigt. Sonst die einzige Wetter-Entität, falls es genau
+    eine gibt - so wie sie die Prognose auch von selbst nehmen würde.
+    """
+    if CONF_WETTER in current:
+        return current[CONF_WETTER] or None
+    return einzige_wetter_entitaet(hass)
+
+
+def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> dict:
+    """Komponenten, Abfrageintervall, Freigaben, Heizwert, Preis und Wetter.
 
     Statt einer Liste fertiger Anlagenschemata wird hier angekreuzt, was an
     der Anlage vorhanden ist. Der Kessel steht nicht zur Wahl, den hat jede
@@ -115,12 +131,17 @@ def _einstellung_felder(current: dict[str, Any]) -> dict:
             CONF_PELLET_PREIS,
             default=current.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS),
         ): vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_PELLET_PREIS)),
+        vol.Optional(
+            CONF_WETTER, description={"suggested_value": wetter}
+        ): EntitySelector(EntitySelectorConfig(domain="weather")),
     }
 
 
-def _connection_schema(current: dict[str, Any]) -> vol.Schema:
+def _connection_schema(current: dict[str, Any], wetter: str | None = None) -> vol.Schema:
     """Das vollständige Formular beim ersten Einrichten."""
-    return vol.Schema({**_verbindung_felder(current), **_einstellung_felder(current)})
+    return vol.Schema(
+        {**_verbindung_felder(current), **_einstellung_felder(current, wetter)}
+    )
 
 
 def _reconfigure_schema(current: dict[str, Any]) -> vol.Schema:
@@ -128,9 +149,9 @@ def _reconfigure_schema(current: dict[str, Any]) -> vol.Schema:
     return vol.Schema(_verbindung_felder(current))
 
 
-def _options_schema(current: dict[str, Any]) -> vol.Schema:
+def _options_schema(current: dict[str, Any], wetter: str | None = None) -> vol.Schema:
     """Konfigurieren ändert alles außer der Adresse der Anlage."""
-    return vol.Schema(_einstellung_felder(current))
+    return vol.Schema(_einstellung_felder(current, wetter))
 
 
 def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
@@ -224,9 +245,12 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_fub_names()
             errors["base"] = "cannot_connect"
 
+        eingabe = user_input or {}
         return self.async_show_form(
             step_id="user",
-            data_schema=_connection_schema(user_input or {}),
+            data_schema=_connection_schema(
+                eingabe, eingabe.get(CONF_WETTER) or wetter_vorschlag(self.hass, {})
+            ),
             errors=errors,
         )
 
@@ -285,6 +309,7 @@ class ETAOptionsFlow(OptionsFlowWithReload):
                 CONF_COMPONENTS: normalize_components(
                     user_input.get(CONF_COMPONENTS)
                 ),
+                CONF_WETTER: user_input.get(CONF_WETTER, ""),
             }
             if self._data.get(CONF_ENABLE_SWITCHES) and not self._current.get(
                 CONF_ENABLE_SWITCHES
@@ -294,7 +319,9 @@ class ETAOptionsFlow(OptionsFlowWithReload):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=_options_schema(self._current),
+            data_schema=_options_schema(
+                self._current, wetter_vorschlag(self.hass, self._current)
+            ),
         )
 
     async def async_step_switch_warning(

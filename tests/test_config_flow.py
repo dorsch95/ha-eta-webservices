@@ -395,3 +395,36 @@ async def test_neu_konfigurieren_wirkt_auch_nach_gespeicherten_optionen(monkeypa
     beim_start = {**eintrag.data, **eintrag.options}
     assert beim_start["host"] == "192.0.2.99"
     assert beim_start["scan_interval"] == 60
+
+
+async def test_geleertes_wetterfeld_bleibt_leer(monkeypatch):
+    """Sonst gewänne beim Start die Wahl aus der ersten Einrichtung."""
+    flow, _ = await options_schritt(monkeypatch, {"wetter": "weather.zuhause"}, optionen())
+    assert flow._data["wetter"] == ""
+
+
+async def test_gewaehltes_wetter_wird_gespeichert(monkeypatch):
+    flow, _ = await options_schritt(monkeypatch, {}, optionen(wetter="weather.zuhause"))
+    assert flow._data["wetter"] == "weather.zuhause"
+
+
+def test_wetter_ist_freiwillig():
+    felder = {str(k): k for k in _connection_schema({}).schema}
+    assert isinstance(felder["wetter"], vol.Optional)
+    assert _connection_schema({})(gueltige_eingabe())
+
+
+def test_wetter_vorschlag():
+    from types import SimpleNamespace
+
+    from eta_webservices.config_flow import wetter_vorschlag
+
+    def hass(*wetter):
+        return SimpleNamespace(
+            states=SimpleNamespace(async_entity_ids=lambda domain: list(wetter))
+        )
+
+    assert wetter_vorschlag(hass("weather.zuhause"), {}) == "weather.zuhause"
+    assert wetter_vorschlag(hass("weather.a", "weather.b"), {}) is None
+    assert wetter_vorschlag(hass("weather.zuhause"), {"wetter": ""}) is None
+    assert wetter_vorschlag(hass("weather.zuhause"), {"wetter": "weather.a"}) == "weather.a"

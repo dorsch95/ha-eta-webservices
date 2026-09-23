@@ -1877,6 +1877,21 @@ cards:
             color: '#9aa5b1'
             font-size: 90%
           prefix: 'Ab: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_reicht_bis
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_lager_reicht_bis
+            style:
+              top: 25.5%
+              left: 50%
+              color: '#d5d9de'
+              font-size: 78%
+            prefix: 'bis '
+            attribute: datum
     - type: conditional
       conditions:
       - condition: state
@@ -3897,6 +3912,21 @@ cards:
             color: '#9aa5b1'
             font-size: 95%
           prefix: 'Warnung ab: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_reicht_bis
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_lager_reicht_bis
+            style:
+              top: 25.5%
+              left: 50%
+              color: '#d5d9de'
+              font-size: 83%
+            prefix: 'Reicht bis '
+            attribute: datum
     - type: conditional
       conditions:
       - condition: state
@@ -5917,6 +5947,21 @@ cards:
             color: '#9aa5b1'
             font-size: 100%
           prefix: 'Warnung ab: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_reicht_bis
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_lager_reicht_bis
+            style:
+              top: 25.5%
+              left: 50%
+              color: '#d5d9de'
+              font-size: 88%
+            prefix: 'Reicht bis '
+            attribute: datum
     - type: conditional
       conditions:
       - condition: state

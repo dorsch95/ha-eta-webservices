@@ -1,6 +1,10 @@
 {
   "domain": "eta_webservices",
   "name": "ETA Web-Services",
+  "after_dependencies": [
+    "recorder",
+    "weather"
+  ],
   "codeowners": [
     "@dorsch95"
   ],

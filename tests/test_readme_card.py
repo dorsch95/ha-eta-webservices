@@ -808,3 +808,23 @@ def test_bewegte_auflagen_gibt_es():
             assert bild.size == (255, 501), datei
             if datei.endswith(".webp"):
                 assert bild.n_frames > 1, datei
+
+
+def test_lager_nennt_im_dach_bis_wann_der_vorrat_reicht(karte):
+    """Das Datum kommt deutsch formatiert aus einem Attribut.
+
+    Der Zustand ist ein ISO-Datum, das die Karte ungeformt zeigen würde.
+    Solange die Prognose lernt, ist er "unknown" und das Dach bleibt leer.
+    """
+    for gitter in raster(karte):
+        lager = next(k for k in gitter["cards"] if k["card"]["image"].endswith("/lager.png"))
+        reicht = [
+            e for e in lager["card"]["elements"]
+            if e["type"] == "conditional"
+            and e["elements"][0].get("entity") == "sensor.eta_heizung_lager_reicht_bis"
+        ]
+        assert len(reicht) == 1
+        label = reicht[0]["elements"][0]
+        assert label["type"] == "state-label"
+        assert label["attribute"] == "datum"
+        assert label["style"]["top"] == "25.5%"

@@ -110,6 +110,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.components = normalize_components(components)
         self.pellet_kwh_per_kg = pellet_kwh_per_kg
         self.pellet_preis = 0.0
+        self.prognose = None
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors
         self.sensor_defs: dict[str, dict] = {}

@@ -10,7 +10,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_change
@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
+from .prognose_koordinator import ETAPrognoseKoordinator
 
 
 async def async_setup_entry(
@@ -46,6 +47,13 @@ async def async_setup_entry(
                 entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum, kosten=True))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerFuellstandSensor(coordinator))
+    if coordinator.prognose is not None:
+        schluessel = list(PROGNOSE)
+        if "lager_vorrat" not in coordinator.sensor_defs:
+            schluessel = [key for key in schluessel if not key.startswith("lager_")]
+        entities.extend(
+            ETAPrognoseSensor(coordinator.prognose, coordinator, key) for key in schluessel
+        )
     entities.append(_pellet_energie(coordinator))
     if coordinator.enable_errors:
         entities.append(ETAErrorSensor(coordinator))
@@ -454,3 +462,143 @@ class ETAComponentMarkerSensor(ETABaseSensor):
     @property
     def native_value(self):
         return self._component
+
+
+def _datum(wert: date | None) -> str | None:
+    return wert.isoformat() if wert else None
+
+
+def _deutsch(wert: date | None) -> str | None:
+    return wert.strftime("%d.%m.%Y") if wert else None
+
+
+def _gerundet(wert: float | None, stellen: int = 1) -> float | None:
+    return round(wert, stellen) if wert is not None else None
+
+
+PROGNOSE = {
+    "pellet_prognose_morgen": {
+        "icon": "mdi:crystal-ball",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "unit": "kg",
+        "wert": lambda e: _gerundet(e.morgen_kg),
+    },
+    "pellet_prognose_treffsicherheit": {
+        "icon": "mdi:bullseye-arrow",
+        "unit": "%",
+        "wert": lambda e: e.treffsicherheit,
+    },
+    "pellet_prognose_status": {
+        "icon": "mdi:school-outline",
+        "category": EntityCategory.DIAGNOSTIC,
+        "wert": lambda e: e.status,
+    },
+    "lager_reicht_bis": {
+        "icon": "mdi:calendar-end",
+        "device_class": SensorDeviceClass.DATE,
+        "wert": lambda e: e.reicht_bis,
+    },
+    "lager_bestellen_bis": {
+        "icon": "mdi:cart-arrow-down",
+        "device_class": SensorDeviceClass.DATE,
+        "wert": lambda e: e.bestellen_bis,
+    },
+    "lager_reichweite": {
+        "icon": "mdi:timer-sand",
+        "device_class": SensorDeviceClass.DURATION,
+        "unit": UnitOfTime.DAYS,
+        "wert": lambda e: e.reichweite_tage,
+    },
+}
+"""Die Sensoren der Verbrauchsprognose; die mit lager_ nur, wenn es ein Lager gibt."""
+
+
+class ETAPrognoseSensor(CoordinatorEntity[ETAPrognoseKoordinator], SensorEntity):
+    """Ein Wert der selbstlernenden Verbrauchsprognose.
+
+    Hängt am Prognose-Koordinator, der stündlich rechnet, gehört aber zum
+    selben Gerät wie alle anderen Entitäten der Anlage. Solange das Modell
+    noch lernt, bleiben die Werte leer und der Status sagt, worauf es
+    wartet.
+    """
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        prognose: ETAPrognoseKoordinator,
+        haupt: ETADataUpdateCoordinator,
+        key: str,
+    ) -> None:
+        super().__init__(prognose)
+        self._key = key
+        art = PROGNOSE[key]
+        self._wert = art["wert"]
+        self._attr_translation_key = key
+        self._attr_unique_id = f"eta_static_{haupt.config_entry.entry_id}_{key}"
+        self._attr_device_info = haupt.device_info
+        self._attr_icon = art["icon"]
+        self._attr_device_class = art.get("device_class")
+        self._attr_native_unit_of_measurement = art.get("unit")
+        self._attr_entity_category = art.get("category")
+        if art.get("unit"):
+            self._attr_suggested_display_precision = 0
+
+    @property
+    def native_value(self):
+        if self.coordinator.data is None:
+            return "startet" if self._key == "pellet_prognose_status" else None
+        return self._wert(self.coordinator.data)
+
+    @property
+    def icon(self) -> str:
+        if self._key == "pellet_prognose_status":
+            bereit = self.coordinator.data is not None and self.coordinator.data.bereit
+            return "mdi:check-circle-outline" if bereit else "mdi:school-outline"
+        return self._attr_icon
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        e = self.coordinator.data
+        if e is None:
+            return None
+        if self._key == "pellet_prognose_morgen":
+            return {
+                "temperatur": _gerundet(e.morgen_temperatur),
+                "quelle": e.morgen_quelle,
+            }
+        if self._key == "pellet_prognose_treffsicherheit":
+            return {
+                "verglichene_tage": e.verglichene_tage,
+                "gestern_prognose_kg": _gerundet(e.gestern_prognose),
+                "gestern_tatsaechlich_kg": _gerundet(e.gestern_tatsaechlich),
+            }
+        if self._key == "pellet_prognose_status":
+            m = e.modell
+            return {
+                "lerntage": e.lerntage,
+                "heiztage": e.heiztage,
+                "grundlast_kg_je_tag": _gerundet(m.grundlast) if m else None,
+                "kg_je_grad_kaelter": _gerundet(m.faktor, 2) if m else None,
+                "heizgrenze": _gerundet(m.heizgrenze) if m else None,
+                "ausreisser": m.ausreisser if m else None,
+                "standort_waermer_als_mittel": _gerundet(e.klima_abweichung),
+                "wetter": self.coordinator.wetter_id,
+                "vorhersage_tage": self.coordinator.vorhersage_tage,
+            }
+        if self._key == "lager_reicht_bis":
+            attribute = {
+                "datum": _deutsch(e.reicht_bis),
+                "fruehestens": _datum(e.reicht_fruehestens),
+                "spaetestens": _datum(e.reicht_spaetestens),
+            }
+            if e.ueber_horizont:
+                attribute["hinweis"] = "reicht länger als zwei Jahre"
+            return attribute
+        if self._key == "lager_bestellen_bis":
+            return {
+                "datum": _deutsch(e.bestellen_bis),
+                "fruehestens": _datum(e.bestellen_fruehestens),
+                "spaetestens": _datum(e.bestellen_spaetestens),
+            }
+        return None

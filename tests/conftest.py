@@ -389,6 +389,16 @@ class FakeEntityRegistry:
     def async_remove(self, entity_id: str) -> None:
         self.eintraege.pop(entity_id)
 
+    def async_get_entity_id(self, domain: str, platform: str, unique_id: str) -> str | None:
+        return next(
+            (
+                e.entity_id
+                for e in self.eintraege.values()
+                if e.domain == domain and e.unique_id == unique_id
+            ),
+            None,
+        )
+
     def fuer_eintrag(self, config_entry_id: str) -> list:
         return [
             e for e in self.eintraege.values() if e.config_entry_id == config_entry_id

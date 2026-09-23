@@ -23,6 +23,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 - Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
+- A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
 - The ready-made dashboard card: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
 - Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
 
@@ -72,9 +73,10 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, PV-Heizmodul, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein. Trägst du den **Pelletpreis** in Euro je Tonne ein, rechnet die Integration auch die Kosten aus - bei 0 bleibt es beim Verbrauch in kg.
-7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-9. Klicke auf **Absenden**.
+7. Wähle optional eine **Wettervorhersage** für die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers). Gibt es in deinem Home Assistant genau eine Wetter-Entität, ist sie schon vorausgewählt.
+8. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
+9. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+10. Klicke auf **Absenden**.
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Nur die **IP-Adresse** steht woanders: Bekommt die Heizung eine neue, trägst du sie im Drei-Punkte-Menü der Integration unter **Neu konfigurieren** ein.
 
@@ -121,6 +123,9 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_pelletverbrauch_dieses_jahr` | Pelletverbrauch seit 1. Januar | kg |
 | `sensor.eta_heizung_pelletkosten_heute` … `_diese_woche`, `_dieses_jahr` | Kosten dazu - nur mit eingetragenem Pelletpreis | EUR |
 | `sensor.eta_heizung_pellet_inhalt_tagesbehalter` | Pellet Inhalt Tagesbehälter | kg |
+| `sensor.eta_heizung_pelletprognose_morgen` | Erwarteter Verbrauch morgen - siehe Verbrauchsprognose | kg |
+| `sensor.eta_heizung_pelletprognose_treffsicherheit` | Wie gut die Prognose die letzten 14 Tage getroffen hat | % |
+| `sensor.eta_heizung_pelletprognose_status` | Was die Prognose gerade tut ("lernt noch", "bereit") | Text |
 | `sensor.eta_heizung_restsauerstoff` | Restsauerstoff | % |
 | `sensor.eta_heizung_rucklauftemperatur` | Rücklauftemperatur | °C |
 | `sensor.eta_heizung_verbrauch_seit_entaschung` | Verbrauch seit Entaschung | kg |
@@ -150,6 +155,9 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
 | `sensor.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen | kg |
 | `sensor.eta_heizung_lager_fullstand` | Lager Füllstand (Vorrat geteilt durch maximalen Vorrat) | % |
+| `sensor.eta_heizung_lager_reicht_bis` | Tag, an dem das Lager voraussichtlich leer ist | Datum |
+| `sensor.eta_heizung_lager_bestellen_bis` | Tag, an dem voraussichtlich die Warngrenze erreicht ist | Datum |
+| `sensor.eta_heizung_lager_reichweite` | Tage, bis das Lager voraussichtlich leer ist | d |
 | `sensor.eta_heizung_lager_vorrat` | Lager Vorrat | kg |
 | `sensor.eta_heizung_lager_warngrenze` | Lager Warngrenze | kg |
 | **Solar** | | |
@@ -224,7 +232,7 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck.
+Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck. Hat die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) genug gelernt, steht im Dach des Lagers, bis wann der Vorrat reicht.
 
 ### Einrichten
 
@@ -312,6 +320,48 @@ Aus dem Gesamtverbrauch der Anlage zählt die Integration mit, was **heute**, **
 Gezählt wird ab dem Einrichten: Am ersten Tag steht unter *heute* nur, was seitdem verbrannt wurde, unter *dieses Jahr* entsprechend weniger als das ganze Jahr. Den Pelletpreis änderst du unter **Konfigurieren**, etwa nach einer neuen Lieferung - die Kosten rechnen ab dann mit dem neuen Preis.
 
 Nur Kesseltypen mit Gesamtverbrauch (Pellets, SH TWIN) haben diese Werte.
+
+## 🔮 Verbrauchsprognose und Reichweite des Lagers
+
+Wie viele Pellets ein Haus braucht, hängt vor allem an der Außentemperatur. Die Integration lernt deshalb aus deinem eigenen Verlauf, **wie viel dein Haus bei welcher Temperatur verbrennt**, und rechnet damit voraus: wie viel morgen verbrannt wird, wann die Warngrenze erreicht ist und wann das Lager leer ist.
+
+**So lernt sie:** Für jeden vergangenen Tag nimmt sie den Verbrauch und die mittlere Außentemperatur aus der Langzeitstatistik von Home Assistant. Daraus bestimmt sie drei Dinge:
+
+* die **Grundlast** - was auch an warmen Tagen verbrennt, vor allem für Warmwasser,
+* wie viel **jedes Grad kälter** zusätzlich kostet,
+* die **Heizgrenze** - ab welcher Außentemperatur dein Haus überhaupt heizt.
+
+Jüngere Tage zählen mehr als alte, damit sich die Prognose anpasst, wenn sich am Haus etwas ändert. Einzelne Ausreißer - Urlaub, Störung, Besuch - verbiegen sie nicht; was an solchen Tagen mehr verbrannt wurde, rechnet sie trotzdem mit ein. Weil die Statistik seit dem Einrichten der Integration mitläuft, lernt die Prognose nach einem Update sofort aus allem, was schon da ist.
+
+**So rechnet sie voraus:** Für die nächsten Tage gilt die Wettervorhersage, danach das langjährige Temperaturmittel in Deutschland (DWD 1991-2020). Um wie viel dein Standort wärmer oder kälter ist, lernt sie nach und nach aus der eigenen Außentemperatur. Mit dieser Temperatur rechnet sie den Vorrat im Lager Tag für Tag herunter.
+
+**So prüft sie sich selbst:** Für jeden der letzten 14 Tage lernt sie nur aus den Tagen davor, schätzt den Verbrauch aus der tatsächlichen Außentemperatur und vergleicht mit dem, was wirklich verbrannt wurde. Das Ergebnis ist die **Treffsicherheit** (100 % = aufs Kilogramm genau), Schätzung und Wirklichkeit von gestern stehen in ihren Attributen.
+
+| Entität | Bedeutung |
+|---|---|
+| `sensor.eta_heizung_pelletprognose_morgen` | erwarteter Verbrauch morgen in kg, dazu die angenommene Temperatur und ihre Quelle |
+| `sensor.eta_heizung_pelletprognose_treffsicherheit` | wie gut die Prognose die letzten 14 Tage getroffen hat |
+| `sensor.eta_heizung_pelletprognose_status` | "lernt noch (…)" oder "bereit"; in den Attributen, was sie gelernt hat |
+| `sensor.eta_heizung_lager_reicht_bis` | an welchem Tag das Lager leer ist, mit *frühestens* und *spätestens* |
+| `sensor.eta_heizung_lager_bestellen_bis` | an welchem Tag die Warngrenze der Anlage erreicht ist - der späteste gute Tag zum Bestellen |
+| `sensor.eta_heizung_lager_reichweite` | wie viele Tage der Vorrat noch reicht |
+
+*Frühestens* gilt, wenn es jenseits der Vorhersage 2 Grad kälter wird als üblich, *spätestens*, wenn es 2 Grad wärmer wird. Die drei Lager-Werte gibt es nur mit angekreuztem Pelletlager.
+
+**Was sie braucht:** 14 vollständige Tage, davon 7 mit höchstens 12 °C, und die Tage müssen mindestens 5 Grad auseinanderliegen - nur wer milde und kalte Tage gesehen hat, kann sagen, was ein Grad kostet. Bis dahin steht im Status, worauf sie wartet. Außerdem den Recorder von Home Assistant (ist standardmäßig an) und einen Kessel mit Gesamtverbrauch (Pellets, SH TWIN).
+
+**Wettervorhersage:** Wähle unter **Konfigurieren** eine Wetter-Entität, etwa die von Met.no, die jede neue Home-Assistant-Installation mitbringt. Gibt es genau eine, nimmt die Prognose sie von selbst. Leerst du das Feld, rechnet sie nur mit dem langjährigen Mittel - für *reicht bis* macht das wenig aus, für *morgen* viel.
+
+**Wie genau das ist:** In einer Simulation mit 120 Häusern - jedes mit eigenem Standort, launischen Wintern und Ausreißern - lag der geschätzte Leer-Tag ohne Wettervorhersage im Mittel (Median) so weit daneben:
+
+| Echter Leer-Tag in | Abweichung |
+|---|---|
+| 14 Tagen | 1 Tag |
+| 30 Tagen | 3 Tage |
+| 60 Tagen | 4 Tage |
+| 120 Tagen | 6 Tage |
+
+Die Prognose rechnet nur in Home Assistant und schreibt nichts in die Heizung. Was sie gelernt hat, steht auch in der Diagnose-Datei unter `prognose`.
 
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 

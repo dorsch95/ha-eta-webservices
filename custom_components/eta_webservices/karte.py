@@ -412,6 +412,21 @@ def lager_auflagen():
     return elemente
 
 
+def lager_reicht_bis(schrift, kurz):
+    """Bis wann der Vorrat reicht - klein ins Dach des Lagers geschrieben.
+
+    Kommt aus der Verbrauchsprognose. Solange sie noch lernt oder der
+    Vorrat länger als zwei Jahre reicht, bleibt das Dach leer. Das Datum
+    steht deutsch formatiert im Attribut "datum"; der Zustand selbst ist
+    ein ISO-Datum, das die Karte ungeformt anzeigen würde.
+    """
+    element = label(
+        "lager_reicht_bis", "bis " if kurz else "Reicht bis ", "hell", 25.5, 50, schrift - 12
+    )
+    element["attribute"] = "datum"
+    return nur_wenn_vorhanden(element)
+
+
 HEIZKREIS_OHNE_FLUSS = ["Aus", "-", "unavailable"]
 """Anforderungen, bei denen im Heizkreis nichts fließt.
 
@@ -585,6 +600,7 @@ def grid(spalten, schrift, kurz):
                     label("lager_vorrat", "Vorrat: ", "behaelter", 8, 50, schrift + 5),
                     label("lager_warngrenze", "Ab: " if kurz else "Warnung ab: ",
                           "gedaempft", 15, 50, schrift),
+                    lager_reicht_bis(schrift, kurz),
                 ],
             ),
             komponente(

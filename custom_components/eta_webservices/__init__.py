@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
 from .api import ETAApiClient
@@ -22,6 +23,7 @@ from .const import (
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
     CONF_SCAN_INTERVAL,
+    CONF_WETTER,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
@@ -38,6 +40,7 @@ from .const import (
 from .aktionen import async_aktionen_registrieren
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import deutsche_namen
+from .prognose_koordinator import ETAPrognoseKoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,10 +93,61 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
 
+    if _prognose_moeglich(hass, coordinator):
+        coordinator.prognose = ETAPrognoseKoordinator(
+            hass,
+            entry,
+            coordinator,
+            config.get(CONF_WETTER),
+            lambda: _statistik_ids(hass, entry),
+        )
+
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _verwaiste_entitaeten_entfernen(hass, entry, coordinator)
+    if coordinator.prognose is not None:
+        entry.async_on_unload(async_at_started(hass, _prognose_starten(coordinator)))
     return True
+
+
+def _prognose_moeglich(hass: HomeAssistant, coordinator: ETADataUpdateCoordinator) -> bool:
+    """Die Prognose lernt aus der Langzeitstatistik von Gesamtverbrauch
+    und Außentemperatur - ohne Recorder oder einen der beiden Werte nicht.
+    """
+    if "recorder" not in getattr(hass.config, "components", set()):
+        return False
+    return all(
+        coordinator.sensor_defs.get(key, {}).get("uri")
+        for key in ("pellet_gesamtverbrauch", "aussentemperatur")
+    )
+
+
+def _statistik_ids(hass: HomeAssistant, entry: ETAConfigEntry) -> tuple[str | None, str | None]:
+    """Unter welchen Entitäts-IDs Gesamtverbrauch und Außentemperatur gerade stehen.
+
+    Jedes Mal neu nachgeschlagen, weil der Nutzer sie umbenennen kann;
+    Home Assistant zieht die Statistik dann mit um.
+    """
+    registry = er.async_get(hass)
+    return tuple(
+        registry.async_get_entity_id(
+            "sensor", DOMAIN, f"eta_static_{entry.entry_id}_{key}"
+        )
+        for key in ("pellet_gesamtverbrauch", "aussentemperatur")
+    )
+
+
+def _prognose_starten(coordinator: ETADataUpdateCoordinator):
+    """Rechnet die Prognose erst, wenn Home Assistant ganz gestartet ist.
+
+    Vorher gibt es die Wetter-Entitäten womöglich noch nicht, und der
+    Start soll nicht auf die Statistik warten.
+    """
+
+    async def starten(_hass: HomeAssistant) -> None:
+        await coordinator.prognose.async_refresh()
+
+    return starten
 
 
 _EIGENE_ENTITAETEN = {
@@ -103,8 +157,14 @@ _EIGENE_ENTITAETEN = {
     "pellet_verbrauch_heute": "kessel",
     "pellet_verbrauch_woche": "kessel",
     "pellet_verbrauch_jahr": "kessel",
+    "pellet_prognose_morgen": "kessel",
+    "pellet_prognose_treffsicherheit": "kessel",
+    "pellet_prognose_status": "kessel",
     "lager_niedrig": "lager",
     "lager_fuellstand": "lager",
+    "lager_reicht_bis": "lager",
+    "lager_bestellen_bis": "lager",
+    "lager_reichweite": "lager",
 }
 _KOSTEN = {"pellet_kosten_heute", "pellet_kosten_woche", "pellet_kosten_jahr"}
 _STOERUNG = {"aktive_fehler", "stoerung"}
