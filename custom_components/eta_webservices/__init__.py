@@ -20,10 +20,12 @@ from .const import (
     CONF_ENABLE_ERRORS,
     CONF_ENABLE_SWITCHES,
     CONF_PELLET_KWH_PER_KG,
+    CONF_PELLET_PREIS,
     CONF_SCAN_INTERVAL,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
+    DEFAULT_PELLET_PREIS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     PLATFORMS,
@@ -83,6 +85,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         enable_errors=config.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
     )
 
+    coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
@@ -97,13 +100,22 @@ _EIGENE_ENTITAETEN = {
     "aschebox_status": "kessel",
     "aschebox_faellig": "kessel",
     "pellet_energie_gesamt": "kessel",
+    "pellet_verbrauch_heute": "kessel",
+    "pellet_verbrauch_woche": "kessel",
+    "pellet_verbrauch_jahr": "kessel",
     "lager_niedrig": "lager",
+    "lager_fuellstand": "lager",
 }
+_KOSTEN = {"pellet_kosten_heute", "pellet_kosten_woche", "pellet_kosten_jahr"}
 _STOERUNG = {"aktive_fehler", "stoerung"}
 
 
 def entitaet_vorgesehen(
-    key: str, components: list[str], enable_switches: bool, enable_errors: bool
+    key: str,
+    components: list[str],
+    enable_switches: bool,
+    enable_errors: bool,
+    mit_kosten: bool = False,
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -126,6 +138,8 @@ def entitaet_vorgesehen(
         return enable_switches and SELECTS[key]["component"] in aktiv
     if key in _STOERUNG:
         return enable_errors
+    if key in _KOSTEN:
+        return mit_kosten and "kessel" in aktiv
     if key in _EIGENE_ENTITAETEN:
         return _EIGENE_ENTITAETEN[key] in aktiv
     if re.fullmatch(r"puffer_fuehler_\d+", key):
@@ -155,6 +169,7 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.components,
             coordinator.enable_switches,
             coordinator.enable_errors,
+            coordinator.pellet_preis > 0,
         )
         if vorgesehen is False:
             _LOGGER.info(

@@ -29,14 +29,17 @@ from .const import (
     CONF_ENABLE_SWITCHES,
     CONF_FUB_NAMES,
     CONF_PELLET_KWH_PER_KG,
+    CONF_PELLET_PREIS,
     CONF_SCAN_INTERVAL,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
+    DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
+    MAX_PELLET_PREIS,
     MAX_SCAN_INTERVAL,
     MIN_PELLET_KWH_PER_KG,
     MIN_SCAN_INTERVAL,
@@ -108,6 +111,10 @@ def _einstellung_felder(current: dict[str, Any]) -> dict:
             vol.Coerce(float),
             vol.Range(min=MIN_PELLET_KWH_PER_KG, max=MAX_PELLET_KWH_PER_KG),
         ),
+        vol.Required(
+            CONF_PELLET_PREIS,
+            default=current.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS),
+        ): vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_PELLET_PREIS)),
     }
 
 

@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
+from typing import Any
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.event import async_track_time_change
+from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
@@ -33,6 +39,11 @@ async def async_setup_entry(
     ]
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
+    if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
+        for zeitraum in ZEITRAEUME:
+            entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum))
+            if coordinator.pellet_preis > 0:
+                entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum, kosten=True))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerFuellstandSensor(coordinator))
     entities.append(_pellet_energie(coordinator))
@@ -229,6 +240,138 @@ class ETALagerFuellstandSensor(ETABaseSensor):
         if maximum_kg <= 0:
             return None
         return round(max(0.0, vorrat_kg / maximum_kg * 100))
+
+
+ZEITRAEUME = ("heute", "woche", "jahr")
+"""Die Zeiträume, für die Verbrauch und Kosten gezählt werden."""
+
+
+def zeitraum_beginn(zeitraum: str, jetzt: datetime) -> datetime:
+    """Der Beginn des laufenden Zeitraums in Ortszeit.
+
+    Heute beginnt um Mitternacht, die Woche am Montag, das Jahr am
+    1. Januar.
+    """
+    tag = jetzt.date()
+    if zeitraum == "woche":
+        tag -= timedelta(days=tag.weekday())
+    elif zeitraum == "jahr":
+        tag = date(tag.year, 1, 1)
+    return dt_util.start_of_local_day(tag)
+
+
+class _Zaehlerstand(ExtraStoredData):
+    """Was ein Zeitraum-Sensor über einen Neustart hinweg behalten muss."""
+
+    def __init__(self, beginn: datetime | None, basis: float | None) -> None:
+        self.beginn = beginn
+        self.basis = basis
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "beginn": self.beginn.isoformat() if self.beginn else None,
+            "basis": self.basis,
+        }
+
+
+class ETAPelletZeitraumSensor(ETABaseSensor, RestoreEntity):
+    """Pelletverbrauch oder -kosten seit Beginn des Tages, der Woche, des Jahres.
+
+    Grundlage ist der Gesamtverbrauch der Anlage, ein Zähler, der nie
+    zurückspringt. Zu Beginn jedes Zeitraums merkt sich der Sensor dessen
+    Stand; angezeigt wird der Zuwachs seitdem. Den gemerkten Stand
+    behält er über einen Neustart von Home Assistant hinweg. Beim ersten
+    Einrichten beginnt die Zählung mit dem Einrichten, nicht rückwirkend.
+
+    Die Kosten rechnen den Verbrauch mit dem eingestellten Pelletpreis in
+    Euro je Tonne um.
+    """
+
+    _attr_state_class = SensorStateClass.TOTAL
+
+    def __init__(
+        self, coordinator: ETADataUpdateCoordinator, zeitraum: str, kosten: bool = False
+    ) -> None:
+        key = f"pellet_{'kosten' if kosten else 'verbrauch'}_{zeitraum}"
+        super().__init__(coordinator, key)
+        self._attr_translation_key = key
+        self._zeitraum = zeitraum
+        self._kosten = kosten
+        self._beginn: datetime | None = None
+        self._basis: float | None = None
+        if kosten:
+            self._attr_device_class = SensorDeviceClass.MONETARY
+            self._attr_native_unit_of_measurement = "EUR"
+            self._attr_suggested_display_precision = 2
+            self._attr_icon = "mdi:cash"
+        else:
+            self._attr_device_class = SensorDeviceClass.WEIGHT
+            self._attr_native_unit_of_measurement = "kg"
+            self._attr_suggested_display_precision = 0
+            self._attr_icon = "mdi:fire"
+
+    def _gesamt(self) -> float | None:
+        wert = (self.coordinator.data or {}).get("pellet_gesamtverbrauch")
+        if wert is None:
+            return None
+        try:
+            return float(wert.value)
+        except (TypeError, ValueError):
+            return None
+
+    def _pruefen(self) -> None:
+        """Beginnt bei Bedarf einen neuen Zeitraum."""
+        beginn = zeitraum_beginn(self._zeitraum, dt_util.now())
+        gesamt = self._gesamt()
+        if self._beginn != beginn:
+            self._beginn = beginn
+            self._basis = gesamt
+        elif self._basis is None or (gesamt is not None and gesamt < self._basis):
+            self._basis = gesamt
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        gespeichert = await self.async_get_last_extra_data()
+        if gespeichert is not None:
+            daten = gespeichert.as_dict()
+            if daten.get("beginn"):
+                self._beginn = dt_util.parse_datetime(daten["beginn"])
+            self._basis = daten.get("basis")
+        self._pruefen()
+        self.async_on_remove(
+            async_track_time_change(
+                self.hass, self._neuer_tag, hour=0, minute=0, second=5
+            )
+        )
+
+    @callback
+    def _neuer_tag(self, _jetzt: datetime) -> None:
+        """Um Mitternacht auf null, auch wenn die Anlage gerade schweigt."""
+        self._pruefen()
+        self.async_write_ha_state()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._pruefen()
+        super()._handle_coordinator_update()
+
+    @property
+    def extra_restore_state_data(self) -> _Zaehlerstand:
+        return _Zaehlerstand(self._beginn, self._basis)
+
+    @property
+    def last_reset(self) -> datetime | None:
+        return self._beginn
+
+    @property
+    def native_value(self) -> float | None:
+        gesamt = self._gesamt()
+        if gesamt is None or self._basis is None:
+            return None
+        verbrauch = max(0.0, gesamt - self._basis)
+        if self._kosten:
+            return round(verbrauch * self.coordinator.pellet_preis / 1000, 2)
+        return verbrauch
 
 
 class ETAErrorSensor(ETABaseSensor):

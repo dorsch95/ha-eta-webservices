@@ -709,6 +709,93 @@ async def test_lager_fuellstand_in_prozent(hass, entry):
     assert fuellstand.native_value is None
 
 
+def _kg(zahl):
+    from eta_webservices.api import ETAValue
+
+    return ETAValue(zahl, str(zahl), "kg", False, 0)
+
+
+def test_zeitraum_beginnt_mitternacht_montag_neujahr():
+    from datetime import datetime
+
+    from homeassistant.util import dt as dt_util
+
+    from eta_webservices.sensor import zeitraum_beginn
+
+    jetzt = datetime(2026, 9, 24, 15, 30, tzinfo=dt_util.get_default_time_zone())
+    assert zeitraum_beginn("heute", jetzt).date().isoformat() == "2026-09-24"
+    assert zeitraum_beginn("woche", jetzt).date().isoformat() == "2026-09-21"
+    assert zeitraum_beginn("jahr", jetzt).date().isoformat() == "2026-01-01"
+    assert zeitraum_beginn("heute", jetzt).hour == 0
+
+
+async def test_pelletverbrauch_zaehlt_ab_beginn_des_zeitraums(hass, entry, monkeypatch):
+    from datetime import datetime
+
+    from homeassistant.util import dt as dt_util
+
+    from eta_webservices import sensor as sensor_modul
+
+    coordinator, by_name = await setup_integration(hass, entry)
+    heute = by_name["Pelletverbrauch heute"]
+    jahr = by_name["Pelletverbrauch dieses Jahr"]
+    zone = dt_util.get_default_time_zone()
+    uhr = {"jetzt": datetime(2026, 9, 24, 8, 0, tzinfo=zone)}
+    monkeypatch.setattr(sensor_modul.dt_util, "now", lambda: uhr["jetzt"])
+
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(12000)
+    heute._pruefen()
+    jahr._pruefen()
+    assert heute.native_value == 0
+    assert heute.native_unit_of_measurement == "kg"
+
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(12018)
+    heute._pruefen()
+    jahr._pruefen()
+    assert heute.native_value == 18
+    assert jahr.native_value == 18
+
+    uhr["jetzt"] = datetime(2026, 9, 25, 0, 0, 5, tzinfo=zone)
+    heute._pruefen()
+    jahr._pruefen()
+    assert heute.native_value == 0, "neuer Tag beginnt bei null"
+    assert jahr.native_value == 18, "das Jahr zählt weiter"
+    assert heute.last_reset.date().isoformat() == "2026-09-25"
+
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(12030)
+    assert heute.native_value == 12
+    assert jahr.native_value == 30
+
+
+async def test_zurueckgesetzter_zaehler_ergibt_keinen_negativen_verbrauch(hass, entry):
+    coordinator, by_name = await setup_integration(hass, entry)
+    woche = by_name["Pelletverbrauch diese Woche"]
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(5000)
+    woche._pruefen()
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(100)
+    assert woche.native_value == 0
+    woche._pruefen()
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(107)
+    assert woche.native_value == 7
+
+
+async def test_pelletkosten_nur_mit_preis(hass, entry):
+    _, by_name = await setup_integration(hass, entry)
+    assert "Pelletverbrauch heute" in by_name
+    assert not [name for name in by_name if name.startswith("Pelletkosten")]
+
+
+async def test_pelletkosten_rechnen_mit_dem_preis_je_tonne(hass, entry):
+    entry.data["pellet_preis"] = 380.0
+    coordinator, by_name = await setup_integration(hass, entry)
+    kosten = by_name["Pelletkosten heute"]
+    assert kosten.native_unit_of_measurement == "EUR"
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(1000)
+    kosten._pruefen()
+    coordinator.data["pellet_gesamtverbrauch"] = _kg(1025)
+    assert kosten.native_value == 9.5
+
+
 async def test_status_unterscheidet_fehlend_von_unerreichbar(hass, entry, menu_xml):
     """"-" heißt "hat die Anlage nicht", nicht "gerade nicht lesbar"."""
     from eta_webservices.coordinator import VERALTET_AB
@@ -898,6 +985,9 @@ async def test_lager_austragung_ist_klartext(hass, entry):
         ("heizkreis_betriebsart", True),
         ("lager_niedrig", False),
         ("aschebox_faellig", True),
+        ("pellet_verbrauch_heute", True),
+        ("pellet_kosten_heute", False),
+        ("lager_fuellstand", False),
         ("gibt_es_nicht", None),
     ],
 )

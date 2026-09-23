@@ -9,6 +9,7 @@
           "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
+          "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits"
         }
@@ -60,6 +61,7 @@
           "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
+          "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits"
         }
@@ -275,8 +277,26 @@
       "pellet_gesamtverbrauch": {
         "name": "Pellet total consumption"
       },
+      "pellet_kosten_heute": {
+        "name": "Pellet cost today"
+      },
+      "pellet_kosten_jahr": {
+        "name": "Pellet cost this year"
+      },
+      "pellet_kosten_woche": {
+        "name": "Pellet cost this week"
+      },
       "pellet_tagesbehaelter": {
         "name": "Pellet day hopper level"
+      },
+      "pellet_verbrauch_heute": {
+        "name": "Pellet consumption today"
+      },
+      "pellet_verbrauch_jahr": {
+        "name": "Pellet consumption this year"
+      },
+      "pellet_verbrauch_woche": {
+        "name": "Pellet consumption this week"
       },
       "puffer_fuehler_1": {
         "name": "Buffer sensor 1"

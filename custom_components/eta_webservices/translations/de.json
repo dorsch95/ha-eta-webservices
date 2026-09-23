@@ -9,6 +9,7 @@
           "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
+          "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "enable_switches": "Kessel und Heizkreise schalten dürfen"
         }
@@ -60,6 +61,7 @@
           "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
+          "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "enable_switches": "Kessel und Heizkreise schalten dürfen"
         }
@@ -275,8 +277,26 @@
       "pellet_gesamtverbrauch": {
         "name": "Pellet Gesamtverbrauch"
       },
+      "pellet_kosten_heute": {
+        "name": "Pelletkosten heute"
+      },
+      "pellet_kosten_jahr": {
+        "name": "Pelletkosten dieses Jahr"
+      },
+      "pellet_kosten_woche": {
+        "name": "Pelletkosten diese Woche"
+      },
       "pellet_tagesbehaelter": {
         "name": "Pellet Inhalt Tagesbehälter"
+      },
+      "pellet_verbrauch_heute": {
+        "name": "Pelletverbrauch heute"
+      },
+      "pellet_verbrauch_jahr": {
+        "name": "Pelletverbrauch dieses Jahr"
+      },
+      "pellet_verbrauch_woche": {
+        "name": "Pelletverbrauch diese Woche"
       },
       "puffer_fuehler_1": {
         "name": "Puffer Fühler 1"

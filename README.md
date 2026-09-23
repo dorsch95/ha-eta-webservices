@@ -71,7 +71,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
 4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, PV-Heizmodul, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
-6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein.
+6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein. Trägst du den **Pelletpreis** in Euro je Tonne ein, rechnet die Integration auch die Kosten aus - bei 0 bleibt es beim Verbrauch in kg.
 7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
 8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
 9. Klicke auf **Absenden**.
@@ -116,6 +116,10 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_kesseldruck` | Kesseldruck | bar |
 | `sensor.eta_heizung_kesseltemperatur` | Kesseltemperatur | °C |
 | `sensor.eta_heizung_pellet_gesamtverbrauch` | Pellet Gesamtverbrauch | kg |
+| `sensor.eta_heizung_pelletverbrauch_heute` | Pelletverbrauch seit Mitternacht | kg |
+| `sensor.eta_heizung_pelletverbrauch_diese_woche` | Pelletverbrauch seit Montag | kg |
+| `sensor.eta_heizung_pelletverbrauch_dieses_jahr` | Pelletverbrauch seit 1. Januar | kg |
+| `sensor.eta_heizung_pelletkosten_heute` … `_diese_woche`, `_dieses_jahr` | Kosten dazu - nur mit eingetragenem Pelletpreis | EUR |
 | `sensor.eta_heizung_pellet_inhalt_tagesbehalter` | Pellet Inhalt Tagesbehälter | kg |
 | `sensor.eta_heizung_restsauerstoff` | Restsauerstoff | % |
 | `sensor.eta_heizung_rucklauftemperatur` | Rücklauftemperatur | °C |
@@ -301,6 +305,14 @@ Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, ents
 
 ---
 
+## 📅 Verbrauch und Kosten je Zeitraum
+
+Aus dem Gesamtverbrauch der Anlage zählt die Integration mit, was **heute**, **diese Woche** (ab Montag) und **dieses Jahr** (ab 1. Januar) verbrannt wurde - in kg und, mit eingetragenem Pelletpreis, in Euro. Um Mitternacht, am Montag und zu Neujahr beginnen die Werte wieder bei null, ein Neustart von Home Assistant setzt sie nicht zurück.
+
+Gezählt wird ab dem Einrichten: Am ersten Tag steht unter *heute* nur, was seitdem verbrannt wurde, unter *dieses Jahr* entsprechend weniger als das ganze Jahr. Den Pelletpreis änderst du unter **Konfigurieren**, etwa nach einer neuen Lieferung - die Kosten rechnen ab dann mit dem neuen Preis.
+
+Nur Kesseltypen mit Gesamtverbrauch (Pellets, SH TWIN) haben diese Werte.
+
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 
 Die Integration rechnet den Pelletverbrauch in Energie um und stellt ihn als `sensor.eta_heizung_pellet_energieverbrauch_gesamt` in kWh bereit. Damit lässt er sich neben Strom und Gas ins Energie-Dashboard aufnehmen:
@@ -390,17 +402,18 @@ Fertig verpackt gibt es das als Blueprint **Störung melden** - siehe unten.
 
 ## 🧩 Fertige Automatisierungen (Blueprints)
 
-Im Ordner [`blueprints/automation/eta_webservices`](blueprints/automation/eta_webservices) liegen drei gebrauchsfertige Automatisierungen:
+Im Ordner [`blueprints/automation/eta_webservices`](blueprints/automation/eta_webservices) liegen vier gebrauchsfertige Automatisierungen:
 
-| Blueprint | Wofür |
-|---|---|
-| **Störung melden** | Push-Nachricht, sobald eine Störung ansteht - mit dem Klartext der Meldung |
-| **Aschebox leeren** | Erinnerung, sobald die Schwelle der Anlage erreicht ist |
-| **Heizkreis auf ECO bei offenem Fenster** | Setzt den Heizkreis auf ECO, solange ein Fenster offen steht, und stellt danach die Betriebsart von vorher wieder her. Ein Heizkreis auf *Aus* bleibt aus |
+| Blueprint | Wofür | |
+|---|---|---|
+| **Störung melden** | Push-Nachricht, sobald eine Störung ansteht - mit dem Klartext der Meldung | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fstoerung_melden.yaml) |
+| **Aschebox leeren** | Erinnerung, sobald die Schwelle der Anlage erreicht ist | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Faschebox_leeren.yaml) |
+| **Pelletvorrat niedrig** | Erinnerung zum Bestellen, sobald der Vorrat die Warngrenze der Anlage erreicht - mit Vorrat und Füllstand | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fpelletvorrat_melden.yaml) |
+| **Heizkreis auf ECO bei offenem Fenster** | Setzt den Heizkreis auf ECO, solange ein Fenster offen steht, und stellt danach die Betriebsart von vorher wieder her. Ein Heizkreis auf *Aus* bleibt aus | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fheizkreis_absenken.yaml) |
 
-**Einbauen:** Die gewünschte `.yaml` nach `config/blueprints/automation/eta_webservices/` kopieren (Ordner ggf. anlegen) und Home Assistant neu starten. Danach unter **Einstellungen -> Automatisierungen & Szenen -> Blueprints** auswählen.
+**Einbauen:** Auf **Importieren** klicken - Home Assistant öffnet sich und übernimmt den Blueprint. Danach unter **Einstellungen -> Automatisierungen & Szenen -> Blueprints** auswählen und die Benachrichtigung festlegen, etwa eine Push-Nachricht an dein Handy. Ohne Internetzugang zu GitHub geht es auch von Hand: die `.yaml` nach `config/blueprints/automation/eta_webservices/` kopieren und Home Assistant neu starten.
 
-Der dritte braucht die Betriebsart-Auswahl, also einen freigegebenen Schreibzugriff.
+Der Heizkreis-Blueprint braucht die Betriebsart-Auswahl, also einen freigegebenen Schreibzugriff.
 
 ---
 

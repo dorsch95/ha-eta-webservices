@@ -1,0 +1,53 @@
+blueprint:
+  name: ETA Heizung - Pelletvorrat niedrig
+  description: >-
+    Meldet sich, sobald der Vorrat im Pelletlager die Warngrenze erreicht,
+    die an der Anlage eingestellt ist - Zeit, Pellets zu bestellen. Vorrat
+    und Füllstand stehen mit in der Nachricht.
+  domain: automation
+  source_url: https://github.com/dorsch95/ha-eta-webservices/blob/main/blueprints/automation/eta_webservices/pelletvorrat_melden.yaml
+  input:
+    vorratsmelder:
+      name: Vorratsmelder
+      description: Die Entität "Pelletvorrat niedrig" deiner ETA-Heizung.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              integration: eta_webservices
+    wartezeit:
+      name: Verzögerung
+      description: >-
+        So lange muss der Vorrat unter der Warngrenze liegen, bevor
+        benachrichtigt wird. Verhindert eine Nachricht, wenn der Wert beim
+        Fördern kurz um die Grenze pendelt.
+      default:
+        minutes: 30
+      selector:
+        duration: {}
+    aktion:
+      name: Benachrichtigung
+      description: >-
+        Was geschehen soll. Üblich ist eine Push-Nachricht an dein Handy.
+        Verfügbar sind dort die Variablen vorrat (in kg), warngrenze (in kg)
+        und fuellstand (in Prozent, falls die Anlage einen maximalen Vorrat
+        kennt).
+      selector:
+        action: {}
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input vorratsmelder
+    from: "off"
+    to: "on"
+    for: !input wartezeit
+
+variables:
+  melder: !input vorratsmelder
+  vorrat: "{{ state_attr(melder, 'vorrat') | int(0) }}"
+  warngrenze: "{{ state_attr(melder, 'warngrenze') | int(0) }}"
+  fuellstand: "{{ state_attr(melder, 'fuellstand_prozent') | round(0) | int(0) }}"
+
+actions: !input aktion
