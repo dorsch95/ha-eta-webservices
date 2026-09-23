@@ -15,6 +15,19 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
+<details>
+<summary>🇬🇧 <b>English summary</b></summary>
+
+**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tank, fresh water module, heating circuits, solar and pellet store) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
+
+- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has.
+- Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report.
+- Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
+- The ready-made dashboard card: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
+- Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
+
+</details>
+
 ---
 
 ## ⚙️ Vorbereitung am ETA-Kessel
@@ -193,17 +206,16 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Die Karte ist lang (sie enthält jede Komponente dreimal, einmal je Bildschirmgröße), deshalb steht sie als eigene Datei im Repo:
-
-**➡️ [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml)** — Inhalt kopieren und wie unten beschrieben einfügen.
-
 ### Einrichten
 
-1. Lege im Dashboard eine **neue Ansicht** an (Stift oben rechts, dann `+`).
-2. Wähle als Ansichtstyp **Panel (1 Karte)**. Das ist wichtig: In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, und die Beschriftungen werden abgeschnitten.
-3. Füge in dieser Ansicht eine Karte vom Typ **Manuell** ein und ersetze den Inhalt durch den aus `eta-karte.yaml`.
+1. Öffne **Entwicklerwerkzeuge -> Aktionen**, wähle **ETA Web-Services: Dashboard-Karte erzeugen** und klicke auf **Aktion ausführen**. Die Antwort darunter ist die fertige Karte - zugeschnitten auf deine Anlage: nur deine Komponenten, genau deine Pufferfühler, deine Entitäten. Kopiere sie komplett.
+2. Lege im Dashboard eine **neue Ansicht** an (Stift oben rechts, dann `+`).
+3. Wähle als Ansichtstyp **Panel (1 Karte)**. Das ist wichtig: In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, und die Beschriftungen werden abgeschnitten.
+4. Füge in dieser Ansicht eine Karte vom Typ **Manuell** ein und ersetze den Inhalt durch die kopierte Antwort.
 
-Es ist nichts zu löschen und nichts anzupassen. Die Grafiken liefert die Integration selbst aus.
+Es ist nichts zu löschen und nichts anzupassen. Die Grafiken liefert die Integration selbst aus. Baust du deine Anlage später um, führ die Aktion einfach noch einmal aus.
+
+Alternativ gibt es die **universelle Karte**, die ohne Anpassung zu jeder Anlage passt: **➡️ [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml)**. Sie ist deutlich länger, weil sie alle Komponenten und Fühlerzahlen enthält und das Passende per Bedingung einblendet.
 
 > ℹ️ **Update von Version 0.20 oder älter:** Füge die Karte einmal neu ein. Die Grafiken kommen jetzt direkt aus der Integration statt aus deinem `www`-Ordner, außerdem hat die Heizkreis-Kachel neue Tasten für die Betriebsart. Die alte Karte funktioniert bis dahin weiter. Danach kannst du den Ordner `www/community/ha-eta-webservices` löschen - er wird nicht mehr gebraucht.
 
@@ -230,7 +242,7 @@ Die Beschriftungen stecken **nicht** in den Grafiken, sondern in `prefix` der `s
 
 </details>
 
-> ℹ️ Die Entitäts-IDs in der Karte gelten für eine **deutschsprachige** Home-Assistant-Installation. Home Assistant bildet Entitäts-IDs aus dem übersetzten Namen; bei englischer Spracheinstellung heißt die Kesseltemperatur entsprechend `sensor.eta_heizung_boiler_temperature`. Deine bestehenden Entitäten behalten ihre ID in jedem Fall.
+> ℹ️ Die Entitäts-IDs sind **in jeder Spracheinstellung gleich** - die Kesseltemperatur heißt auch in einem englischen Home Assistant `sensor.eta_heizung_kesseltemperatur`, nur der angezeigte Name ist übersetzt. Deshalb passt die Karte überall. Hast du eine Entität umbenannt, setzt die Aktion *Dashboard-Karte erzeugen* den neuen Namen von selbst ein.
 
 ### Pufferfühler
 
@@ -244,28 +256,11 @@ Wie viele du hast, steht unter **Entwicklerwerkzeuge -> Zustände** (`sensor.eta
 
 Jede Beschriftung steht als `prefix` im YAML, nicht im Bild. Aus `prefix: 'Kessel: '` wird also einfach `prefix: 'Vorlauf Kessel: '`. Mit `suffix` lässt sich zusätzlich etwas hinter den Wert setzen.
 
-Denk daran, die Änderung in allen drei Bildschirm-Varianten zu machen - oder passe [`dashboard/karte_bauen.py`](dashboard/karte_bauen.py) an und erzeuge die Datei neu:
+Denk daran, die Änderung in allen drei Bildschirm-Varianten zu machen.
 
-```bash
-python dashboard/karte_bauen.py
-```
+### Meldungen von Spook
 
-### Kürzere Karte für die eigene Anlage
-
-Die mitgelieferte Karte passt zu **jeder** Anlage und ist deshalb lang: Sie enthält alle neun Komponenten und alle Fühlerzahlen von drei bis acht. Wer seine Anlage kennt, kann sich eine zugeschnittene erzeugen:
-
-```bash
-python dashboard/karte_bauen.py \
-  --komponenten kessel,puffer,fwm,hk1,lager,solar \
-  --fuehler 5 \
-  --ziel meine-karte.yaml
-```
-
-Aus 3239 Zeilen werden so je nach Anlage 500 bis 1200. Die Karte sieht genau gleich aus - sie nennt nur keine Entitäten mehr, die es bei dir nicht gibt.
-
-Das ist auch die Antwort, wenn dich Werkzeuge wie [Spook](https://spook.boo) auf *"unbekannte Entitäten"* hinweisen: Die universelle Karte nennt bewusst auch Heizkreis 2 bis 4 und die Pufferfühler 6 bis 8, jeweils abgesichert durch eine Bedingung. Spook liest das YAML aber nur nach Namen ab und wertet die Bedingungen nicht aus. Angezeigt wird trotzdem nichts Falsches - die zugeschnittene Karte macht die Meldung nur still.
-
-Mögliche Komponenten: `kessel`, `puffer`, `fwm`, `hk1` bis `hk4`, `lager`, `solar`. Baust du später um, einfach neu erzeugen.
+Werkzeuge wie [Spook](https://spook.boo) melden bei der **universellen** Karte *"unbekannte Entitäten"*: Sie nennt bewusst auch Heizkreis 2 bis 4 und die Pufferfühler 6 bis 8, jeweils abgesichert durch eine Bedingung, und Spook wertet Bedingungen nicht aus. Angezeigt wird trotzdem nichts Falsches. Die Karte aus der Aktion *Dashboard-Karte erzeugen* nennt nur Entitäten, die es bei dir gibt - dann bleibt Spook still.
 
 > 💡 `top`/`left` verankern in Lovelace die **Mitte** des Elements. Die linksbündigen Beschriftungen im Kessel-Block nutzen deshalb `transform: 'translate(0, -50%)'`. Alle Werte lassen sich im visuellen Editor per Drag & Drop feinjustieren.
 
@@ -397,9 +392,9 @@ Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage,
 
 **Eine ganze Komponente ohne Werte** meldet Home Assistant selbst als **Reparatur** (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und den Weg zu **Konfigurieren**, wo du den tatsächlichen Funktionsblock-Namen einträgst; er verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann meldet Home Assistant "Wird eingerichtet" und versucht es von selbst weiter.
 
-**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer und unter `"schreibzugriff"`, welche Schalter erkannt wurden. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues) angehängt werden.
+**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer, unter `"schreibzugriff"`, welche Schalter erkannt wurden, und unter `"menuebaum"` der **vollständige Menübaum** deiner Anlage. Mehr braucht es nicht, um die Integration an eine abweichende Anlage anzupassen. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) angehängt werden - das Formular dort fragt nach allem Nötigen.
 
-**Legt die Integration den Wert gar nicht erst an**, fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Die Datei ist in sich geschlossen - herunterladen, auf einem Rechner im selben Netz ablegen, starten. Nötig ist nur Python, keine Zusatzpakete:
+**Lässt sich die Integration gar nicht einrichten**, gibt es keinen Diagnose-Export. Dann fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Die Datei ist in sich geschlossen - herunterladen, auf einem Rechner im selben Netz ablegen, starten. Nötig ist nur Python, keine Zusatzpakete:
 
 ```bash
 python3 eta_bericht.py 10.0.0.173
@@ -423,7 +418,7 @@ Dieselben Tests laufen zusammen mit `hassfest` und der HACS-Validierung bei jede
 
 Grundlage für die Attrappe ist die offizielle Dokumentation *ETAtouch RESTful Webservices* (Version 1.2); ihre Antworten bilden deren Beispiele nach, inklusive `advTextOffset`, an dem sich Textvariablen erkennen lassen.
 
-Ein Teil der Tests prüft nicht den Code, sondern dieses README: dass die Dashboard-Karte nur gültige Elementtypen verwendet, dass jede darin genannte Entität wirklich entsteht, und dass sich die Entitäts-IDs einer deutschsprachigen Installation nicht ändern.
+Ein Teil der Tests prüft nicht den Code, sondern dieses README: dass die Dashboard-Karte nur gültige Elementtypen verwendet, dass jede darin genannte Entität wirklich entsteht, und dass die Entitäts-IDs in jeder Sprache gleich bleiben.
 
 ---
 
