@@ -53,6 +53,24 @@ def load_menu() -> str:
     return (FIXTURES / "menu.xml").read_text(encoding="utf-8")
 
 
+def ohne_objekt(menu: str, *uris: str) -> str:
+    """Entfernt Objekte samt Unterbaum - so, als hätte die Anlage sie nicht.
+
+    Nur umbenennen genügt nicht: Messwerte findet die Integration notfalls
+    auch über die Kennung am Ende ihrer URI.
+    """
+    import xml.etree.ElementTree as ET
+
+    namensraum = "http://www.eta.co.at/rest/v1"
+    ET.register_namespace("", namensraum)
+    wurzel = ET.fromstring(menu)
+    for eltern in wurzel.iter():
+        for kind in list(eltern):
+            if kind.get("uri") in uris:
+                eltern.remove(kind)
+    return ET.tostring(wurzel, encoding="unicode")
+
+
 def var_xml(
     value=None,
     str_value=None,

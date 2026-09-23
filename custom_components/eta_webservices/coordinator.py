@@ -113,6 +113,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.enable_errors = enable_errors
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
+        self.ueber_kennung: set[str] = set()
         self.components_without_data: list[str] = []
         self.api_version: str | None = None
         self.errors: list[ETAError] = []
@@ -334,7 +335,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """
         try:
             self.discovered_uris, indices = await async_discover_uris(
-                self.client, fub_name_overrides
+                self.client, fub_name_overrides, self.ueber_kennung
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(

@@ -94,6 +94,7 @@ async def async_get_config_entry_diagnostics(
             "nicht_gefunden": sorted(
                 set(DISCOVERY_PATHS) - set(coordinator.discovered_uris)
             ),
+            "ueber_kennung_gefunden": sorted(coordinator.ueber_kennung),
             "pufferfuehler": sorted(
                 int(key.rsplit("_", 1)[1])
                 for key in coordinator.discovered_uris

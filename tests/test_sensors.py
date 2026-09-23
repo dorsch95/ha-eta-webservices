@@ -7,7 +7,7 @@ import pytest
 import eta_webservices
 from eta_webservices import sensor as sensor_platform
 
-from .conftest import entity_name
+from .conftest import entity_name, ohne_objekt
 
 
 async def setup_integration(hass, entry):
@@ -192,7 +192,7 @@ async def test_jede_uri_stammt_aus_dem_menuebaum(hass, entry, menu_xml):
 
 async def test_ohne_fund_zeigt_der_sensor_einen_strich(hass, entry, menu_xml):
     """Die Entität bleibt, nur eben ohne Adresse und ohne Wert."""
-    hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
     coordinator, by_name = await setup_integration(hass, entry)
 
     assert coordinator.sensor_defs["kessel_temperatur"]["uri"] is None
@@ -206,7 +206,7 @@ async def test_strich_sensor_meldet_keine_klassen(hass, entry, menu_xml):
     Eine numerische Geräteklasse verträgt keinen Text als Zustand - das
     stünde sonst in jedem Abfragezyklus im Protokoll.
     """
-    hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
     _, by_name = await setup_integration(hass, entry)
 
     sensor = by_name["Kesseltemperatur"]
@@ -227,6 +227,7 @@ async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
     assert "192.0.2" not in str(bericht)
     assert bericht["erkennung"]["ueber_menuebaum_gefunden"] > 0
     assert bericht["erkennung"]["pufferfuehler"]
+    assert bericht["erkennung"]["ueber_kennung_gefunden"] == []
     assert bericht["letzte_abfrage"]["erfolgreich"] is True
 
     kessel = bericht["messwerte"]["kessel_temperatur"]
@@ -267,7 +268,7 @@ async def test_diagnose_kommt_auch_ohne_menuebaum_zustande(hass, entry):
 async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
     from eta_webservices.diagnostics import async_get_config_entry_diagnostics
 
-    hass.session.menu = menu_xml.replace('name="Eingänge"', 'name="Verschoben"')
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
 
@@ -655,7 +656,7 @@ async def test_status_unterscheidet_fehlend_von_unerreichbar(hass, entry, menu_x
     """"-" heißt "hat die Anlage nicht", nicht "gerade nicht lesbar"."""
     from eta_webservices.coordinator import VERALTET_AB
 
-    hass.session.menu = menu_xml.replace('name="Kesseldruck"', 'name="Anlagendruck"')
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/0/12180")
     hass.session.varset_unterstuetzt = False
     coordinator, by_name = await setup_integration(hass, entry)
 
@@ -738,9 +739,7 @@ async def test_aschebox_erinnerung_ist_ohne_werte_unbekannt(hass, entry, menu_xm
     """Ohne Schwelle weiß der Melder nichts - weder "fällig" noch "OK"."""
     from eta_webservices import binary_sensor as bs
 
-    hass.session.menu = menu_xml.replace(
-        'name="Aschebox leeren nach"', 'name="Verschoben"'
-    )
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/0/12120")
     await setup_integration(hass, entry)
     entities: list = []
     await bs.async_setup_entry(hass, entry, entities.extend)
@@ -754,7 +753,7 @@ async def test_es_gibt_genau_einen_energiesensor(hass, entry, menu_xml):
     """Zwei würden sich im Energie-Dashboard doppelt zählen lassen."""
     from homeassistant.components.sensor import SensorDeviceClass
 
-    for menu in (menu_xml, menu_xml.replace('name="Gesamtverbrauch"', 'name="Weg"')):
+    for menu in (menu_xml, ohne_objekt(menu_xml, "/264/10891/0/0/12016")):
         hass.session.menu = menu
         _, by_name = await setup_integration(hass, entry)
         energie = [
@@ -771,7 +770,7 @@ async def test_ohne_gesamtverbrauch_kein_energiewert(hass, entry, menu_xml):
     Die Aschebox misst ihren eigenen Füllstand, nicht den Verbrauch, und
     taugt deshalb nicht als Ersatzgrundlage.
     """
-    hass.session.menu = menu_xml.replace('name="Gesamtverbrauch"', 'name="Weg"')
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/0/12016")
     _, by_name = await setup_integration(hass, entry)
 
     energie = by_name["Pellet Energieverbrauch gesamt"]
@@ -807,7 +806,7 @@ async def test_lagervorrat_und_warnung(hass, entry):
 async def test_lagerwarnung_ist_ohne_grenze_unbekannt(hass, entry, menu_xml):
     from eta_webservices import binary_sensor as bs
 
-    hass.session.menu = menu_xml.replace('name="Vorrat Warngrenze"', 'name="Weg"')
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10201/0/0/12042")
     entry.data["components"] = ["kessel", "lager"]
     await setup_integration(hass, entry)
     entities: list = []

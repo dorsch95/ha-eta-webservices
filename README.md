@@ -11,7 +11,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 
 📈 Bei Pelletkesseln steht der Verbrauch als Energiewert bereit und lässt sich ins **Energie-Dashboard** von Home Assistant aufnehmen.
 
-🔎 **Keine URIs von Hand.** Die internen ETA-Adressen (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Die Integration liest deshalb beim Einrichten einmalig den Menübaum (`/user/menu`) und sucht die Werte über ihre **Bezeichnungen** ("Kessel → Eingänge → Rücklauf"), die stabil bleiben. Im Code steht **keine einzige feste Adresse** - eine von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen.
+🔎 **Keine URIs von Hand.** Die internen ETA-Adressen (z. B. `/264/10891/0/11109/0`) unterscheiden sich von Anlage zu Anlage. Die Integration liest deshalb beim Einrichten einmalig den Menübaum (`/user/menu`) und sucht die Werte über ihre **Bezeichnungen** ("Kessel → Eingänge → Rücklauf"), die stabil bleiben. Im Code steht **keine einzige vollständige Adresse** - eine von einer fremden Anlage wäre geraten und könnte still den falschen Wert anzeigen. Passt ein Name nicht, sucht die Integration bei Messwerten innerhalb des richtigen Funktionsblocks noch nach der Nummer des Objekts: den hinteren drei Zahlen der Adresse, die bei jeder Anlage gleich sind.
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
@@ -21,7 +21,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 **ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tank, fresh water module, heating circuits, solar and pellet store) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
 
 - Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has.
-- Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report.
+- Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
 - The ready-made dashboard card: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
 - Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
@@ -388,11 +388,11 @@ Der dritte braucht die Betriebsart-Auswahl, also einen freigegebenen Schreibzugr
 
 ## 🩺 Fehlersuche
 
-Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Fehlt etwas, ist es dort meist anders benannt oder schlicht nicht verbaut.
+Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Passt ein Name nicht, sucht sie Messwerte zusätzlich über ihre Nummer im selben Funktionsblock. Fehlt dann noch etwas, ist es an deiner Anlage meist schlicht nicht verbaut.
 
 **Eine ganze Komponente ohne Werte** meldet Home Assistant selbst als **Reparatur** (**Einstellungen -> System -> Reparaturen**). Der Hinweis nennt die Komponente und den Weg zu **Konfigurieren**, wo du den tatsächlichen Funktionsblock-Namen einträgst; er verschwindet von selbst, sobald die Werte gefunden werden. War die Heizung gar nicht erreichbar, erscheint er nicht - dann meldet Home Assistant "Wird eingerichtet" und versucht es von selbst weiter.
 
-**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer, unter `"schreibzugriff"`, welche Schalter erkannt wurden, und unter `"menuebaum"` der **vollständige Menübaum** deiner Anlage. Mehr braucht es nicht, um die Integration an eine abweichende Anlage anzupassen. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) angehängt werden - das Formular dort fragt nach allem Nötigen.
+**Ein einzelner Messwert** steht im Diagnose-Export: **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Gerät "ETA Heizung" -> Diagnose herunterladen**. Darin steht je Messwert die abgefragte Adresse, der zuletzt angekommene Wert, unter `"nicht_gefunden"` alles ohne Treffer, unter `"ueber_kennung_gefunden"` die Werte, die nicht über ihren Namen, sondern über ihre Nummer gefunden wurden, unter `"schreibzugriff"`, welche Schalter erkannt wurden, und unter `"menuebaum"` der **vollständige Menübaum** deiner Anlage. Mehr braucht es nicht, um die Integration an eine abweichende Anlage anzupassen. Die IP-Adresse ist geschwärzt, die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) angehängt werden - das Formular dort fragt nach allem Nötigen.
 
 **Lässt sich die Integration gar nicht einrichten**, gibt es keinen Diagnose-Export. Dann fragt [`tools/eta_bericht.py`](tools/eta_bericht.py) die Anlage direkt. Die Datei ist in sich geschlossen - herunterladen, auf einem Rechner im selben Netz ablegen, starten. Nötig ist nur Python, keine Zusatzpakete:
 

@@ -190,3 +190,88 @@ async def test_zaehler_werden_nicht_ueber_ausgaenge_gefunden(hass, menu_xml):
     ausgaenge = menu_xml[menu_xml.index('name="Ausgänge"') :]
     ausgaenge = ausgaenge[: ausgaenge.index("</object>")]
     assert "Verbrauch seit" not in ausgaenge
+
+
+async def test_mit_passenden_namen_wird_keine_kennung_gebraucht(hass):
+    """An der echten Anlage findet der Namenspfad alles selbst."""
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    ueber_kennung: set = set()
+    await async_discover_uris(client, {}, ueber_kennung)
+    assert ueber_kennung == set()
+
+
+ENGLISCH = {
+    'name="Kessel">': 'name="Boiler">',
+    'name="Eingänge"': 'name="Inputs"',
+    'name="Ausgänge"': 'name="Outputs"',
+    'name="Zählerstände"': 'name="Counters"',
+    'name="Gesamtverbrauch"': 'name="Total consumed"',
+    'name="Kesseldruck"': 'name="Boiler pressure"',
+    'name="Leistung"': 'name="Output"',
+    'name="Wärmemenge"': 'name="Heat amount"',
+    'name="Ertrag heute"': 'name="Yield today"',
+    'name="Ertrag gestern"': 'name="Yield yesterday"',
+    'name="Vorrat"': 'name="Stock"',
+    'name="Heizen Taste"': 'name="Heating button"',
+}
+"""Einige Namen so, wie eine Anlage mit englischem Display sie meldet."""
+
+
+async def test_andere_display_sprache_wird_ueber_kennungen_gefunden(hass, menu_xml):
+    """Findet der Namenspfad nichts, hilft die Kennung im selben Block.
+
+    Den Funktionsblock selbst trägt der Nutzer beim Einrichten ein - hier
+    "Boiler" statt "Kessel".
+    """
+    for deutsch, englisch in ENGLISCH.items():
+        menu_xml = menu_xml.replace(deutsch, englisch)
+    hass.session.menu = menu_xml
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    ueber_kennung: set = set()
+    uris, _ = await async_discover_uris(client, {"kessel": "Boiler"}, ueber_kennung)
+
+    assert uris["kessel_temperatur"] == "/264/10891/0/11109/0"
+    assert uris["kessel_druck"] == "/264/10891/0/0/12180"
+    assert uris["pellet_gesamtverbrauch"] == "/264/10891/0/0/12016"
+    assert uris["solar_waermemenge"] == "/120/10221/0/0/12349"
+    assert uris["lager_vorrat"] == "/264/10201/0/0/12015"
+    assert {"kessel_temperatur", "kessel_druck", "solar_ertrag_heute"} <= ueber_kennung
+
+
+async def test_kennung_bleibt_im_eigenen_funktionsblock(hass, menu_xml):
+    """Heizkreis 2 darf nie den Vorlauf von Heizkreis 1 bekommen."""
+    hass.session.menu = menu_xml.replace(
+        '<object uri="/120/10102/0/11060/0" name="Vorlauf"/>', ""
+    )
+    uris, _ = await discover(hass)
+
+    assert "heizkreis2_vorlauf" not in uris
+    assert uris["heizkreis_vorlauf"] == "/120/10101/0/11060/0"
+
+
+async def test_tasten_werden_nie_ueber_kennungen_gefunden(hass, menu_xml):
+    """Schreibende Objekte nur über ihren Namen - so wie bisher."""
+    hass.session.menu = menu_xml.replace('name="Heizen Taste"', 'name="Heating button"')
+    uris, _ = await discover(hass)
+
+    assert "heizkreis_betriebsart_heizen" not in uris
+    assert "heizkreis_betriebsart_automatik" in uris
+
+
+def test_kennungen_gehoeren_zu_gesuchten_messwerten():
+    from eta_webservices.uri_discovery import DISCOVERY_PATHS, KENNUNGEN, SWITCH_ROLES
+
+    assert set(KENNUNGEN) <= set(DISCOVERY_PATHS)
+    assert not set(KENNUNGEN) & set(SWITCH_ROLES)
+    for kennung in KENNUNGEN.values():
+        assert kennung.count("/") == 2 and all(t.isdigit() for t in kennung.split("/"))
+
+
+async def test_kennungen_passen_zum_echten_menuebaum(hass):
+    """Jede Kennung stimmt mit dem, was der Namenspfad an der Anlage findet."""
+    from eta_webservices.uri_discovery import KENNUNGEN
+
+    uris, _ = await discover(hass)
+    for key, kennung in KENNUNGEN.items():
+        if key in uris:
+            assert uris[key].endswith("/" + kennung), key

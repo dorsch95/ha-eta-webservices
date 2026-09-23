@@ -83,6 +83,55 @@ tief im Menü liegt. Für die übrigen bleibt es beim festen Pfad - Namen
 wie "Vorlauf" kommen mehrfach vor.
 """
 
+KENNUNGEN = {
+    "kessel_temperatur": "0/11109/0",
+    "ruecklauf_temperatur": "0/11160/0",
+    "kessel_druck": "0/0/12180",
+    "pellet_tagesbehälter": "0/0/12011",
+    "kessel_soll": "0/0/13953",
+    "restsauerstoff": "0/11108/2060",
+    "pellet_gesamtverbrauch": "0/0/12016",
+    "aschebox_verbrauch": "0/0/12013",
+    "entaschung_verbrauch": "0/0/12012",
+    "aschebox_schwelle": "0/0/12120",
+    "kessel_zustand": "0/0/12000",
+    "aussentemperatur": "0/11127/0",
+    "puffer_ladezustand": "0/0/12528",
+    "heizkreis_vorlauf": "0/11060/0",
+    "heizkreis_anforderung": "0/11124/2001",
+    "heizkreis2_vorlauf": "0/11060/0",
+    "heizkreis2_anforderung": "0/11124/2001",
+    "heizkreis3_vorlauf": "0/11060/0",
+    "heizkreis3_anforderung": "0/11124/2001",
+    "heizkreis4_vorlauf": "0/11060/0",
+    "heizkreis4_anforderung": "0/11124/2001",
+    "fwm_warmwasser": "0/11148/0",
+    "lager_vorrat": "0/0/12015",
+    "lager_warngrenze": "0/0/12042",
+    "lager_maximum": "0/0/12790",
+    "lager_zustand": "0/0/12423",
+    "solar_kollektor": "0/11139/0",
+    "solar_leistung": "0/0/12379",
+    "solar_waermemenge": "0/0/12349",
+    "solar_ertrag_heute": "0/0/12350",
+    "solar_ertrag_gestern": "0/0/12769",
+}
+"""Zweiter Weg zu einem Messwert: die hinteren drei Zahlen seiner URI.
+
+Eine URI hat die Form /Modul/Funktionsblock/Funktion/Ein-Ausgang/Variable.
+Die vorderen beiden Zahlen hängen an der einzelnen Anlage, die hinteren
+drei bezeichnen das Objekt selbst - in den Menübäumen echter Anlagen
+trägt dasselbe Objekt im selben Funktionsblock-Typ dieselben. Findet der
+Namenspfad nichts, etwa weil ein Zweig anders liegt oder das Display auf
+eine andere Sprache eingestellt ist, wird innerhalb des Funktionsblocks
+nach dieser Kennung gesucht - nie außerhalb.
+
+Aufgenommen sind nur Kennungen, die in einem echten Menübaum mit ihrem
+Namen stehen. Heizkreis 2 bis 4 sind derselbe Funktionsblock-Typ wie
+Heizkreis 1 und tragen deshalb dieselben. Nur Messwerte: Tasten und
+Schalter werden weiter ausschließlich über ihren Namen gefunden.
+"""
+
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
 
 _SCHALTER_NAMEN = (
@@ -232,6 +281,31 @@ def _finde_nach_namen(fub, name):
     return durchsuchen(fub)
 
 
+def _kennung(uri):
+    """Die hinteren drei Zahlen einer URI, oder None bei anderer Form."""
+    teile = (uri or "").strip("/").split("/")
+    return "/".join(teile[2:]) if len(teile) == 5 else None
+
+
+def _finde_nach_kennung(fub, kennung):
+    """Sucht im Funktionsblock das Objekt mit dieser Kennung."""
+    if fub is None:
+        return None
+
+    def durchsuchen(knoten):
+        for kind in _as_list(knoten.get("object")):
+            if not isinstance(kind, dict):
+                continue
+            if _kennung(kind.get("@uri")) == kennung:
+                return kind["@uri"]
+            treffer = durchsuchen(kind)
+            if treffer:
+                return treffer
+        return None
+
+    return durchsuchen(fub)
+
+
 def _discover_puffer_fuehler(fub):
     """Ermittelt die tatsächlich vorhandenen Pufferfühler (1 bis N).
 
@@ -262,7 +336,7 @@ def _discover_puffer_fuehler(fub):
     return found
 
 
-async def async_discover_uris(client, fub_name_overrides=None):
+async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=None):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
@@ -271,7 +345,9 @@ async def async_discover_uris(client, fub_name_overrides=None):
     - puffer_fuehler_indices: sortierte Nummern der gefundenen Fühler.
 
     Nicht gefundene Schlüssel fehlen im Ergebnis. Ist der Menübaum nicht
-    lesbar, wird der ETAApiError durchgereicht.
+    lesbar, wird der ETAApiError durchgereicht. In ueber_kennung, falls
+    übergeben, landen die Schlüssel, die erst über KENNUNGEN gefunden
+    wurden - ein Hinweis, dass der Namenspfad an dieser Anlage nicht passt.
     """
     discovered = {}
 
@@ -288,6 +364,10 @@ async def async_discover_uris(client, fub_name_overrides=None):
         uri = found.get("@uri") if found is not None else None
         if not uri and key in NAMENSSUCHE:
             uri = _finde_nach_namen(fub, NAMENSSUCHE[key])
+        if not uri and key in KENNUNGEN:
+            uri = _finde_nach_kennung(fub, KENNUNGEN[key])
+            if uri and ueber_kennung is not None:
+                ueber_kennung.add(key)
         if uri:
             discovered[key] = uri
 
