@@ -148,23 +148,49 @@ def test_warnung_nennt_die_wesentlichen_punkte():
 class FakeEintrag:
     """Ein bestehender Config Entry, wie ihn Neu-Konfigurieren vorfindet."""
 
-    def __init__(self, **daten):
+    def __init__(self, options: dict | None = None, minor_version: int = 2, **daten):
+        self.entry_id = "eintrag1"
+        self.version = 1
+        self.minor_version = minor_version
         self.data = {"host": "192.0.2.10", "port": 8080, **daten}
-        self.options: dict = {}
+        self.options: dict = dict(options or {})
+        self.unique_id = f"{self.data['host']}:{self.data['port']}"
 
 
-async def reconfigure_schritt(monkeypatch, bisher, eingabe):
+class FakeEintraege:
+    """Die Teile von hass.config_entries, die Flow und Migration benutzen."""
+
+    def __init__(self, *eintraege: FakeEintrag) -> None:
+        self.eintraege = list(eintraege)
+
+    def async_entry_for_domain_unique_id(self, domain, unique_id):
+        return next((e for e in self.eintraege if e.unique_id == unique_id), None)
+
+    def async_update_entry(self, eintrag, **aenderungen):
+        for name, wert in aenderungen.items():
+            setattr(eintrag, name, wert)
+        return True
+
+
+class FakeHass:
+    def __init__(self, *eintraege: FakeEintrag) -> None:
+        self.config_entries = FakeEintraege(*eintraege)
+
+
+async def reconfigure_schritt(monkeypatch, eintrag, eingabe, erreichbar=True, andere=()):
     """Führt Neu-Konfigurieren aus, ohne echte Anlage und ohne Instanz."""
     from eta_webservices import config_flow as modul
 
-    monkeypatch.setattr(modul, "_test_connection", lambda hass, host, port: _wahr())
+    async def verbindung(hass, host, port):
+        return erreichbar
+
+    monkeypatch.setattr(modul, "_test_connection", verbindung)
 
     from homeassistant.config_entries import SOURCE_RECONFIGURE
 
     flow = modul.ETAConfigFlow()
-    flow.hass = None
+    flow.hass = FakeHass(eintrag, *andere)
     flow.context = {"source": SOURCE_RECONFIGURE}
-    eintrag = FakeEintrag(**bisher)
     monkeypatch.setattr(
         modul.ETAConfigFlow, "_get_reconfigure_entry", lambda self: eintrag
     )
@@ -175,44 +201,189 @@ async def reconfigure_schritt(monkeypatch, bisher, eingabe):
     )
     monkeypatch.setattr(
         modul.ETAConfigFlow,
+        "async_abort",
+        lambda self, **kwargs: {"type": "abort", **kwargs},
+    )
+    monkeypatch.setattr(
+        modul.ETAConfigFlow,
         "async_update_reload_and_abort",
         lambda self, entry, **kwargs: {"type": "abort", **kwargs},
     )
-    return flow, await flow.async_step_reconfigure(eingabe)
+    return await flow.async_step_reconfigure(eingabe)
 
 
-async def _wahr() -> bool:
-    return True
+def feldnamen(schema) -> set[str]:
+    return {str(k) for k in schema.schema}
 
 
-async def test_neu_konfigurieren_warnt_vor_dem_schreibzugriff(monkeypatch):
-    """Ohne die Warnung ließe sich das Schalten hier ungefragt einschalten."""
-    flow, ergebnis = await reconfigure_schritt(
-        monkeypatch,
-        bisher={"enable_switches": False},
-        eingabe=gueltige_eingabe(enable_switches=True),
+async def test_neu_konfigurieren_fragt_nur_die_adresse(monkeypatch):
+    """Alles andere steht unter Konfigurieren - an zwei Stellen überdeckte
+    sonst die eine Einstellung still die andere."""
+    ergebnis = await reconfigure_schritt(monkeypatch, FakeEintrag(), None)
+
+    assert ergebnis["step_id"] == "reconfigure"
+    assert feldnamen(ergebnis["data_schema"]) == {"host", "port"}
+
+
+async def test_neu_konfigurieren_kann_keinen_schreibzugriff_freigeben(monkeypatch):
+    """Die Freigabe geht nur über Konfigurieren, wo die Warnung erscheint."""
+    ergebnis = await reconfigure_schritt(monkeypatch, FakeEintrag(), None)
+    assert "enable_switches" not in feldnamen(ergebnis["data_schema"])
+
+
+async def test_neu_konfigurieren_uebernimmt_adresse_und_kennung(monkeypatch):
+    ergebnis = await reconfigure_schritt(
+        monkeypatch, FakeEintrag(), {"host": "192.0.2.99", "port": 8081}
     )
 
+    assert ergebnis["type"] == "abort"
+    assert ergebnis["data_updates"] == {"host": "192.0.2.99", "port": 8081}
+    assert ergebnis["unique_id"] == "192.0.2.99:8081"
+
+
+async def test_neu_konfigurieren_ohne_verbindung_meldet_fehler(monkeypatch):
+    ergebnis = await reconfigure_schritt(
+        monkeypatch,
+        FakeEintrag(),
+        {"host": "192.0.2.99", "port": 8080},
+        erreichbar=False,
+    )
+    assert ergebnis["type"] == "form"
+    assert ergebnis["errors"] == {"base": "cannot_connect"}
+
+
+async def test_neu_konfigurieren_auf_vergebene_adresse_bricht_ab(monkeypatch):
+    andere = FakeEintrag(host="192.0.2.50")
+    ergebnis = await reconfigure_schritt(
+        monkeypatch,
+        FakeEintrag(),
+        {"host": "192.0.2.50", "port": 8080},
+        andere=(andere,),
+    )
+    assert ergebnis == {"type": "abort", "reason": "already_configured"}
+
+
+def test_optionen_fragen_nicht_nach_der_adresse():
+    from eta_webservices.config_flow import _options_schema
+
+    felder = feldnamen(_options_schema({}))
+    assert "host" not in felder
+    assert "port" not in felder
+    assert {"components", "enable_switches", "enable_errors"} <= felder
+
+
+async def options_schritt(monkeypatch, bisher, eingabe):
+    """Führt den ersten Schritt von Konfigurieren aus."""
+    from eta_webservices import config_flow as modul
+
+    flow = modul.ETAOptionsFlow()
+    monkeypatch.setattr(modul.ETAOptionsFlow, "_current", property(lambda self: bisher))
+    monkeypatch.setattr(
+        modul.ETAOptionsFlow,
+        "async_show_form",
+        lambda self, **kwargs: {"type": "form", **kwargs},
+    )
+    monkeypatch.setattr(
+        modul.ETAOptionsFlow,
+        "async_create_entry",
+        lambda self, **kwargs: {"type": "create_entry", **kwargs},
+    )
+    return flow, await flow.async_step_init(eingabe)
+
+
+def optionen(**overrides):
+    daten = gueltige_eingabe(**overrides)
+    daten.pop("host")
+    daten.pop("port")
+    return daten
+
+
+async def test_konfigurieren_warnt_vor_dem_schreibzugriff(monkeypatch):
+    """Ohne die Warnung ließe sich das Schalten hier ungefragt einschalten."""
+    flow, ergebnis = await options_schritt(
+        monkeypatch, {"enable_switches": False}, optionen(enable_switches=True)
+    )
     assert ergebnis["step_id"] == "switch_warning"
 
-    bestaetigt = await flow.async_step_switch_warning({})
-    assert bestaetigt["type"] == "abort"
-    assert bestaetigt["data_updates"]["enable_switches"] is True
-
-
-async def test_neu_konfigurieren_ohne_schalter_geht_direkt_durch(monkeypatch):
-    _, ergebnis = await reconfigure_schritt(
-        monkeypatch,
-        bisher={"enable_switches": False},
-        eingabe=gueltige_eingabe(enable_switches=False),
-    )
-    assert ergebnis["type"] == "abort"
+    weiter = await flow.async_step_switch_warning({})
+    assert weiter["step_id"] == "fub_names"
 
 
 async def test_bereits_freigegebener_schreibzugriff_warnt_nicht_erneut(monkeypatch):
-    _, ergebnis = await reconfigure_schritt(
-        monkeypatch,
-        bisher={"enable_switches": True},
-        eingabe=gueltige_eingabe(enable_switches=True),
+    _, ergebnis = await options_schritt(
+        monkeypatch, {"enable_switches": True}, optionen(enable_switches=True)
     )
-    assert ergebnis["type"] == "abort"
+    assert ergebnis["step_id"] == "fub_names"
+
+
+async def test_konfigurieren_speichert_keine_adresse(monkeypatch):
+    flow, _ = await options_schritt(monkeypatch, {}, optionen())
+    ergebnis = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex"})
+
+    assert ergebnis["type"] == "create_entry"
+    assert "host" not in ergebnis["data"]
+    assert "port" not in ergebnis["data"]
+
+
+async def test_migration_holt_die_adresse_aus_den_optionen():
+    """Die Optionen gewannen bisher - ihr Wert ist der, mit dem es lief."""
+    from eta_webservices import async_migrate_entry
+
+    eintrag = FakeEintrag(
+        minor_version=1,
+        options={"host": "192.0.2.77", "port": 8080, "scan_interval": 60},
+    )
+    hass = FakeHass(eintrag)
+
+    assert await async_migrate_entry(hass, eintrag) is True
+    assert eintrag.data["host"] == "192.0.2.77"
+    assert eintrag.options == {"scan_interval": 60}
+    assert eintrag.unique_id == "192.0.2.77:8080"
+    assert eintrag.minor_version == 2
+
+
+async def test_migration_laesst_eintraege_ohne_optionen_unveraendert():
+    from eta_webservices import async_migrate_entry
+
+    eintrag = FakeEintrag(minor_version=1)
+    await async_migrate_entry(FakeHass(eintrag), eintrag)
+
+    assert eintrag.data == {"host": "192.0.2.10", "port": 8080}
+    assert eintrag.options == {}
+
+
+async def test_migration_uebernimmt_keine_fremde_kennung():
+    from eta_webservices import async_migrate_entry
+
+    eintrag = FakeEintrag(minor_version=1, options={"host": "192.0.2.50"})
+    anderer = FakeEintrag(host="192.0.2.50")
+    anderer.entry_id = "eintrag2"
+    await async_migrate_entry(FakeHass(eintrag, anderer), eintrag)
+
+    assert eintrag.data["host"] == "192.0.2.50"
+    assert eintrag.unique_id == "192.0.2.10:8080"
+
+
+async def test_neu_konfigurieren_wirkt_auch_nach_gespeicherten_optionen(monkeypatch):
+    """Der ursprüngliche Fehler, von Anfang bis Ende.
+
+    Erst über Konfigurieren gespeichert, dann über Neu konfigurieren eine
+    neue Adresse eingetragen: Beim Start muss die neue gelten. Bis 0.20
+    überdeckten die Optionen sie still.
+    """
+    from eta_webservices import async_migrate_entry
+
+    eintrag = FakeEintrag(
+        minor_version=1,
+        options={"host": "192.0.2.10", "port": 8080, "scan_interval": 60},
+    )
+    await async_migrate_entry(FakeHass(eintrag), eintrag)
+
+    ergebnis = await reconfigure_schritt(
+        monkeypatch, eintrag, {"host": "192.0.2.99", "port": 8080}
+    )
+    eintrag.data.update(ergebnis["data_updates"])
+
+    beim_start = {**eintrag.data, **eintrag.options}
+    assert beim_start["host"] == "192.0.2.99"
+    assert beim_start["scan_interval"] == 60

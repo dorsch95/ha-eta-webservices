@@ -30,16 +30,12 @@
         }
       },
       "reconfigure": {
-        "title": "Change ETA heating system",
+        "title": "Change the heating system's IP address",
         "data": {
           "host": "IP address of the heating system",
-          "port": "Port (default: 8080)",
-          "components": "Components present on your system",
-          "scan_interval": "Polling interval (seconds)",
-          "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
-          "enable_errors": "Read fault messages from the heating system",
-          "enable_switches": "Allow switching the boiler and heating circuits"
-        }
+          "port": "Port (default: 8080)"
+        },
+        "description": "For example when the heating system got a new address on your home network. Components, permissions and all other settings are changed under **Configure**."
       },
       "switch_warning": {
         "title": "Switching writes to your heating system",
@@ -59,8 +55,6 @@
       "init": {
         "title": "Edit ETA heating system",
         "data": {
-          "host": "IP address of the heating system",
-          "port": "Port (default: 8080)",
           "components": "Components present on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
@@ -88,9 +82,6 @@
         "title": "Switching writes to your heating system",
         "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
       }
-    },
-    "error": {
-      "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler."
     }
   },
   "selector": {

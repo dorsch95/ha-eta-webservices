@@ -6,7 +6,6 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import (
-    SOURCE_RECONFIGURE,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
@@ -59,8 +58,16 @@ _WAEHLBARE_KOMPONENTEN = [
 ]
 
 
-def _connection_schema(current: dict[str, Any]) -> vol.Schema:
-    """Formular für Host, Port, Komponenten und Abfrageintervall.
+def _verbindung_felder(current: dict[str, Any]) -> dict:
+    """Die Felder, über die die Anlage erreicht wird."""
+    return {
+        vol.Required(CONF_HOST, default=current.get(CONF_HOST)): cv.string,
+        vol.Required(CONF_PORT, default=current.get(CONF_PORT, DEFAULT_PORT)): cv.port,
+    }
+
+
+def _einstellung_felder(current: dict[str, Any]) -> dict:
+    """Komponenten, Abfrageintervall, Freigaben und Heizwert.
 
     Statt einer Liste fertiger Anlagenschemata wird hier angekreuzt, was an
     der Anlage vorhanden ist. Der Kessel steht nicht zur Wahl, den hat jede
@@ -70,46 +77,53 @@ def _connection_schema(current: dict[str, Any]) -> vol.Schema:
         key for key in normalize_components(components_from_config(current))
         if key in _WAEHLBARE_KOMPONENTEN
     ]
-    return vol.Schema(
-        {
-            vol.Required(CONF_HOST, default=current.get(CONF_HOST)): cv.string,
-            vol.Required(
-                CONF_PORT, default=current.get(CONF_PORT, DEFAULT_PORT)
-            ): cv.port,
-            vol.Required(CONF_COMPONENTS, default=vorauswahl): SelectSelector(
-                SelectSelectorConfig(
-                    options=_WAEHLBARE_KOMPONENTEN,
-                    multiple=True,
-                    mode=SelectSelectorMode.LIST,
-                    translation_key="components",
-                )
-            ),
-            vol.Required(
-                CONF_SCAN_INTERVAL,
-                default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-            ): vol.All(
-                cv.positive_int,
-                vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-            ),
-            vol.Required(
-                CONF_ENABLE_ERRORS,
-                default=current.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
-            ): cv.boolean,
-            vol.Required(
-                CONF_ENABLE_SWITCHES,
-                default=current.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
-            ): cv.boolean,
-            vol.Required(
-                CONF_PELLET_KWH_PER_KG,
-                default=current.get(
-                    CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG
-                ),
-            ): vol.All(
-                vol.Coerce(float),
-                vol.Range(min=MIN_PELLET_KWH_PER_KG, max=MAX_PELLET_KWH_PER_KG),
-            ),
-        }
-    )
+    return {
+        vol.Required(CONF_COMPONENTS, default=vorauswahl): SelectSelector(
+            SelectSelectorConfig(
+                options=_WAEHLBARE_KOMPONENTEN,
+                multiple=True,
+                mode=SelectSelectorMode.LIST,
+                translation_key="components",
+            )
+        ),
+        vol.Required(
+            CONF_SCAN_INTERVAL,
+            default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        ): vol.All(
+            cv.positive_int,
+            vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+        ),
+        vol.Required(
+            CONF_ENABLE_ERRORS,
+            default=current.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
+        ): cv.boolean,
+        vol.Required(
+            CONF_ENABLE_SWITCHES,
+            default=current.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
+        ): cv.boolean,
+        vol.Required(
+            CONF_PELLET_KWH_PER_KG,
+            default=current.get(CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG),
+        ): vol.All(
+            vol.Coerce(float),
+            vol.Range(min=MIN_PELLET_KWH_PER_KG, max=MAX_PELLET_KWH_PER_KG),
+        ),
+    }
+
+
+def _connection_schema(current: dict[str, Any]) -> vol.Schema:
+    """Das vollständige Formular beim ersten Einrichten."""
+    return vol.Schema({**_verbindung_felder(current), **_einstellung_felder(current)})
+
+
+def _reconfigure_schema(current: dict[str, Any]) -> vol.Schema:
+    """Neu konfigurieren ändert nur, wo die Anlage zu erreichen ist."""
+    return vol.Schema(_verbindung_felder(current))
+
+
+def _options_schema(current: dict[str, Any]) -> vol.Schema:
+    """Konfigurieren ändert alles außer der Adresse der Anlage."""
+    return vol.Schema(_einstellung_felder(current))
 
 
 def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
@@ -129,9 +143,15 @@ def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
 
 
 class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Einrichtung der Integration in zwei Schritten."""
+    """Einrichtung der Integration in zwei Schritten.
+
+    Ab Unterversion 2 stehen IP-Adresse und Port nur noch in den Daten des
+    Eintrags, alle übrigen Einstellungen in seinen Optionen. Vorher konnten
+    beide an beiden Stellen stehen - siehe async_migrate_entry.
+    """
 
     VERSION = 1
+    MINOR_VERSION = 2
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
@@ -139,39 +159,38 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Erlaubt das Ändern der Einstellungen aus dem Integrationsmenü."""
+        """Ändert IP-Adresse und Port, etwa nach einem Wechsel im Heimnetz.
+
+        Alle anderen Einstellungen gehören zu Konfigurieren. Stünden sie an
+        beiden Stellen, könnte die eine die andere still überdecken.
+        """
         eintrag = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
 
-        bisher = {**eintrag.data, **eintrag.options}
-
         if user_input is not None:
-            if await _test_connection(
-                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+            host = user_input[CONF_HOST]
+            port = user_input[CONF_PORT]
+            neue_id = f"{host}:{port}"
+            if (
+                neue_id != eintrag.unique_id
+                and self.hass.config_entries.async_entry_for_domain_unique_id(
+                    DOMAIN, neue_id
+                )
             ):
-                self._data = {
-                    **user_input,
-                    CONF_COMPONENTS: normalize_components(
-                        user_input.get(CONF_COMPONENTS)
-                    ),
-                }
-                if self._data.get(CONF_ENABLE_SWITCHES) and not bisher.get(
-                    CONF_ENABLE_SWITCHES
-                ):
-                    return await self.async_step_switch_warning()
-                return self._reconfigure_uebernehmen()
+                return self.async_abort(reason="already_configured")
+
+            if await _test_connection(self.hass, host, port):
+                return self.async_update_reload_and_abort(
+                    eintrag,
+                    unique_id=neue_id,
+                    data_updates={CONF_HOST: host, CONF_PORT: port},
+                )
             errors["base"] = "cannot_connect"
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=_connection_schema(user_input or bisher),
+            data_schema=_reconfigure_schema(user_input or dict(eintrag.data)),
             errors=errors,
-        )
-
-    def _reconfigure_uebernehmen(self) -> ConfigFlowResult:
-        """Schreibt die geänderten Einstellungen zurück in den Eintrag."""
-        return self.async_update_reload_and_abort(
-            self._get_reconfigure_entry(), data_updates=self._data
         )
 
     async def async_step_user(
@@ -209,13 +228,9 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Lässt den Schreibzugriff ausdrücklich bestätigen.
 
-        Erscheint nur, wenn Schalter eingeschaltet werden - auch beim
-        Neu-Konfigurieren, sonst ließe sich der Schreibzugriff auf diesem
-        Weg ungefragt aktivieren.
+        Erscheint nur, wenn Schalter eingeschaltet werden.
         """
         if user_input is not None:
-            if self.source == SOURCE_RECONFIGURE:
-                return self._reconfigure_uebernehmen()
             return await self.async_step_fub_names()
         return self.async_show_form(step_id="switch_warning")
 
@@ -245,7 +260,7 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class ETAOptionsFlow(OptionsFlowWithReload):
-    """Nachträgliches Ändern von Verbindung, Schema und FUB-Namen."""
+    """Nachträgliches Ändern von Komponenten, Freigaben und FUB-Namen."""
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
@@ -257,29 +272,22 @@ class ETAOptionsFlow(OptionsFlowWithReload):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-
         if user_input is not None:
-            if await _test_connection(
-                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+            self._data = {
+                **user_input,
+                CONF_COMPONENTS: normalize_components(
+                    user_input.get(CONF_COMPONENTS)
+                ),
+            }
+            if self._data.get(CONF_ENABLE_SWITCHES) and not self._current.get(
+                CONF_ENABLE_SWITCHES
             ):
-                self._data = {
-                    **user_input,
-                    CONF_COMPONENTS: normalize_components(
-                        user_input.get(CONF_COMPONENTS)
-                    ),
-                }
-                if self._data.get(CONF_ENABLE_SWITCHES) and not self._current.get(
-                    CONF_ENABLE_SWITCHES
-                ):
-                    return await self.async_step_switch_warning()
-                return await self.async_step_fub_names()
-            errors["base"] = "cannot_connect"
+                return await self.async_step_switch_warning()
+            return await self.async_step_fub_names()
 
         return self.async_show_form(
             step_id="init",
-            data_schema=_connection_schema(user_input or self._current),
-            errors=errors,
+            data_schema=_options_schema(self._current),
         )
 
     async def async_step_switch_warning(

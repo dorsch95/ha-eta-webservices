@@ -30,16 +30,12 @@
         }
       },
       "reconfigure": {
-        "title": "ETA Heizung ändern",
+        "title": "IP-Adresse der Heizung ändern",
         "data": {
           "host": "IP-Adresse der Heizung",
-          "port": "Port (Standard: 8080)",
-          "components": "An deiner Anlage vorhandene Komponenten",
-          "scan_interval": "Abfrageintervall (Sekunden)",
-          "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
-          "enable_errors": "Störungsmeldungen der Anlage auslesen",
-          "enable_switches": "Kessel und Heizkreise schalten dürfen"
-        }
+          "port": "Port (Standard: 8080)"
+        },
+        "description": "Zum Beispiel, wenn die Heizung im Heimnetz eine neue Adresse bekommen hat. Komponenten, Freigaben und alle übrigen Einstellungen änderst du unter **Konfigurieren**."
       },
       "switch_warning": {
         "title": "Schalten schreibt in deine Heizung",
@@ -59,8 +55,6 @@
       "init": {
         "title": "ETA Heizung bearbeiten",
         "data": {
-          "host": "IP-Adresse der Heizung",
-          "port": "Port (Standard: 8080)",
           "components": "An deiner Anlage vorhandene Komponenten",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
@@ -88,9 +82,6 @@
         "title": "Schalten schreibt in deine Heizung",
         "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
       }
-    },
-    "error": {
-      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
     }
   },
   "selector": {

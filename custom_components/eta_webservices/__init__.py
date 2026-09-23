@@ -21,6 +21,7 @@ from .const import (
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
     PLATFORMS,
     components_from_config,
 )
@@ -89,6 +90,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
+    """Holt IP-Adresse und Port aus den Optionen in die Daten des Eintrags.
+
+    Bis Version 0.20 ließen sich beide sowohl über Konfigurieren (landet in
+    den Optionen) als auch über Neu konfigurieren (landet in den Daten)
+    ändern. Beim Start gewinnen die Optionen - eine Änderung über Neu
+    konfigurieren blieb dadurch wirkungslos. Übernommen wird der Wert aus
+    den Optionen, weil das der ist, mit dem die Integration bisher lief.
+    """
+    if entry.version > 1:
+        return False
+    if entry.minor_version >= 2:
+        return True
+
+    daten = dict(entry.data)
+    optionen = dict(entry.options)
+    for schluessel in (CONF_HOST, CONF_PORT):
+        if schluessel in optionen:
+            daten[schluessel] = optionen.pop(schluessel)
+
+    unique_id = entry.unique_id
+    neue_id = f"{daten[CONF_HOST]}:{daten[CONF_PORT]}"
+    vergeben = hass.config_entries.async_entry_for_domain_unique_id(DOMAIN, neue_id)
+    if vergeben is None or vergeben.entry_id == entry.entry_id:
+        unique_id = neue_id
+
+    hass.config_entries.async_update_entry(
+        entry, data=daten, options=optionen, unique_id=unique_id, minor_version=2
+    )
     return True
 
 
