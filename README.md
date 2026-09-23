@@ -219,7 +219,7 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart.
+Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart.
 
 ### Einrichten
 

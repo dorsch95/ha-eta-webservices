@@ -281,6 +281,13 @@ KESSEL_ENTASCHEN = [
 ]
 """Der Rost dreht sich um seine Längsachse und kippt die Asche ab."""
 
+KESSEL_STOERUNG = [
+    "Störung",
+    "Störung beim Entaschen",
+    "Wartung",
+]
+"""Ein gelbes Warndreieck mit Ausrufezeichen blinkt im Brennraum."""
+
 KESSEL_GLUT = [
     "Glutabbrand",
     "Glutabbrand wegen Entaschung",
@@ -300,8 +307,6 @@ KESSEL_AUS = [
     "Füllen gestoppt wegen Entaschung",
     "Bereit",
     "Aschebox fehlt",
-    "Störung beim Entaschen",
-    "Störung",
     "Verriegelt",
     "Lambdasonde kalibrieren",
     "Vorwärmen",
@@ -313,7 +318,6 @@ KESSEL_AUS = [
     "Vorbereitung",
     "Vorbereiten auf Entaschung",
     "Durchlüften",
-    "Wartung",
     "Umschaltung auf Stückholzbetrieb",
 ]
 """Kessel-Zustände ohne Feuer.
@@ -332,6 +336,7 @@ def kessel_zustandsbilder():
         (KESSEL_FLAMME, "kessel_flamme.webp"),
         (KESSEL_ZUENDUNG, "kessel_zuendung.webp"),
         (KESSEL_ENTASCHEN, "kessel_entaschen.webp"),
+        (KESSEL_STOERUNG, "kessel_stoerung.webp"),
         (KESSEL_GLUT, "kessel_glut.webp"),
         (KESSEL_AUS, "kessel_aus.png"),
     ):
