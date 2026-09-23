@@ -412,6 +412,7 @@ MARKER = {
 """Welche Marker-Entität zu welcher Komponente gehört.
 
 Die Schlüssel sind dieselben, die im Einrichtungsdialog angekreuzt werden.
+"twin" fehlt absichtlich: Seine Werte stehen auf der Kessel-Kachel.
 """
 
 
@@ -478,7 +479,11 @@ def responsive_karte(komponenten=None, fuehler=None):
     if komponenten is None and fuehler is None:
         return karte
 
-    behalten = {MARKER[k] for k in komponenten} if komponenten else set(MARKER.values())
+    behalten = (
+        {MARKER[k] for k in komponenten if k in MARKER}
+        if komponenten
+        else set(MARKER.values())
+    )
     for variante in karte["cards"]:
         gitter = variante["card"]
         gitter["cards"] = [k for k in gitter["cards"] if _passt_zur_anlage(k, behalten)]

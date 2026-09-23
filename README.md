@@ -69,11 +69,11 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Web-Services**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager). Der Kessel steht nicht zur Wahl - den hat jede Anlage.
+4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein.
 7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
 9. Klicke auf **Absenden**.
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Nur die **IP-Adresse** steht woanders: Bekommt die Heizung eine neue, trägst du sie im Drei-Punkte-Menü der Integration unter **Neu konfigurieren** ein.
@@ -190,12 +190,13 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 | Rolle | Standardname(n) |
 |---|---|
 | Kessel | `Kessel` |
+| Pelletteil des SH TWIN | `Twin` |
 | Pufferspeicher | `PufferFlex` (ältere Anlagen ohne Flex-Funktion: `Puffer`) |
 | Frischwasser-/Warmwassermodul | `FWM`, oder `WW` bei einem reinen Warmwasserspeicher |
-| Heizkreis 1 | `HK`, oder `HK1` sobald mehrere Heizkreise vorhanden sind |
-| Heizkreis 2 | `HK2` |
-| Heizkreis 3 | `HK3` |
-| Heizkreis 4 | `HK4` |
+| Heizkreis 1 | `HK` (auch `HK1` oder `HK 1` wird gefunden) |
+| Heizkreis 2 | `HK2` oder `HK 2` |
+| Heizkreis 3 | `HK3` oder `HK 3` |
+| Heizkreis 4 | `HK4` oder `HK 4` |
 | Pelletlager | `Lager` |
 | Solaranlage | `Solar` |
 | Außentemperatur | `Sys` |

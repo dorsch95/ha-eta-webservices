@@ -18,6 +18,7 @@
         "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen vorausgefüllt.",
         "data": {
           "kessel": "FUB-Name: Kessel",
+          "twin": "FUB-Name: Pelletteil des SH TWIN (Twin)",
           "sys": "FUB-Name: Sys (für Außentemperatur)",
           "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
@@ -67,6 +68,7 @@
         "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind mit den ETA-Standardnamen bzw. deinen bisherigen Angaben vorausgefüllt.",
         "data": {
           "kessel": "FUB-Name: Kessel",
+          "twin": "FUB-Name: Pelletteil des SH TWIN (Twin)",
           "sys": "FUB-Name: Sys (für Außentemperatur)",
           "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
@@ -87,6 +89,7 @@
   "selector": {
     "components": {
       "options": {
+        "twin": "TWIN (Pelletteil am Stückholzkessel)",
         "puffer": "Pufferspeicher",
         "fwm": "Frischwassermodul / Warmwasser",
         "hk1": "Heizkreis 1",
@@ -241,6 +244,9 @@
       },
       "komponente_solar": {
         "name": "Komponente Solar"
+      },
+      "komponente_twin": {
+        "name": "Komponente TWIN"
       },
       "lager_maximum": {
         "name": "Lager Fassungsvermögen"

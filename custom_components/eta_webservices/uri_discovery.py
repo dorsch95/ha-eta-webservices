@@ -83,6 +83,22 @@ tief im Menü liegt. Für die übrigen bleibt es beim festen Pfad - Namen
 wie "Vorlauf" kommen mehrfach vor.
 """
 
+TWIN_SCHLUESSEL = {
+    "pellet_tagesbehälter",
+    "pellet_gesamtverbrauch",
+    "aschebox_verbrauch",
+    "entaschung_verbrauch",
+    "aschebox_schwelle",
+}
+"""Pelletwerte, die beim SH TWIN im Funktionsblock "Twin" stehen.
+
+Der Block "Kessel" ist dort der Stückholzteil und führt sie nicht.
+Temperaturen, Restsauerstoff und Zustand zeigen beide Blöcke gleich an,
+sie kommen weiter aus "Kessel". Gilt nur, wenn die Komponente "twin"
+angekreuzt ist - erkennbar daran, dass ihr Funktionsblock-Name im
+Formular gespeichert wurde.
+"""
+
 AUSWEICHPFADE = {
     "fwm_warmwasser": [["Eingänge", "Warmwasserspeicher"]],
 }
@@ -376,9 +392,12 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
 
     fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
     fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
+    twin = fubs_by_role.get("twin") if "twin" in (fub_name_overrides or {}) else None
 
     for key, (role, path) in DISCOVERY_PATHS.items():
         fub = fubs_by_role.get(role)
+        if twin is not None and key in TWIN_SCHLUESSEL:
+            fub = twin
         if fub is None:
             continue
         found = _find_path(fub, path)

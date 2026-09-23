@@ -109,15 +109,19 @@ def test_varianten_decken_jede_breite_genau_einmal_ab(karte):
         assert ab == bis + 1, f"Lücke oder Überlappung bei {bis}/{ab}"
 
 
+MIT_KACHEL = [key for key, info in COMPONENTS.items() if info["image"]]
+"""Komponenten mit eigener Kachel - "twin" steht auf der Kessel-Kachel."""
+
+
 def test_je_variante_und_komponente_genau_eine_karte(karte):
     for gitter in raster(karte):
         marker = [u["conditions"][0]["state"] for u in gitter["cards"]]
-        assert marker == list(COMPONENTS)
+        assert marker == MIT_KACHEL
 
 
 def test_karten_verweisen_auf_die_richtige_grafik(karte):
     for gitter in raster(karte):
-        for komponente, unterkarte in zip(COMPONENTS, gitter["cards"]):
+        for komponente, unterkarte in zip(MIT_KACHEL, gitter["cards"]):
             erwartet = f"{COMPONENTS[komponente]['image']}.png"
             assert unterkarte["card"]["image"].endswith(erwartet)
 
@@ -380,7 +384,8 @@ def test_jede_komponente_hat_ihre_kachel():
 
     from eta_webservices import GRAFIKEN
 
-    for info in COMPONENTS.values():
+    for key in MIT_KACHEL:
+        info = COMPONENTS[key]
         daten = (GRAFIKEN / f"{info['image']}.png").read_bytes()
         assert daten.startswith(b"\x89PNG\r\n\x1a\n"), info["image"]
         assert struct.unpack(">II", daten[16:24]) == (255, 501), info["image"]
@@ -607,3 +612,10 @@ def test_ohne_angaben_entsteht_die_universelle_karte():
 
     erzeugt = yaml.safe_dump(responsive_karte(), allow_unicode=True, sort_keys=False)
     assert erzeugt == KARTE.read_text(encoding="utf-8")
+
+
+def test_twin_bringt_keine_eigene_kachel():
+    """Die Pelletwerte des SH TWIN stehen auf der Kessel-Kachel."""
+    mit_twin = zugeschnitten(["kessel", "twin", "puffer"], 5)
+    ohne_twin = zugeschnitten(["kessel", "puffer"], 5)
+    assert mit_twin == ohne_twin

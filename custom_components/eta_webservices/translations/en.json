@@ -18,6 +18,7 @@
         "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names.",
         "data": {
           "kessel": "FUB name: boiler",
+          "twin": "FUB name: pellet unit of the SH TWIN (Twin)",
           "sys": "FUB name: Sys (outside temperature)",
           "pufferflex": "FUB name: buffer tank (default PufferFlex, older systems: Puffer)",
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
@@ -67,6 +68,7 @@
         "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names or your previous entries.",
         "data": {
           "kessel": "FUB name: boiler",
+          "twin": "FUB name: pellet unit of the SH TWIN (Twin)",
           "sys": "FUB name: Sys (outside temperature)",
           "pufferflex": "FUB name: buffer tank (default PufferFlex, older systems: Puffer)",
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
@@ -87,6 +89,7 @@
   "selector": {
     "components": {
       "options": {
+        "twin": "TWIN (pellet unit on the log wood boiler)",
         "puffer": "Buffer tank",
         "fwm": "Fresh water / hot water module",
         "hk1": "Heating circuit 1",
@@ -241,6 +244,9 @@
       },
       "komponente_solar": {
         "name": "Solar component"
+      },
+      "komponente_twin": {
+        "name": "Component TWIN"
       },
       "lager_maximum": {
         "name": "Store capacity"

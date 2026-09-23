@@ -75,6 +75,55 @@ async def test_warmwasserspeicher_statt_frischwassermodul(hass, menu_xml):
     assert "fwm_warmwasser" not in ueber_kennung
 
 
+STUECKHOLZ_KESSEL = """<fub uri="/264/10301" name="Kessel">
+<object uri="/264/10301/0/0/10990" name="Eingänge">
+<object uri="/264/10301/0/11109/0" name="Kessel"/>
+<object uri="/264/10301/0/11160/0" name="Rücklauf"/>
+</object>
+<object uri="/264/10301/0/0/12010" name="Zählerstände">
+<object uri="/264/10301/0/0/12153" name="Volllaststunden"/>
+</object>
+<object uri="/264/10301/0/0/19402" name="Kessel">
+<object uri="/264/10301/0/0/12000" name="Kessel-Zustand detailliert"/>
+</object>
+</fub>
+"""
+"""Der Stückholzteil eines SH TWIN: kein Verbrauch, kein Pelletsbehälter."""
+
+
+def twin_menue(menu_xml):
+    """Der Pelletkessel der Testanlage wird zum Block "Twin" am Stückholzkessel."""
+    return menu_xml.replace(
+        '<fub uri="/264/10891" name="Kessel">',
+        STUECKHOLZ_KESSEL + '<fub uri="/264/10891" name="Twin">',
+    )
+
+
+async def test_twin_liefert_die_pelletwerte(hass, menu_xml):
+    hass.session.menu = twin_menue(menu_xml)
+    uris, _ = await discover(hass, {"kessel": "Kessel", "twin": "Twin"})
+    assert uris["pellet_gesamtverbrauch"] == "/264/10891/0/0/12016"
+    assert uris["pellet_tagesbehälter"] == "/264/10891/0/0/12011"
+    assert uris["aschebox_verbrauch"] == "/264/10891/0/0/12013"
+    assert uris["entaschung_verbrauch"] == "/264/10891/0/0/12012"
+    assert uris["aschebox_schwelle"] == "/264/10891/0/0/12120"
+    assert uris["kessel_temperatur"] == "/264/10301/0/11109/0"
+    assert uris["kessel_zustand"] == "/264/10301/0/0/12000"
+
+
+async def test_ohne_twin_auswahl_keine_pelletwerte(hass, menu_xml):
+    hass.session.menu = twin_menue(menu_xml)
+    uris, _ = await discover(hass, {"kessel": "Kessel"})
+    assert "pellet_gesamtverbrauch" not in uris
+    assert "pellet_tagesbehälter" not in uris
+    assert uris["kessel_temperatur"] == "/264/10301/0/11109/0"
+
+
+async def test_twin_auswahl_ohne_twin_block_nimmt_den_kessel(hass):
+    uris, _ = await discover(hass, {"kessel": "Kessel", "twin": "Twin"})
+    assert uris["pellet_gesamtverbrauch"] == "/264/10891/0/0/12016"
+
+
 def test_standardnamen_je_rolle():
     assert fub_role_default("kessel", ["kessel"]) == "Kessel"
     assert fub_role_default("hk", ["kessel", "hk", "hk2"]) == "HK"

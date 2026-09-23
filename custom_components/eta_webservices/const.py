@@ -68,6 +68,12 @@ COMPONENTS = {
         "discovery_prefixes": ["kessel_", "aussentemperatur"],
         "required": True,
     },
+    "twin": {
+        "name": "TWIN",
+        "image": None,
+        "roles": ["twin"],
+        "discovery_prefixes": ["pellet_gesamtverbrauch"],
+    },
     "puffer": {
         "name": "Pufferspeicher",
         "image": "puffer",
@@ -121,6 +127,12 @@ COMPONENTS = {
 
 Jede Komponente bringt Grafik, Funktionsblock-Rollen und Messwerte mit.
 Sensoren ordnen sich über ihr Feld "component" hier zu.
+
+"twin" ist die Ausnahme ohne eigene Grafik: Beim Stückholzkessel mit
+angeflanschtem Pelletteil (SH TWIN) führt ein eigener Funktionsblock
+"Twin" die Pelletwerte - Gesamtverbrauch, Tagesbehälter, Entaschung.
+Sie erscheinen auf der Kessel-Kachel, als hätte die Anlage einen
+Pelletkessel. Siehe TWIN_SCHLUESSEL in uri_discovery.py.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -534,6 +546,7 @@ def puffer_fuehler_info(index, is_last):
 
 FUB_ROLE_DEFAULT_NAMES = {
     "kessel": ["Kessel"],
+    "twin": ["Twin"],
     "sys": ["Sys"],
     "pufferflex": ["PufferFlex", "Puffer"],
     "fwm": ["FWM", "WW"],
