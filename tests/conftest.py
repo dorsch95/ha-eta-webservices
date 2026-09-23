@@ -287,6 +287,17 @@ class FakeSession:
         """
         if not self.varinfo_unterstuetzt:
             return FakeResponse("", status=404)
+        if url.endswith("/12000"):
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
+                'name="Kessel-Zustand detailliert" fullName="Kessel > Kessel-Zustand detailliert" '
+                'unit="" decPlaces="0" scaleFactor="1" advTextOffset="2000" isWritable="0">'
+                "<type>TEXT</type><validValues>"
+                '<value strValue="Ausgeschaltet">2000</value>'
+                '<value strValue="Heizen">2006</value>'
+                '<value strValue="Glutabbrand">2007</value>'
+                "</validValues></variable></varInfo></eta>"
+            )
         if not any(t in url for t in ("12080", "12125", "12126", "12230")):
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '

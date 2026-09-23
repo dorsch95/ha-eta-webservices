@@ -254,6 +254,21 @@ async def test_diagnose_enthaelt_den_menuebaum(hass, entry):
     assert "192.0.2" not in "\n".join(baum)
 
 
+async def test_diagnose_nennt_die_moeglichen_zustandstexte(hass, entry):
+    """Damit lässt sich die Kessel-Kachel auf andere Kesseltypen abstimmen."""
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+
+    await setup_integration(hass, entry)
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert bericht["zustandstexte"]["kessel_zustand"] == [
+        "Ausgeschaltet",
+        "Heizen",
+        "Glutabbrand",
+    ]
+    assert "kessel_temperatur" not in bericht["zustandstexte"]
+
+
 async def test_diagnose_kommt_auch_ohne_menuebaum_zustande(hass, entry):
     from eta_webservices.diagnostics import async_get_config_entry_diagnostics
 
