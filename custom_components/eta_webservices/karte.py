@@ -263,14 +263,18 @@ KESSEL_FLAMME = [
     "Heizen",
     "Heizen Start",
     "Anheizen",
-    "Zünden",
-    "Heizversuch",
     "Pellet Betrieb",
     "Heizen, Vorbereitung auf Messung",
     "Heizen, Teillastmessung durchführen",
     "Heizen, Nennlastmessung durchführen",
 ]
 """Kessel-Zustände, bei denen die Flamme lodert."""
+
+KESSEL_ZUENDUNG = [
+    "Zünden",
+    "Heizversuch",
+]
+"""Kessel-Zustände, in denen gezündet wird: Der Zündstab glüht, Funken springen."""
 
 KESSEL_GLUT = [
     "Glutabbrand",
@@ -310,7 +314,7 @@ KESSEL_AUS = [
 ]
 """Kessel-Zustände ohne Feuer.
 
-Die drei Listen sind alle Texte, die ein Pelletkessel für
+Die vier Listen sind alle Texte, die ein Pelletkessel für
 "Kessel-Zustand detailliert" meldet. Ein Text, der in keiner steht - etwa
 von einem anderen Kesseltyp -, zeigt die bisherige Kachel mit ruhender
 Flamme.
@@ -322,6 +326,7 @@ def kessel_zustandsbilder():
     bilder = {}
     for zustaende, bild in (
         (KESSEL_FLAMME, "kessel_flamme.webp"),
+        (KESSEL_ZUENDUNG, "kessel_zuendung.webp"),
         (KESSEL_GLUT, "kessel_glut.webp"),
         (KESSEL_AUS, "kessel_aus.png"),
     ):

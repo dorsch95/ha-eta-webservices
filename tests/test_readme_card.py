@@ -667,9 +667,9 @@ ALLE_KESSEL_ZUSTAENDE = [
 
 
 def test_jeder_kessel_zustand_hat_genau_ein_bild():
-    from eta_webservices.karte import KESSEL_AUS, KESSEL_FLAMME, KESSEL_GLUT
+    from eta_webservices.karte import KESSEL_AUS, KESSEL_FLAMME, KESSEL_GLUT, KESSEL_ZUENDUNG
 
-    listen = KESSEL_FLAMME + KESSEL_GLUT + KESSEL_AUS
+    listen = KESSEL_FLAMME + KESSEL_ZUENDUNG + KESSEL_GLUT + KESSEL_AUS
     assert len(listen) == len(set(listen)), "Zustand doppelt zugeordnet"
     assert set(listen) == set(ALLE_KESSEL_ZUSTAENDE)
 
@@ -681,7 +681,9 @@ def test_kessel_zustandsbilder_gibt_es_und_sie_bewegen_sich():
     from eta_webservices.karte import kessel_zustandsbilder
 
     dateien = {pfad.rsplit("/", 1)[1] for pfad in kessel_zustandsbilder().values()}
-    assert dateien == {"kessel_flamme.webp", "kessel_glut.webp", "kessel_aus.png"}
+    assert dateien == {
+        "kessel_flamme.webp", "kessel_zuendung.webp", "kessel_glut.webp", "kessel_aus.png"
+    }
     for datei in dateien:
         with Image.open(GRAFIKEN / datei) as bild:
             assert bild.size == (255, 501), datei
@@ -696,4 +698,6 @@ def test_kessel_kachel_wechselt_mit_dem_zustand(karte):
         assert kessel["image"].endswith("/kessel.png")
         assert kessel["state_image"]["Heizen"].endswith("/kessel_flamme.webp")
         assert kessel["state_image"]["Glutabbrand"].endswith("/kessel_glut.webp")
+        assert kessel["state_image"]["Zünden"].endswith("/kessel_zuendung.webp")
+        assert kessel["state_image"]["Heizversuch"].endswith("/kessel_zuendung.webp")
         assert kessel["state_image"]["Bereit"].endswith("/kessel_aus.png")

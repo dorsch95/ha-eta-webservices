@@ -109,12 +109,12 @@ cards:
           Heizen: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
           Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Zünden: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizversuch: /eta_webservices/grafiken/kessel_flamme.webp
           Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
+          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
           Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
@@ -1822,12 +1822,12 @@ cards:
           Heizen: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
           Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Zünden: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizversuch: /eta_webservices/grafiken/kessel_flamme.webp
           Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
+          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
           Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
@@ -3535,12 +3535,12 @@ cards:
           Heizen: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
           Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Zünden: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizversuch: /eta_webservices/grafiken/kessel_flamme.webp
           Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
           Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
+          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
           Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
