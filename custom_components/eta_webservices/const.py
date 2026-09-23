@@ -13,6 +13,16 @@ from homeassistant.const import Platform
 DOMAIN = "eta_webservices"
 DEFAULT_PORT = 8080
 
+URL_GRAFIKEN = f"/{DOMAIN}/grafiken"
+"""Unter dieser Adresse liefert Home Assistant die Kachelgrafiken aus.
+
+Die Dateien liegen im Ordner grafiken/ der Integration und kommen mit
+jedem Update mit. Je Komponente genau eine Kachel (255x501); die
+Beschriftungen stecken bewusst nicht im Bild, sondern kommen in der
+Dashboard-Karte aus state-label-Elementen - sonst bräuchte jede Sprache
+und jeder Heizkreis eine eigene Grafik.
+"""
+
 PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.SELECT,

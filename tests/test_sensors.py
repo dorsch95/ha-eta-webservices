@@ -123,26 +123,39 @@ async def test_kompletter_ausfall_meldet_update_failed(hass, entry):
         await coordinator._async_update_data()
 
 
-async def test_anlagengrafiken_werden_geschrieben(hass, entry):
+async def test_grafiken_werden_aus_der_integration_ausgeliefert():
+    """Nichts landet mehr im www-Ordner des Nutzers.
+
+    Home Assistant liefert die Kacheln direkt aus dem Ordner der
+    Integration aus - ohne Browser-Zwischenspeicher, damit geänderte
+    Grafiken nach einem Update sofort ankommen.
+    """
+    import eta_webservices
+    from eta_webservices.const import URL_GRAFIKEN
+
+    class Http:
+        def __init__(self) -> None:
+            self.pfade: list = []
+
+        async def async_register_static_paths(self, pfade):
+            self.pfade.extend(pfade)
+
+    class Hass:
+        http = Http()
+
+    assert await eta_webservices.async_setup(Hass(), {}) is True
+
+    (pfad,) = Hass.http.pfade
+    assert pfad.url_path == URL_GRAFIKEN
+    assert pfad.path == str(eta_webservices.GRAFIKEN)
+    assert pfad.cache_headers is False
+
+
+async def test_setup_schreibt_nichts_nach_www(hass, entry):
     import os
 
     await setup_integration(hass, entry)
-    verzeichnis = hass.config.path("www", "community", "ha-eta-webservices")
-    dateien = os.listdir(verzeichnis)
-    assert dateien
-    assert all(name.endswith(".png") for name in dateien)
-
-
-async def test_zweiter_setup_schreibt_grafiken_nicht_erneut(hass, entry):
-    import os
-
-    await setup_integration(hass, entry)
-    verzeichnis = hass.config.path("www", "community", "ha-eta-webservices")
-    eine_datei = os.path.join(verzeichnis, os.listdir(verzeichnis)[0])
-    vorher = os.stat(eine_datei).st_mtime_ns
-
-    await setup_integration(hass, entry)
-    assert os.stat(eine_datei).st_mtime_ns == vorher
+    assert not os.path.exists(hass.config.path("www"))
 
 
 async def test_jeder_sensor_einer_komponente_existiert(hass, entry):

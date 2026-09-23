@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-import base64
 import logging
-import os
 import re
+from pathlib import Path
 
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.typing import ConfigType
 
 from .api import ETAApiClient
 from .const import (
@@ -28,35 +30,30 @@ from .const import (
     SELECTS,
     SENSORS,
     SWITCHES,
+    URL_GRAFIKEN,
     components_from_config,
 )
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
-from .images import IMAGES_DATA
 
 _LOGGER = logging.getLogger(__name__)
 
-WWW_SUBDIR = ("community", "ha-eta-webservices")
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+GRAFIKEN = Path(__file__).parent / "grafiken"
 
 
-def _write_component_images(www_root: str) -> None:
-    """Schreibt die Komponentengrafiken nach www/.
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Stellt die Kachelgrafiken unter URL_GRAFIKEN bereit.
 
-    Läuft im Executor, weil Dateizugriffe und das Dekodieren der
-    Base64-Daten den Event Loop nicht blockieren dürfen.
+    Bis Version 0.20 wurden sie bei jedem Start in den www-Ordner des
+    Nutzers geschrieben. Jetzt liefert Home Assistant sie direkt aus dem
+    Ordner der Integration aus; ohne Zwischenspeicher im Browser, damit
+    geänderte Grafiken nach einem Update sofort ankommen.
     """
-    target_dir = os.path.join(www_root, *WWW_SUBDIR)
-    os.makedirs(target_dir, exist_ok=True)
-
-    for image_key, base64_string in IMAGES_DATA.items():
-        target_file = os.path.join(target_dir, f"{image_key}.png")
-        decoded = base64.b64decode(base64_string)
-        if (
-            os.path.exists(target_file)
-            and os.path.getsize(target_file) == len(decoded)
-        ):
-            continue
-        with open(target_file, "wb") as file:
-            file.write(decoded)
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(URL_GRAFIKEN, str(GRAFIKEN), cache_headers=False)]
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
@@ -70,13 +67,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     pellet_kwh_per_kg = config.get(
         CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG
     )
-
-    try:
-        await hass.async_add_executor_job(
-            _write_component_images, hass.config.path("www")
-        )
-    except OSError as err:
-        _LOGGER.error("Komponentengrafiken konnten nicht geschrieben werden: %s", err)
 
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     coordinator = ETADataUpdateCoordinator(

@@ -360,15 +360,43 @@ def test_genannte_grenzwerte_stimmen_mit_dem_code_ueberein():
 
 
 def test_genannte_bilder_werden_ausgeliefert():
+    """Jede Grafik, auf die Karte oder README zeigen, liegt der Integration bei."""
     import re
 
-    from eta_webservices.images import IMAGES_DATA
+    from eta_webservices import GRAFIKEN
+    from eta_webservices.const import URL_GRAFIKEN
 
     text = readme_text() + KARTE.read_text(encoding="utf-8")
-    bilder = set(re.findall(r"ha-eta-webservices/([a-z0-9_]+)\.png", text))
+    bilder = set(re.findall(rf"{re.escape(URL_GRAFIKEN)}/([a-z0-9_]+\.png)", text))
     assert bilder, "keine Bildverweise gefunden"
     for bild in bilder:
-        assert bild in IMAGES_DATA, bild
+        assert (GRAFIKEN / bild).is_file(), bild
+    assert "/local/community/" not in KARTE.read_text(encoding="utf-8")
+
+
+def test_jede_komponente_hat_ihre_kachel():
+    """Je Komponente eine Kachel im Format 255x501, so wie die Karte sie setzt."""
+    import struct
+
+    from eta_webservices import GRAFIKEN
+
+    for info in COMPONENTS.values():
+        daten = (GRAFIKEN / f"{info['image']}.png").read_bytes()
+        assert daten.startswith(b"\x89PNG\r\n\x1a\n"), info["image"]
+        assert struct.unpack(">II", daten[16:24]) == (255, 501), info["image"]
+
+
+def test_kartenskript_kennt_die_bildadresse():
+    import importlib.util
+
+    from eta_webservices.const import URL_GRAFIKEN
+
+    spec = importlib.util.spec_from_file_location(
+        "karte_bauen", KARTE.parent / "karte_bauen.py"
+    )
+    modul = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modul)
+    assert modul.BILDPFAD == URL_GRAFIKEN
 
 
 def test_kartendatei_ist_aktuell():

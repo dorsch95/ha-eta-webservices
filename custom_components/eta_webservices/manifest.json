@@ -5,7 +5,9 @@
     "@dorsch95"
   ],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/dorsch95/ha-eta-webservices",
   "integration_type": "device",
   "iot_class": "local_polling",

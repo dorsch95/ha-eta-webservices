@@ -7,7 +7,7 @@ Diese Integration liest **ETA Heizsysteme** komplett lokal über die integrierte
 
 Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch auch schalten; das muss beim Einrichten ausdrücklich freigegeben werden.
 
-⚡ Du kreuzt im Setup an, welche Komponenten deine Anlage hat. Die passenden Grafiken landen automatisch auf deiner Festplatte, und eine einzige Dashboard-Karte deckt alle Anlagen ab.
+⚡ Du kreuzt im Setup an, welche Komponenten deine Anlage hat. Die Grafiken bringt die Integration selbst mit, und eine einzige Dashboard-Karte deckt alle Anlagen ab.
 
 📈 Bei Pelletkesseln steht der Verbrauch als Energiewert bereit und lässt sich ins **Energie-Dashboard** von Home Assistant aufnehmen.
 
@@ -61,7 +61,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deiner Lieferscheinung ein anderer Wert, trage ihn hier ein.
 7. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
 8. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK1", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-9. Klicke auf **Absenden**. Die Komponentengrafiken werden automatisch auf deiner Festplatte abgelegt.
+9. Klicke auf **Absenden**.
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Nur die **IP-Adresse** steht woanders: Bekommt die Heizung eine neue, trägst du sie im Drei-Punkte-Menü der Integration unter **Neu konfigurieren** ein.
 
@@ -203,7 +203,9 @@ Die Karte ist lang (sie enthält jede Komponente dreimal, einmal je Bildschirmgr
 2. Wähle als Ansichtstyp **Panel (1 Karte)**. Das ist wichtig: In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, und die Beschriftungen werden abgeschnitten.
 3. Füge in dieser Ansicht eine Karte vom Typ **Manuell** ein und ersetze den Inhalt durch den aus `eta-karte.yaml`.
 
-Es ist nichts zu löschen und nichts anzupassen.
+Es ist nichts zu löschen und nichts anzupassen. Die Grafiken liefert die Integration selbst aus.
+
+> ℹ️ **Update von Version 0.20 oder älter:** Füge die Karte einmal neu ein. Die Grafiken kommen jetzt direkt aus der Integration statt aus deinem `www`-Ordner, außerdem hat die Heizkreis-Kachel neue Tasten für die Betriebsart. Die alte Karte funktioniert bis dahin weiter. Danach kannst du den Ordner `www/community/ha-eta-webservices` löschen - er wird nicht mehr gebraucht.
 
 ### Wie sich die Karte anpasst
 

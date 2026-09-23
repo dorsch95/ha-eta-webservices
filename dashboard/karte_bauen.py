@@ -12,7 +12,8 @@ import pathlib
 
 import yaml
 
-BILDPFAD = "/local/community/ha-eta-webservices"
+BILDPFAD = "/eta_webservices/grafiken"
+"""Dort liefert die Integration die Kachelgrafiken aus, siehe URL_GRAFIKEN."""
 
 FARBEN = {
     "aussen": "#9aa5b1",
