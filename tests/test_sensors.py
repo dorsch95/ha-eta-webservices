@@ -226,6 +226,35 @@ async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
     assert kessel["letzter_wert"] == pytest.approx(55.5)
 
 
+async def test_diagnose_enthaelt_den_menuebaum(hass, entry):
+    """Ein Klick auf "Diagnose herunterladen" ersetzt eta_bericht.py.
+
+    Genau dieser Baum fehlt, um die Integration an eine fremde Anlage
+    anzupassen - Solar, Lager, Hackgut, weitere Heizkreise.
+    """
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+
+    await setup_integration(hass, entry)
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+    baum = bericht["menuebaum"]
+
+    assert "Sys  /120/10241" in baum
+    assert "    Außentemperaturfühler  /120/10241/0/11127/0" in baum
+    assert any(zeile.startswith("Kessel  ") for zeile in baum)
+    assert "192.0.2" not in "\n".join(baum)
+
+
+async def test_diagnose_kommt_auch_ohne_menuebaum_zustande(hass, entry):
+    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+
+    await setup_integration(hass, entry)
+    hass.session.fail_uris = {"/user/menu"}
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert bericht["menuebaum"][0].startswith("Menübaum nicht lesbar")
+    assert bericht["messwerte"]
+
+
 async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
     from eta_webservices.diagnostics import async_get_config_entry_diagnostics
 
