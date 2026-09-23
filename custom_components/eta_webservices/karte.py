@@ -276,6 +276,11 @@ KESSEL_ZUENDUNG = [
 ]
 """Kessel-Zustände, in denen gezündet wird: Der Zündstab glüht, Funken springen."""
 
+KESSEL_ENTASCHEN = [
+    "Entaschen",
+]
+"""Der Rost dreht sich um seine Längsachse und kippt die Asche ab."""
+
 KESSEL_GLUT = [
     "Glutabbrand",
     "Glutabbrand wegen Entaschung",
@@ -295,7 +300,6 @@ KESSEL_AUS = [
     "Füllen gestoppt wegen Entaschung",
     "Bereit",
     "Aschebox fehlt",
-    "Entaschen",
     "Störung beim Entaschen",
     "Störung",
     "Verriegelt",
@@ -314,7 +318,7 @@ KESSEL_AUS = [
 ]
 """Kessel-Zustände ohne Feuer.
 
-Die vier Listen sind alle Texte, die ein Pelletkessel für
+Die Listen zusammen sind alle Texte, die ein Pelletkessel für
 "Kessel-Zustand detailliert" meldet. Ein Text, der in keiner steht - etwa
 von einem anderen Kesseltyp -, zeigt die bisherige Kachel mit ruhender
 Flamme.
@@ -327,6 +331,7 @@ def kessel_zustandsbilder():
     for zustaende, bild in (
         (KESSEL_FLAMME, "kessel_flamme.webp"),
         (KESSEL_ZUENDUNG, "kessel_zuendung.webp"),
+        (KESSEL_ENTASCHEN, "kessel_entaschen.webp"),
         (KESSEL_GLUT, "kessel_glut.webp"),
         (KESSEL_AUS, "kessel_aus.png"),
     ):

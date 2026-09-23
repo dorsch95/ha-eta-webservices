@@ -115,6 +115,7 @@ cards:
           Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
           Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
           Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
+          Entaschen: /eta_webservices/grafiken/kessel_entaschen.webp
           Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
@@ -129,7 +130,6 @@ cards:
           Füllen gestoppt wegen Entaschung: /eta_webservices/grafiken/kessel_aus.png
           Bereit: /eta_webservices/grafiken/kessel_aus.png
           Aschebox fehlt: /eta_webservices/grafiken/kessel_aus.png
-          Entaschen: /eta_webservices/grafiken/kessel_aus.png
           Störung beim Entaschen: /eta_webservices/grafiken/kessel_aus.png
           Störung: /eta_webservices/grafiken/kessel_aus.png
           Verriegelt: /eta_webservices/grafiken/kessel_aus.png
@@ -1828,6 +1828,7 @@ cards:
           Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
           Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
           Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
+          Entaschen: /eta_webservices/grafiken/kessel_entaschen.webp
           Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
@@ -1842,7 +1843,6 @@ cards:
           Füllen gestoppt wegen Entaschung: /eta_webservices/grafiken/kessel_aus.png
           Bereit: /eta_webservices/grafiken/kessel_aus.png
           Aschebox fehlt: /eta_webservices/grafiken/kessel_aus.png
-          Entaschen: /eta_webservices/grafiken/kessel_aus.png
           Störung beim Entaschen: /eta_webservices/grafiken/kessel_aus.png
           Störung: /eta_webservices/grafiken/kessel_aus.png
           Verriegelt: /eta_webservices/grafiken/kessel_aus.png
@@ -3541,6 +3541,7 @@ cards:
           Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
           Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
           Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
+          Entaschen: /eta_webservices/grafiken/kessel_entaschen.webp
           Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
           Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
@@ -3555,7 +3556,6 @@ cards:
           Füllen gestoppt wegen Entaschung: /eta_webservices/grafiken/kessel_aus.png
           Bereit: /eta_webservices/grafiken/kessel_aus.png
           Aschebox fehlt: /eta_webservices/grafiken/kessel_aus.png
-          Entaschen: /eta_webservices/grafiken/kessel_aus.png
           Störung beim Entaschen: /eta_webservices/grafiken/kessel_aus.png
           Störung: /eta_webservices/grafiken/kessel_aus.png
           Verriegelt: /eta_webservices/grafiken/kessel_aus.png
