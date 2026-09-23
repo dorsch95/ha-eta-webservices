@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Anleitung und Fehlersuche
+    url: https://github.com/dorsch95/ha-eta-webservices#-fehlersuche
+    about: Häufige Fragen stehen im README - vielleicht ist deine schon beantwortet.

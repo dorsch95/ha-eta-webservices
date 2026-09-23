@@ -1,0 +1,57 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie beschrieben. / Something does not work as documented.
+labels: ["fehler"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke, dass du dir die Zeit nimmst. Am meisten hilft die **Diagnose-Datei**:
+        **Einstellungen → Geräte & Dienste → ETA Web-Services → Gerät "ETA Heizung" → Diagnose herunterladen**.
+        Die IP-Adresse ist darin geschwärzt, die Datei kann hier einfach angehängt werden.
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Was ist passiert?
+      description: Was hast du erwartet, was ist stattdessen passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: diagnose
+    attributes:
+      label: Diagnose-Datei
+      description: Datei per Drag & Drop hier ablegen.
+      placeholder: Diagnose-Datei hierher ziehen
+    validations:
+      required: true
+  - type: dropdown
+    id: kessel
+    attributes:
+      label: Kesseltyp
+      options:
+        - Pellets
+        - Hackgut
+        - Stückholz
+        - anderer
+    validations:
+      required: true
+  - type: input
+    id: version_integration
+    attributes:
+      label: Version der Integration
+      placeholder: z. B. V0.21
+    validations:
+      required: true
+  - type: input
+    id: version_ha
+    attributes:
+      label: Version von Home Assistant
+      description: Einstellungen → Info
+      placeholder: z. B. 2026.9.2
+    validations:
+      required: true
+  - type: textarea
+    id: protokoll
+    attributes:
+      label: Protokoll (optional)
+      description: Zeilen aus dem Protokoll, die "eta_webservices" enthalten.
+      render: text

@@ -1,0 +1,45 @@
+name: Wert fehlt / meine Anlage ist anders
+description: Ein Wert zeigt "-", eine Komponente wird nicht gefunden oder deine Anlage hat etwas, das die Integration noch nicht kennt.
+labels: ["anlage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Die Integration findet die Werte über die **Namen im Menübaum** deiner Anlage. Anlagen unterscheiden sich,
+        und jede weitere hilft, die Suche besser zu machen - besonders mit Solar, Pelletlager, Hackgut,
+        Stückholz oder mehreren Heizkreisen.
+
+        Die **Diagnose-Datei** enthält den vollständigen Menübaum, sonst ist nichts nötig:
+        **Einstellungen → Geräte & Dienste → ETA Web-Services → Gerät "ETA Heizung" → Diagnose herunterladen**.
+        Lässt sich die Integration gar nicht einrichten, erstellt `tools/eta_bericht.py` einen Bericht ohne Home Assistant.
+  - type: textarea
+    id: was_fehlt
+    attributes:
+      label: Was fehlt oder weicht ab?
+      placeholder: z. B. "Solar Leistung zeigt -, obwohl die Anlage eine Wärmemengenmessung hat"
+    validations:
+      required: true
+  - type: textarea
+    id: diagnose
+    attributes:
+      label: Diagnose-Datei oder eta_bericht.txt
+      description: Datei per Drag & Drop hier ablegen.
+    validations:
+      required: true
+  - type: textarea
+    id: display
+    attributes:
+      label: Wo steht der Wert am Display der Anlage?
+      description: Der Weg durch das Menü, so genau wie möglich. Ein Foto hilft auch.
+      placeholder: z. B. Kessel → Entaschung → Verbrauch seit Aschebox leeren
+  - type: dropdown
+    id: kessel
+    attributes:
+      label: Kesseltyp
+      options:
+        - Pellets
+        - Hackgut
+        - Stückholz
+        - anderer
+    validations:
+      required: true
