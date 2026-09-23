@@ -36,6 +36,30 @@ async def test_messwert_hat_feste_einheit_und_geraet(hass, entry):
     assert kessel.unique_id.endswith("kessel_temperatur")
 
 
+async def test_nachkommastellen_kommen_von_der_anlage(hass, entry):
+    """Die Anlage nennt zu jedem Wert, wie genau er gemeint ist.
+
+    Bis 0.20 wurde das gelesen, aber nie benutzt: Ein Kesseldruck von
+    1,48 bar erschien als 1,5 bar.
+    """
+    from eta_webservices.sensor import ETAMeasurementSensor
+
+    coordinator, by_name = await setup_integration(hass, entry)
+    assert by_name["Kesseltemperatur"].suggested_display_precision == 1
+
+    coordinator.data["kessel_druck"].dec_places = 2
+    druck = ETAMeasurementSensor(
+        coordinator, "kessel_druck", coordinator.sensor_defs["kessel_druck"]
+    )
+    assert druck.suggested_display_precision == 2
+
+    coordinator.data["kessel_druck"].dec_places = None
+    ohne_angabe = ETAMeasurementSensor(
+        coordinator, "kessel_druck", coordinator.sensor_defs["kessel_druck"]
+    )
+    assert ohne_angabe.suggested_display_precision == 1
+
+
 async def test_unique_ids_sind_eindeutig(hass, entry):
     _, by_name = await setup_integration(hass, entry)
     ids = [entity.unique_id for entity in by_name.values()]

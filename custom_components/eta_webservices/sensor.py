@@ -60,6 +60,20 @@ def _pellet_energie(coordinator: ETADataUpdateCoordinator) -> SensorEntity:
     )
 
 
+def _nachkommastellen(coordinator: ETADataUpdateCoordinator, key: str) -> int:
+    """So viele Nachkommastellen, wie die Anlage für diesen Wert angibt.
+
+    Die Anlage nennt sie zu jedem Messwert (decPlaces), passend zu ihrer
+    eigenen Messauflösung - beim Kesseldruck etwa zwei, bei Zählerständen
+    in Kilogramm keine. Liegt beim Einrichten noch kein Wert vor, bleibt
+    es bei einer Stelle.
+    """
+    reading = (coordinator.data or {}).get(key)
+    if reading is None or reading.is_text or reading.dec_places is None:
+        return 1
+    return max(0, min(reading.dec_places, 3))
+
+
 class ETABaseSensor(CoordinatorEntity[ETADataUpdateCoordinator], SensorEntity):
     """Gemeinsame Basis aller ETA-Sensoren."""
 
@@ -95,7 +109,9 @@ class ETAMeasurementSensor(ETABaseSensor):
 
         if not info.get("is_string"):
             self._attr_native_unit_of_measurement = info.get("default_unit")
-            self._attr_suggested_display_precision = 1
+            self._attr_suggested_display_precision = _nachkommastellen(
+                coordinator, key
+            )
 
         self._position = info.get("position")
 
