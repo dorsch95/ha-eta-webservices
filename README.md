@@ -201,6 +201,8 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 | Solaranlage | `Solar` |
 | Außentemperatur | `Sys` |
 
+Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufende Nummer an, zum Beispiel `HK 1.1`, `FWM 1.1` oder `WW 1.1`. Solche Namen - und alle Namen, die du selbst vergeben hast (etwa "Fußboden" statt `HK2`) - trägst du beim Einrichten oder unter **Konfigurieren** ein. Den genauen Namen zeigt das Display deiner Heizung als Reiter über dem Funktionsblock.
+
 ---
 
 ## 📺 Dashboard-Vorlage für Lovelace
