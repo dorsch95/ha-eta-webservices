@@ -34,6 +34,7 @@ from .const import (
     components_from_config,
 )
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .entitaets_ids import deutsche_namen
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,6 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         enable_errors=config.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
     )
 
+    coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
 

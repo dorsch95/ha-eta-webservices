@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .entitaets_ids import ids_vorschlagen
 
 VERWERFEN_NACH = 3
 """So oft darf die Anlage dem erwarteten Zustand widersprechen.
@@ -41,11 +42,13 @@ async def async_setup_entry(
     Einträgen ist.
     """
     coordinator = entry.runtime_data
-    async_add_entities(
+    entities = [
         ETASwitch(coordinator, key, definition)
         for key, definition in coordinator.switch_defs.items()
         if not definition.get("nur_fuer_auswahl")
-    )
+    ]
+    ids_vorschlagen(coordinator.deutsche_namen, "switch", entities)
+    async_add_entities(entities)
 
 
 class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):

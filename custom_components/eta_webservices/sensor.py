@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .entitaets_ids import ids_vorschlagen
 
 
 async def async_setup_entry(
@@ -39,6 +40,7 @@ async def async_setup_entry(
         ETAComponentMarkerSensor(coordinator, key) for key in coordinator.components
     )
 
+    ids_vorschlagen(coordinator.deutsche_namen, "sensor", entities)
     async_add_entities(entities)
 
 

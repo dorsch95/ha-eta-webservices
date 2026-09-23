@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .api import ETAApiError
 from .const import BETRIEBSART_AUS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .entitaets_ids import ids_vorschlagen
 from .switch import VERWERFEN_NACH
 
 
@@ -22,10 +23,12 @@ async def async_setup_entry(
 ) -> None:
     """Legt je erkanntem Heizkreis eine Betriebsart-Auswahl an."""
     coordinator = entry.runtime_data
-    async_add_entities(
+    entities = [
         ETABetriebsartSelect(coordinator, key, definition)
         for key, definition in coordinator.select_defs.items()
-    )
+    ]
+    ids_vorschlagen(coordinator.deutsche_namen, "select", entities)
+    async_add_entities(entities)
 
 
 class ETABetriebsartSelect(

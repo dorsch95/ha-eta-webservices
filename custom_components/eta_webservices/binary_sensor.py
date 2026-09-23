@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .entitaets_ids import ids_vorschlagen
 
 
 async def async_setup_entry(
@@ -27,6 +28,7 @@ async def async_setup_entry(
         entities.append(ETAAscheboxBinarySensor(coordinator))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerBinarySensor(coordinator))
+    ids_vorschlagen(coordinator.deutsche_namen, "binary_sensor", entities)
     async_add_entities(entities)
 
 

@@ -1,11 +1,10 @@
-"""Friert die Entity-IDs einer deutschsprachigen Installation ein.
+"""Friert die Entity-IDs ein - sie sind in jeder Spracheinstellung dieselben.
 
-Home Assistant leitet die Entity-ID aus dem Anzeigenamen ab, und der kommt
-seit der Umstellung auf translation_key aus den Sprachdateien. Deutsch steht
-in HAs Liste der Sprachen mit eigenen Entity-IDs, deshalb hängt die ID am
-deutschen Namen. Ändert den jemand, ändert sich die Entity-ID - und jedes
-Dashboard, jede Automatisierung und jede Statistik der bestehenden Nutzer
-zeigt ins Leere. Dieser Test schlägt in dem Fall an.
+Jede Entität schlägt die ID vor, die eine deutschsprachige Installation
+bekäme (entitaets_ids.py) - unabhängig von der Spracheinstellung. Die ID
+hängt damit am deutschen Namen. Ändert den jemand, ändert sich die ID bei
+jeder neuen Installation, und Karte, README und geteilte
+Automatisierungen zeigen ins Leere. Dieser Test schlägt in dem Fall an.
 """
 
 from __future__ import annotations
@@ -85,3 +84,56 @@ def test_neue_entitaeten_sind_hier_eingetragen():
         f"Neue Entitäten ohne festgeschriebene Entity-ID: {neu}. "
         "Ergänze sie in ERWARTETE_IDS, damit spätere Umbenennungen auffallen."
     )
+
+
+async def test_jede_entitaet_schlaegt_ihre_deutsche_id_vor(hass, entry):
+    """Die ID darf nicht an der Spracheinstellung hängen.
+
+    Home Assistant leitet sie beim ersten Anlegen aus dem übersetzten Namen
+    ab - bei englischer Einstellung wäre es sensor.eta_heizung_boiler_temperature,
+    und Karte und README zeigten ins Leere. Deshalb schlägt jede Entität die
+    ID einer deutschsprachigen Installation selbst vor.
+    """
+    from eta_webservices import binary_sensor, select, sensor, switch
+
+    from .test_sensors import setup_integration
+
+    await setup_integration(hass, entry)
+    for plattform in (sensor, binary_sensor, switch, select):
+        entitaeten: list = []
+        await plattform.async_setup_entry(hass, entry, entitaeten.extend)
+        assert entitaeten, plattform.__name__
+        for entitaet in entitaeten:
+            domain = plattform.__name__.rsplit(".", 1)[1]
+            name = json.loads(
+                (UEBERSETZUNGEN / "de.json").read_text(encoding="utf-8")
+            )["entity"][domain][entitaet.translation_key]["name"]
+            assert entitaet.entity_id == f"{domain}.{slugify(f'{GERAET} {name}')}"
+
+
+async def test_vorschlag_passt_zu_den_eingefrorenen_ids(hass, entry):
+    from eta_webservices import sensor
+
+    from .test_sensors import setup_integration
+
+    await setup_integration(hass, entry)
+    entitaeten: list = []
+    await sensor.async_setup_entry(hass, entry, entitaeten.extend)
+    vorgeschlagen = {e.translation_key: e.entity_id for e in entitaeten}
+    for key, entity_id in ERWARTETE_IDS.items():
+        if key in vorgeschlagen:
+            assert vorgeschlagen[key] == entity_id, key
+
+
+def test_hacs_nennt_die_laender_der_anlagen():
+    """Laut HACS-Regeln Pflicht für Repos, die nur einige Länder betreffen.
+
+    Die Suche arbeitet mit den deutschen Menünamen der Anlage; praktisch
+    alle Anlagen stehen in Deutschland, Österreich und der Schweiz.
+    """
+    from pathlib import Path
+
+    hacs = json.loads(
+        (Path(__file__).resolve().parents[1] / "hacs.json").read_text(encoding="utf-8")
+    )
+    assert hacs["country"] == ["DE", "AT", "CH"]

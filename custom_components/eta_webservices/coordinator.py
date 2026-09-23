@@ -22,6 +22,7 @@ from .const import (
     normalize_components,
     puffer_fuehler_info,
 )
+from .entitaets_ids import Namen
 from .repairs import async_check_components
 from .uri_discovery import async_discover_uris
 
@@ -119,6 +120,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.switch_defs: dict[str, dict] = {}
         self.select_defs: dict[str, dict] = {}
         self.fehlzyklen: dict[str, int] = {}
+        self.deutsche_namen: Namen = {}
         self._varset_name = f"ha{entry.entry_id}"[:32]
         self._varset_bereit = False
         self._varset_bewaehrt = False
