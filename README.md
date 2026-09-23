@@ -381,7 +381,7 @@ Im Ordner [`blueprints/automation/eta_webservices`](blueprints/automation/eta_we
 |---|---|
 | **Störung melden** | Push-Nachricht, sobald eine Störung ansteht - mit dem Klartext der Meldung |
 | **Aschebox leeren** | Erinnerung, sobald die Schwelle der Anlage erreicht ist |
-| **Heizkreis absenken bei offenem Fenster** | Setzt den Heizkreis auf Absenken, solange ein Fenster offen steht, und danach zurück |
+| **Heizkreis auf ECO bei offenem Fenster** | Setzt den Heizkreis auf ECO, solange ein Fenster offen steht, und stellt danach die Betriebsart von vorher wieder her. Ein Heizkreis auf *Aus* bleibt aus |
 
 **Einbauen:** Die gewünschte `.yaml` nach `config/blueprints/automation/eta_webservices/` kopieren (Ordner ggf. anlegen) und Home Assistant neu starten. Danach unter **Einstellungen -> Automatisierungen & Szenen -> Blueprints** auswählen.
 

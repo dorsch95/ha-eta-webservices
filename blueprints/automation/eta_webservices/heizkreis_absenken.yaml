@@ -2,10 +2,21 @@ blueprint:
   name: ETA Heizung - Heizkreis auf ECO bei offenem Fenster
   description: >-
     Setzt einen Heizkreis auf ECO, solange ein Fenster oder eine Tür offen
-    steht, und danach zurück auf Auto.
+    steht, und stellt danach die Betriebsart von vorher wieder her.
+
+
+    Umgeschaltet wird nur aus Auto oder Dauer heraus. Ein Heizkreis auf Aus
+    bleibt aus, einer auf ECO bleibt unberührt. Wird die Betriebsart
+    geändert, während das Fenster offen ist, bleibt es bei dieser Änderung.
+
 
     Voraussetzung: Beim Einrichten der Integration muss das Schalten erlaubt
     sein, sonst gibt es die Betriebsart-Auswahl nicht.
+
+
+    Startet Home Assistant neu, während ein Fenster offen steht, geht die
+    Erinnerung an die vorherige Betriebsart verloren - der Heizkreis bleibt
+    dann auf ECO, bis du ihn zurückstellst.
   domain: automation
   source_url: https://github.com/dorsch95/ha-eta-webservices/blob/main/blueprints/automation/eta_webservices/heizkreis_absenken.yaml
   input:
@@ -34,48 +45,52 @@ blueprint:
         duration: {}
     zurueck_auf:
       name: Danach zurück auf
-      default: automatik
+      description: >-
+        Was gilt, wenn alle Fenster wieder zu sind. "Wie vorher" stellt die
+        Betriebsart her, die vor dem Öffnen eingestellt war.
+      default: vorher
       selector:
         select:
           options:
+            - label: Wie vorher
+              value: vorher
             - label: Auto
               value: automatik
             - label: Dauer
               value: heizen
 
-mode: restart
+mode: single
+max_exceeded: silent
+
+variables:
+  betriebsart: !input betriebsart
+  fenster: !input fenster
+  zurueck_auf: !input zurueck_auf
 
 triggers:
   - trigger: state
     entity_id: !input fenster
     to: "on"
     for: !input offen_seit
-    id: offen
-  - trigger: state
-    entity_id: !input fenster
-    to: "off"
-    id: zu
+
+conditions:
+  - condition: template
+    value_template: "{{ states(betriebsart) in ['automatik', 'heizen'] }}"
 
 actions:
-  - choose:
-      - conditions:
-          - condition: trigger
-            id: offen
-        sequence:
-          - action: select.select_option
-            target:
-              entity_id: !input betriebsart
-            data:
-              option: absenken
-      - conditions:
-          - condition: trigger
-            id: zu
-          - condition: state
-            entity_id: !input fenster
-            state: "off"
-        sequence:
-          - action: select.select_option
-            target:
-              entity_id: !input betriebsart
-            data:
-              option: !input zurueck_auf
+  - variables:
+      vorher: "{{ states(betriebsart) }}"
+  - action: select.select_option
+    target:
+      entity_id: !input betriebsart
+    data:
+      option: absenken
+  - wait_template: >-
+      {{ expand(fenster) | selectattr('state', 'eq', 'on') | list | count == 0 }}
+  - condition: template
+    value_template: "{{ is_state(betriebsart, 'absenken') }}"
+  - action: select.select_option
+    target:
+      entity_id: !input betriebsart
+    data:
+      option: "{{ vorher if zurueck_auf == 'vorher' else zurueck_auf }}"
