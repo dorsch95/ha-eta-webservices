@@ -776,3 +776,90 @@ async def test_lager_austragung_ist_klartext(hass, entry):
     assert sensor.native_value == "Bereit"
     assert sensor.native_unit_of_measurement is None
     assert sensor.state_class is None
+
+
+@pytest.mark.parametrize(
+    "key, erwartet",
+    [
+        ("kessel_temperatur", True),
+        ("solar_kollektor", False),
+        ("puffer_fuehler_7", True),
+        ("komponente_lager", False),
+        ("kessel_schalter", True),
+        ("heizkreis_schalter", False),
+        ("heizkreis3_betriebsart", False),
+        ("heizkreis_betriebsart", True),
+        ("lager_niedrig", False),
+        ("aschebox_faellig", True),
+        ("gibt_es_nicht", None),
+    ],
+)
+def test_vorgesehene_entitaeten(key, erwartet):
+    from eta_webservices import entitaet_vorgesehen
+
+    assert (
+        entitaet_vorgesehen(
+            key, ["kessel", "puffer", "hk1"], enable_switches=True, enable_errors=True
+        )
+        is erwartet
+    )
+
+
+def test_ohne_freigaben_sind_schalter_und_stoerung_nicht_vorgesehen():
+    from eta_webservices import entitaet_vorgesehen
+
+    for key in ("kessel_schalter", "heizkreis_betriebsart", "stoerung", "aktive_fehler"):
+        assert entitaet_vorgesehen(key, ["kessel", "hk1"], False, False) is False
+
+
+async def test_verwaiste_entitaeten_werden_entfernt(hass, entry):
+    """Abgewählte Komponenten und der alte Heizkreis-Schalter verschwinden.
+
+    Bis 0.20 blieben sie dauerhaft als "Nicht verfügbar" stehen - etwa
+    switch.eta_heizung_heizkreis_1, den es seit der Betriebsart-Auswahl
+    nicht mehr gibt.
+    """
+    register = hass.entity_registry
+    eigen = entry.entry_id
+    for entity_id, unique_id in (
+        ("switch.eta_heizung_heizkreis_1", "eta_switch_{}_heizkreis_schalter"),
+        ("sensor.eta_heizung_solar_leistung", "eta_static_{}_solar_leistung"),
+        ("sensor.eta_heizung_komponente_solar", "eta_static_{}_komponente_solar"),
+        ("sensor.eta_heizung_kesseltemperatur", "eta_static_{}_kessel_temperatur"),
+        ("switch.eta_heizung_kessel", "eta_switch_{}_kessel_schalter"),
+        ("sensor.eta_heizung_puffer_fuhler_8", "eta_static_{}_puffer_fuehler_8"),
+        ("sensor.eigene_erfindung", "eta_static_{}_gibt_es_nicht"),
+    ):
+        register.anlegen(entity_id, unique_id.format(eigen), eigen)
+    register.anlegen(
+        "sensor.andere_anlage_solar", "eta_static_andere_solar_leistung", "andere"
+    )
+
+    await setup_integration(hass, entry)
+
+    assert set(register.eintraege) == {
+        "sensor.eta_heizung_kesseltemperatur",
+        "switch.eta_heizung_kessel",
+        "sensor.eta_heizung_puffer_fuhler_8",
+        "sensor.eigene_erfindung",
+        "sensor.andere_anlage_solar",
+    }
+
+
+async def test_aussetzer_beim_start_loescht_keine_schalter(hass, entry):
+    """Entfernt wird nur nach Einrichtung, nie nach dem, was die Anlage meldet.
+
+    Antwortet /user/varinfo beim Start nicht, entsteht der Schalter diesmal
+    nicht. Gelöscht werden darf er deshalb nicht - sonst wären Name,
+    Bereich und Anpassungen des Nutzers weg.
+    """
+    hass.session.varinfo_unterstuetzt = False
+    eigen = entry.entry_id
+    hass.entity_registry.anlegen(
+        "switch.eta_heizung_kessel", f"eta_switch_{eigen}_kessel_schalter", eigen
+    )
+
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert "kessel_schalter" not in coordinator.switch_defs
+    assert "switch.eta_heizung_kessel" in hass.entity_registry.eintraege

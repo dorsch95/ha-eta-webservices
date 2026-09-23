@@ -5,9 +5,11 @@ from __future__ import annotations
 import base64
 import logging
 import os
+import re
 
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ETAApiClient
@@ -23,6 +25,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     PLATFORMS,
+    SELECTS,
+    SENSORS,
+    SWITCHES,
     components_from_config,
 )
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
@@ -90,7 +95,78 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _verwaiste_entitaeten_entfernen(hass, entry, coordinator)
     return True
+
+
+_EIGENE_ENTITAETEN = {
+    "aschebox_status": "kessel",
+    "aschebox_faellig": "kessel",
+    "pellet_energie_gesamt": "kessel",
+    "lager_niedrig": "lager",
+}
+_STOERUNG = {"aktive_fehler", "stoerung"}
+
+
+def entitaet_vorgesehen(
+    key: str, components: list[str], enable_switches: bool, enable_errors: bool
+) -> bool | None:
+    """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
+
+    Entscheidet allein nach der Einrichtung - Komponenten und Freigaben -,
+    nie danach, was die Anlage gerade meldet. Ein kurzer Aussetzer beim
+    Start darf keine Entität samt ihren Anpassungen löschen. None heißt:
+    unbekannter Schlüssel, nicht anfassen.
+    """
+    aktiv = set(components)
+    if key in SENSORS:
+        return SENSORS[key]["component"] in aktiv
+    if key in SWITCHES:
+        definition = SWITCHES[key]
+        return (
+            enable_switches
+            and definition["component"] in aktiv
+            and not definition.get("nur_fuer_auswahl")
+        )
+    if key in SELECTS:
+        return enable_switches and SELECTS[key]["component"] in aktiv
+    if key in _STOERUNG:
+        return enable_errors
+    if key in _EIGENE_ENTITAETEN:
+        return _EIGENE_ENTITAETEN[key] in aktiv
+    if re.fullmatch(r"puffer_fuehler_\d+", key):
+        return "puffer" in aktiv
+    if key.startswith("komponente_"):
+        return key.removeprefix("komponente_") in aktiv
+    return None
+
+
+def _verwaiste_entitaeten_entfernen(
+    hass: HomeAssistant, entry: ETAConfigEntry, coordinator: ETADataUpdateCoordinator
+) -> None:
+    """Entfernt Entitäten, die diese Einrichtung nicht mehr hervorbringt.
+
+    Wird eine Komponente abgewählt oder der Schreibzugriff entzogen, blieben
+    ihre Entitäten sonst dauerhaft als "Nicht verfügbar" stehen.
+    """
+    registry = er.async_get(hass)
+    praefixe = (f"eta_static_{entry.entry_id}_", f"eta_switch_{entry.entry_id}_")
+    for eintrag in er.async_entries_for_config_entry(registry, entry.entry_id):
+        praefix = next((p for p in praefixe if eintrag.unique_id.startswith(p)), None)
+        if praefix is None:
+            continue
+        key = eintrag.unique_id.removeprefix(praefix)
+        vorgesehen = entitaet_vorgesehen(
+            key,
+            coordinator.components,
+            coordinator.enable_switches,
+            coordinator.enable_errors,
+        )
+        if vorgesehen is False:
+            _LOGGER.info(
+                "ETA: %s wird nicht mehr bereitgestellt, entfernt", eintrag.entity_id
+            )
+            registry.async_remove(eintrag.entity_id)
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
