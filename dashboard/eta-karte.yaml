@@ -104,6 +104,47 @@ cards:
               top: 92%
               left: 86%
               --mdc-icon-size: 30px
+        entity: sensor.eta_heizung_kessel_zustand
+        state_image:
+          Heizen: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
+          Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
+          Zünden: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizversuch: /eta_webservices/grafiken/kessel_flamme.webp
+          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.webp
+          Ausbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Ausgeschaltet: /eta_webservices/grafiken/kessel_aus.png
+          Klappe Öffnen: /eta_webservices/grafiken/kessel_aus.png
+          Pelletsbehälter auffüllen: /eta_webservices/grafiken/kessel_aus.png
+          Füllen gestoppt wegen Zündung: /eta_webservices/grafiken/kessel_aus.png
+          Füllen gestoppt wegen Entaschung: /eta_webservices/grafiken/kessel_aus.png
+          Bereit: /eta_webservices/grafiken/kessel_aus.png
+          Aschebox fehlt: /eta_webservices/grafiken/kessel_aus.png
+          Entaschen: /eta_webservices/grafiken/kessel_aus.png
+          Störung beim Entaschen: /eta_webservices/grafiken/kessel_aus.png
+          Störung: /eta_webservices/grafiken/kessel_aus.png
+          Verriegelt: /eta_webservices/grafiken/kessel_aus.png
+          Lambdasonde kalibrieren: /eta_webservices/grafiken/kessel_aus.png
+          Vorwärmen: /eta_webservices/grafiken/kessel_aus.png
+          Stoker leeren: /eta_webservices/grafiken/kessel_aus.png
+          Füllen: /eta_webservices/grafiken/kessel_aus.png
+          Isoliertür geöffnet: /eta_webservices/grafiken/kessel_aus.png
+          Verzögerungszeit abwarten: /eta_webservices/grafiken/kessel_aus.png
+          Übertemperatur: /eta_webservices/grafiken/kessel_aus.png
+          Vorbereitung: /eta_webservices/grafiken/kessel_aus.png
+          Vorbereiten auf Entaschung: /eta_webservices/grafiken/kessel_aus.png
+          Durchlüften: /eta_webservices/grafiken/kessel_aus.png
+          Wartung: /eta_webservices/grafiken/kessel_aus.png
+          Umschaltung auf Stückholzbetrieb: /eta_webservices/grafiken/kessel_aus.png
     - type: conditional
       conditions:
       - condition: state
@@ -1776,6 +1817,47 @@ cards:
               top: 92%
               left: 86%
               --mdc-icon-size: 30px
+        entity: sensor.eta_heizung_kessel_zustand
+        state_image:
+          Heizen: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
+          Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
+          Zünden: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizversuch: /eta_webservices/grafiken/kessel_flamme.webp
+          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.webp
+          Ausbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Ausgeschaltet: /eta_webservices/grafiken/kessel_aus.png
+          Klappe Öffnen: /eta_webservices/grafiken/kessel_aus.png
+          Pelletsbehälter auffüllen: /eta_webservices/grafiken/kessel_aus.png
+          Füllen gestoppt wegen Zündung: /eta_webservices/grafiken/kessel_aus.png
+          Füllen gestoppt wegen Entaschung: /eta_webservices/grafiken/kessel_aus.png
+          Bereit: /eta_webservices/grafiken/kessel_aus.png
+          Aschebox fehlt: /eta_webservices/grafiken/kessel_aus.png
+          Entaschen: /eta_webservices/grafiken/kessel_aus.png
+          Störung beim Entaschen: /eta_webservices/grafiken/kessel_aus.png
+          Störung: /eta_webservices/grafiken/kessel_aus.png
+          Verriegelt: /eta_webservices/grafiken/kessel_aus.png
+          Lambdasonde kalibrieren: /eta_webservices/grafiken/kessel_aus.png
+          Vorwärmen: /eta_webservices/grafiken/kessel_aus.png
+          Stoker leeren: /eta_webservices/grafiken/kessel_aus.png
+          Füllen: /eta_webservices/grafiken/kessel_aus.png
+          Isoliertür geöffnet: /eta_webservices/grafiken/kessel_aus.png
+          Verzögerungszeit abwarten: /eta_webservices/grafiken/kessel_aus.png
+          Übertemperatur: /eta_webservices/grafiken/kessel_aus.png
+          Vorbereitung: /eta_webservices/grafiken/kessel_aus.png
+          Vorbereiten auf Entaschung: /eta_webservices/grafiken/kessel_aus.png
+          Durchlüften: /eta_webservices/grafiken/kessel_aus.png
+          Wartung: /eta_webservices/grafiken/kessel_aus.png
+          Umschaltung auf Stückholzbetrieb: /eta_webservices/grafiken/kessel_aus.png
     - type: conditional
       conditions:
       - condition: state
@@ -3448,6 +3530,47 @@ cards:
               top: 92%
               left: 86%
               --mdc-icon-size: 30px
+        entity: sensor.eta_heizung_kessel_zustand
+        state_image:
+          Heizen: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
+          Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
+          Zünden: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizversuch: /eta_webservices/grafiken/kessel_flamme.webp
+          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
+          Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.webp
+          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.webp
+          Ausbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Ausgeschaltet: /eta_webservices/grafiken/kessel_aus.png
+          Klappe Öffnen: /eta_webservices/grafiken/kessel_aus.png
+          Pelletsbehälter auffüllen: /eta_webservices/grafiken/kessel_aus.png
+          Füllen gestoppt wegen Zündung: /eta_webservices/grafiken/kessel_aus.png
+          Füllen gestoppt wegen Entaschung: /eta_webservices/grafiken/kessel_aus.png
+          Bereit: /eta_webservices/grafiken/kessel_aus.png
+          Aschebox fehlt: /eta_webservices/grafiken/kessel_aus.png
+          Entaschen: /eta_webservices/grafiken/kessel_aus.png
+          Störung beim Entaschen: /eta_webservices/grafiken/kessel_aus.png
+          Störung: /eta_webservices/grafiken/kessel_aus.png
+          Verriegelt: /eta_webservices/grafiken/kessel_aus.png
+          Lambdasonde kalibrieren: /eta_webservices/grafiken/kessel_aus.png
+          Vorwärmen: /eta_webservices/grafiken/kessel_aus.png
+          Stoker leeren: /eta_webservices/grafiken/kessel_aus.png
+          Füllen: /eta_webservices/grafiken/kessel_aus.png
+          Isoliertür geöffnet: /eta_webservices/grafiken/kessel_aus.png
+          Verzögerungszeit abwarten: /eta_webservices/grafiken/kessel_aus.png
+          Übertemperatur: /eta_webservices/grafiken/kessel_aus.png
+          Vorbereitung: /eta_webservices/grafiken/kessel_aus.png
+          Vorbereiten auf Entaschung: /eta_webservices/grafiken/kessel_aus.png
+          Durchlüften: /eta_webservices/grafiken/kessel_aus.png
+          Wartung: /eta_webservices/grafiken/kessel_aus.png
+          Umschaltung auf Stückholzbetrieb: /eta_webservices/grafiken/kessel_aus.png
     - type: conditional
       conditions:
       - condition: state

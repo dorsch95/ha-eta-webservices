@@ -132,4 +132,7 @@ def _ohne_fehlende(knoten, vorhanden: set[str]):
                 ]
         if isinstance(knoten.get("card"), dict):
             knoten["card"] = _ohne_fehlende(knoten["card"], vorhanden)
+        if "state_image" in knoten and knoten.get("entity") not in vorhanden:
+            knoten.pop("state_image")
+            knoten.pop("entity", None)
     return knoten

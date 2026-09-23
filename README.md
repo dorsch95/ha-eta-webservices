@@ -219,6 +219,8 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
+Der Kessel lebt mit: Heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart.
+
 ### Einrichten
 
 1. Öffne **Entwicklerwerkzeuge -> Aktionen**, wähle **ETA Web-Services: Dashboard-Karte erzeugen** und klicke auf **Aktion ausführen**. Die Antwort darunter ist die fertige Karte - zugeschnitten auf deine Anlage: nur deine Komponenten, genau deine Pufferfühler, deine Entitäten. Kopiere sie komplett.

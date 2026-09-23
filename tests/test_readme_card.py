@@ -647,3 +647,53 @@ def test_geltende_betriebsart_leuchtet(karte):
             assert gruppe["elements"][0]["style"]["color"] == AKTIV
         for gruppe in hell:
             assert gruppe["elements"][0]["style"]["color"] != AKTIV
+
+
+ALLE_KESSEL_ZUSTAENDE = [
+    "Ausgeschaltet", "Klappe Öffnen", "Pelletsbehälter auffüllen",
+    "Füllen gestoppt wegen Zündung", "Heizversuch", "Zünden", "Heizen",
+    "Glutabbrand", "Glutabbrand wegen Entaschung", "Glutabbrand da ausgeschaltet",
+    "Glutabbrand weil Aschebox fehlt", "Füllen gestoppt wegen Entaschung", "Bereit",
+    "Aschebox fehlt", "Entaschen", "Störung beim Entaschen", "Störung",
+    "Glutabbrand wegen Störung", "Glutabbrand wegen Verriegelung", "Verriegelt",
+    "Lambdasonde kalibrieren", "Heizen Start", "Vorwärmen", "Stoker leeren", "Füllen",
+    "Isoliertür geöffnet", "Anheizen", "Verzögerungszeit abwarten", "Übertemperatur",
+    "Pellet Betrieb", "Vorbereitung", "Heizen, Vorbereitung auf Messung",
+    "Heizen, Teillastmessung durchführen", "Heizen, Nennlastmessung durchführen",
+    "Vorbereiten auf Entaschung", "Durchlüften", "Wartung", "Ausbrand",
+    "Umschaltung auf Stückholzbetrieb",
+]
+"""Alle Texte, die ein Pelletkessel für "Kessel-Zustand detailliert" meldet (varinfo)."""
+
+
+def test_jeder_kessel_zustand_hat_genau_ein_bild():
+    from eta_webservices.karte import KESSEL_AUS, KESSEL_FLAMME, KESSEL_GLUT
+
+    listen = KESSEL_FLAMME + KESSEL_GLUT + KESSEL_AUS
+    assert len(listen) == len(set(listen)), "Zustand doppelt zugeordnet"
+    assert set(listen) == set(ALLE_KESSEL_ZUSTAENDE)
+
+
+def test_kessel_zustandsbilder_gibt_es_und_sie_bewegen_sich():
+    from PIL import Image
+
+    from eta_webservices import GRAFIKEN
+    from eta_webservices.karte import kessel_zustandsbilder
+
+    dateien = {pfad.rsplit("/", 1)[1] for pfad in kessel_zustandsbilder().values()}
+    assert dateien == {"kessel_flamme.webp", "kessel_glut.webp", "kessel_aus.png"}
+    for datei in dateien:
+        with Image.open(GRAFIKEN / datei) as bild:
+            assert bild.size == (255, 501), datei
+            if datei.endswith(".webp"):
+                assert bild.n_frames > 1, datei
+
+
+def test_kessel_kachel_wechselt_mit_dem_zustand(karte):
+    for gitter in raster(karte):
+        kessel = gitter["cards"][0]["card"]
+        assert kessel["entity"] == "sensor.eta_heizung_kessel_zustand"
+        assert kessel["image"].endswith("/kessel.png")
+        assert kessel["state_image"]["Heizen"].endswith("/kessel_flamme.webp")
+        assert kessel["state_image"]["Glutabbrand"].endswith("/kessel_glut.webp")
+        assert kessel["state_image"]["Bereit"].endswith("/kessel_aus.png")

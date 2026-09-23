@@ -138,3 +138,38 @@ async def test_die_antwort_ist_eine_karte(hass, entry):
 
     assert karte["type"] == "vertical-stack"
     json.dumps(karte)
+
+
+async def test_kessel_wechselt_das_bild_mit_dem_zustand(hass, entry):
+    await eingerichtet(hass, entry)
+    karte = karte_fuer_eintrag(hass, entry)
+    kessel = [
+        kachel["card"]
+        for variante in karte["cards"]
+        for kachel in variante["card"]["cards"]
+        if kachel["card"]["image"].endswith("/kessel.png")
+    ]
+    assert len(kessel) == 3
+    for kachel in kessel:
+        assert kachel["entity"] == "sensor.eta_heizung_kessel_zustand"
+        assert kachel["state_image"]["Heizen"].endswith("kessel_flamme.webp")
+
+
+def test_ohne_kessel_zustand_bleibt_das_grundbild():
+    """Fehlt die Zustands-Entität, darf die Karte sie nicht nennen.
+
+    Sonst meldet Spook eine unbekannte Entität. Das Grundbild bleibt.
+    """
+    from eta_webservices.karte import responsive_karte
+
+    karte = responsive_karte(["kessel"])
+    ohne = {
+        entitaet: entitaet
+        for entitaet in genannte(karte)
+        if entitaet != "sensor.eta_heizung_kessel_zustand"
+    }
+    angepasst = karte_anpassen(karte, ohne)
+
+    assert "state_image" not in json.dumps(angepasst)
+    assert "sensor.eta_heizung_kessel_zustand" not in json.dumps(angepasst)
+    assert "/kessel.png" in json.dumps(angepasst)

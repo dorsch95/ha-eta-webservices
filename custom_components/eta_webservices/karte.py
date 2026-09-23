@@ -259,8 +259,93 @@ def modus_tasten(entity, top, groesse=26):
     return elemente
 
 
-def komponente(marker, zustand, bild, elemente):
-    """Eine Kachel, die nur erscheint, wenn es die Komponente gibt."""
+KESSEL_FLAMME = [
+    "Heizen",
+    "Heizen Start",
+    "Anheizen",
+    "Zünden",
+    "Heizversuch",
+    "Pellet Betrieb",
+    "Heizen, Vorbereitung auf Messung",
+    "Heizen, Teillastmessung durchführen",
+    "Heizen, Nennlastmessung durchführen",
+]
+"""Kessel-Zustände, bei denen die Flamme lodert."""
+
+KESSEL_GLUT = [
+    "Glutabbrand",
+    "Glutabbrand wegen Entaschung",
+    "Glutabbrand da ausgeschaltet",
+    "Glutabbrand weil Aschebox fehlt",
+    "Glutabbrand wegen Störung",
+    "Glutabbrand wegen Verriegelung",
+    "Ausbrand",
+]
+"""Kessel-Zustände, bei denen nur noch Glut im Brennraum liegt."""
+
+KESSEL_AUS = [
+    "Ausgeschaltet",
+    "Klappe Öffnen",
+    "Pelletsbehälter auffüllen",
+    "Füllen gestoppt wegen Zündung",
+    "Füllen gestoppt wegen Entaschung",
+    "Bereit",
+    "Aschebox fehlt",
+    "Entaschen",
+    "Störung beim Entaschen",
+    "Störung",
+    "Verriegelt",
+    "Lambdasonde kalibrieren",
+    "Vorwärmen",
+    "Stoker leeren",
+    "Füllen",
+    "Isoliertür geöffnet",
+    "Verzögerungszeit abwarten",
+    "Übertemperatur",
+    "Vorbereitung",
+    "Vorbereiten auf Entaschung",
+    "Durchlüften",
+    "Wartung",
+    "Umschaltung auf Stückholzbetrieb",
+]
+"""Kessel-Zustände ohne Feuer.
+
+Die drei Listen sind alle Texte, die ein Pelletkessel für
+"Kessel-Zustand detailliert" meldet. Ein Text, der in keiner steht - etwa
+von einem anderen Kesseltyp -, zeigt die bisherige Kachel mit ruhender
+Flamme.
+"""
+
+
+def kessel_zustandsbilder():
+    """Welches Bild die Kessel-Kachel bei welchem Zustand zeigt."""
+    bilder = {}
+    for zustaende, bild in (
+        (KESSEL_FLAMME, "kessel_flamme.webp"),
+        (KESSEL_GLUT, "kessel_glut.webp"),
+        (KESSEL_AUS, "kessel_aus.png"),
+    ):
+        for zustand in zustaende:
+            bilder[zustand] = f"{BILDPFAD}/{bild}"
+    return bilder
+
+
+def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
+    """Eine Kachel, die nur erscheint, wenn es die Komponente gibt.
+
+    zustandsbilder ist ein Paar (Entität, {Zustand: Bild}). Dann wechselt
+    die Kachel ihr Bild mit dem Zustand dieser Entität; bei jedem anderen
+    Zustand bleibt es beim Grundbild.
+    """
+    karte = {
+        "type": "picture-elements",
+        "image": f"{BILDPFAD}/{bild}.png",
+        "elements": elemente,
+    }
+    if zustandsbilder:
+        entitaet, bilder = zustandsbilder
+        karte["entity"] = f"sensor.eta_heizung_{entitaet}"
+        karte["state_image"] = bilder
     return {
         "type": "conditional",
         "conditions": [
@@ -270,11 +355,7 @@ def komponente(marker, zustand, bild, elemente):
                 "state": zustand,
             }
         ],
-        "card": {
-            "type": "picture-elements",
-            "image": f"{BILDPFAD}/{bild}.png",
-            "elements": elemente,
-        },
+        "card": karte,
     }
 
 
@@ -298,7 +379,8 @@ def grid(spalten, schrift, kurz):
         "columns": spalten,
         "square": False,
         "cards": [
-            komponente("kessel", "kessel", "kessel", kessel),
+            komponente("kessel", "kessel", "kessel", kessel,
+                       ("kessel_zustand", kessel_zustandsbilder())),
             komponente(
                 "pufferspeicher",
                 "puffer",
