@@ -20,7 +20,7 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 
 **ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tank, fresh water module, heating circuits, solar and pellet store) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
 
-- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has.
+- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
 - The ready-made dashboard card: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.

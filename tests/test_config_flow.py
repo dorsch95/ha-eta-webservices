@@ -83,6 +83,14 @@ def test_jede_komponente_hat_fub_rollen(komponente):
     assert fub_roles_for_components([komponente])
 
 
+def test_twin_steht_in_der_auswahl_am_ende():
+    """Nur wenige Anlagen sind ein SH TWIN - die Auswahl beginnt beim Puffer."""
+    from eta_webservices.config_flow import _WAEHLBARE_KOMPONENTEN
+
+    assert _WAEHLBARE_KOMPONENTEN[0] == "puffer"
+    assert _WAEHLBARE_KOMPONENTEN[-1] == "twin"
+
+
 def test_fub_formular_ist_mit_standardnamen_vorbelegt():
     schema = _fub_names_schema(["kessel", "sys", "hk", "hk2"], {})
     defaults = {str(key): key.default() for key in schema.schema}

@@ -68,12 +68,6 @@ COMPONENTS = {
         "discovery_prefixes": ["kessel_", "aussentemperatur"],
         "required": True,
     },
-    "twin": {
-        "name": "TWIN",
-        "image": None,
-        "roles": ["twin"],
-        "discovery_prefixes": ["pellet_gesamtverbrauch"],
-    },
     "puffer": {
         "name": "Pufferspeicher",
         "image": "puffer",
@@ -122,6 +116,12 @@ COMPONENTS = {
         "roles": ["solar"],
         "discovery_prefixes": ["solar_"],
     },
+    "twin": {
+        "name": "TWIN",
+        "image": None,
+        "roles": ["twin"],
+        "discovery_prefixes": ["pellet_gesamtverbrauch"],
+    },
 }
 """Die wählbaren Bausteine einer Anlage.
 
@@ -132,7 +132,9 @@ Sensoren ordnen sich über ihr Feld "component" hier zu.
 angeflanschtem Pelletteil (SH TWIN) führt ein eigener Funktionsblock
 "Twin" die Pelletwerte - Gesamtverbrauch, Tagesbehälter, Entaschung.
 Sie erscheinen auf der Kessel-Kachel, als hätte die Anlage einen
-Pelletkessel. Siehe TWIN_SCHLUESSEL in uri_discovery.py.
+Pelletkessel. Siehe TWIN_SCHLUESSEL in uri_discovery.py. Sie steht
+am Ende, weil sie nur wenige Anlagen betrifft und im Auswahlfeld sonst
+ganz oben stünde.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
