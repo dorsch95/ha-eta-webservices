@@ -670,6 +670,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 85%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -914,6 +915,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 85%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -1158,6 +1160,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 85%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -1402,6 +1405,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 85%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -2526,6 +2530,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 90%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -2770,6 +2775,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 90%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -3014,6 +3020,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 90%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -3258,6 +3265,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 90%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -4382,6 +4390,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 95%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -4626,6 +4635,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 95%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -4870,6 +4880,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 95%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state
@@ -5114,6 +5125,7 @@ cards:
             left: 50%
             color: '#d5d9de'
             font-size: 95%
+          prefix: 'Anforderung: '
         - type: conditional
           conditions:
           - condition: state

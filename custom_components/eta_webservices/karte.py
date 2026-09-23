@@ -495,7 +495,7 @@ def grid(spalten, schrift, kurz):
                 [
                     label("heizkreis_vorlauftemperatur", "HK1: " if kurz else "Vorlauf HK1: ",
                           "kessel", 8, 50, schrift),
-                    label("heizkreis_anforderung", None, "hell", 15, 50, schrift - 5),
+                    label("heizkreis_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_1_betriebsart", 23, schrift - 5),
                     *modus_tasten("heizkreis_1_betriebsart", 90),
                 ],
@@ -507,7 +507,7 @@ def grid(spalten, schrift, kurz):
                 [
                     label("heizkreis_2_vorlauftemperatur", "HK2: " if kurz else "Vorlauf HK2: ",
                           "kessel", 8, 50, schrift),
-                    label("heizkreis_2_anforderung", None, "hell", 15, 50, schrift - 5),
+                    label("heizkreis_2_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_2_betriebsart", 23, schrift - 5),
                     *modus_tasten("heizkreis_2_betriebsart", 90),
                 ],
@@ -519,7 +519,7 @@ def grid(spalten, schrift, kurz):
                 [
                     label("heizkreis_3_vorlauftemperatur", "HK3: " if kurz else "Vorlauf HK3: ",
                           "kessel", 8, 50, schrift),
-                    label("heizkreis_3_anforderung", None, "hell", 15, 50, schrift - 5),
+                    label("heizkreis_3_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_3_betriebsart", 23, schrift - 5),
                     *modus_tasten("heizkreis_3_betriebsart", 90),
                 ],
@@ -531,7 +531,7 @@ def grid(spalten, schrift, kurz):
                 [
                     label("heizkreis_4_vorlauftemperatur", "HK4: " if kurz else "Vorlauf HK4: ",
                           "kessel", 8, 50, schrift),
-                    label("heizkreis_4_anforderung", None, "hell", 15, 50, schrift - 5),
+                    label("heizkreis_4_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_4_betriebsart", 23, schrift - 5),
                     *modus_tasten("heizkreis_4_betriebsart", 90),
                 ],
