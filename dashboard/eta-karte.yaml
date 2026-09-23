@@ -427,6 +427,9 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_puffer_fuhler_8
             state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_9
+            state: unknown
           elements:
           - type: state-label
             entity: sensor.eta_heizung_puffer_fuhler_1
@@ -479,6 +482,99 @@ cards:
               font-size: 90%
           - type: state-label
             entity: sensor.eta_heizung_puffer_fuhler_8
+            style:
+              top: 88.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_1
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_2
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_3
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_4
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_5
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_6
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_7
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_8
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_9
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_1
+            style:
+              top: 36.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_2
+            style:
+              top: 42.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_3
+            style:
+              top: 49.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_4
+            style:
+              top: 55.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_5
+            style:
+              top: 62.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_6
+            style:
+              top: 68.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_7
+            style:
+              top: 75.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_8
+            style:
+              top: 81.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_9
             style:
               top: 88.0%
               left: 50%
@@ -1506,6 +1602,9 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_puffer_fuhler_8
             state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_9
+            state: unknown
           elements:
           - type: state-label
             entity: sensor.eta_heizung_puffer_fuhler_1
@@ -1558,6 +1657,99 @@ cards:
               font-size: 95%
           - type: state-label
             entity: sensor.eta_heizung_puffer_fuhler_8
+            style:
+              top: 88.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_1
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_2
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_3
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_4
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_5
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_6
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_7
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_8
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_9
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_1
+            style:
+              top: 36.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_2
+            style:
+              top: 42.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_3
+            style:
+              top: 49.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_4
+            style:
+              top: 55.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_5
+            style:
+              top: 62.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_6
+            style:
+              top: 68.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_7
+            style:
+              top: 75.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_8
+            style:
+              top: 81.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_9
             style:
               top: 88.0%
               left: 50%
@@ -2585,6 +2777,9 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_puffer_fuhler_8
             state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_9
+            state: unknown
           elements:
           - type: state-label
             entity: sensor.eta_heizung_puffer_fuhler_1
@@ -2637,6 +2832,99 @@ cards:
               font-size: 100%
           - type: state-label
             entity: sensor.eta_heizung_puffer_fuhler_8
+            style:
+              top: 88.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_1
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_2
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_3
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_4
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_5
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_6
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_7
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_8
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_puffer_fuhler_9
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_1
+            style:
+              top: 36.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_2
+            style:
+              top: 42.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_3
+            style:
+              top: 49.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_4
+            style:
+              top: 55.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_5
+            style:
+              top: 62.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_6
+            style:
+              top: 68.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_7
+            style:
+              top: 75.0%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_8
+            style:
+              top: 81.5%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+          - type: state-label
+            entity: sensor.eta_heizung_puffer_fuhler_9
             style:
               top: 88.0%
               left: 50%

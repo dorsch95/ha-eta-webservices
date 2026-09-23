@@ -502,7 +502,8 @@ SENSORS = {
     },
 }
 
-PUFFER_FUEHLER_MAX = 8
+PUFFER_FUEHLER_MAX = 9
+"""Mehr Fühler kennt PufferFlex nicht."""
 
 PUFFER_FUEHLER_MINDEST = 3
 """So viele Fühler bekommt ein Puffer, wenn der Menübaum keine nennt.

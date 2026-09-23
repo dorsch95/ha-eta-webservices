@@ -86,7 +86,7 @@ Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Gerät
 
 Alle Entitäten hängen an einem gemeinsamen Gerät ("ETA Heizung"). Die vollständige Liste steht unten; erklärungsbedürftig sind nur diese:
 
-* **Pufferfühler:** alle tatsächlich vorhandenen (PufferFlex hat 3 bis 8). Die Anzahl erkennt die Integration selbst; Fühler 1 trägt das Attribut `position: oben`, der letzte `position: unten`.
+* **Pufferfühler:** alle tatsächlich vorhandenen (PufferFlex hat 3 bis 9). Die Anzahl erkennt die Integration selbst; Fühler 1 trägt das Attribut `position: oben`, der letzte `position: unten`.
 * **Zirkulationspumpe:** ob sie gerade läuft - nicht, wie warm das Zirkulationswasser ist.
 * **`sensor.eta_heizung_aschebox_status`:** Verbrauch und Schwelle in einem Text ("459/1000kg"), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
 * **`sensor.eta_heizung_aktive_fehler`:** Anzahl der Störungen, die Meldungen selbst in den Attributen.
@@ -157,7 +157,7 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_aschebox_status` | "459/1000kg" für die Dashboard-Anzeige | |
 | `sensor.eta_heizung_pellet_energieverbrauch_gesamt` | Gesamtverbrauch in kWh fürs Energie-Dashboard | |
 | `sensor.eta_heizung_aktive_fehler` | Anzahl der anstehenden Störungen | |
-| `sensor.eta_heizung_puffer_fuhler_1` … `_8` | je gefundenem Pufferfühler einer | |
+| `sensor.eta_heizung_puffer_fuhler_1` … `_9` | je gefundenem Pufferfühler einer | |
 | `sensor.eta_heizung_komponente_*` | Marker je Komponente für die Dashboard-Karte | |
 | `binary_sensor.eta_heizung_storung` | an, sobald eine Störung ansteht | |
 | `binary_sensor.eta_heizung_aschebox_leeren` | an, sobald die Schwelle erreicht ist | |
@@ -246,7 +246,7 @@ Die Beschriftungen stecken **nicht** in den Grafiken, sondern in `prefix` der `s
 
 ### Pufferfühler
 
-Die Karte zeigt **so viele Fühler, wie deine Anlage hat** - drei bis acht. Du musst nichts anpassen.
+Die Karte zeigt **so viele Fühler, wie deine Anlage hat** - drei bis neun. Du musst nichts anpassen.
 
 Dahinter steckt für jede mögliche Anzahl ein eigener Block, der genau dann greift, wenn Fühler *N* vorhanden und Fühler *N+1* nicht vorhanden ist. Die Fühler verteilen sich dabei gleichmäßig über die Speicherhöhe, denn Fühler 1 misst oben und der letzte unten - beide tragen das Attribut `position` mit `oben` bzw. `unten`.
 
@@ -260,7 +260,7 @@ Denk daran, die Änderung in allen drei Bildschirm-Varianten zu machen.
 
 ### Meldungen von Spook
 
-Werkzeuge wie [Spook](https://spook.boo) melden bei der **universellen** Karte *"unbekannte Entitäten"*: Sie nennt bewusst auch Heizkreis 2 bis 4 und die Pufferfühler 6 bis 8, jeweils abgesichert durch eine Bedingung, und Spook wertet Bedingungen nicht aus. Angezeigt wird trotzdem nichts Falsches. Die Karte aus der Aktion *Dashboard-Karte erzeugen* nennt nur Entitäten, die es bei dir gibt - dann bleibt Spook still.
+Werkzeuge wie [Spook](https://spook.boo) melden bei der **universellen** Karte *"unbekannte Entitäten"*: Sie nennt bewusst auch Heizkreis 2 bis 4 und die Pufferfühler 6 bis 9, jeweils abgesichert durch eine Bedingung, und Spook wertet Bedingungen nicht aus. Angezeigt wird trotzdem nichts Falsches. Die Karte aus der Aktion *Dashboard-Karte erzeugen* nennt nur Entitäten, die es bei dir gibt - dann bleibt Spook still.
 
 > 💡 `top`/`left` verankern in Lovelace die **Mitte** des Elements. Die linksbündigen Beschriftungen im Kessel-Block nutzen deshalb `transform: 'translate(0, -50%)'`. Alle Werte lassen sich im visuellen Editor per Drag & Drop feinjustieren.
 

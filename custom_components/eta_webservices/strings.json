@@ -287,6 +287,9 @@
       "puffer_fuehler_8": {
         "name": "Buffer sensor 8"
       },
+      "puffer_fuehler_9": {
+        "name": "Buffer sensor 9"
+      },
       "puffer_ladezustand": {
         "name": "Buffer charge level"
       },

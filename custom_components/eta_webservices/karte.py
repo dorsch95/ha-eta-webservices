@@ -121,7 +121,7 @@ def betriebsart(entity, top, schrift):
 PUFFER_OBEN = 36
 PUFFER_UNTEN = 88
 PUFFER_MIN = 3
-PUFFER_MAX = 8
+PUFFER_MAX = 9
 
 
 def puffer_fuehler(anzahl, schrift):

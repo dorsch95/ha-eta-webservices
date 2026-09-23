@@ -287,6 +287,9 @@
       "puffer_fuehler_8": {
         "name": "Puffer Fühler 8"
       },
+      "puffer_fuehler_9": {
+        "name": "Puffer Fühler 9"
+      },
       "puffer_ladezustand": {
         "name": "Puffer Ladezustand"
       },

@@ -91,7 +91,7 @@ def test_sensoren_verweisen_auf_gueltige_uebersetzungsschluessel():
     from eta_webservices.const import SENSORS, puffer_fuehler_info
 
     schluessel = [info["translation_key"] for info in SENSORS.values()]
-    schluessel += [puffer_fuehler_info(i, False)["translation_key"] for i in range(1, 9)]
+    schluessel += [puffer_fuehler_info(i, False)["translation_key"] for i in range(1, 10)]
     for eintrag in schluessel:
         assert re.fullmatch(r"[a-z0-9][a-z0-9\-_]*[a-z0-9]", eintrag), eintrag
 
