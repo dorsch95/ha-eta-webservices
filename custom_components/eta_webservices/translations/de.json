@@ -44,6 +44,15 @@
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
+      "puffer": {
+        "title": "Pufferspeicher-Volumen",
+        "description": "Der Funktionsblock „Puffer“ zeigt sein effektives Volumen zwar am Display der Regelung, gibt es aber nicht an die Webservices weiter. Trag ein, wie viele Liter dein Pufferspeicher fasst - etwa den Wert „Effektives Puffervolumen“ vom Display, vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
+        "data": {
+          "puffer_volumen": "Pufferspeicher (Liter)",
+          "puffer2_volumen": "Pufferspeicher 2 (Liter)",
+          "puffer3_volumen": "Pufferspeicher 3 (Liter)"
+        }
+      },
       "reconfigure": {
         "title": "IP-Adresse der Heizung ändern",
         "data": {
@@ -106,6 +115,15 @@
           "pufferflex3": "FUB-Name: Pufferspeicher 3 (PufferFlex 3)",
           "brenner": "FUB-Name: Brenner (Brenner)",
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
+        }
+      },
+      "puffer": {
+        "title": "Pufferspeicher-Volumen",
+        "description": "Der Funktionsblock „Puffer“ zeigt sein effektives Volumen zwar am Display der Regelung, gibt es aber nicht an die Webservices weiter. Trag ein, wie viele Liter dein Pufferspeicher fasst - etwa den Wert „Effektives Puffervolumen“ vom Display, vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
+        "data": {
+          "puffer_volumen": "Pufferspeicher (Liter)",
+          "puffer2_volumen": "Pufferspeicher 2 (Liter)",
+          "puffer3_volumen": "Pufferspeicher 3 (Liter)"
         }
       },
       "switch_warning": {
@@ -218,23 +236,11 @@
       "brenner_volllaststunden": {
         "name": "Brenner Volllaststunden"
       },
-      "brenner_zustand": {
-        "name": "Brenner Zustand"
-      },
       "entaschung_verbrauch": {
         "name": "Verbrauch seit Entaschung"
       },
-      "fernleitung_angefordert": {
-        "name": "Fernleitung angeforderte Temperatur"
-      },
-      "fernleitung_kesseltemperatur": {
-        "name": "Fernleitung Kesseltemperatur"
-      },
       "fernleitung_pumpe": {
         "name": "Fernleitung Pumpe"
-      },
-      "fernleitung_zustand": {
-        "name": "Fernleitung Zustand"
       },
       "fwm_warmwasser": {
         "name": "FWM Warmwassertemperatur"
@@ -413,6 +419,9 @@
       "puffer2_ladepumpe": {
         "name": "Puffer 2 Ladepumpe"
       },
+      "puffer2_ladezustand": {
+        "name": "Puffer 2 Ladezustand"
+      },
       "puffer2_volumen": {
         "name": "Puffer 2 effektives Volumen"
       },
@@ -445,6 +454,9 @@
       },
       "puffer3_ladepumpe": {
         "name": "Puffer 3 Ladepumpe"
+      },
+      "puffer3_ladezustand": {
+        "name": "Puffer 3 Ladezustand"
       },
       "puffer3_volumen": {
         "name": "Puffer 3 effektives Volumen"

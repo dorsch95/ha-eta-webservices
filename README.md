@@ -76,7 +76,8 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 7. Wähle optional eine **Wettervorhersage** für die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers). Gibt es in deinem Home Assistant genau eine Wetter-Entität, ist sie schon vorausgewählt.
 8. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
 9. Danach siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-10. Klicke auf **Absenden**.
+10. Hast du einen Pufferspeicher mit dem älteren Funktionsblock **Puffer**, fragt der nächste Schritt nach seinen **Litern**. Er zeigt sein effektives Volumen zwar am Display, gibt es aber nicht an die Webservices weiter; trag den Wert vom Display, vom Typenschild oder aus den Unterlagen ein. Bei **PufferFlex** liest die Integration das Volumen selbst, dann erscheint der Schritt nicht. Ob ein Puffer sein Volumen meldet, erkennt sie am Menübaum.
+11. Klicke auf **Absenden**.
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Nur die **IP-Adresse** steht woanders: Bekommt die Heizung eine neue, trägst du sie im Drei-Punkte-Menü der Integration unter **Neu konfigurieren** ein.
 
@@ -89,9 +90,11 @@ Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Gerät
 Alle Entitäten hängen an einem gemeinsamen Gerät ("ETA Heizung"). Die vollständige Liste steht unten; erklärungsbedürftig sind nur diese:
 
 * **Pufferfühler:** alle tatsächlich vorhandenen (PufferFlex hat 3 bis 9, der ältere Funktionsblock "Puffer" 2 bis 5 von "Puffer oben" bis "Puffer unten"). Die Anzahl erkennt die Integration selbst; Fühler 1 trägt das Attribut `position: oben`, der letzte `position: unten`.
-* **Effektives Puffervolumen:** rechnet die Regelung aus dem Gesamtvolumen und der Lage der Fühler. Die Integration liest es aus der Anlage - eintragen musst du nichts. Damit rechnen der Energieinhalt und die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers).
+* **Effektives Puffervolumen:** rechnet die Regelung aus dem Gesamtvolumen und der Lage der Fühler. Bei PufferFlex liest die Integration es aus der Anlage - eintragen musst du nichts. Der ältere Funktionsblock "Puffer" gibt es nicht an die Webservices weiter; dort trägst du die Liter beim Einrichten ein (Schritt 10). Damit rechnen der Energieinhalt und die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers).
 * **Ladepumpe:** nur bei einem Puffer, der im ETA-Assistenten als **dezentral** geladen eingerichtet ist - sonst hat er keinen Pumpenausgang.
-* **Weitere Puffer** (Pufferspeicher 2 und 3) bringen bewusst nur Fühler, effektives Volumen und gegebenenfalls die Ladepumpe mit, damit die Entitätsliste nicht überquillt. Ladezustand und Energieinhalt gibt es für den ersten.
+* **Ladezustand:** bei jedem PufferFlex. Der ältere Funktionsblock "Puffer" kennt keinen.
+* **Weitere Puffer** (Pufferspeicher 2 und 3) bringen bewusst nur Fühler, Ladezustand, effektives Volumen und gegebenenfalls die Ladepumpe mit, damit die Entitätsliste nicht überquillt. Den Energieinhalt gibt es für den ersten.
+* **Pumpen** (Zirkulation, Ladepumpe, Fernleitung) zeigen, was die Anlage an ihren Ausgang meldet: `Ein` oder `Aus`.
 * **Zirkulationspumpe:** ob sie gerade läuft - nicht, wie warm das Zirkulationswasser ist.
 * **`sensor.eta_heizung_aschebox_status`:** Verbrauch und Schwelle in einem Text ("459/1000kg"), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
 * **`sensor.eta_heizung_aktive_fehler`:** Anzahl der Störungen, die Meldungen selbst in den Attributen.
@@ -101,7 +104,7 @@ Alle Entitäten hängen an einem gemeinsamen Gerät ("ETA Heizung"). Die vollst�
 
 Es entstehen nur Entitäten für die Komponenten, die du angekreuzt hast.
 
-Innerhalb einer angekreuzten Komponente gibt es jeden Sensor **immer**. Findet die Integration einen Wert im Menübaum deiner Anlage nicht, zeigt der Sensor "-" statt eines Werts. Das ist Absicht: Restsauerstoff hat jeder Kessel, einen Kesseldruck nicht jeder - und eine Entität, die je nach Anlage da ist oder fehlt, bricht Dashboards, Automatisierungen und Statistiken. Ausnahmen sind das effektive Puffervolumen und die Ladepumpe: Sie entstehen nur, wenn die Anlage sie hat.
+Innerhalb einer angekreuzten Komponente gibt es jeden Sensor **immer**. Findet die Integration einen Wert im Menübaum deiner Anlage nicht, zeigt der Sensor "-" statt eines Werts. Das ist Absicht: Restsauerstoff hat jeder Kessel, einen Kesseldruck nicht jeder - und eine Entität, die je nach Anlage da ist oder fehlt, bricht Dashboards, Automatisierungen und Statistiken. Ausnahmen sind das effektive Puffervolumen, die Ladepumpe und der Ladezustand weiterer Puffer: Sie entstehen nur, wenn die Anlage sie hat.
 
 ### Alle Entitäten im Überblick
 
@@ -137,8 +140,10 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_puffer_ladezustand` | Puffer Ladezustand | % |
 | `sensor.eta_heizung_puffer_effektives_volumen` | Puffer effektives Volumen | L |
 | `sensor.eta_heizung_puffer_ladepumpe` | Puffer Ladepumpe | Text |
-| `sensor.eta_heizung_puffer_energieinhalt` | Wärme im Puffer über 30 °C - nur mit effektivem Volumen | kWh |
+| `sensor.eta_heizung_puffer_energieinhalt` | Wärme im Puffer über 30 °C - nur mit bekanntem Volumen | kWh |
 | **Pufferspeicher 2 und Pufferspeicher 3** | | |
+| `sensor.eta_heizung_puffer_2_ladezustand` | Puffer 2 Ladezustand | % |
+| `sensor.eta_heizung_puffer_3_ladezustand` | Puffer 3 Ladezustand | % |
 | `sensor.eta_heizung_puffer_2_effektives_volumen` | Puffer 2 effektives Volumen | L |
 | `sensor.eta_heizung_puffer_2_ladepumpe` | Puffer 2 Ladepumpe | Text |
 | `sensor.eta_heizung_puffer_3_effektives_volumen` | Puffer 3 effektives Volumen | L |
@@ -187,16 +192,12 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_pv_heizmodul_temperatur_unten` | PV-Heizmodul Temperatur unten | °C |
 | `sensor.eta_heizung_pv_heizmodul_zustand` | PV-Heizmodul Zustand | Text |
 | **Brenner** | | |
-| `sensor.eta_heizung_brenner_zustand` | Brenner Zustand | Text |
 | `sensor.eta_heizung_brenner_anforderung` | Brenner Anforderung | Text |
 | `sensor.eta_heizung_brenner_temperatur` | Brenner Temperatur | °C |
 | `sensor.eta_heizung_brenner_leistung_soll` | Brenner Leistung Soll | kW |
 | `sensor.eta_heizung_brenner_volllaststunden` | Brenner Volllaststunden | h |
 | **Fernleitung** | | |
-| `sensor.eta_heizung_fernleitung_zustand` | Fernleitung Zustand | Text |
 | `sensor.eta_heizung_fernleitung_pumpe` | Fernleitung Pumpe | Text |
-| `sensor.eta_heizung_fernleitung_kesseltemperatur` | Fernleitung Kesseltemperatur | °C |
-| `sensor.eta_heizung_fernleitung_angeforderte_temperatur` | Fernleitung angeforderte Temperatur | °C |
 | **Unabhängig von den Komponenten** | | |
 | `sensor.eta_heizung_aschebox_status` | "459/1000kg" für die Dashboard-Anzeige | |
 | `sensor.eta_heizung_pellet_energieverbrauch_gesamt` | Gesamtverbrauch in kWh fürs Energie-Dashboard | |
@@ -259,7 +260,7 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck. Hat die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) genug gelernt, steht im Dach des Lagers, bis wann der Vorrat reicht. Läuft der Brenner (Zustand "Ein" oder "Messung"), brennen blaue Flammen im Sichtfenster der Therme; läuft die Fernpumpe, wandern helle Pulse durch Vor- und Rücklauf der Fernleitung. Jeder Pufferspeicher bekommt eine eigene Kachel - weitere mit ihrer Nummer und dem effektiven Volumen oben, eine Ladepumpe steht darunter, wenn es sie gibt.
+Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck. Hat die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) genug gelernt, steht im Dach des Lagers, bis wann der Vorrat reicht. Fordert die Regelung den Brenner an, brennen blaue Flammen im Sichtfenster der Therme; läuft die Fernpumpe, wandern helle Pulse durch Vor- und Rücklauf der Fernleitung. Jeder Pufferspeicher bekommt eine eigene Kachel mit seinem Ladezustand oben (weitere mit ihrer Nummer), eine Ladepumpe steht darunter, wenn es sie gibt. Werte, die die Anlage nicht führt - etwa die Zirkulationspumpe ohne Zirkulation -, lässt die Karte weg, statt `-` zu zeigen.
 
 Wer keine Bewegung möchte - etwa auf einem Wandtablet, das sparsam laufen soll -, schaltet `switch.eta_heizung_animationen` aus (Gerät *ETA Heizung*, Bereich *Konfiguration*). Die Karte zeigt dann Standbilder mit derselben Aussage: Flamme, Funken, Glut und Warndreieck stehen still, Sonne und Blitz leuchten, Heizkreis und Förderschnecke bleiben hervorgehoben. Das Umschalten wirkt sofort und gilt für alle Dashboards. Der Schalter gehört nur zu Home Assistant, schreibt nichts in die Heizung und ist auch ohne Schreibzugriff da.
 
@@ -340,9 +341,9 @@ Die Integration sieht für jeden Kessel gleich aus - welche Werte ankommen, ents
 
 **Das PV-Heizmodul (PVM)** ist keine Solaranlage: Es heizt mit überschüssigem Strom deiner PV-Anlage über einen Heizstab ins Wasser. Die Integration liest die Leistung des Heizstabs, die Temperaturen oben, Mitte und unten, den Zustand, die Gesamtenergie und den Ertrag von heute und gestern - geschrieben wird nichts. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist Strom, den der Heizstab verbraucht hat; im Energie-Dashboard gehört er unter **Einzelne Geräte**. Die Namen stammen vom Display, an einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 
-**Der Brenner** ist ein zweiter Wärmeerzeuger - Gastherme, Ölkessel oder Wärmepumpe -, den die ETA-Regelung freigibt oder sperrt, etwa solange der ETA-Kessel läuft. Die Integration liest seinen Zustand, die Anforderung, die Temperatur, die geforderte Leistung und die Volllaststunden. Sperren und Freigeben regelt die Anlage selbst; geschrieben wird nichts.
+**Der Brenner** ist ein zweiter Wärmeerzeuger - Gastherme, Ölkessel oder Wärmepumpe -, den die ETA-Regelung freigibt oder sperrt, etwa solange der ETA-Kessel läuft. Die Integration liest die Anforderung, die Temperatur, die geforderte Leistung und die Volllaststunden. Einen Zustand gibt es bewusst nicht: Ob der Brenner wirklich brennt, meldet er der Regelung nicht zurück - sie weiß nur, ob sie ihn anfordert. Sperren und Freigeben regelt die Anlage selbst; geschrieben wird nichts.
 
-**Die Fernleitung** bringt Wärme zu einem Nebengebäude. Gelesen werden ihr Zustand, ob die Fernpumpe läuft, die Temperatur am Kessel und die angeforderte Temperatur. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe` bzw. `puffer_2_ladepumpe`).
+**Die Fernleitung** bringt Wärme zu einem Nebengebäude. Gelesen wird nur, ob die Fernpumpe läuft (`Ein` oder `Aus`) - ihre Temperaturen sind an den meisten Anlagen nur errechnet. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe` bzw. `puffer_2_ladepumpe`).
 
 ---
 
@@ -368,7 +369,7 @@ Jüngere Tage zählen mehr als alte, damit sich die Prognose anpasst, wenn sich 
 
 **So rechnet sie voraus:** Für die nächsten Tage gilt die Wettervorhersage, danach das langjährige Temperaturmittel in Deutschland (DWD 1991-2020). Um wie viel dein Standort wärmer oder kälter ist, lernt sie nach und nach aus der eigenen Außentemperatur. Mit dieser Temperatur rechnet sie den Vorrat im Lager Tag für Tag herunter.
 
-**Mit Pufferspeicher:** Meldet die Anlage sein effektives Volumen, rechnet die Prognose außerdem heraus, was der Puffer über Mitternacht mitnimmt: Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht - bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Dafür nimmt sie die mittlere Temperatur aller Pufferfühler in der letzten Stunde jedes Tages. An der Reichweite des Lagers ändert das wenig, weil sich die Verschiebung nach ein paar Tagen ausgleicht; die einzelnen Tage und damit *morgen* und die Treffsicherheit werden deutlich genauer. In einer Simulation mit einem Puffer, der um Mitternacht mal fast leer, mal voll ist, stieg die Treffsicherheit bei 1000 Litern von 75 auf 92 %. Auch ein ungenaues Volumen hilft: War es um die Hälfte zu klein oder zu groß, lag sie immer noch bei 85 %. Das effektive Volumen folgt aus dem Gesamtvolumen, das unter PufferFlex > Einstellungen eingestellt ist - ab Werk stehen dort 1000 l. Hat dein Speicher eine andere Größe und wurde das beim Einrichten der Anlage nicht angepasst, lohnt ein Blick dorthin. Bei mehreren Puffern zählt die Wärme aller zusammen.
+**Mit Pufferspeicher:** Ist sein Volumen bekannt - PufferFlex meldet es, beim älteren Puffer trägst du es ein -, rechnet die Prognose außerdem heraus, was der Puffer über Mitternacht mitnimmt: Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht - bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Dafür nimmt sie die mittlere Temperatur aller Pufferfühler in der letzten Stunde jedes Tages. An der Reichweite des Lagers ändert das wenig, weil sich die Verschiebung nach ein paar Tagen ausgleicht; die einzelnen Tage und damit *morgen* und die Treffsicherheit werden deutlich genauer. In einer Simulation mit einem Puffer, der um Mitternacht mal fast leer, mal voll ist, stieg die Treffsicherheit bei 1000 Litern von 75 auf 92 %. Auch ein ungenaues Volumen hilft: War es um die Hälfte zu klein oder zu groß, lag sie immer noch bei 85 %. Das effektive Volumen von PufferFlex folgt aus dem Gesamtvolumen, das unter PufferFlex > Einstellungen eingestellt ist - ab Werk stehen dort 1000 l. Hat dein Speicher eine andere Größe und wurde das beim Einrichten der Anlage nicht angepasst, lohnt ein Blick dorthin. Bei mehreren Puffern zählt die Wärme aller zusammen.
 
 **So prüft sie sich selbst:** Für jeden der letzten 14 Tage lernt sie nur aus den Tagen davor, schätzt den Verbrauch aus der tatsächlichen Außentemperatur und vergleicht mit dem, was wirklich verbrannt wurde. Das Ergebnis ist die **Treffsicherheit** (100 % = aufs Kilogramm genau), Schätzung und Wirklichkeit von gestern stehen in ihren Attributen.
 

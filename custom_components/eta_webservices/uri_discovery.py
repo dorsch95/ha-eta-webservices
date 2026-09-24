@@ -45,6 +45,8 @@ DISCOVERY_PATHS = {
     "kessel_zustand": ("kessel", ["Kessel", "Kessel-Zustand detailliert"]),
     "aussentemperatur": ("sys", ["Außentemperatur", "Außentemperaturfühler"]),
     "puffer_ladezustand": ("pufferflex", ["Puffer", "Ladezustand"]),
+    "puffer2_ladezustand": ("pufferflex2", ["Puffer", "Ladezustand"]),
+    "puffer3_ladezustand": ("pufferflex3", ["Puffer", "Ladezustand"]),
     "heizkreis_vorlauf": ("hk", ["Eingänge", "Vorlauf"]),
     "heizkreis_anforderung": ("hk", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "heizkreis2_vorlauf": ("hk2", ["Eingänge", "Vorlauf"]),
@@ -71,14 +73,10 @@ DISCOVERY_PATHS = {
     "pvm_gesamtenergie": ("pvm", ["Zählerstände", "Gesamtenergie Heizstab"]),
     "pvm_ertrag_heute": ("pvm", ["Zählerstände", "Ertrag heute"]),
     "pvm_ertrag_gestern": ("pvm", ["Zählerstände", "Ertrag gestern"]),
-    "brenner_zustand": ("brenner", ["Brenner", "Brenner-Zustand detailliert"]),
     "brenner_anforderung": ("brenner", ["Ausgänge", "Anforderung Brenner"]),
     "brenner_temperatur": ("brenner", ["Brenner", "Brennertemperatur"]),
     "brenner_leistung_soll": ("brenner", ["Ausgänge", "Leistung Soll"]),
     "brenner_volllaststunden": ("brenner", ["Zählerstände", "Volllaststunden"]),
-    "fernleitung_zustand": ("fernleitung", ["Fernleitung", "Fernleitung-Zustand detailliert"]),
-    "fernleitung_kesseltemperatur": ("fernleitung", ["Fernleitung", "Kessel"]),
-    "fernleitung_angefordert": ("fernleitung", ["Fernleitung", "Angeforderte Temperatur"]),
 }
 
 PUMPEN = {
@@ -152,6 +150,8 @@ KENNUNGEN = {
     "kessel_zustand": "0/0/12000",
     "aussentemperatur": "0/11127/0",
     "puffer_ladezustand": "0/0/12528",
+    "puffer2_ladezustand": "0/0/12528",
+    "puffer3_ladezustand": "0/0/12528",
     "heizkreis_vorlauf": "0/11060/0",
     "heizkreis_anforderung": "0/11124/2001",
     "heizkreis2_vorlauf": "0/11060/0",
@@ -177,14 +177,10 @@ KENNUNGEN = {
     "pvm_zustand": "0/0/15219",
     "pvm_ertrag_heute": "0/0/12350",
     "pvm_ertrag_gestern": "0/0/12769",
-    "brenner_zustand": "0/0/12289",
     "brenner_anforderung": "0/0/12363",
     "brenner_temperatur": "0/0/12361",
     "brenner_leistung_soll": "0/0/12008",
     "brenner_volllaststunden": "0/0/12153",
-    "fernleitung_zustand": "0/0/12424",
-    "fernleitung_kesseltemperatur": "0/0/12161",
-    "fernleitung_angefordert": "0/0/12006",
 }
 """Zweiter Weg zu einem Messwert: die hinteren drei Zahlen seiner URI.
 
@@ -198,8 +194,8 @@ nach dieser Kennung gesucht - nie außerhalb.
 
 Aufgenommen sind Kennungen, die in einem echten Menübaum mit ihrem
 Namen stehen. Heizkreis 2 bis 4 sind derselbe Funktionsblock-Typ wie
-Heizkreis 1 und tragen deshalb dieselben. Einzige Ausnahme ist das
-PV-Heizmodul: Von ihm gibt es noch keinen echten Menübaum, seine
+Heizkreis 1 und tragen deshalb dieselben, ebenso Puffer 2 und 3.
+Einzige Ausnahme ist das PV-Heizmodul: Von ihm gibt es noch keinen echten Menübaum, seine
 Kennungen sind unbelegt. Greift eine davon, steht das in der Diagnose
 unter "ueber_kennung_gefunden". Nur Messwerte: Tasten und Schalter
 werden weiter ausschließlich über ihren Namen gefunden.
@@ -211,9 +207,9 @@ PUFFER_VOLUMEN = ("Effektives Puffervolumen", "0/0/12499")
 Die Regelung rechnet es aus dem eingestellten Gesamtvolumen und der Lage
 der Fühler; damit rechnen Energieinhalt und Prognose. PufferFlex zeigt es
 unter Einstellungen > Leistungsregelung. Der ältere Funktionsblock
-"Puffer" führt es auch, nennt es aber nicht in jedem Menübaum - dann wird
-die Kennung im Funktionsblock direkt gelesen, siehe
-async_discover_uris.
+"Puffer" kennt es am Display auch, gibt es aber nicht an die Webservices
+weiter - dort fragt die Einrichtung nach den Litern. Ob ein Puffer das
+Volumen meldet, ist damit zugleich das Merkmal, ob es ein PufferFlex ist.
 """
 
 ALTE_PUFFER_FUEHLER = (
@@ -459,9 +455,7 @@ def _discover_puffer_fuehler(fub):
     return {index: uri for index, uri in enumerate(vorhanden, start=1)}
 
 
-async def async_discover_uris(
-    client, fub_name_overrides=None, ueber_kennung=None, ungeprueft=None
-):
+async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=None):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
@@ -473,11 +467,6 @@ async def async_discover_uris(
     lesbar, wird der ETAApiError durchgereicht. In ueber_kennung, falls
     übergeben, landen die Schlüssel, die erst über KENNUNGEN gefunden
     wurden - ein Hinweis, dass der Namenspfad an dieser Anlage nicht passt.
-
-    In ungeprueft, falls übergeben, landen URIs, die nicht im Menübaum
-    stehen, sondern aus Funktionsblock und Kennung zusammengesetzt sind -
-    bisher nur das effektive Puffervolumen. Ob es sie gibt, zeigt erst ein
-    Lesen; das übernimmt der Koordinator.
     """
     discovered = {}
 
@@ -544,8 +533,6 @@ async def async_discover_uris(
         )
         if volumen:
             discovered[f"{komponente}_volumen"] = volumen
-        elif puffer is not None and puffer.get("@uri") and ungeprueft is not None:
-            ungeprueft[f"{komponente}_volumen"] = f"{puffer['@uri']}/{PUFFER_VOLUMEN[1]}"
 
     gesucht = set(DISCOVERY_PATHS) | set(PUMPEN) | {f"{k}_volumen" for k in PUFFER_SPEICHER}
     messwerte = (gesucht & set(discovered)) | alle_fuehler

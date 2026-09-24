@@ -133,6 +133,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.prognose = None
         self.mit_prognose = True
         self.mit_zeitraeumen = True
+        self.puffer_volumen_eingetragen: dict[str, float] = {}
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors
         self.sensor_defs: dict[str, dict] = {}
@@ -362,16 +363,14 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Ohne Menübaum gibt es nichts abzufragen; Home Assistant bekommt
         dann ConfigEntryNotReady und versucht es später erneut.
         """
-        ungeprueft: dict[str, str] = {}
         try:
             self.discovered_uris, indices = await async_discover_uris(
-                self.client, fub_name_overrides, self.ueber_kennung, ungeprueft
+                self.client, fub_name_overrides, self.ueber_kennung
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
                 f"Menübaum der Anlage nicht lesbar: {err}"
             ) from err
-        await self._ungeprueft_lesen(ungeprueft)
 
         self.sensor_defs = build_sensor_defs(
             self.discovered_uris, indices, self.components
@@ -388,30 +387,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._betriebsarten_pruefen()
         await self._varset_anlegen()
 
-    async def _ungeprueft_lesen(self, ungeprueft: dict[str, str]) -> None:
-        """Übernimmt zusammengesetzte URIs, die die Anlage tatsächlich kennt.
-
-        Jede wird einmal gelesen; nur eine Zahl zählt. Eine Anlage ohne
-        das Objekt antwortet mit einem Fehler, dann bleibt es weg - im
-        Variablensatz könnte eine unbekannte URI sonst die ganze Abfrage
-        stören. Nur für angekreuzte Komponenten.
-        """
-        for key, uri in ungeprueft.items():
-            if SENSORS[key]["component"] not in self.components:
-                continue
-            try:
-                wert = await self.client.async_get_value(uri)
-            except ETAApiError as err:
-                _LOGGER.debug("ETA: %s unter %s nicht vorhanden: %s", key, uri, err)
-                continue
-            if wert.is_text or wert.value is None:
-                continue
-            self.discovered_uris[key] = uri
-            self.ueber_kennung.add(key)
-            _LOGGER.info("ETA: %s über seine Kennung gefunden (%s)", key, uri)
-
-    def volumen(self, komponente: str = "puffer") -> float | None:
-        """Das effektive Volumen eines Puffers in Litern, wie die Anlage es meldet.
+    def _volumen_der_anlage(self, komponente: str) -> float | None:
+        """Das effektive Volumen, wie die Anlage es meldet, in Litern.
 
         Unplausible Werte - kein Puffer hat unter 50 oder über 100000
         Liter - gelten als unbekannt.
@@ -423,18 +400,41 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return liter if liter is not None and 50 <= liter <= 100000 else None
 
+    def volumen(self, komponente: str = "puffer") -> float | None:
+        """Das Volumen eines Puffers in Litern: von der Anlage, sonst eingetragen.
+
+        Eingetragen wird es nur beim älteren Funktionsblock "Puffer", der
+        sein Volumen nicht an die Webservices gibt.
+        """
+        if komponente not in self.components:
+            return None
+        von_der_anlage = self._volumen_der_anlage(komponente)
+        if von_der_anlage is not None:
+            return von_der_anlage
+        eingetragen = self.puffer_volumen_eingetragen.get(komponente, 0.0)
+        return eingetragen if eingetragen > 0 else None
+
+    def volumen_quelle(self, komponente: str = "puffer") -> str | None:
+        if self.volumen(komponente) is None:
+            return None
+        return "Anlage" if self._volumen_der_anlage(komponente) is not None else "Einstellung"
+
     @property
     def puffer_volumen(self) -> float | None:
-        """Das effektive Volumen des ersten Puffers."""
+        """Das Volumen des ersten Puffers."""
         return self.volumen("puffer")
 
     @property
     def puffer_mit_volumen(self) -> set[str]:
-        """Die angekreuzten Puffer, deren Anlage ein effektives Volumen führt."""
+        """Die angekreuzten Puffer mit Volumen - von der Anlage oder eingetragen."""
         return {
             k
             for k in PUFFER_SPEICHER
-            if self.sensor_defs.get(f"{k}_volumen", {}).get("uri")
+            if k in self.components
+            and (
+                self.sensor_defs.get(f"{k}_volumen", {}).get("uri")
+                or self.puffer_volumen_eingetragen.get(k, 0.0) > 0
+            )
         }
 
     async def _async_update_data(self) -> dict[str, ETAValue]:

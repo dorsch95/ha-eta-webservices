@@ -44,6 +44,15 @@
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
+      "puffer": {
+        "title": "Buffer tank volume",
+        "description": "The 'Puffer' function block shows its effective volume on the controller display but does not pass it on to the webservices. Enter how many litres your buffer tank holds - for example the 'Effektives Puffervolumen' value from the display, the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
+        "data": {
+          "puffer_volumen": "Buffer tank (litres)",
+          "puffer2_volumen": "Buffer tank 2 (litres)",
+          "puffer3_volumen": "Buffer tank 3 (litres)"
+        }
+      },
       "reconfigure": {
         "title": "Change the heating system's IP address",
         "data": {
@@ -106,6 +115,15 @@
           "pufferflex3": "FUB name: buffer tank 3 (PufferFlex 3)",
           "brenner": "FUB name: burner (Brenner)",
           "fernleitung": "FUB name: transfer line (Fernl)"
+        }
+      },
+      "puffer": {
+        "title": "Buffer tank volume",
+        "description": "The 'Puffer' function block shows its effective volume on the controller display but does not pass it on to the webservices. Enter how many litres your buffer tank holds - for example the 'Effektives Puffervolumen' value from the display, the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
+        "data": {
+          "puffer_volumen": "Buffer tank (litres)",
+          "puffer2_volumen": "Buffer tank 2 (litres)",
+          "puffer3_volumen": "Buffer tank 3 (litres)"
         }
       },
       "switch_warning": {
@@ -218,23 +236,11 @@
       "brenner_volllaststunden": {
         "name": "Burner full-load hours"
       },
-      "brenner_zustand": {
-        "name": "Burner state"
-      },
       "entaschung_verbrauch": {
         "name": "Consumption since de-ashing"
       },
-      "fernleitung_angefordert": {
-        "name": "Transfer line requested temperature"
-      },
-      "fernleitung_kesseltemperatur": {
-        "name": "Transfer line boiler temperature"
-      },
       "fernleitung_pumpe": {
         "name": "Transfer line pump"
-      },
-      "fernleitung_zustand": {
-        "name": "Transfer line state"
       },
       "fwm_warmwasser": {
         "name": "Hot water temperature"
@@ -413,6 +419,9 @@
       "puffer2_ladepumpe": {
         "name": "Buffer 2 charging pump"
       },
+      "puffer2_ladezustand": {
+        "name": "Buffer 2 charge level"
+      },
       "puffer2_volumen": {
         "name": "Buffer 2 effective volume"
       },
@@ -445,6 +454,9 @@
       },
       "puffer3_ladepumpe": {
         "name": "Buffer 3 charging pump"
+      },
+      "puffer3_ladezustand": {
+        "name": "Buffer 3 charge level"
       },
       "puffer3_volumen": {
         "name": "Buffer 3 effective volume"

@@ -159,6 +159,10 @@ async def async_get_config_entry_diagnostics(
                 "puffer_volumen": {
                     k: coordinator.volumen(k) for k in sorted(coordinator.puffer_mit_volumen)
                 },
+                "puffer_volumen_quelle": {
+                    k: coordinator.volumen_quelle(k)
+                    for k in sorted(coordinator.puffer_mit_volumen)
+                },
                 "abfrageintervall": (
                     coordinator.update_interval.total_seconds()
                     if coordinator.update_interval

@@ -23,8 +23,9 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .api import ETAApiClient
+from .api import ETAApiClient, ETAApiError
 from .prognose_koordinator import einzige_wetter_entitaet
+from .uri_discovery import async_discover_uris
 from .const import (
     COMPONENTS,
     CONF_COMPONENTS,
@@ -48,13 +49,16 @@ from .const import (
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
     MAX_PELLET_PREIS,
+    MAX_PUFFER_VOLUMEN,
     MAX_SCAN_INTERVAL,
     MIN_PELLET_KWH_PER_KG,
     MIN_SCAN_INTERVAL,
+    PUFFER_SPEICHER,
     components_from_config,
     fub_role_default,
     fub_roles_for_components,
     normalize_components,
+    puffer_volumen_schluessel,
 )
 
 
@@ -62,6 +66,51 @@ async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     """Prüft, ob die Anlage erreichbar ist und Webservices aktiv sind."""
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     return await client.async_test_connection()
+
+
+async def _puffer_ohne_volumen(
+    hass: HomeAssistant,
+    host: str | None,
+    port: int,
+    fub_names: dict[str, str],
+    komponenten: list[str],
+) -> list[str]:
+    """Die angekreuzten Puffer, die ihr effektives Volumen nicht melden.
+
+    Das ist der ältere Funktionsblock "Puffer": Er kennt das Volumen am
+    Display, gibt es aber nicht an die Webservices weiter. PufferFlex nennt
+    es im Menübaum. Gefragt wird nur für Puffer, deren Fühler gefunden
+    wurden - einer, den die Erkennung gar nicht findet, hätte mit dem
+    Volumen nichts gewonnen. Ist der Menübaum nicht lesbar, wird nicht
+    gefragt.
+    """
+    if not host:
+        return []
+    client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
+    try:
+        gefunden, _ = await async_discover_uris(client, fub_names)
+    except ETAApiError:
+        return []
+    return [
+        komponente
+        for komponente in PUFFER_SPEICHER
+        if komponente in komponenten
+        and f"{komponente}_volumen" not in gefunden
+        and any(key.startswith(f"{komponente}_fuehler_") for key in gefunden)
+    ]
+
+
+def _puffer_schema(komponenten: list[str], current: dict[str, Any]) -> vol.Schema:
+    """Je Puffer ohne gemeldetes Volumen ein Feld für seine Liter, 0 = unbekannt."""
+    return vol.Schema(
+        {
+            vol.Required(
+                puffer_volumen_schluessel(komponente),
+                default=int(current.get(puffer_volumen_schluessel(komponente)) or 0),
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_PUFFER_VOLUMEN))
+            for komponente in komponenten
+        }
+    )
 
 
 _WAEHLBARE_KOMPONENTEN = [
@@ -198,6 +247,7 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
+        self._ohne_volumen: list[str] = []
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -286,17 +336,33 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
         roles = fub_roles_for_components(self._data[CONF_COMPONENTS])
 
         if user_input is not None:
-            return self.async_create_entry(
-                title="ETA Heizung",
-                data={
-                    **self._data,
-                    CONF_FUB_NAMES: {role: user_input[role] for role in roles},
-                },
+            self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
+            self._ohne_volumen = await _puffer_ohne_volumen(
+                self.hass,
+                self._data[CONF_HOST],
+                self._data[CONF_PORT],
+                self._data[CONF_FUB_NAMES],
+                self._data[CONF_COMPONENTS],
             )
+            if self._ohne_volumen:
+                return await self.async_step_puffer()
+            return self.async_create_entry(title="ETA Heizung", data=self._data)
 
         return self.async_show_form(
             step_id="fub_names",
             data_schema=_fub_names_schema(roles, {}),
+        )
+
+    async def async_step_puffer(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Fragt nach den Litern der Puffer, die ihr Volumen nicht melden."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title="ETA Heizung", data={**self._data, **user_input}
+            )
+        return self.async_show_form(
+            step_id="puffer", data_schema=_puffer_schema(self._ohne_volumen, {})
         )
 
     @staticmethod
@@ -310,6 +376,7 @@ class ETAOptionsFlow(OptionsFlowWithReload):
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
+        self._ohne_volumen: list[str] = []
 
     @property
     def _current(self) -> dict[str, Any]:
@@ -353,17 +420,32 @@ class ETAOptionsFlow(OptionsFlowWithReload):
         roles = fub_roles_for_components(self._data[CONF_COMPONENTS])
 
         if user_input is not None:
-            return self.async_create_entry(
-                title="",
-                data={
-                    **self._data,
-                    CONF_FUB_NAMES: {role: user_input[role] for role in roles},
-                },
+            self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
+            self._ohne_volumen = await _puffer_ohne_volumen(
+                self.hass,
+                self._current.get(CONF_HOST),
+                self._current.get(CONF_PORT, DEFAULT_PORT),
+                self._data[CONF_FUB_NAMES],
+                self._data[CONF_COMPONENTS],
             )
+            if self._ohne_volumen:
+                return await self.async_step_puffer()
+            return self.async_create_entry(title="", data=self._data)
 
         return self.async_show_form(
             step_id="fub_names",
             data_schema=_fub_names_schema(
                 roles, self._current.get(CONF_FUB_NAMES, {})
             ),
+        )
+
+    async def async_step_puffer(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wie im Einrichtungsdialog, vorbelegt mit den bisherigen Litern."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data={**self._data, **user_input})
+        return self.async_show_form(
+            step_id="puffer",
+            data_schema=_puffer_schema(self._ohne_volumen, self._current),
         )

@@ -41,6 +41,7 @@ from .const import (
     SWITCHES,
     URL_GRAFIKEN,
     components_from_config,
+    puffer_volumen_schluessel,
 )
 from .aktionen import async_aktionen_registrieren
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
@@ -94,6 +95,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     )
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
+    coordinator.puffer_volumen_eingetragen = {
+        komponente: float(config.get(puffer_volumen_schluessel(komponente)) or 0)
+        for komponente in PUFFER_SPEICHER
+    }
     coordinator.mit_prognose = config.get(CONF_PROGNOSE, DEFAULT_PROGNOSE)
     coordinator.mit_zeitraeumen = config.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
@@ -148,7 +153,7 @@ def _statistik_ids(hass: HomeAssistant, entry: ETAConfigEntry) -> tuple[str | No
 def _puffer_quellen(
     hass: HomeAssistant, entry: ETAConfigEntry, coordinator: ETADataUpdateCoordinator
 ) -> list[dict]:
-    """Je Puffer mit effektivem Volumen: Fühler, ihre Entitäts-IDs und das Volumen.
+    """Je Puffer mit bekanntem Volumen: Fühler, ihre Entitäts-IDs und das Volumen.
 
     Die Entitäts-IDs braucht die Prognose für die Statistik, die Schlüssel
     für die aktuellen Werte. Ein Puffer, dessen Fühler nicht alle im

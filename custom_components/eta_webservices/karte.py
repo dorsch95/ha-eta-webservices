@@ -82,6 +82,21 @@ def nur_wenn_vorhanden(element):
     }
 
 
+def nur_mit_wert(element):
+    """Blendet ein Element aus, wenn es seine Entität nicht gibt oder sie "-" zeigt.
+
+    "-" zeigt ein Sensor, dessen Wert die Anlage nicht führt - etwa die
+    Zirkulationspumpe an einer Anlage ohne Zirkulation oder der
+    Ladezustand beim älteren Funktionsblock "Puffer". Eine Zeile
+    "Zirkulationspumpe: -" sagte dort nur, dass es nichts zu sagen gibt.
+    """
+    geschuetzt = nur_wenn_vorhanden(element)
+    geschuetzt["conditions"].append(
+        {"condition": "state", "entity": element["entity"], "state_not": "-"}
+    )
+    return geschuetzt
+
+
 def schalter(entity, top, left, groesse=30):
     """Ein antippbares Symbol, das den Schalter umlegt."""
     return nur_wenn_vorhanden(
@@ -194,28 +209,24 @@ def puffer_schrift(anzahl, schrift):
 def puffer_kachel(komponente_, schrift, kurz):
     """Die Kachel eines Pufferspeichers.
 
-    Der erste zeigt oben seinen Ladezustand. Weitere haben keinen, dort
-    steht das effektive Volumen mit ihrer Nummer davor - so ist auch
-    erkennbar, welcher Puffer das ist. Darunter die Ladepumpe, falls der
-    Puffer dezentral geladen wird.
+    Oben der Ladezustand, bei weiteren Puffern mit ihrer Nummer - so ist
+    erkennbar, welcher Puffer das ist. Der ältere Funktionsblock "Puffer"
+    kennt keinen Ladezustand, dann bleibt die Zeile leer. Darunter die
+    Ladepumpe, falls der Puffer dezentral geladen wird.
     """
     praefix, marker = PUFFER_KACHELN[komponente_]
-    if komponente_ == "puffer":
-        oben = label("puffer_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
-                     "hell", 8, 50, schrift + 5)
-    else:
-        nummer = praefix.rsplit("_", 1)[1]
-        oben = nur_wenn_vorhanden(
-            label(f"{praefix}_effektives_volumen", f"Puffer {nummer}: ",
-                  "hell", 8, 50, schrift + 5)
-        )
+    nummer = "" if komponente_ == "puffer" else " " + praefix.rsplit("_", 1)[1]
     return komponente(
         marker,
         komponente_,
         "puffer",
         [
-            oben,
-            nur_wenn_vorhanden(
+            nur_mit_wert(
+                label(f"{praefix}_ladezustand",
+                      f"Ladung{nummer}: " if kurz else f"Ladezustand{nummer}: ",
+                      "hell", 8, 50, schrift + 5)
+            ),
+            nur_mit_wert(
                 label(f"{praefix}_ladepumpe", "Pumpe: " if kurz else "Ladepumpe: ",
                       "gedaempft", 15, 50, schrift)
             ),
@@ -559,16 +570,15 @@ def aktiv_oder_ruhe(bild, entitaet):
     ]
 
 
-BRENNER_ZUSTAND = "sensor.eta_heizung_brenner_zustand"
-BRENNER_FLAMME = ["Ein", "Messung"]
-"""Brenner-Zustände, bei denen der zweite Erzeuger läuft und die Flamme brennt."""
+BRENNER_ANFORDERUNG = "sensor.eta_heizung_brenner_anforderung"
+"""Fordert die Regelung den Brenner an ("Ein"), brennt die Flamme.
+
+Ob er wirklich brennt, meldet der Brenner der Regelung nicht zurück - die
+Anforderung ist alles, was sie weiß.
+"""
 
 FERNLEITUNG_PUMPE = "sensor.eta_heizung_fernleitung_pumpe"
-"""Solange die Fernpumpe angefordert ist, wandern Pulse durch Vor- und Rücklauf.
-
-Wie beim Heizkreis zählt alles außer den Anforderungen ohne Fluss, siehe
-HEIZKREIS_OHNE_FLUSS.
-"""
+"""Läuft die Fernpumpe ("Ein"), wandern Pulse durch Vor- und Rücklauf."""
 
 
 def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
@@ -630,9 +640,11 @@ def grid(spalten, schrift, kurz):
                 [
                     label("fwm_warmwassertemperatur", "WW: " if kurz else "Warmwasser: ",
                           "hell", 8, 50, schrift + 5),
-                    label("fwm_zirkulationspumpe",
-                          "Zirk.: " if kurz else "Zirkulationspumpe: ",
-                          "gedaempft", 15, 50, schrift),
+                    nur_mit_wert(
+                        label("fwm_zirkulationspumpe",
+                              "Zirk.: " if kurz else "Zirkulationspumpe: ",
+                              "gedaempft", 15, 50, schrift)
+                    ),
                 ],
             ),
             komponente(
@@ -752,14 +764,13 @@ def grid(spalten, schrift, kurz):
                 [
                     *bewegt_oder_still(
                         "brenner_aktiv",
-                        BRENNER_ZUSTAND,
-                        [{"condition": "state", "entity": BRENNER_ZUSTAND, "state": BRENNER_FLAMME}],
+                        BRENNER_ANFORDERUNG,
+                        [{"condition": "state", "entity": BRENNER_ANFORDERUNG, "state": "Ein"}],
                     ),
-                    label("brenner_zustand", "Brenner: ", "hell", 8, 50, schrift),
                     label("brenner_anforderung", "Anf.: " if kurz else "Anforderung: ",
-                          "gedaempft", 15, 50, schrift - 5),
+                          "hell", 8, 50, schrift),
                     label("brenner_temperatur", "Temp.: " if kurz else "Temperatur: ",
-                          "kessel", 22, 50, schrift - 5),
+                          "kessel", 15, 50, schrift - 5),
                 ],
             ),
             komponente(
@@ -770,15 +781,10 @@ def grid(spalten, schrift, kurz):
                     *bewegt_oder_still(
                         "fernleitung_fluss",
                         FERNLEITUNG_PUMPE,
-                        [{"condition": "state", "entity": FERNLEITUNG_PUMPE,
-                          "state_not": HEIZKREIS_OHNE_FLUSS}],
+                        [{"condition": "state", "entity": FERNLEITUNG_PUMPE, "state": "Ein"}],
                     ),
-                    label("fernleitung_zustand", "Fernl.: " if kurz else "Fernleitung: ",
+                    label("fernleitung_pumpe", "Fernl.: " if kurz else "Fernleitung: ",
                           "hell", 8, 50, schrift),
-                    label("fernleitung_kesseltemperatur", "Kessel: ",
-                          "kessel", 15, 50, schrift - 5),
-                    label("fernleitung_angeforderte_temperatur", "Soll: " if kurz else "Angefordert: ",
-                          "soll", 22, 50, schrift - 5),
                 ],
             ),
         ],

@@ -280,12 +280,17 @@ def test_optionen_fragen_nicht_nach_der_adresse():
     assert {"components", "enable_switches", "enable_errors"} <= felder
 
 
+async def _keiner_ohne_volumen(*_):
+    return []
+
+
 async def options_schritt(monkeypatch, bisher, eingabe):
     """Führt den ersten Schritt von Konfigurieren aus."""
     from eta_webservices import config_flow as modul
 
     flow = modul.ETAOptionsFlow()
     monkeypatch.setattr(modul.ETAOptionsFlow, "_current", property(lambda self: bisher))
+    monkeypatch.setattr(modul, "_puffer_ohne_volumen", _keiner_ohne_volumen)
     monkeypatch.setattr(
         modul.ETAOptionsFlow,
         "async_show_form",
@@ -431,11 +436,63 @@ def test_wetter_vorschlag():
 
 
 
-async def test_puffervolumen_wird_nicht_mehr_abgefragt(monkeypatch):
-    """Das effektive Volumen kommt aus der Anlage, eine Eingabe gibt es nicht."""
-    flow, ergebnis = await options_schritt(monkeypatch, {}, optionen(components=["puffer", "puffer2"]))
-    assert ergebnis["step_id"] == "fub_names"
-    assert not hasattr(flow, "async_step_puffer")
+async def test_puffer_mit_eigenem_volumen_wird_nicht_gefragt(monkeypatch):
+    """PufferFlex meldet sein effektives Volumen - dann gibt es keinen Schritt dafür."""
+    flow, _ = await options_schritt(monkeypatch, {}, optionen(components=["puffer", "puffer2"]))
+    fertig = await flow.async_step_fub_names(
+        {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "PufferFlex 2"}
+    )
+    assert fertig["type"] == "create_entry"
+    assert "puffer_volumen" not in fertig["data"]
+
+
+async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
+    """Nur für den Puffer, der sein Volumen nicht meldet; vorbelegt mit dem bisherigen Wert."""
+    from eta_webservices import config_flow as modul
+
+    bisher = {"host": "192.0.2.10", "port": 8080, "puffer2_volumen": 650}
+    flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
+
+    async def nur_puffer2(*_):
+        return ["puffer2"]
+
+    monkeypatch.setattr(modul, "_puffer_ohne_volumen", nur_puffer2)
+    schritt = await flow.async_step_fub_names(
+        {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
+    )
+    assert schritt["step_id"] == "puffer"
+    felder = {str(k): k.default() for k in schritt["data_schema"].schema}
+    assert felder == {"puffer2_volumen": 650}
+    with pytest.raises(vol.Invalid):
+        schritt["data_schema"]({"puffer2_volumen": -5})
+    fertig = await flow.async_step_puffer({"puffer2_volumen": 800})
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["puffer2_volumen"] == 800
+    assert fertig["data"]["fub_names"]["pufferflex2"] == "Puffer"
+
+
+async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
+    """Fühler gefunden, Volumen nicht: der ältere Funktionsblock "Puffer"."""
+    from eta_webservices import config_flow as modul
+
+    async def menue(client, fub_names):
+        return {
+            "puffer_fuehler_1": "/1/2/0/11327/0",
+            "puffer_volumen": "/1/2/0/0/12499",
+            "puffer2_fuehler_1": "/1/3/0/11153/0",
+        }, [1]
+
+    monkeypatch.setattr(modul, "async_discover_uris", menue)
+    monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
+    komponenten = ["kessel", "puffer", "puffer2", "puffer3"]
+    assert await modul._puffer_ohne_volumen(None, "h", 8080, {}, komponenten) == ["puffer2"]
+    assert await modul._puffer_ohne_volumen(None, "h", 8080, {}, ["kessel", "puffer"]) == []
+
+    async def kaputt(client, fub_names):
+        raise modul.ETAApiError("kein Menübaum")
+
+    monkeypatch.setattr(modul, "async_discover_uris", kaputt)
+    assert await modul._puffer_ohne_volumen(None, "h", 8080, {}, komponenten) == []
 
 
 async def test_weitere_puffer_brenner_und_fernleitung_fragen_ihren_fub_namen(monkeypatch):

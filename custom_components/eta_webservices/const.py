@@ -65,6 +65,20 @@ CONF_ZEITRAEUME = "verbrauch_zeitraeume"
 """Pelletverbrauch (und -kosten) für heute, diese Woche und dieses Jahr anlegen."""
 DEFAULT_ZEITRAEUME = True
 
+MAX_PUFFER_VOLUMEN = 100000
+
+
+def puffer_volumen_schluessel(komponente):
+    """Unter welchem Schlüssel das eingetragene Volumen eines Puffers steht, in Litern.
+
+    Nur für Puffer, die ihr effektives Volumen nicht an die Webservices
+    geben - der ältere Funktionsblock "Puffer". Der erste Puffer heißt
+    "puffer_volumen" wie schon in Version 0.23, ein dort eingetragener
+    Wert gilt also weiter. 0 heißt: unbekannt.
+    """
+    return f"{komponente}_volumen"
+
+
 CONF_WETTER = "wetter"
 """Wetter-Entität, deren Vorhersage die Verbrauchsprognose nutzt.
 
@@ -187,8 +201,11 @@ am Ende, weil sie nur wenige Anlagen betrifft und im Auswahlfeld sonst
 ganz oben stünde.
 
 "brenner" ist ein zweiter Wärmeerzeuger (Gastherme, Ölkessel,
-Wärmepumpe), den die ETA-Regelung freigibt oder sperrt; "fernleitung"
-die Leitung zu einem Nebengebäude. Beide nur lesend.
+Wärmepumpe), den die ETA-Regelung freigibt oder sperrt. Ob er wirklich
+brennt, erfährt die Regelung nicht - deshalb zählt seine Anforderung,
+kein Zustand. "fernleitung" ist die Leitung zu einem Nebengebäude; von
+ihr kommt nur, ob die Fernpumpe läuft, weil ihre Temperaturen an den
+meisten Anlagen nur errechnet sind. Beide nur lesend.
 """
 
 PUFFER_SPEICHER = {"puffer": "", "puffer2": " 2", "puffer3": " 3"}
@@ -199,9 +216,10 @@ Puffer behält die von früher (puffer_fuehler_1, puffer_ladezustand), die
 weiteren heißen puffer2_… und puffer3_…. Die Entitäten heißen
 "Puffer 2 Fühler 1" usw.
 
-Je Puffer gibt es bewusst nur wenig: die Fühler, das effektive Volumen
-und - bei dezentraler Ladung - die Ladepumpe. Ladezustand und
-Energieinhalt hat nur der erste Puffer, weil es sie schon vorher gab.
+Je Puffer gibt es bewusst nur wenig: die Fühler, den Ladezustand (nur
+PufferFlex, der ältere Funktionsblock "Puffer" kennt keinen), das
+effektive Volumen und - bei dezentraler Ladung - die Ladepumpe. Den
+Energieinhalt hat nur der erste Puffer, weil es ihn schon vorher gab.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -411,6 +429,26 @@ SENSORS = {
         "component": "puffer",
         "name": "Puffer Ladezustand",
         "translation_key": "puffer_ladezustand",
+        "icon": "mdi:battery-charging-60",
+        "device_class": None,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "%",
+    },
+    "puffer2_ladezustand": {
+        "component": "puffer2",
+        "name": "Puffer 2 Ladezustand",
+        "translation_key": "puffer2_ladezustand",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:battery-charging-60",
+        "device_class": None,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "%",
+    },
+    "puffer3_ladezustand": {
+        "component": "puffer3",
+        "name": "Puffer 3 Ladezustand",
+        "translation_key": "puffer3_ladezustand",
+        "nur_wenn_vorhanden": True,
         "icon": "mdi:battery-charging-60",
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -704,13 +742,6 @@ SENSORS = {
         "icon": "mdi:pump",
         "is_string": True,
     },
-    "brenner_zustand": {
-        "component": "brenner",
-        "name": "Brenner Zustand",
-        "translation_key": "brenner_zustand",
-        "icon": "mdi:fire-circle",
-        "is_string": True,
-    },
     "brenner_anforderung": {
         "component": "brenner",
         "name": "Brenner Anforderung",
@@ -746,37 +777,12 @@ SENSORS = {
         "default_unit": "s",
         "suggested_unit": "h",
     },
-    "fernleitung_zustand": {
-        "component": "fernleitung",
-        "name": "Fernleitung Zustand",
-        "translation_key": "fernleitung_zustand",
-        "icon": "mdi:pipe",
-        "is_string": True,
-    },
     "fernleitung_pumpe": {
         "component": "fernleitung",
         "name": "Fernleitung Pumpe",
         "translation_key": "fernleitung_pumpe",
         "icon": "mdi:pump",
         "is_string": True,
-    },
-    "fernleitung_kesseltemperatur": {
-        "component": "fernleitung",
-        "name": "Fernleitung Kesseltemperatur",
-        "translation_key": "fernleitung_kesseltemperatur",
-        "icon": "mdi:thermometer",
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "°C",
-    },
-    "fernleitung_angefordert": {
-        "component": "fernleitung",
-        "name": "Fernleitung angeforderte Temperatur",
-        "translation_key": "fernleitung_angefordert",
-        "icon": "mdi:thermometer-chevron-up",
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "°C",
     },
 }
 """Alle Messwerte, die die Integration kennt.
