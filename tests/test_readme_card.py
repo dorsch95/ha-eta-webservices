@@ -371,7 +371,7 @@ def test_genannte_bilder_werden_ausgeliefert():
     from eta_webservices.const import URL_GRAFIKEN
 
     text = readme_text() + KARTE.read_text(encoding="utf-8")
-    bilder = set(re.findall(rf"{re.escape(URL_GRAFIKEN)}/([a-z0-9_]+\.png)", text))
+    bilder = set(re.findall(rf"{re.escape(URL_GRAFIKEN)}/(?:[0-9.]+/)?([a-z0-9_]+\.png)", text))
     assert bilder, "keine Bildverweise gefunden"
     for bild in bilder:
         assert (GRAFIKEN / bild).is_file(), bild
@@ -392,10 +392,16 @@ def test_jede_komponente_hat_ihre_kachel():
 
 
 def test_karte_kennt_die_bildadresse():
+    """Mit der Version darin - sonst zeigen Browser nach einem Update alte Bilder."""
+    import json
+
+    from eta_webservices import GRAFIKEN
     from eta_webservices.const import URL_GRAFIKEN
     from eta_webservices.karte import BILDPFAD
 
-    assert BILDPFAD == URL_GRAFIKEN
+    version = json.loads((GRAFIKEN.parent / "manifest.json").read_text(encoding="utf-8"))["version"]
+    assert BILDPFAD == f"{URL_GRAFIKEN}/{version}"
+    assert f"{BILDPFAD}/kessel.png" in KARTE.read_text(encoding="utf-8")
 
 
 def test_kartendatei_ist_aktuell():

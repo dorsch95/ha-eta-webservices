@@ -161,10 +161,14 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
     assert await eta_webservices.async_setup(Hass(), {}) is True
     assert Hass.services.angemeldet == [("eta_webservices", "karte_erzeugen")]
 
-    (pfad,) = Hass.http.pfade
-    assert pfad.url_path == URL_GRAFIKEN
-    assert pfad.path == str(eta_webservices.GRAFIKEN)
-    assert pfad.cache_headers is False
+    from eta_webservices.karte import BILDPFAD
+
+    assert [p.url_path for p in Hass.http.pfade] == [BILDPFAD, URL_GRAFIKEN], (
+        "mit Version für neue Karten, ohne für ältere"
+    )
+    for pfad in Hass.http.pfade:
+        assert pfad.path == str(eta_webservices.GRAFIKEN)
+        assert pfad.cache_headers is False
 
 
 async def test_setup_schreibt_nichts_nach_www(hass, entry):

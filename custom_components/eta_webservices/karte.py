@@ -12,10 +12,23 @@ Das Modul kommt ohne Home Assistant aus, damit das Skript es auch ohne
 installiertes Home Assistant laden kann.
 """
 
+import json
 import re
+from pathlib import Path
 
-BILDPFAD = "/eta_webservices/grafiken"
-"""Dort liefert die Integration die Kachelgrafiken aus, siehe URL_GRAFIKEN."""
+VERSION = json.loads(
+    (Path(__file__).with_name("manifest.json")).read_text(encoding="utf-8")
+)["version"]
+"""Die Version der Integration, aus manifest.json."""
+
+BILDPFAD = f"/eta_webservices/grafiken/{VERSION}"
+"""Dort liefert die Integration die Kachelgrafiken aus, siehe URL_GRAFIKEN.
+
+Die Version steckt in der Adresse: Die Bilder behalten bei einem Update
+ihre Namen, und Browser wie die Home-Assistant-App zeigten sonst noch
+lange die alten aus ihrem Zwischenspeicher. Mit jeder Version ist es
+eine neue Adresse, also holen sie die neuen Bilder.
+"""
 
 FARBEN = {
     "aussen": "#9aa5b1",
