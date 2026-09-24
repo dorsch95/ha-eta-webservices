@@ -366,3 +366,39 @@ def test_kessel_knoepfe_leuchten_wie_am_heizkreis():
             "entity": "sensor.eta_heizung_aschebox_plan",
             "state_not": "unknown",
         } in knopf["conditions"], "Knopf und Uhrzeit melden sonst unknown"
+
+
+async def test_ohne_messwert_zeigt_die_karte_einen_strich(hass, entry):
+    """Die Lambdasonde ist bei "Bereit" aus - dann "-" statt "Unbekannt"."""
+    from eta_webservices.api import ETAValue
+
+    coordinator, by_name = await setup_integration(hass, entry)
+    sensor = by_name["Restsauerstoff"]
+    assert "anzeige" not in sensor.extra_state_attributes
+    coordinator.data["restsauerstoff"] = ETAValue(None, "---", "%", False, 1)
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes["anzeige"] == "-"
+
+
+def test_kessel_zeilen_mit_strich():
+    gitter = karte.grid(spalten=4, schrift=100, kurz=False)
+    kessel = next(
+        k for k in gitter["cards"]
+        if k["conditions"][0]["entity"] == "sensor.eta_heizung_komponente_kessel"
+    )
+    zeilen = [
+        e for e in kessel["card"]["elements"]
+        if e.get("elements") and e["elements"][0].get("entity") == "sensor.eta_heizung_restsauerstoff"
+    ]
+    normal, strich = zeilen
+    assert "attribute" not in normal["elements"][0]
+    assert strich["elements"][0]["attribute"] == "anzeige"
+    assert strich["elements"][0]["prefix"] == normal["elements"][0]["prefix"]
+    assert strich["conditions"] == [
+        {
+            "condition": "state",
+            "entity": "sensor.eta_heizung_restsauerstoff",
+            "attribute": "anzeige",
+            "state_not": "unknown",
+        }
+    ]

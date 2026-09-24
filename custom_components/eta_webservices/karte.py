@@ -77,6 +77,38 @@ def label(entity, prefix, farbe, top, left, schrift, linksbuendig=False):
     return element
 
 
+def mit_strich(element):
+    """Eine Beschriftung, die ohne Messwert "-" statt "Unbekannt" zeigt.
+
+    Meldet die Anlage nur Striche - der Restsauerstoff etwa, solange die
+    Lambdasonde bei "Bereit" aus ist -, bleibt der Sensor unbekannt und
+    trägt das Merkmal "anzeige": "-". Dann steht an derselben Stelle
+    dieses Merkmal statt des Zustands. Home Assistant wertet ein fehlendes
+    Merkmal wie eine fehlende Entität als "unknown".
+    """
+    entitaet = element["entity"]
+    strich = {**element, "attribute": "anzeige"}
+    return [
+        {
+            "type": "conditional",
+            "conditions": [{"condition": "state", "entity": entitaet, "state_not": "unknown"}],
+            "elements": [element],
+        },
+        {
+            "type": "conditional",
+            "conditions": [
+                {
+                    "condition": "state",
+                    "entity": entitaet,
+                    "attribute": "anzeige",
+                    "state_not": "unknown",
+                }
+            ],
+            "elements": [strich],
+        },
+    ]
+
+
 def nur_wenn_vorhanden(element):
     """Blendet ein Element aus, wenn es seine Entität nicht gibt.
 
@@ -874,16 +906,19 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
 def grid(spalten, schrift, kurz):
     """Alle Kacheln nebeneinander, für eine der drei Bildschirmbreiten."""
     kessel = kessel_bewegung() + [
-        label(
-            entity,
-            kurz_text if kurz else lang_text,
-            farbe,
-            top,
-            6,
-            schrift,
-            linksbuendig=True,
-        )
+        teil
         for entity, lang_text, kurz_text, farbe, top in KESSEL_ZEILEN
+        for teil in mit_strich(
+            label(
+                entity,
+                kurz_text if kurz else lang_text,
+                farbe,
+                top,
+                6,
+                schrift,
+                linksbuendig=True,
+            )
+        )
     ]
     kessel.extend(kessel_knoepfe())
     kessel.append(aschebox_status(schrift - 10))

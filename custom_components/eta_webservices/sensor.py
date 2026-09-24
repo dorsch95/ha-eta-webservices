@@ -160,7 +160,17 @@ class ETAMeasurementSensor(ETABaseSensor):
 
     @property
     def extra_state_attributes(self) -> dict:
-        attribute = {"status": self.coordinator.sensor_status(self._key)}
+        """Status und Lage des Fühlers; ohne Messwert zusätzlich "anzeige": "-".
+
+        Der Zustand selbst bleibt dann unbekannt - einen Strich nimmt Home
+        Assistant bei einem Zahlenwert mit Einheit nicht an. Die Karte zeigt
+        über "anzeige" trotzdem "-" statt "Unbekannt", etwa beim
+        Restsauerstoff, solange die Lambdasonde bei "Bereit" aus ist.
+        """
+        status = self.coordinator.sensor_status(self._key)
+        attribute = {"status": status}
+        if status == "kein_messwert":
+            attribute["anzeige"] = "-"
         if self._position:
             attribute["position"] = self._position
         return attribute
