@@ -455,7 +455,9 @@ def _discover_puffer_fuehler(fub):
     return {index: uri for index, uri in enumerate(vorhanden, start=1)}
 
 
-async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=None):
+async def async_discover_uris(
+    client, fub_name_overrides=None, ueber_kennung=None, fub_namen=None
+):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
@@ -467,6 +469,10 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
     lesbar, wird der ETAApiError durchgereicht. In ueber_kennung, falls
     übergeben, landen die Schlüssel, die erst über KENNUNGEN gefunden
     wurden - ein Hinweis, dass der Namenspfad an dieser Anlage nicht passt.
+    In fub_namen, falls übergeben, landet je Rolle der Name des
+    Funktionsblocks, wie er im Menübaum steht - etwa "Puffer" statt des
+    vorbelegten "PufferFlex", wenn die Erkennung auf den älteren Block
+    ausgewichen ist.
     """
     discovered = {}
 
@@ -474,6 +480,10 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
 
     fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
     fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
+    if fub_namen is not None:
+        fub_namen.update(
+            {rolle: fub["@name"] for rolle, fub in fubs_by_role.items() if fub.get("@name")}
+        )
     twin = fubs_by_role.get("twin") if "twin" in (fub_name_overrides or {}) else None
 
     for key, (role, path) in DISCOVERY_PATHS.items():

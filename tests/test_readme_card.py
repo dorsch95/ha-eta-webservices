@@ -903,3 +903,52 @@ def test_jede_bewegung_hat_ein_gleich_grosses_standbild():
         with Image.open(bewegt) as a, Image.open(bewegt.with_suffix(".png")) as b:
             assert a.size == b.size == (255, 501), bewegt.name
             assert a.n_frames > 1
+
+
+def _puffernamen(karte):
+    """Je Puffer-Kachel der ersten Variante: ihre Etiketten mit dem Funktionsblock."""
+    ergebnis = {}
+    for kachel in raster(karte)[0]["cards"]:
+        marker = kachel["conditions"][0]["entity"]
+        if "pufferspeicher" not in marker:
+            continue
+        ergebnis[marker] = [
+            element
+            for element in kachel["card"]["elements"]
+            if element.get("attribute") == "funktionsblock"
+            or any(k.get("attribute") == "funktionsblock" for k in element.get("elements", []))
+        ]
+    return ergebnis
+
+
+def test_puffername_erscheint_nur_bei_mehreren_puffern(karte):
+    """Universell: je Kachel zwei Blöcke, die nur mit einem weiteren Puffer greifen."""
+    for marker, namen in _puffernamen(karte).items():
+        assert len(namen) == 2, marker
+        for block in namen:
+            andere = [
+                b for b in block["conditions"]
+                if b["entity"] != marker and b.get("state_not") == "unknown"
+            ]
+            assert andere, "ohne weiteren Puffer darf kein Name stehen"
+
+
+def test_zuschnitt_zeigt_den_puffernamen_fest_oder_gar_nicht():
+    einer = _puffernamen(zugeschnitten(["kessel", "puffer"], {"puffer": 5}))
+    assert einer == {"sensor.eta_heizung_komponente_pufferspeicher": []}
+
+    zwei = _puffernamen(zugeschnitten(["kessel", "puffer", "puffer2"], {"puffer": 5, "puffer2": 3}))
+    assert set(zwei) == {
+        "sensor.eta_heizung_komponente_pufferspeicher",
+        "sensor.eta_heizung_komponente_pufferspeicher_2",
+    }
+    for marker, namen in zwei.items():
+        assert namen == [
+            {
+                "type": "state-label",
+                "entity": marker,
+                "attribute": "funktionsblock",
+                "style": namen[0]["style"],
+            }
+        ]
+    assert "pufferspeicher_3" not in str(zugeschnitten(["kessel", "puffer", "puffer2"], None))

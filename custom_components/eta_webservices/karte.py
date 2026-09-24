@@ -206,26 +206,73 @@ def puffer_schrift(anzahl, schrift):
     return schrift
 
 
+PUFFER_NAME_OBEN = 23
+"""Höhe des Namens: zwischen Ladepumpe und Deckel des Speichers."""
+
+
+def _marker_entitaet(komponente_):
+    return f"sensor.eta_heizung_komponente_{PUFFER_KACHELN[komponente_][1]}"
+
+
+def puffer_name(komponente_, schrift):
+    """Der Name des Funktionsblocks über dem Speicher, wenn es weitere Puffer gibt.
+
+    Bei einem einzigen Puffer wäre er überflüssig. Der Name kommt aus dem
+    Attribut "funktionsblock" des Komponenten-Markers - so, wie der Block
+    an der Regelung heißt, etwa "PufferFlex 2" oder "Puffer".
+
+    Ob es weitere gibt, zeigen deren Marker. Bedingungen gelten nur alle
+    zugleich, deshalb zwei Elemente: eines, wenn der erste der anderen
+    Puffer da ist, eines, wenn nur der zweite da ist. Die zugeschnittene
+    Karte ersetzt beide durch das Etikett allein oder lässt sie weg, siehe
+    _puffernamen_zuschneiden.
+    """
+    erster, zweiter = (k for k in PUFFER_KACHELN if k != komponente_)
+    eigener = _marker_entitaet(komponente_)
+    etikett = label(f"komponente_{PUFFER_KACHELN[komponente_][1]}", None,
+                    "weiss", PUFFER_NAME_OBEN, 50, schrift + 5)
+    etikett["attribute"] = "funktionsblock"
+    vorhanden = {"condition": "state", "entity": eigener, "state_not": "unknown"}
+    return [
+        {
+            "type": "conditional",
+            "conditions": [
+                vorhanden,
+                {"condition": "state", "entity": _marker_entitaet(erster), "state_not": "unknown"},
+            ],
+            "elements": [etikett],
+        },
+        {
+            "type": "conditional",
+            "conditions": [
+                vorhanden,
+                {"condition": "state", "entity": _marker_entitaet(erster), "state": "unknown"},
+                {"condition": "state", "entity": _marker_entitaet(zweiter), "state_not": "unknown"},
+            ],
+            "elements": [etikett],
+        },
+    ]
+
+
 def puffer_kachel(komponente_, schrift, kurz):
     """Die Kachel eines Pufferspeichers.
 
-    Oben der Ladezustand, bei weiteren Puffern mit ihrer Nummer - so ist
-    erkennbar, welcher Puffer das ist. Der ältere Funktionsblock "Puffer"
-    kennt keinen Ladezustand, dann bleibt die Zeile leer. Darunter die
-    Ladepumpe, falls der Puffer dezentral geladen wird.
+    Oben der Ladezustand - der ältere Funktionsblock "Puffer" kennt keinen,
+    dann bleibt die Zeile leer. Darunter die Ladepumpe, falls der Puffer
+    dezentral geladen wird. Gibt es mehrere Puffer, steht über dem
+    Speicher sein Name, siehe puffer_name.
     """
     praefix, marker = PUFFER_KACHELN[komponente_]
-    nummer = "" if komponente_ == "puffer" else " " + praefix.rsplit("_", 1)[1]
     return komponente(
         marker,
         komponente_,
         "puffer",
         [
             nur_mit_wert(
-                label(f"{praefix}_ladezustand",
-                      f"Ladung{nummer}: " if kurz else f"Ladezustand{nummer}: ",
+                label(f"{praefix}_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
                       "hell", 8, 50, schrift + 5)
             ),
+            *puffer_name(komponente_, schrift),
             nur_mit_wert(
                 label(f"{praefix}_ladepumpe", "Pumpe: " if kurz else "Ladepumpe: ",
                       "gedaempft", 15, 50, schrift)
@@ -870,6 +917,30 @@ def _fuehler_ausduennen(kachel, anzahl):
     kachel["card"]["elements"] = behalten
 
 
+def _ist_puffername(element):
+    """Erkennt die Elemente, die den Namen eines Puffers zeigen."""
+    return element.get("type") == "conditional" and any(
+        kind.get("attribute") == "funktionsblock" for kind in element.get("elements", [])
+    )
+
+
+def _puffernamen_zuschneiden(kachel, mehrere):
+    """Zeigt den Namen fest, wenn es mehrere Puffer gibt, sonst gar nicht.
+
+    Die Bedingungen der universellen Karte fragen Marker ab, die es auf
+    dieser Anlage womöglich nicht gibt - die zugeschnittene Karte soll
+    nur vorhandene Entitäten nennen.
+    """
+    behalten, gesetzt = [], False
+    for element in kachel["card"]["elements"]:
+        if not _ist_puffername(element):
+            behalten.append(element)
+        elif mehrere and not gesetzt:
+            behalten.extend(element["elements"])
+            gesetzt = True
+    kachel["card"]["elements"] = behalten
+
+
 def responsive_karte(komponenten=None, fuehler=None):
     """Die fertige Karte: alle drei Breiten übereinander, eine sichtbar.
 
@@ -908,9 +979,13 @@ def responsive_karte(komponenten=None, fuehler=None):
         f"sensor.eta_heizung_komponente_{marker}": fuehler.get(k)
         for k, (_, marker) in PUFFER_KACHELN.items()
     }
+    puffer_marker = {_marker_entitaet(k) for k in PUFFER_KACHELN}
+    mehrere = komponenten is not None and sum(k in PUFFER_KACHELN for k in komponenten) > 1
     for variante in karte["cards"]:
         gitter = variante["card"]
         gitter["cards"] = [k for k in gitter["cards"] if _passt_zur_anlage(k, behalten)]
         for kachel in gitter["cards"]:
             _fuehler_ausduennen(kachel, je_marker.get(kachel["conditions"][0]["entity"]))
+            if komponenten is not None and kachel["conditions"][0]["entity"] in puffer_marker:
+                _puffernamen_zuschneiden(kachel, mehrere)
     return karte

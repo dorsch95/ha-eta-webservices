@@ -257,3 +257,14 @@ def test_puffer_fuehler_bekommen_ihren_puffer_im_namen():
     assert info["name"] == "Puffer 3 Fühler 1"
     assert info["translation_key"] == "puffer3_fuehler_1"
     assert info["component"] == "puffer3"
+
+
+async def test_marker_nennt_den_funktionsblock_wie_im_menuebaum(hass, entry, menu_xml):
+    """Auch wenn die Erkennung vom vorbelegten "PufferFlex" auf "Puffer" ausweicht."""
+    menu = mit_fub(menu_xml, ALTER_PUFFER)
+    hass.session.menu = menu.replace('name="PufferFlex"', 'name="PufferFlex alt"')
+    entry.data["components"] = ["kessel", "puffer", "puffer2"]
+    entry.data["fub_names"] = {"pufferflex": "PufferFlex"}
+    coordinator, by_name = await setup_integration(hass, entry)
+    assert by_name["Komponente Pufferspeicher"].extra_state_attributes == {"funktionsblock": "Puffer"}
+    assert coordinator.funktionsblock("puffer2") == "Pufferspeicher 2", "nicht gefunden"

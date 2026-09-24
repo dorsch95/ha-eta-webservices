@@ -511,6 +511,11 @@ class ETAComponentMarkerSensor(ETABaseSensor):
     def native_value(self):
         return self._component
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Der Name des Funktionsblocks - die Karte schreibt ihn über die Puffer."""
+        return {"funktionsblock": self.coordinator.funktionsblock(self._component)}
+
 
 def _datum(wert: date | None) -> str | None:
     return wert.isoformat() if wert else None

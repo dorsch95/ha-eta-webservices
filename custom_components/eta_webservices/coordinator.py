@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import ETAApiClient, ETAApiError, ETAError, ETAValue
 from .const import (
     BETRIEBSART_TASTEN,
+    COMPONENTS,
     SELECTS,
     SWITCHES,
     DOMAIN,
@@ -139,6 +140,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
         self.ueber_kennung: set[str] = set()
+        self.fub_namen: dict[str, str] = {}
         self.components_without_data: list[str] = []
         self.api_version: str | None = None
         self.errors: list[ETAError] = []
@@ -365,7 +367,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """
         try:
             self.discovered_uris, indices = await async_discover_uris(
-                self.client, fub_name_overrides, self.ueber_kennung
+                self.client, fub_name_overrides, self.ueber_kennung, self.fub_namen
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
@@ -386,6 +388,15 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._schalter_pruefen()
         await self._betriebsarten_pruefen()
         await self._varset_anlegen()
+
+    def funktionsblock(self, komponente: str) -> str:
+        """Wie der Funktionsblock dieser Komponente an der Anlage heißt.
+
+        So, wie er im Menübaum steht. Wurde er nicht gefunden, der Name der
+        Komponente.
+        """
+        rolle = COMPONENTS[komponente]["roles"][0]
+        return self.fub_namen.get(rolle) or COMPONENTS[komponente]["name"]
 
     def _volumen_der_anlage(self, komponente: str) -> float | None:
         """Das effektive Volumen, wie die Anlage es meldet, in Litern.
