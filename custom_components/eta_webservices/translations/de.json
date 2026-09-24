@@ -425,6 +425,9 @@
       "puffer2_volumen": {
         "name": "Puffer 2 effektives Volumen"
       },
+      "puffer2_zustand": {
+        "name": "Puffer 2 Zustand"
+      },
       "puffer3_fuehler_1": {
         "name": "Puffer 3 Fühler 1"
       },
@@ -460,6 +463,9 @@
       },
       "puffer3_volumen": {
         "name": "Puffer 3 effektives Volumen"
+      },
+      "puffer3_zustand": {
+        "name": "Puffer 3 Zustand"
       },
       "puffer_energieinhalt": {
         "name": "Puffer Energieinhalt"
@@ -499,6 +505,9 @@
       },
       "puffer_volumen": {
         "name": "Puffer effektives Volumen"
+      },
+      "puffer_zustand": {
+        "name": "Puffer Zustand"
       },
       "pvm_ertrag_gestern": {
         "name": "PV-Heizmodul Ertrag gestern"

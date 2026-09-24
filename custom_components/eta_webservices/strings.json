@@ -425,6 +425,9 @@
       "puffer2_volumen": {
         "name": "Buffer 2 effective volume"
       },
+      "puffer2_zustand": {
+        "name": "Buffer 2 state"
+      },
       "puffer3_fuehler_1": {
         "name": "Buffer 3 sensor 1"
       },
@@ -460,6 +463,9 @@
       },
       "puffer3_volumen": {
         "name": "Buffer 3 effective volume"
+      },
+      "puffer3_zustand": {
+        "name": "Buffer 3 state"
       },
       "puffer_energieinhalt": {
         "name": "Buffer energy content"
@@ -499,6 +505,9 @@
       },
       "puffer_volumen": {
         "name": "Buffer effective volume"
+      },
+      "puffer_zustand": {
+        "name": "Buffer state"
       },
       "pvm_ertrag_gestern": {
         "name": "PV heating module yield yesterday"

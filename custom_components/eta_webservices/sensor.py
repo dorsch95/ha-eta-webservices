@@ -206,6 +206,10 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
     picture-elements-Karten können keine zwei Werte zusammenführen. Die
     Einheit steckt im Text selbst, weil ein Textwert keine
     unit_of_measurement tragen darf.
+
+    Führt die Anlage einen der beiden Werte gar nicht - ein Kessel ohne
+    Aschebox, oder gar kein Kessel-Block -, steht dort "-" wie bei jedem
+    Messwert, den die Anlage nicht kennt, statt "Unbekannt".
     """
 
     _attr_icon = "mdi:trash-can"
@@ -216,6 +220,9 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
 
     @property
     def native_value(self):
+        defs = self.coordinator.sensor_defs
+        if not all(defs.get(key, {}).get("uri") for key in ("aschebox_verbrauch", "aschebox_schwelle")):
+            return "-"
         verbrauch = self.coordinator.data.get("aschebox_verbrauch")
         schwelle = self.coordinator.data.get("aschebox_schwelle")
         if verbrauch is None or schwelle is None:

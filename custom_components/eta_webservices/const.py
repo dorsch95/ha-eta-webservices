@@ -216,9 +216,10 @@ Puffer behält die von früher (puffer_fuehler_1, puffer_ladezustand), die
 weiteren heißen puffer2_… und puffer3_…. Die Entitäten heißen
 "Puffer 2 Fühler 1" usw.
 
-Je Puffer gibt es bewusst nur wenig: die Fühler, den Ladezustand (nur
-PufferFlex, der ältere Funktionsblock "Puffer" kennt keinen), das
-effektive Volumen und - bei dezentraler Ladung - die Ladepumpe. Den
+Je Puffer gibt es bewusst nur wenig: die Fühler, den Zustand, den
+Ladezustand (nur PufferFlex, der ältere Funktionsblock "Puffer" kennt
+keinen), das effektive Volumen und - bei dezentraler Ladung - die
+Ladepumpe. Den
 Energieinhalt hat nur der erste Puffer, weil es ihn schon vorher gab.
 """
 
@@ -433,6 +434,27 @@ SENSORS = {
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "%",
+    },
+    "puffer_zustand": {
+        "component": "puffer",
+        "name": "Puffer Zustand",
+        "translation_key": "puffer_zustand",
+        "icon": "mdi:storage-tank",
+        "is_string": True,
+    },
+    "puffer2_zustand": {
+        "component": "puffer2",
+        "name": "Puffer 2 Zustand",
+        "translation_key": "puffer2_zustand",
+        "icon": "mdi:storage-tank",
+        "is_string": True,
+    },
+    "puffer3_zustand": {
+        "component": "puffer3",
+        "name": "Puffer 3 Zustand",
+        "translation_key": "puffer3_zustand",
+        "icon": "mdi:storage-tank",
+        "is_string": True,
     },
     "puffer2_ladezustand": {
         "component": "puffer2",

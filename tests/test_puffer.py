@@ -40,6 +40,7 @@ ZWEITER_PUFFER = (
     '<object uri="/120/10602/0/11157/2001" name="Anforderung"/>'
     "</object></object>"
     '<object uri="/120/10602/0/0/19403" name="Puffer">'
+    '<object uri="/120/10602/0/0/12208" name="Puffer-Zustand detailliert"/>'
     '<object uri="/120/10602/0/0/12528" name="Ladezustand"/>'
     "</object>"
     '<object uri="/120/10602/0/0/12421" name="Einstellungen">'
@@ -198,7 +199,7 @@ async def test_ladepumpe_bei_dezentraler_ladung(hass, entry, menu_xml):
 
 
 async def test_zweiter_puffer_mit_fuehlern_volumen_und_pumpe(hass, entry, menu_xml):
-    """Fühler, Ladezustand, effektives Volumen und Ladepumpe - kein Energieinhalt."""
+    """Fühler, Zustand, Ladezustand, effektives Volumen und Ladepumpe - kein Energieinhalt."""
     hass.session.menu = mit_fub(menu_xml, ZWEITER_PUFFER)
     entry.data["components"] = ["kessel", "puffer", "puffer2"]
     coordinator, by_name = await setup_integration(hass, entry)
@@ -209,6 +210,7 @@ async def test_zweiter_puffer_mit_fuehlern_volumen_und_pumpe(hass, entry, menu_x
         "Puffer 2 Fühler 3",
         "Puffer 2 Ladepumpe",
         "Puffer 2 Ladezustand",
+        "Puffer 2 Zustand",
         "Puffer 2 effektives Volumen",
     ]
     assert coordinator.discovered_uris["puffer2_fuehler_1"] == "/120/10602/0/11327/0"
@@ -246,6 +248,7 @@ async def test_alter_puffer_als_zweiter_hat_keinen_ladezustand(hass, entry, menu
     assert sorted(n for n in by_name if n.startswith("Puffer 2")) == [
         "Puffer 2 Fühler 1",
         "Puffer 2 Fühler 2",
+        "Puffer 2 Zustand",
     ]
     assert coordinator.volumen("puffer2") is None
 

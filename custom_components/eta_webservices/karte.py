@@ -206,6 +206,15 @@ def puffer_schrift(anzahl, schrift):
     return schrift
 
 
+PUFFER_LAEDT = ["Anfordern", "Laden", "Restwärme", "Abschöpfen"]
+"""Puffer-Zustände, bei denen der Rand des Speichers warm pulsiert.
+
+Die Texte von "Puffer-Zustand detailliert" sind bei PufferFlex und beim
+älteren Funktionsblock "Puffer" dieselben. Bei allen übrigen - Aus,
+Geladen, Frostschutz, Fühlerfehler, Aus Schaltuhr, Extra Warmwasser
+laden, Solar Vorrang - bleibt der Rahmen grau.
+"""
+
 PUFFER_NAME_OBEN = 23
 """Höhe des Namens: zwischen Ladepumpe und Deckel des Speichers."""
 
@@ -257,17 +266,25 @@ def puffer_name(komponente_, schrift):
 def puffer_kachel(komponente_, schrift, kurz):
     """Die Kachel eines Pufferspeichers.
 
-    Oben der Ladezustand - der ältere Funktionsblock "Puffer" kennt keinen,
+    Der Rahmen des Speichers pulsiert, solange der Puffer Wärme anfordert
+    oder aufnimmt, siehe PUFFER_LAEDT. Oben der Ladezustand - der ältere
+    Funktionsblock "Puffer" kennt keinen,
     dann bleibt die Zeile leer. Darunter die Ladepumpe, falls der Puffer
     dezentral geladen wird. Gibt es mehrere Puffer, steht über dem
     Speicher sein Name, siehe puffer_name.
     """
     praefix, marker = PUFFER_KACHELN[komponente_]
+    zustand = f"sensor.eta_heizung_{praefix}_zustand"
     return komponente(
         marker,
         komponente_,
         "puffer",
         [
+            *bewegt_oder_still(
+                "puffer_laden",
+                zustand,
+                [{"condition": "state", "entity": zustand, "state": PUFFER_LAEDT}],
+            ),
             nur_mit_wert(
                 label(f"{praefix}_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
                       "hell", 8, 50, schrift + 5)

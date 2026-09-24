@@ -72,6 +72,13 @@ async def test_aschebox_kombiniert_beide_werte(hass, entry):
     assert by_name["Aschebox Status"].native_unit_of_measurement is None
 
 
+async def test_aschebox_ohne_werte_der_anlage_zeigt_einen_strich(hass, entry, menu_xml):
+    """Etwa an einer Anlage ohne Kessel-Block - nicht "Unbekannt"."""
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/0/12013", "/264/10891/0/0/12120")
+    _, by_name = await setup_integration(hass, entry)
+    assert by_name["Aschebox Status"].native_value == "-"
+
+
 async def test_pufferfuehler_kennen_ihre_position(hass, entry):
     _, by_name = await setup_integration(hass, entry)
     fuehler = [name for name in by_name if name.startswith("Puffer Fühler")]

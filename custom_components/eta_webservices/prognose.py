@@ -510,10 +510,12 @@ def berechnen(
 
     if vorrat is None:
         return ergebnis
-    rechnen = lambda verschiebung: herunterrechnen(
-        modell, vorrat, grenze, heute_schon, heute, vorhersage, abweichung,
-        verschiebung, streuung,
-    )
+    def rechnen(verschiebung):
+        return herunterrechnen(
+            modell, vorrat, grenze, heute_schon, heute, vorhersage, abweichung,
+            verschiebung, streuung,
+        )
+
     ergebnis.bestellen_bis, ergebnis.reicht_bis = rechnen(0.0)
     ergebnis.bestellen_fruehestens, ergebnis.reicht_fruehestens = rechnen(-SPANNE_KELVIN)
     ergebnis.bestellen_spaetestens, ergebnis.reicht_spaetestens = rechnen(SPANNE_KELVIN)
