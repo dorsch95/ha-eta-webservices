@@ -12,7 +12,13 @@ from __future__ import annotations
 import logging
 import re
 
-from .const import BETRIEBSART_TASTEN, FUB_ROLE_DEFAULT_NAMES, PUFFER_FUEHLER_MAX
+from .const import (
+    BETRIEBSART_TASTEN,
+    COMPONENTS,
+    FUB_ROLE_DEFAULT_NAMES,
+    PUFFER_FUEHLER_MAX,
+    PUFFER_SPEICHER,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,16 +71,32 @@ DISCOVERY_PATHS = {
     "pvm_gesamtenergie": ("pvm", ["Zählerstände", "Gesamtenergie Heizstab"]),
     "pvm_ertrag_heute": ("pvm", ["Zählerstände", "Ertrag heute"]),
     "pvm_ertrag_gestern": ("pvm", ["Zählerstände", "Ertrag gestern"]),
+    "brenner_zustand": ("brenner", ["Brenner", "Brenner-Zustand detailliert"]),
+    "brenner_anforderung": ("brenner", ["Ausgänge", "Anforderung Brenner"]),
+    "brenner_temperatur": ("brenner", ["Brenner", "Brennertemperatur"]),
+    "brenner_leistung_soll": ("brenner", ["Ausgänge", "Leistung Soll"]),
+    "brenner_volllaststunden": ("brenner", ["Zählerstände", "Volllaststunden"]),
+    "fernleitung_zustand": ("fernleitung", ["Fernleitung", "Fernleitung-Zustand detailliert"]),
+    "fernleitung_kesseltemperatur": ("fernleitung", ["Fernleitung", "Kessel"]),
+    "fernleitung_angefordert": ("fernleitung", ["Fernleitung", "Angeforderte Temperatur"]),
 }
 
 PUMPEN = {
     "fwm_zirkulationspumpe": ("fwm", "zirkulation"),
+    "fernleitung_pumpe": ("fernleitung", "fernpumpe"),
+    "puffer_ladepumpe": ("pufferflex", "pufferlade"),
+    "puffer2_ladepumpe": ("pufferflex2", "pufferlade"),
+    "puffer3_ladepumpe": ("pufferflex3", "pufferlade"),
 }
 """Pumpen, die über ein Stichwort in ihrem Namen gesucht werden.
 
 Je nach Anlage heißt eine Pumpe "Zirkulationspumpe", "Zirkulation" oder
 ähnlich. Gesucht wird unter "Ausgänge"; geliefert wird die URI ihrer
 "Anforderung", die den Laufzustand meldet.
+
+Das "Pufferladeventil/-pumpe" hat ein Puffer nur, wenn er im
+ETA-Assistenten als dezentral geladen eingerichtet ist - sonst sind
+seine Ausgänge leer.
 """
 
 NAMENSSUCHE = {
@@ -155,6 +177,14 @@ KENNUNGEN = {
     "pvm_zustand": "0/0/15219",
     "pvm_ertrag_heute": "0/0/12350",
     "pvm_ertrag_gestern": "0/0/12769",
+    "brenner_zustand": "0/0/12289",
+    "brenner_anforderung": "0/0/12363",
+    "brenner_temperatur": "0/0/12361",
+    "brenner_leistung_soll": "0/0/12008",
+    "brenner_volllaststunden": "0/0/12153",
+    "fernleitung_zustand": "0/0/12424",
+    "fernleitung_kesseltemperatur": "0/0/12161",
+    "fernleitung_angefordert": "0/0/12006",
 }
 """Zweiter Weg zu einem Messwert: die hinteren drei Zahlen seiner URI.
 
@@ -175,13 +205,29 @@ unter "ueber_kennung_gefunden". Nur Messwerte: Tasten und Schalter
 werden weiter ausschließlich über ihren Namen gefunden.
 """
 
-PUFFER_VOLUMEN = ("Gesamtvolumen", "0/0/13520")
-"""Name und Kennung des eingestellten Puffervolumens in Litern.
+PUFFER_VOLUMEN = ("Effektives Puffervolumen", "0/0/12499")
+"""Name und Kennung des effektiven Puffervolumens in Litern.
 
-Kein Messwert und keine Entität: Die Integration liest es einmal beim
-Start, um den Energieinhalt des Puffers zu berechnen. Nur PufferFlex
-führt es, beim Funktionsblock "Puffer" fehlt es. Die Kennung ist
-unbelegt.
+Die Regelung rechnet es aus dem eingestellten Gesamtvolumen und der Lage
+der Fühler; damit rechnen Energieinhalt und Prognose. PufferFlex zeigt es
+unter Einstellungen > Leistungsregelung. Der ältere Funktionsblock
+"Puffer" führt es auch, nennt es aber nicht in jedem Menübaum - dann wird
+die Kennung im Funktionsblock direkt gelesen, siehe
+async_discover_uris.
+"""
+
+ALTE_PUFFER_FUEHLER = (
+    "Puffer oben",
+    "Puffer oben/mitte",
+    "Puffer mitte",
+    "Puffer mitte/unten",
+    "Puffer unten",
+)
+"""So heißen die Fühler beim älteren Funktionsblock "Puffer", von oben nach unten.
+
+Er kennt kein "Fühler 1 … 9" wie PufferFlex. Gleich benannte Fühler mit
+Zusatz ("Puffer oben Solar", "Puffer oben Frischwasser") gehören zur
+Solar- bzw. Frischwasserregelung und zählen nicht mit.
 """
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
@@ -397,10 +443,25 @@ def _discover_puffer_fuehler(fub):
         uri = child.get("@uri")
         if uri and index not in found:
             found[index] = uri
-    return found
+    if found:
+        return found
+
+    nach_name = {
+        (child.get("@name") or "").strip().casefold(): child.get("@uri")
+        for child in _as_list(eingaenge.get("object"))
+        if isinstance(child, dict) and child.get("@uri")
+    }
+    vorhanden = [
+        nach_name[name.casefold()]
+        for name in ALTE_PUFFER_FUEHLER
+        if name.casefold() in nach_name
+    ]
+    return {index: uri for index, uri in enumerate(vorhanden, start=1)}
 
 
-async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=None):
+async def async_discover_uris(
+    client, fub_name_overrides=None, ueber_kennung=None, ungeprueft=None
+):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
     Gibt ein Tupel (discovered, puffer_fuehler_indices) zurück:
@@ -412,6 +473,11 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
     lesbar, wird der ETAApiError durchgereicht. In ueber_kennung, falls
     übergeben, landen die Schlüssel, die erst über KENNUNGEN gefunden
     wurden - ein Hinweis, dass der Namenspfad an dieser Anlage nicht passt.
+
+    In ungeprueft, falls übergeben, landen URIs, die nicht im Menübaum
+    stehen, sondern aus Funktionsblock und Kennung zusammengesetzt sind -
+    bisher nur das effektive Puffervolumen. Ob es sie gibt, zeigt erst ein
+    Lesen; das übernimmt der Koordinator.
     """
     discovered = {}
 
@@ -463,27 +529,33 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
             if uri:
                 discovered[f"{key}_{modus}"] = uri
 
-    puffer_fuehler = _discover_puffer_fuehler(fubs_by_role.get("pufferflex"))
-    puffer_fuehler_indices = sorted(puffer_fuehler)
-    for index, uri in puffer_fuehler.items():
-        discovered[f"puffer_fuehler_{index}"] = uri
+    puffer_fuehler_indices = []
+    alle_fuehler = set()
+    for komponente in PUFFER_SPEICHER:
+        puffer = fubs_by_role.get(COMPONENTS[komponente]["roles"][0])
+        fuehler = _discover_puffer_fuehler(puffer)
+        for index, uri in fuehler.items():
+            discovered[f"{komponente}_fuehler_{index}"] = uri
+            alle_fuehler.add(f"{komponente}_fuehler_{index}")
+        if komponente == "puffer":
+            puffer_fuehler_indices = sorted(fuehler)
+        volumen = _finde_nach_namen(puffer, PUFFER_VOLUMEN[0]) or _finde_nach_kennung(
+            puffer, PUFFER_VOLUMEN[1]
+        )
+        if volumen:
+            discovered[f"{komponente}_volumen"] = volumen
+        elif puffer is not None and puffer.get("@uri") and ungeprueft is not None:
+            ungeprueft[f"{komponente}_volumen"] = f"{puffer['@uri']}/{PUFFER_VOLUMEN[1]}"
 
-    puffer = fubs_by_role.get("pufferflex")
-    volumen = _finde_nach_namen(puffer, PUFFER_VOLUMEN[0]) or _finde_nach_kennung(
-        puffer, PUFFER_VOLUMEN[1]
-    )
-    if volumen:
-        discovered["puffer_gesamtvolumen"] = volumen
-
-    gesucht = set(DISCOVERY_PATHS) | set(PUMPEN)
-    messwerte = (gesucht & set(discovered)) | set(puffer_fuehler)
+    gesucht = set(DISCOVERY_PATHS) | set(PUMPEN) | {f"{k}_volumen" for k in PUFFER_SPEICHER}
+    messwerte = (gesucht & set(discovered)) | alle_fuehler
     _LOGGER.info(
         "ETA Webservices: %d von %d Messwerten im Menübaum gefunden "
         "(%d Pufferfühler), dazu %d Schalt- und Betriebsart-Objekte",
         len(messwerte),
-        len(gesucht) + len(puffer_fuehler_indices),
-        len(puffer_fuehler_indices),
-        len(discovered) - len(messwerte) - (1 if volumen else 0),
+        len(gesucht) + len(alle_fuehler),
+        len(alle_fuehler),
+        len(discovered) - len(messwerte),
     )
     missing = sorted(gesucht - set(discovered))
     if missing:

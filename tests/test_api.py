@@ -49,6 +49,26 @@ def test_leerer_wert_faellt_auf_text_zurueck():
     assert reading.is_text is True
 
 
+@pytest.mark.parametrize("striche", ["---", "--", "- - -", "---,-"])
+def test_striche_heissen_kein_messwert(striche):
+    """Ein Fühler mit Unterbrechung zeigt "---", der Rohwert bleibt stehen.
+
+    Aus der zweiten Anlage: Puffer oben mit Unterbrechung meldet
+    strValue "---" und Rohwert 600 - ohne diese Prüfung stünden in Home
+    Assistant 60,0 °C, als wäre der Fühler in Ordnung.
+    """
+    reading = parse(var_xml(value="600", str_value=striche, unit="°C", scale="10"))
+    assert reading.display is None
+    assert reading.value is None
+    assert reading.is_text is False
+    assert reading.unit == "°C"
+
+
+def test_minuswert_ist_ein_messwert():
+    reading = parse(var_xml(value="-35", str_value="-3,5", unit="°C", scale="10"))
+    assert reading.display == pytest.approx(-3.5)
+
+
 def test_zahlenwert_bleibt_zahl_wenn_kein_textoffset_gesetzt_ist():
     reading = parse(
         var_xml(value="724", str_value="72,4", unit="°C", scale="10")

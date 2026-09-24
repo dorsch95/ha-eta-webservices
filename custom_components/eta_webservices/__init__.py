@@ -23,7 +23,6 @@ from .const import (
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
     CONF_PROGNOSE,
-    CONF_PUFFER_VOLUMEN,
     CONF_SCAN_INTERVAL,
     CONF_WETTER,
     CONF_ZEITRAEUME,
@@ -36,6 +35,7 @@ from .const import (
     DEFAULT_ZEITRAEUME,
     DOMAIN,
     PLATFORMS,
+    PUFFER_SPEICHER,
     SELECTS,
     SENSORS,
     SWITCHES,
@@ -43,7 +43,7 @@ from .const import (
     components_from_config,
 )
 from .aktionen import async_aktionen_registrieren
-from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import deutsche_namen
 from .prognose_koordinator import ETAPrognoseKoordinator
 
@@ -94,7 +94,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     )
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
-    coordinator.puffer_volumen_einstellung = float(config.get(CONF_PUFFER_VOLUMEN) or 0)
     coordinator.mit_prognose = config.get(CONF_PROGNOSE, DEFAULT_PROGNOSE)
     coordinator.mit_zeitraeumen = config.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
@@ -108,7 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
             coordinator,
             config.get(CONF_WETTER),
             lambda: _statistik_ids(hass, entry),
-            lambda: _puffer_ids(hass, entry, coordinator),
+            lambda: _puffer_quellen(hass, entry, coordinator),
         )
 
     entry.runtime_data = coordinator
@@ -146,19 +145,30 @@ def _statistik_ids(hass: HomeAssistant, entry: ETAConfigEntry) -> tuple[str | No
     )
 
 
-def _puffer_ids(
+def _puffer_quellen(
     hass: HomeAssistant, entry: ETAConfigEntry, coordinator: ETADataUpdateCoordinator
-) -> list[str | None]:
-    """Die Entitäts-IDs der Pufferfühler, oben zuerst - für ihre Statistik."""
+) -> list[dict]:
+    """Je Puffer mit effektivem Volumen: Fühler, ihre Entitäts-IDs und das Volumen.
+
+    Die Entitäts-IDs braucht die Prognose für die Statistik, die Schlüssel
+    für die aktuellen Werte. Ein Puffer, dessen Fühler nicht alle im
+    Register stehen, fehlt - mit einem Teil der Fühler wäre das Mittel
+    schief.
+    """
     registry = er.async_get(hass)
-    schluessel = sorted(
-        (k for k in coordinator.sensor_defs if k.startswith("puffer_fuehler_")),
-        key=lambda k: int(k.rsplit("_", 1)[1]),
-    )
-    return [
-        registry.async_get_entity_id("sensor", DOMAIN, f"eta_static_{entry.entry_id}_{key}")
-        for key in schluessel
-    ]
+    quellen = []
+    for komponente in PUFFER_SPEICHER:
+        volumen = coordinator.volumen(komponente)
+        schluessel = puffer_fuehler_schluessel(coordinator.sensor_defs, komponente)
+        if not volumen or not schluessel:
+            continue
+        ids = [
+            registry.async_get_entity_id("sensor", DOMAIN, f"eta_static_{entry.entry_id}_{key}")
+            for key in schluessel
+        ]
+        if all(ids):
+            quellen.append({"ids": ids, "schluessel": schluessel, "volumen": volumen})
+    return quellen
 
 
 def _prognose_starten(coordinator: ETADataUpdateCoordinator):
@@ -202,7 +212,7 @@ def entitaet_vorgesehen(
     enable_switches: bool,
     enable_errors: bool,
     mit_kosten: bool = False,
-    mit_puffervolumen: bool = False,
+    puffer_mit_volumen: frozenset[str] | set[str] = frozenset(),
     mit_prognose: bool = True,
     mit_zeitraeumen: bool = True,
 ) -> bool | None:
@@ -234,11 +244,12 @@ def entitaet_vorgesehen(
     if key in _PROGNOSE:
         return mit_prognose and _PROGNOSE[key] in aktiv
     if key in _MIT_PUFFERVOLUMEN:
-        return mit_puffervolumen and "puffer" in aktiv
+        return "puffer" in aktiv and "puffer" in puffer_mit_volumen
     if key in _EIGENE_ENTITAETEN:
         return _EIGENE_ENTITAETEN[key] in aktiv
-    if re.fullmatch(r"puffer_fuehler_\d+", key):
-        return "puffer" in aktiv
+    fuehler = re.fullmatch(r"(puffer\d?)_fuehler_\d+", key)
+    if fuehler:
+        return fuehler.group(1) in aktiv
     if key.startswith("komponente_"):
         return key.removeprefix("komponente_") in aktiv
     return None
@@ -265,7 +276,7 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.enable_switches,
             coordinator.enable_errors,
             coordinator.pellet_preis > 0,
-            coordinator.puffer_volumen is not None,
+            coordinator.puffer_mit_volumen,
             coordinator.mit_prognose,
             coordinator.mit_zeitraeumen,
         )

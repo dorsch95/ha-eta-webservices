@@ -470,7 +470,9 @@ def entitaetstabelle() -> list[str]:
         zeile(
             "sensor",
             info["translation_key"],
-            info.get("default_unit") or ("Text" if info.get("is_string") else "–"),
+            info.get("suggested_unit")
+            or info.get("default_unit")
+            or ("Text" if info.get("is_string") else "–"),
         )
         for info in SENSORS.values()
     ]

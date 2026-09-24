@@ -12,6 +12,8 @@ Das Modul kommt ohne Home Assistant aus, damit das Skript es auch ohne
 installiertes Home Assistant laden kann.
 """
 
+import re
+
 BILDPFAD = "/eta_webservices/grafiken"
 """Dort liefert die Integration die Kachelgrafiken aus, siehe URL_GRAFIKEN."""
 
@@ -120,11 +122,19 @@ def betriebsart(entity, top, schrift):
 
 PUFFER_OBEN = 36
 PUFFER_UNTEN = 88
-PUFFER_MIN = 3
+PUFFER_MIN = 2
+"""Der ältere Funktionsblock "Puffer" kommt mit zwei Fühlern aus, oben und unten."""
 PUFFER_MAX = 9
 
+PUFFER_KACHELN = {
+    "puffer": ("puffer", "pufferspeicher"),
+    "puffer2": ("puffer_2", "pufferspeicher_2"),
+    "puffer3": ("puffer_3", "pufferspeicher_3"),
+}
+"""Je Puffer: womit seine Entitäts-IDs beginnen und welcher Marker ihn zeigt."""
 
-def puffer_fuehler(anzahl, schrift):
+
+def puffer_fuehler(anzahl, schrift, praefix="puffer"):
     """Zeigt genau dann N Fühler, wenn die Anlage N Fühler hat.
 
     Die Integration legt je gefundenem Fühler eine Entität an - wie viele
@@ -134,12 +144,13 @@ def puffer_fuehler(anzahl, schrift):
     fehlende Entität als "unknown".
 
     Die Fühler sitzen gleichmäßig verteilt zwischen Speicheroberkante und
-    -unterkante, denn Fühler 1 misst oben und der letzte unten.
+    -unterkante, denn Fühler 1 misst oben und der letzte unten. praefix
+    wählt den Puffer, siehe PUFFER_KACHELN.
     """
     bedingungen = [
         {
             "condition": "state",
-            "entity": f"sensor.eta_heizung_puffer_fuhler_{i}",
+            "entity": f"sensor.eta_heizung_{praefix}_fuhler_{i}",
             "state_not": "unknown",
         }
         for i in range(1, anzahl + 1)
@@ -148,7 +159,7 @@ def puffer_fuehler(anzahl, schrift):
         bedingungen.append(
             {
                 "condition": "state",
-                "entity": f"sensor.eta_heizung_puffer_fuhler_{anzahl + 1}",
+                "entity": f"sensor.eta_heizung_{praefix}_fuhler_{anzahl + 1}",
                 "state": "unknown",
             }
         )
@@ -159,7 +170,7 @@ def puffer_fuehler(anzahl, schrift):
         "conditions": bedingungen,
         "elements": [
             label(
-                f"puffer_fuhler_{i}",
+                f"{praefix}_fuhler_{i}",
                 None,
                 "weiss",
                 round(PUFFER_OBEN + abstand * (i - 1), 1),
@@ -178,6 +189,42 @@ def puffer_schrift(anzahl, schrift):
     if anzahl <= 6:
         return schrift + 5
     return schrift
+
+
+def puffer_kachel(komponente_, schrift, kurz):
+    """Die Kachel eines Pufferspeichers.
+
+    Der erste zeigt oben seinen Ladezustand. Weitere haben keinen, dort
+    steht das effektive Volumen mit ihrer Nummer davor - so ist auch
+    erkennbar, welcher Puffer das ist. Darunter die Ladepumpe, falls der
+    Puffer dezentral geladen wird.
+    """
+    praefix, marker = PUFFER_KACHELN[komponente_]
+    if komponente_ == "puffer":
+        oben = label("puffer_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
+                     "hell", 8, 50, schrift + 5)
+    else:
+        nummer = praefix.rsplit("_", 1)[1]
+        oben = nur_wenn_vorhanden(
+            label(f"{praefix}_effektives_volumen", f"Puffer {nummer}: ",
+                  "hell", 8, 50, schrift + 5)
+        )
+    return komponente(
+        marker,
+        komponente_,
+        "puffer",
+        [
+            oben,
+            nur_wenn_vorhanden(
+                label(f"{praefix}_ladepumpe", "Pumpe: " if kurz else "Ladepumpe: ",
+                      "gedaempft", 15, 50, schrift)
+            ),
+            *(
+                puffer_fuehler(anzahl, puffer_schrift(anzahl, schrift), praefix)
+                for anzahl in range(PUFFER_MIN, PUFFER_MAX + 1)
+            ),
+        ],
+    )
 
 
 MODUS_TASTEN = [
@@ -512,6 +559,18 @@ def aktiv_oder_ruhe(bild, entitaet):
     ]
 
 
+BRENNER_ZUSTAND = "sensor.eta_heizung_brenner_zustand"
+BRENNER_FLAMME = ["Ein", "Messung"]
+"""Brenner-Zustände, bei denen der zweite Erzeuger läuft und die Flamme brennt."""
+
+FERNLEITUNG_PUMPE = "sensor.eta_heizung_fernleitung_pumpe"
+"""Solange die Fernpumpe angefordert ist, wandern Pulse durch Vor- und Rücklauf.
+
+Wie beim Heizkreis zählt alles außer den Anforderungen ohne Fluss, siehe
+HEIZKREIS_OHNE_FLUSS.
+"""
+
+
 def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     """Eine Kachel, die nur erscheint, wenn es die Komponente gibt.
 
@@ -563,19 +622,7 @@ def grid(spalten, schrift, kurz):
         "cards": [
             komponente("kessel", "kessel", "kessel", kessel,
                        ("kessel_zustand", kessel_zustandsbilder())),
-            komponente(
-                "pufferspeicher",
-                "puffer",
-                "puffer",
-                [
-                    label("puffer_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
-                          "hell", 8, 50, schrift + 5),
-                    *(
-                        puffer_fuehler(anzahl, puffer_schrift(anzahl, schrift))
-                        for anzahl in range(PUFFER_MIN, PUFFER_MAX + 1)
-                    ),
-                ],
-            ),
+            *(puffer_kachel(k, schrift, kurz) for k in PUFFER_KACHELN),
             komponente(
                 "fwm",
                 "fwm",
@@ -698,6 +745,42 @@ def grid(spalten, schrift, kurz):
                           "hell", 22, 50, schrift - 5),
                 ],
             ),
+            komponente(
+                "brenner",
+                "brenner",
+                "brenner",
+                [
+                    *bewegt_oder_still(
+                        "brenner_aktiv",
+                        BRENNER_ZUSTAND,
+                        [{"condition": "state", "entity": BRENNER_ZUSTAND, "state": BRENNER_FLAMME}],
+                    ),
+                    label("brenner_zustand", "Brenner: ", "hell", 8, 50, schrift),
+                    label("brenner_anforderung", "Anf.: " if kurz else "Anforderung: ",
+                          "gedaempft", 15, 50, schrift - 5),
+                    label("brenner_temperatur", "Temp.: " if kurz else "Temperatur: ",
+                          "kessel", 22, 50, schrift - 5),
+                ],
+            ),
+            komponente(
+                "fernleitung",
+                "fernleitung",
+                "fernleitung",
+                [
+                    *bewegt_oder_still(
+                        "fernleitung_fluss",
+                        FERNLEITUNG_PUMPE,
+                        [{"condition": "state", "entity": FERNLEITUNG_PUMPE,
+                          "state_not": HEIZKREIS_OHNE_FLUSS}],
+                    ),
+                    label("fernleitung_zustand", "Fernl.: " if kurz else "Fernleitung: ",
+                          "hell", 8, 50, schrift),
+                    label("fernleitung_kesseltemperatur", "Kessel: ",
+                          "kessel", 15, 50, schrift - 5),
+                    label("fernleitung_angeforderte_temperatur", "Soll: " if kurz else "Angefordert: ",
+                          "soll", 22, 50, schrift - 5),
+                ],
+            ),
         ],
     }
 
@@ -718,6 +801,8 @@ sind zusätzlich die Beschriftungen gekürzt.
 MARKER = {
     "kessel": "komponente_kessel",
     "puffer": "komponente_pufferspeicher",
+    "puffer2": "komponente_pufferspeicher_2",
+    "puffer3": "komponente_pufferspeicher_3",
     "fwm": "komponente_fwm",
     "hk1": "komponente_heizkreis_1",
     "hk2": "komponente_heizkreis_2",
@@ -726,6 +811,8 @@ MARKER = {
     "lager": "komponente_pelletlager",
     "solar": "komponente_solar",
     "pvm": "komponente_pv_heizmodul",
+    "brenner": "komponente_brenner",
+    "fernleitung": "komponente_fernleitung",
 }
 """Welche Marker-Entität zu welcher Komponente gehört.
 
@@ -740,10 +827,14 @@ def _passt_zur_anlage(kachel, behalten):
     return marker in behalten
 
 
+_FUEHLER_ENTITAET = re.compile(r"sensor\.eta_heizung_puffer(_\d)?_fuhler_\d+")
+
+
 def _ist_fuehlergruppe(element):
     """Erkennt einen der Blöcke, die je nach Fühlerzahl greifen."""
     return element.get("type") == "conditional" and all(
-        "puffer_fuhler" in bedingung["entity"] for bedingung in element["conditions"]
+        _FUEHLER_ENTITAET.fullmatch(bedingung["entity"])
+        for bedingung in element["conditions"]
     )
 
 
@@ -753,8 +844,10 @@ def _fuehler_ausduennen(kachel, anzahl):
     Danach entfällt auch die Bedingung "Fühler N+1 darf es nicht geben":
     Sie hält nur die Blöcke auseinander, und es bleibt ja nur einer. So
     nennt die Karte am Ende ausschließlich Entitäten, die es auf dieser
-    Anlage wirklich gibt.
+    Anlage wirklich gibt. Ohne bekannte Anzahl bleiben alle Blöcke.
     """
+    if not anzahl:
+        return
     behalten = []
     for element in kachel["card"]["elements"]:
         if not _ist_fuehlergruppe(element):
@@ -779,9 +872,10 @@ def responsive_karte(komponenten=None, fuehler=None):
 
     Wer seine Anlage kennt, kann sie zuschneiden: "komponenten" nimmt die
     Schlüssel aus MARKER, "fuehler" die tatsächliche Zahl der
-    Pufferfühler. Das kürzt die Karte erheblich und lässt Werkzeuge wie
-    Spook verstummen, die Entitäten bemängeln, die es auf dieser Anlage
-    nicht gibt.
+    Pufferfühler - als Zahl für den ersten Puffer oder je Puffer, etwa
+    {"puffer": 9, "puffer2": 3}. Das kürzt die Karte erheblich und lässt
+    Werkzeuge wie Spook verstummen, die Entitäten bemängeln, die es auf
+    dieser Anlage nicht gibt.
     """
     karte = {
         "type": "vertical-stack",
@@ -802,10 +896,15 @@ def responsive_karte(komponenten=None, fuehler=None):
         if komponenten
         else set(MARKER.values())
     )
+    if not isinstance(fuehler, dict):
+        fuehler = {"puffer": fuehler}
+    je_marker = {
+        f"sensor.eta_heizung_komponente_{marker}": fuehler.get(k)
+        for k, (_, marker) in PUFFER_KACHELN.items()
+    }
     for variante in karte["cards"]:
         gitter = variante["card"]
         gitter["cards"] = [k for k in gitter["cards"] if _passt_zur_anlage(k, behalten)]
-        if fuehler:
-            for kachel in gitter["cards"]:
-                _fuehler_ausduennen(kachel, fuehler)
+        for kachel in gitter["cards"]:
+            _fuehler_ausduennen(kachel, je_marker.get(kachel["conditions"][0]["entity"]))
     return karte

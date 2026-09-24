@@ -314,17 +314,14 @@ async def test_konfigurieren_warnt_vor_dem_schreibzugriff(monkeypatch):
     assert ergebnis["step_id"] == "switch_warning"
 
     weiter = await flow.async_step_switch_warning({})
-    assert weiter["step_id"] == "puffer", "Puffer angekreuzt"
-    weiter = await flow.async_step_puffer({"puffer_volumen": 825})
     assert weiter["step_id"] == "fub_names"
-    assert flow._data["puffer_volumen"] == 825
 
 
 async def test_bereits_freigegebener_schreibzugriff_warnt_nicht_erneut(monkeypatch):
     _, ergebnis = await options_schritt(
         monkeypatch, {"enable_switches": True}, optionen(enable_switches=True)
     )
-    assert ergebnis["step_id"] == "puffer"
+    assert ergebnis["step_id"] == "fub_names"
 
 
 async def test_konfigurieren_speichert_keine_adresse(monkeypatch):
@@ -434,25 +431,21 @@ def test_wetter_vorschlag():
 
 
 
-async def test_ohne_puffer_keine_frage_nach_dem_volumen(monkeypatch):
-    _, ergebnis = await options_schritt(monkeypatch, {}, optionen(components=["fwm"]))
+async def test_puffervolumen_wird_nicht_mehr_abgefragt(monkeypatch):
+    """Das effektive Volumen kommt aus der Anlage, eine Eingabe gibt es nicht."""
+    flow, ergebnis = await options_schritt(monkeypatch, {}, optionen(components=["puffer", "puffer2"]))
     assert ergebnis["step_id"] == "fub_names"
+    assert not hasattr(flow, "async_step_puffer")
 
 
-async def test_puffervolumen_ist_vorbelegt_und_begrenzt(monkeypatch):
-    from eta_webservices.config_flow import _puffer_schema
-
-    flow, ergebnis = await options_schritt(monkeypatch, {"puffer_volumen": 825}, optionen())
-    assert ergebnis["step_id"] == "puffer"
-    schema = _puffer_schema({"puffer_volumen": 825})
-    assert schema({}) == {"puffer_volumen": 825}
-    assert _puffer_schema({})({}) == {"puffer_volumen": 0}
-    with pytest.raises(vol.Invalid):
-        schema({"puffer_volumen": -5})
-    weiter = await flow.async_step_puffer({"puffer_volumen": 1000})
-    assert weiter["step_id"] == "fub_names"
-    fertig = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex"})
-    assert fertig["data"]["puffer_volumen"] == 1000
+async def test_weitere_puffer_brenner_und_fernleitung_fragen_ihren_fub_namen(monkeypatch):
+    _, ergebnis = await options_schritt(
+        monkeypatch, {}, optionen(components=["puffer", "puffer2", "brenner", "fernleitung"])
+    )
+    felder = {str(k): k.default() for k in ergebnis["data_schema"].schema}
+    assert felder["pufferflex2"] == "PufferFlex 2"
+    assert felder["brenner"] == "Brenner"
+    assert felder["fernleitung"] == "Fernl"
 
 
 def test_zusatzfunktionen_sind_waehlbar_und_anfangs_an():

@@ -22,8 +22,8 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 
 from .api import ETAApiError
-from .const import CONF_COMPONENTS, CONF_FUB_NAMES
-from .coordinator import ETAConfigEntry
+from .const import CONF_COMPONENTS, CONF_FUB_NAMES, PUFFER_SPEICHER
+from .coordinator import ETAConfigEntry, puffer_fuehler_schluessel
 from .uri_discovery import DISCOVERY_PATHS, _as_list
 
 TO_REDACT = {CONF_HOST}
@@ -156,8 +156,9 @@ async def async_get_config_entry_diagnostics(
                 CONF_FUB_NAMES: {**entry.data, **entry.options}.get(
                     CONF_FUB_NAMES, {}
                 ),
-                "puffer_volumen": coordinator.puffer_volumen,
-                "puffer_volumen_quelle": coordinator.puffer_volumen_quelle,
+                "puffer_volumen": {
+                    k: coordinator.volumen(k) for k in sorted(coordinator.puffer_mit_volumen)
+                },
                 "abfrageintervall": (
                     coordinator.update_interval.total_seconds()
                     if coordinator.update_interval
@@ -174,11 +175,14 @@ async def async_get_config_entry_diagnostics(
                 set(DISCOVERY_PATHS) - set(coordinator.discovered_uris)
             ),
             "ueber_kennung_gefunden": sorted(coordinator.ueber_kennung),
-            "pufferfuehler": sorted(
-                int(key.rsplit("_", 1)[1])
-                for key in coordinator.discovered_uris
-                if key.startswith("puffer_fuehler_")
-            ),
+            "pufferfuehler": {
+                komponente: [
+                    int(key.rsplit("_", 1)[1])
+                    for key in puffer_fuehler_schluessel(coordinator.discovered_uris, komponente)
+                ]
+                for komponente in PUFFER_SPEICHER
+                if komponente in coordinator.components
+            },
         },
         "schreibzugriff": {
             "freigegeben": coordinator.enable_switches,

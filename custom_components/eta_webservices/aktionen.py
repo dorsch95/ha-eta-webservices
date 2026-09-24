@@ -26,7 +26,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN
+from .const import DOMAIN, PUFFER_SPEICHER
+from .coordinator import puffer_fuehler_schluessel
 from .entitaets_ids import feste_entity_id
 from .karte import responsive_karte
 
@@ -76,10 +77,11 @@ def _eintrag_waehlen(hass: HomeAssistant, eintrag_id: str | None):
 def karte_fuer_eintrag(hass: HomeAssistant, eintrag) -> dict:
     """Baut die Karte für diesen Eintrag mit seinen tatsächlichen Entitäten."""
     coordinator = eintrag.runtime_data
-    fuehler = sum(
-        1 for key in coordinator.sensor_defs if key.startswith("puffer_fuehler_")
-    )
-    karte = responsive_karte(coordinator.components, fuehler or None)
+    fuehler = {
+        komponente: len(puffer_fuehler_schluessel(coordinator.sensor_defs, komponente))
+        for komponente in PUFFER_SPEICHER
+    }
+    karte = responsive_karte(coordinator.components, fuehler)
 
     registry = er.async_get(hass)
     tatsaechlich: dict[str, str] = {}

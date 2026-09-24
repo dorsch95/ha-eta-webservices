@@ -106,7 +106,7 @@ def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
     landet, verschmilzt deshalb mit ihm - der Eintrag verschwindet lautlos,
     ohne Syntaxfehler und ohne dass sich die Anzahl der Einträge ändert.
     """
-    from eta_webservices.const import SELECTS, SENSORS, SWITCHES
+    from eta_webservices.const import PUFFER_SPEICHER, SELECTS, SENSORS, SWITCHES
     from eta_webservices.uri_discovery import (
         BETRIEBSART_ROLES,
         DISCOVERY_PATHS,
@@ -114,6 +114,7 @@ def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
         SWITCH_ROLES,
     )
 
-    assert set(SENSORS) == set(DISCOVERY_PATHS) | set(PUMPEN)
+    volumen = {f"{k}_volumen" for k in PUFFER_SPEICHER}
+    assert set(SENSORS) == set(DISCOVERY_PATHS) | set(PUMPEN) | volumen
     assert set(SWITCHES) == set(SWITCH_ROLES)
     assert set(SELECTS) == set(BETRIEBSART_ROLES)

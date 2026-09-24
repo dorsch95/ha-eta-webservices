@@ -705,12 +705,16 @@ async def test_koordinator_gleicht_den_puffer_aus(prognose_koordinator, monkeypa
 
     zone = dt_util.get_default_time_zone()
     haupt = prognose_koordinator.haupt
-    haupt.puffer_volumen = 1000
     haupt.pellet_kwh_per_kg = 4.8
-    haupt.sensor_defs = {"puffer_fuehler_1": {}, "puffer_fuehler_2": {}}
     haupt.data["puffer_fuehler_1"] = _wert(60)
     haupt.data["puffer_fuehler_2"] = _wert(40)
-    prognose_koordinator._puffer_ids = lambda: ["sensor.oben", "sensor.unten"]
+    prognose_koordinator._puffer_quellen = lambda: [
+        {
+            "ids": ["sensor.oben", "sensor.unten"],
+            "schluessel": ["puffer_fuehler_1", "puffer_fuehler_2"],
+            "volumen": 1000,
+        }
+    ]
 
     ohne_puffer = await prognose_koordinator._async_update_data()
     original = modul.async_stundenwerte
@@ -737,9 +741,44 @@ async def test_koordinator_gleicht_den_puffer_aus(prognose_koordinator, monkeypa
 
 
 async def test_ohne_volumen_kein_ausgleich(prognose_koordinator):
-    prognose_koordinator._puffer_ids = lambda: ["sensor.oben"]
+    prognose_koordinator.haupt.pellet_kwh_per_kg = 4.8
+    prognose_koordinator._puffer_quellen = lambda: [
+        {"ids": ["sensor.oben"], "schluessel": ["puffer_fuehler_1"], "volumen": None}
+    ]
     await prognose_koordinator._async_update_data()
     assert prognose_koordinator.puffer_tage == 0
+
+
+def test_mehrere_puffer_zaehlen_zusammen():
+    """Die Wärme aller Puffer addiert sich; es zählen nur Tage, die jeder kennt."""
+    from eta_webservices import prognose as p
+
+    erster = ({date(2026, 1, 1): 50.0, date(2026, 1, 2): 60.0}, 1.0)
+    zweiter = ({date(2026, 1, 2): 40.0, date(2026, 1, 3): 45.0}, 0.5)
+    assert p.puffer_energie_enden([erster, zweiter]) == {date(2026, 1, 2): 80.0}
+    assert p.puffer_energie_enden([erster]) == {date(2026, 1, 1): 50.0, date(2026, 1, 2): 60.0}
+    assert p.puffer_energie_enden([]) == {}
+
+
+async def test_puffer_quellen_mit_zwei_puffern(hass, entry, menu_xml):
+    """Je Puffer mit effektivem Volumen eine Quelle, mit den Fühlern oben zuerst."""
+    from eta_webservices import _puffer_quellen
+
+    from .test_puffer import ZWEITER_PUFFER, mit_fub
+    from .test_sensors import setup_integration
+
+    hass.session.menu = mit_fub(menu_xml, ZWEITER_PUFFER)
+    entry.data["components"] = ["kessel", "puffer", "puffer2"]
+    coordinator, _ = await setup_integration(hass, entry)
+    for key in coordinator.sensor_defs:
+        if "_fuehler_" in key:
+            hass.entity_registry.anlegen(
+                f"sensor.{key}", f"eta_static_{entry.entry_id}_{key}", entry.entry_id
+            )
+    quellen = _puffer_quellen(hass, entry, coordinator)
+    assert [q["schluessel"][0] for q in quellen] == ["puffer_fuehler_1", "puffer2_fuehler_1"]
+    assert [len(q["ids"]) for q in quellen] == [5, 3]
+    assert [q["volumen"] for q in quellen] == [825, 825]
 
 
 async def test_prognose_laesst_sich_abwaehlen(hass, entry, monkeypatch):

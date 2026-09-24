@@ -18,6 +18,7 @@ from .const import (
     SWITCHES,
     DOMAIN,
     PUFFER_FUEHLER_MINDEST,
+    PUFFER_SPEICHER,
     SENSORS,
     normalize_components,
     puffer_fuehler_info,
@@ -60,29 +61,48 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
 
     Jede URI stammt aus dem Menübaum dieser Anlage; feste Adressen gibt es
     nicht. Was der Menübaum nicht hergibt, bekommt trotzdem eine Entität,
-    nur ohne URI - sie zeigt dann dauerhaft "-". Für nicht ausgewählte
-    Komponenten entsteht nichts.
+    nur ohne URI - sie zeigt dann dauerhaft "-". Ausgenommen ist, was als
+    "nur_wenn_vorhanden" markiert ist. Für nicht ausgewählte Komponenten
+    entsteht nichts.
     """
     aktiv = set(normalize_components(components))
     sensor_defs = {
         key: {**info, "uri": discovered_uris.get(key)}
         for key, info in SENSORS.items()
         if info["component"] in aktiv
+        and (discovered_uris.get(key) or not info.get("nur_wenn_vorhanden"))
     }
 
-    if "puffer" not in aktiv:
-        return sensor_defs
-
-    indices = puffer_fuehler_indices or list(range(1, PUFFER_FUEHLER_MINDEST + 1))
-    last_index = indices[-1]
-    for index in indices:
-        key = f"puffer_fuehler_{index}"
-        sensor_defs[key] = {
-            **puffer_fuehler_info(index, index == last_index),
-            "uri": discovered_uris.get(key),
-        }
+    for komponente in PUFFER_SPEICHER:
+        if komponente not in aktiv:
+            continue
+        praefix = f"{komponente}_fuehler_"
+        indices = sorted(
+            int(key.removeprefix(praefix))
+            for key in discovered_uris
+            if key.startswith(praefix)
+        )
+        if komponente == "puffer" and puffer_fuehler_indices:
+            indices = puffer_fuehler_indices
+        indices = indices or list(range(1, PUFFER_FUEHLER_MINDEST + 1))
+        last_index = indices[-1]
+        for index in indices:
+            key = f"{praefix}{index}"
+            sensor_defs[key] = {
+                **puffer_fuehler_info(index, index == last_index, komponente),
+                "uri": discovered_uris.get(key),
+            }
 
     return sensor_defs
+
+
+def puffer_fuehler_schluessel(sensor_defs, komponente="puffer"):
+    """Die Fühler eines Puffers, oben zuerst."""
+    praefix = f"{komponente}_fuehler_"
+    return sorted(
+        (key for key in sensor_defs if key.startswith(praefix)),
+        key=lambda key: int(key.removeprefix(praefix)),
+    )
 
 
 class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
@@ -111,10 +131,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.pellet_kwh_per_kg = pellet_kwh_per_kg
         self.pellet_preis = 0.0
         self.prognose = None
-        self.puffer_volumen_einstellung = 0.0
         self.mit_prognose = True
         self.mit_zeitraeumen = True
-        self.puffer_volumen_anlage: float | None = None
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors
         self.sensor_defs: dict[str, dict] = {}
@@ -154,12 +172,17 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
 
         "nicht_vorhanden": stand schon beim Einrichten nicht im Menübaum.
         "nicht_erreichbar": vorhanden, kam zuletzt aber nicht an.
+        "kein_messwert": kam an, die Anlage zeigt aber nur Striche - etwa
+        bei einem Fühler mit Unterbrechung.
         """
         info = self.sensor_defs.get(key)
         if info is None or not info.get("uri"):
             return "nicht_vorhanden"
         if self.fehlzyklen.get(key, 0) >= VERALTET_AB:
             return "nicht_erreichbar"
+        wert = (self.data or {}).get(key)
+        if wert is not None and not wert.is_text and wert.value is None:
+            return "kein_messwert"
         return "ok"
 
     @property
@@ -339,14 +362,16 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Ohne Menübaum gibt es nichts abzufragen; Home Assistant bekommt
         dann ConfigEntryNotReady und versucht es später erneut.
         """
+        ungeprueft: dict[str, str] = {}
         try:
             self.discovered_uris, indices = await async_discover_uris(
-                self.client, fub_name_overrides, self.ueber_kennung
+                self.client, fub_name_overrides, self.ueber_kennung, ungeprueft
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
                 f"Menübaum der Anlage nicht lesbar: {err}"
             ) from err
+        await self._ungeprueft_lesen(ungeprueft)
 
         self.sensor_defs = build_sensor_defs(
             self.discovered_uris, indices, self.components
@@ -358,44 +383,59 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             set(self.discovered_uris),
         )
         self.api_version = await self.client.async_get_api_version()
-        await self._puffervolumen_lesen()
         await self._varinfo_laden()
         await self._schalter_pruefen()
         await self._betriebsarten_pruefen()
         await self._varset_anlegen()
 
-    async def _puffervolumen_lesen(self) -> None:
-        """Liest einmal das Gesamtvolumen, das an PufferFlex eingestellt ist.
+    async def _ungeprueft_lesen(self, ungeprueft: dict[str, str]) -> None:
+        """Übernimmt zusammengesetzte URIs, die die Anlage tatsächlich kennt.
 
-        Unplausible Werte - kein Puffer hat unter 50 oder über 100000 Liter -
-        gelten als nicht eingestellt.
+        Jede wird einmal gelesen; nur eine Zahl zählt. Eine Anlage ohne
+        das Objekt antwortet mit einem Fehler, dann bleibt es weg - im
+        Variablensatz könnte eine unbekannte URI sonst die ganze Abfrage
+        stören. Nur für angekreuzte Komponenten.
         """
-        self.puffer_volumen_anlage = None
-        uri = self.discovered_uris.get("puffer_gesamtvolumen")
-        if not uri or "puffer" not in self.components:
-            return
+        for key, uri in ungeprueft.items():
+            if SENSORS[key]["component"] not in self.components:
+                continue
+            try:
+                wert = await self.client.async_get_value(uri)
+            except ETAApiError as err:
+                _LOGGER.debug("ETA: %s unter %s nicht vorhanden: %s", key, uri, err)
+                continue
+            if wert.is_text or wert.value is None:
+                continue
+            self.discovered_uris[key] = uri
+            self.ueber_kennung.add(key)
+            _LOGGER.info("ETA: %s über seine Kennung gefunden (%s)", key, uri)
+
+    def volumen(self, komponente: str = "puffer") -> float | None:
+        """Das effektive Volumen eines Puffers in Litern, wie die Anlage es meldet.
+
+        Unplausible Werte - kein Puffer hat unter 50 oder über 100000
+        Liter - gelten als unbekannt.
+        """
+        wert = (self.data or {}).get(f"{komponente}_volumen")
         try:
-            wert = float((await self.client.async_get_value(uri)).value)
-        except (ETAApiError, TypeError, ValueError) as err:
-            _LOGGER.debug("ETA: Puffervolumen nicht lesbar: %s", err)
-            return
-        if 50 <= wert <= 100000:
-            self.puffer_volumen_anlage = wert
+            liter = float(wert.value) if wert is not None else None
+        except (TypeError, ValueError):
+            return None
+        return liter if liter is not None and 50 <= liter <= 100000 else None
 
     @property
     def puffer_volumen(self) -> float | None:
-        """Das geltende Puffervolumen: eingetragen, sonst von der Anlage."""
-        if "puffer" not in self.components:
-            return None
-        if self.puffer_volumen_einstellung > 0:
-            return self.puffer_volumen_einstellung
-        return self.puffer_volumen_anlage
+        """Das effektive Volumen des ersten Puffers."""
+        return self.volumen("puffer")
 
     @property
-    def puffer_volumen_quelle(self) -> str | None:
-        if self.puffer_volumen is None:
-            return None
-        return "Einstellung" if self.puffer_volumen_einstellung > 0 else "Anlage"
+    def puffer_mit_volumen(self) -> set[str]:
+        """Die angekreuzten Puffer, deren Anlage ein effektives Volumen führt."""
+        return {
+            k
+            for k in PUFFER_SPEICHER
+            if self.sensor_defs.get(f"{k}_volumen", {}).get("uri")
+        }
 
     async def _async_update_data(self) -> dict[str, ETAValue]:
         """Liest alle bekannten Messwerte und mischt sie in den Bestand.

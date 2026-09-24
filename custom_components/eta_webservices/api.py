@@ -367,6 +367,18 @@ def _ganzzahl(node: dict, schluessel: str) -> int | None:
         return None
 
 
+def _ohne_messwert(text: str) -> bool:
+    """Zeigt die Anlage statt eines Werts nur Striche?
+
+    So meldet sie einen Fühler mit Unterbrechung oder Kurzschluss und
+    einen Wert, den gerade niemand liefert (etwa einen Raumfühler über
+    eine Schnittstelle). Der Rohwert daneben ist dann ein alter oder
+    erfundener Wert - bei einem abgerissenen Pufferfühler etwa 60,0 °C.
+    """
+    kern = text.replace(" ", "").replace(",", "").replace(".", "")
+    return bool(kern) and set(kern) == {"-"}
+
+
 def _parse_value_node(node: Any) -> ETAValue:
     """Wandelt einen <value>-Knoten in einen ETAValue um.
 
@@ -390,6 +402,9 @@ def _parse_value_node(node: Any) -> ETAValue:
     einheit = node.get("@unit", "") or ""
     dec_places = _ganzzahl(node, "@decPlaces")
     text_offset = _ganzzahl(node, "@advTextOffset")
+
+    if _ohne_messwert(text) and not text_offset:
+        return ETAValue(None, text, einheit, False, dec_places)
 
     zahl = None
     if roh is not None and str(roh).strip():

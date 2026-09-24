@@ -22,13 +22,6 @@
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },
-      "puffer": {
-        "title": "Pufferspeicher",
-        "description": "Wie viele Liter fasst dein Pufferspeicher? Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose ordnet den Verbrauch dem richtigen Tag zu. Bei PufferFlex liest sie das Volumen aus der Anlage - dann kannst du 0 stehen lassen. Ein eingetragener Wert geht vor.",
-        "data": {
-          "puffer_volumen": "Puffervolumen (Liter, 0 = von der Anlage)"
-        }
-      },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
         "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen vorausgefüllt.",
@@ -44,7 +37,11 @@
           "pvm": "FUB-Name: PV-Heizmodul (PVM)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
-          "lager": "FUB-Name: Pelletlager (Lager)"
+          "lager": "FUB-Name: Pelletlager (Lager)",
+          "pufferflex2": "FUB-Name: Pufferspeicher 2 (PufferFlex 2)",
+          "pufferflex3": "FUB-Name: Pufferspeicher 3 (PufferFlex 3)",
+          "brenner": "FUB-Name: Brenner (Brenner)",
+          "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
       "reconfigure": {
@@ -89,13 +86,6 @@
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },
-      "puffer": {
-        "title": "Pufferspeicher",
-        "description": "Wie viele Liter fasst dein Pufferspeicher? Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose ordnet den Verbrauch dem richtigen Tag zu. Bei PufferFlex liest sie das Volumen aus der Anlage - dann kannst du 0 stehen lassen. Ein eingetragener Wert geht vor.",
-        "data": {
-          "puffer_volumen": "Puffervolumen (Liter, 0 = von der Anlage)"
-        }
-      },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
         "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind mit den ETA-Standardnamen bzw. deinen bisherigen Angaben vorausgefüllt.",
@@ -111,7 +101,11 @@
           "pvm": "FUB-Name: PV-Heizmodul (PVM)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
-          "lager": "FUB-Name: Pelletlager (Lager)"
+          "lager": "FUB-Name: Pelletlager (Lager)",
+          "pufferflex2": "FUB-Name: Pufferspeicher 2 (PufferFlex 2)",
+          "pufferflex3": "FUB-Name: Pufferspeicher 3 (PufferFlex 3)",
+          "brenner": "FUB-Name: Brenner (Brenner)",
+          "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
       "switch_warning": {
@@ -132,7 +126,11 @@
         "pvm": "PV-Heizmodul (PVM)",
         "hk3": "Heizkreis 3",
         "hk4": "Heizkreis 4",
-        "lager": "Pelletlager"
+        "lager": "Pelletlager",
+        "puffer2": "Pufferspeicher 2",
+        "puffer3": "Pufferspeicher 3",
+        "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
+        "fernleitung": "Fernleitung (zu einem Nebengebäude)"
       }
     }
   },
@@ -208,8 +206,35 @@
       "aussentemperatur": {
         "name": "Außentemperatur"
       },
+      "brenner_anforderung": {
+        "name": "Brenner Anforderung"
+      },
+      "brenner_leistung_soll": {
+        "name": "Brenner Leistung Soll"
+      },
+      "brenner_temperatur": {
+        "name": "Brenner Temperatur"
+      },
+      "brenner_volllaststunden": {
+        "name": "Brenner Volllaststunden"
+      },
+      "brenner_zustand": {
+        "name": "Brenner Zustand"
+      },
       "entaschung_verbrauch": {
         "name": "Verbrauch seit Entaschung"
+      },
+      "fernleitung_angefordert": {
+        "name": "Fernleitung angeforderte Temperatur"
+      },
+      "fernleitung_kesseltemperatur": {
+        "name": "Fernleitung Kesseltemperatur"
+      },
+      "fernleitung_pumpe": {
+        "name": "Fernleitung Pumpe"
+      },
+      "fernleitung_zustand": {
+        "name": "Fernleitung Zustand"
       },
       "fwm_warmwasser": {
         "name": "FWM Warmwassertemperatur"
@@ -253,6 +278,12 @@
       "kessel_zustand": {
         "name": "Kessel Zustand"
       },
+      "komponente_brenner": {
+        "name": "Komponente Brenner"
+      },
+      "komponente_fernleitung": {
+        "name": "Komponente Fernleitung"
+      },
       "komponente_fwm": {
         "name": "Komponente FWM"
       },
@@ -276,6 +307,12 @@
       },
       "komponente_puffer": {
         "name": "Komponente Pufferspeicher"
+      },
+      "komponente_puffer2": {
+        "name": "Komponente Pufferspeicher 2"
+      },
+      "komponente_puffer3": {
+        "name": "Komponente Pufferspeicher 3"
       },
       "komponente_pvm": {
         "name": "Komponente PV-Heizmodul"
@@ -346,6 +383,72 @@
       "pellet_verbrauch_woche": {
         "name": "Pelletverbrauch diese Woche"
       },
+      "puffer2_fuehler_1": {
+        "name": "Puffer 2 Fühler 1"
+      },
+      "puffer2_fuehler_2": {
+        "name": "Puffer 2 Fühler 2"
+      },
+      "puffer2_fuehler_3": {
+        "name": "Puffer 2 Fühler 3"
+      },
+      "puffer2_fuehler_4": {
+        "name": "Puffer 2 Fühler 4"
+      },
+      "puffer2_fuehler_5": {
+        "name": "Puffer 2 Fühler 5"
+      },
+      "puffer2_fuehler_6": {
+        "name": "Puffer 2 Fühler 6"
+      },
+      "puffer2_fuehler_7": {
+        "name": "Puffer 2 Fühler 7"
+      },
+      "puffer2_fuehler_8": {
+        "name": "Puffer 2 Fühler 8"
+      },
+      "puffer2_fuehler_9": {
+        "name": "Puffer 2 Fühler 9"
+      },
+      "puffer2_ladepumpe": {
+        "name": "Puffer 2 Ladepumpe"
+      },
+      "puffer2_volumen": {
+        "name": "Puffer 2 effektives Volumen"
+      },
+      "puffer3_fuehler_1": {
+        "name": "Puffer 3 Fühler 1"
+      },
+      "puffer3_fuehler_2": {
+        "name": "Puffer 3 Fühler 2"
+      },
+      "puffer3_fuehler_3": {
+        "name": "Puffer 3 Fühler 3"
+      },
+      "puffer3_fuehler_4": {
+        "name": "Puffer 3 Fühler 4"
+      },
+      "puffer3_fuehler_5": {
+        "name": "Puffer 3 Fühler 5"
+      },
+      "puffer3_fuehler_6": {
+        "name": "Puffer 3 Fühler 6"
+      },
+      "puffer3_fuehler_7": {
+        "name": "Puffer 3 Fühler 7"
+      },
+      "puffer3_fuehler_8": {
+        "name": "Puffer 3 Fühler 8"
+      },
+      "puffer3_fuehler_9": {
+        "name": "Puffer 3 Fühler 9"
+      },
+      "puffer3_ladepumpe": {
+        "name": "Puffer 3 Ladepumpe"
+      },
+      "puffer3_volumen": {
+        "name": "Puffer 3 effektives Volumen"
+      },
       "puffer_energieinhalt": {
         "name": "Puffer Energieinhalt"
       },
@@ -376,8 +479,14 @@
       "puffer_fuehler_9": {
         "name": "Puffer Fühler 9"
       },
+      "puffer_ladepumpe": {
+        "name": "Puffer Ladepumpe"
+      },
       "puffer_ladezustand": {
         "name": "Puffer Ladezustand"
+      },
+      "puffer_volumen": {
+        "name": "Puffer effektives Volumen"
       },
       "pvm_ertrag_gestern": {
         "name": "PV-Heizmodul Ertrag gestern"

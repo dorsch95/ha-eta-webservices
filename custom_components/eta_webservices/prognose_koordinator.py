@@ -135,7 +135,7 @@ class ETAPrognoseKoordinator(DataUpdateCoordinator[prognose.Ergebnis]):
         haupt,
         wetter_wahl: str | None,
         statistik_ids: Callable[[], tuple[str | None, str | None]],
-        puffer_ids: Callable[[], list[str]] = list,
+        puffer_quellen: Callable[[], list[dict]] = list,
     ) -> None:
         super().__init__(
             hass,
@@ -148,7 +148,7 @@ class ETAPrognoseKoordinator(DataUpdateCoordinator[prognose.Ergebnis]):
         self.wetter_wahl = wetter_wahl
         self.wetter_id: str | None = None
         self._statistik_ids = statistik_ids
-        self._puffer_ids = puffer_ids
+        self._puffer_quellen = puffer_quellen
         self.puffer_tage = 0
         self._gegenrechnung_bis: date | None = None
         self._gegenrechnung = None
@@ -175,36 +175,34 @@ class ETAPrognoseKoordinator(DataUpdateCoordinator[prognose.Ergebnis]):
 
         return zahl("lager_vorrat"), zahl("lager_warngrenze")
 
-    def _puffer(self) -> tuple[list[str], float, float]:
-        """Statistik-IDs der Pufferfühler, kWh je Grad und kWh je kg Pellets.
+    def _puffer(self) -> list[dict]:
+        """Die Puffer, deren Wärme ausgeglichen wird - mit bekanntem Volumen.
 
-        Ohne bekanntes Volumen oder ohne Fühler gibt es nichts
-        auszugleichen - dann bleibt die Liste leer.
+        Jeder Eintrag nennt die Statistik-IDs seiner Fühler ("ids"), ihre
+        Schlüssel für die aktuellen Werte ("schluessel") und das Volumen.
         """
-        volumen = getattr(self.haupt, "puffer_volumen", None)
-        ids = [i for i in self._puffer_ids() if i]
-        if not volumen or not ids or len(ids) != len(self._puffer_ids()):
-            return [], 0.0, 0.0
-        kwh_je_kg = (
-            getattr(self.haupt, "pellet_kwh_per_kg", 0.0) * prognose.KESSEL_WIRKUNGSGRAD
-        )
-        return ids, volumen * prognose.WASSER_KWH_JE_LITER_KELVIN, kwh_je_kg
+        return [q for q in self._puffer_quellen() if q.get("ids") and q.get("volumen")]
 
-    def _puffer_jetzt(self) -> float | None:
-        """Mittlere Puffertemperatur gerade eben, aus den Messwerten der Anlage."""
-        schluessel = sorted(
-            (k for k in getattr(self.haupt, "sensor_defs", {}) if k.startswith("puffer_fuehler_")),
-            key=lambda k: int(k.rsplit("_", 1)[1]),
-        )
-        werte = prognose.puffer_temperaturen(self.haupt.data, schluessel)
-        return sum(werte) / len(werte) if werte else None
+    def _puffer_jetzt(self, quellen: list[dict]) -> float | None:
+        """Wärme in allen Puffern gerade eben (kWh), aus den Messwerten der Anlage."""
+        summe = 0.0
+        for quelle in quellen:
+            werte = prognose.puffer_temperaturen(self.haupt.data, quelle["schluessel"])
+            if not werte:
+                return None
+            summe += (
+                sum(werte) / len(werte) * quelle["volumen"] * prognose.WASSER_KWH_JE_LITER_KELVIN
+            )
+        return summe
 
     async def _async_update_data(self) -> prognose.Ergebnis:
         heute = dt_util.now().date()
         verbrauch_id, temperatur_id = self._statistik_ids()
         if not verbrauch_id or not temperatur_id:
             return prognose.Ergebnis(status="wartet auf Gesamtverbrauch und Außentemperatur")
-        puffer_ids, kwh_je_kelvin, kwh_je_kg = self._puffer()
+        quellen = self._puffer()
+        puffer_ids = [i for quelle in quellen for i in quelle["ids"]]
+        kwh_je_kg = getattr(self.haupt, "pellet_kwh_per_kg", 0.0) * prognose.KESSEL_WIRKUNGSGRAD
         try:
             verbrauch, temperatur, puffer = await async_stundenwerte(
                 self.hass, verbrauch_id, temperatur_id, heute, puffer_ids
@@ -222,15 +220,21 @@ class ETAPrognoseKoordinator(DataUpdateCoordinator[prognose.Ergebnis]):
             if lokales_datum_aus_zeitstempel(zeit) == heute
         )
         self.puffer_tage = 0
-        if puffer_ids and kwh_je_kg > 0:
-            enden = prognose.puffer_tagesenden(puffer, lokale_stunde_aus_zeitstempel)
-            tage, self.puffer_tage = prognose.puffer_ausgleichen(
-                tage, enden, kwh_je_kelvin, kwh_je_kg
-            )
-            gestern = enden.get(heute - timedelta(days=1))
-            jetzt = self._puffer_jetzt()
+        if quellen and kwh_je_kg > 0:
+            je_puffer, start = [], 0
+            for quelle in quellen:
+                reihen = puffer[start:start + len(quelle["ids"])]
+                start += len(quelle["ids"])
+                je_puffer.append((
+                    prognose.puffer_tagesenden(reihen, lokale_stunde_aus_zeitstempel),
+                    quelle["volumen"] * prognose.WASSER_KWH_JE_LITER_KELVIN,
+                ))
+            energie = prognose.puffer_energie_enden(je_puffer)
+            tage, self.puffer_tage = prognose.puffer_ausgleichen(tage, energie, 1.0, kwh_je_kg)
+            gestern = energie.get(heute - timedelta(days=1))
+            jetzt = self._puffer_jetzt(quellen)
             if gestern is not None and jetzt is not None:
-                heute_schon -= (jetzt - gestern) * kwh_je_kelvin / kwh_je_kg
+                heute_schon -= (jetzt - gestern) / kwh_je_kg
         self.wetter_id = self._wetter()
         vorhersage = await async_vorhersage(self.hass, self.wetter_id)
         self.vorhersage_tage = len(vorhersage)

@@ -65,15 +65,6 @@ CONF_ZEITRAEUME = "verbrauch_zeitraeume"
 """Pelletverbrauch (und -kosten) für heute, diese Woche und dieses Jahr anlegen."""
 DEFAULT_ZEITRAEUME = True
 
-CONF_PUFFER_VOLUMEN = "puffer_volumen"
-"""Volumen des Pufferspeichers in Litern, 0 = von der Anlage übernehmen.
-
-PufferFlex führt sein Gesamtvolumen selbst, der ältere Funktionsblock
-"Puffer" nicht - dort trägt der Nutzer es beim Einrichten ein. Ein
-eingetragener Wert geht dem der Anlage vor.
-"""
-MAX_PUFFER_VOLUMEN = 100000
-
 CONF_WETTER = "wetter"
 """Wetter-Entität, deren Vorhersage die Verbrauchsprognose nutzt.
 
@@ -102,6 +93,18 @@ COMPONENTS = {
         "image": "puffer",
         "roles": ["pufferflex"],
         "discovery_prefixes": ["puffer_"],
+    },
+    "puffer2": {
+        "name": "Pufferspeicher 2",
+        "image": "puffer",
+        "roles": ["pufferflex2"],
+        "discovery_prefixes": ["puffer2_"],
+    },
+    "puffer3": {
+        "name": "Pufferspeicher 3",
+        "image": "puffer",
+        "roles": ["pufferflex3"],
+        "discovery_prefixes": ["puffer3_"],
     },
     "fwm": {
         "name": "FWM",
@@ -151,6 +154,18 @@ COMPONENTS = {
         "roles": ["pvm"],
         "discovery_prefixes": ["pvm_"],
     },
+    "brenner": {
+        "name": "Brenner",
+        "image": "brenner",
+        "roles": ["brenner"],
+        "discovery_prefixes": ["brenner_"],
+    },
+    "fernleitung": {
+        "name": "Fernleitung",
+        "image": "fernleitung",
+        "roles": ["fernleitung"],
+        "discovery_prefixes": ["fernleitung_"],
+    },
     "twin": {
         "name": "TWIN",
         "image": None,
@@ -170,6 +185,23 @@ Sie erscheinen auf der Kessel-Kachel, als hätte die Anlage einen
 Pelletkessel. Siehe TWIN_SCHLUESSEL in uri_discovery.py. Sie steht
 am Ende, weil sie nur wenige Anlagen betrifft und im Auswahlfeld sonst
 ganz oben stünde.
+
+"brenner" ist ein zweiter Wärmeerzeuger (Gastherme, Ölkessel,
+Wärmepumpe), den die ETA-Regelung freigibt oder sperrt; "fernleitung"
+die Leitung zu einem Nebengebäude. Beide nur lesend.
+"""
+
+PUFFER_SPEICHER = {"puffer": "", "puffer2": " 2", "puffer3": " 3"}
+"""Die Pufferspeicher-Komponenten und der Zusatz in ihren Namen.
+
+Der Komponentenname ist zugleich das Präfix ihrer Schlüssel: Der erste
+Puffer behält die von früher (puffer_fuehler_1, puffer_ladezustand), die
+weiteren heißen puffer2_… und puffer3_…. Die Entitäten heißen
+"Puffer 2 Fühler 1" usw.
+
+Je Puffer gibt es bewusst nur wenig: die Fühler, das effektive Volumen
+und - bei dezentraler Ladung - die Ladepumpe. Ladezustand und
+Energieinhalt hat nur der erste Puffer, weil es sie schon vorher gab.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -383,6 +415,60 @@ SENSORS = {
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "%",
+    },
+    "puffer_volumen": {
+        "component": "puffer",
+        "name": "Puffer effektives Volumen",
+        "translation_key": "puffer_volumen",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:storage-tank-outline",
+        "device_class": SensorDeviceClass.VOLUME_STORAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "L",
+    },
+    "puffer_ladepumpe": {
+        "component": "puffer",
+        "name": "Puffer Ladepumpe",
+        "translation_key": "puffer_ladepumpe",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:pump",
+        "is_string": True,
+    },
+    "puffer2_volumen": {
+        "component": "puffer2",
+        "name": "Puffer 2 effektives Volumen",
+        "translation_key": "puffer2_volumen",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:storage-tank-outline",
+        "device_class": SensorDeviceClass.VOLUME_STORAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "L",
+    },
+    "puffer2_ladepumpe": {
+        "component": "puffer2",
+        "name": "Puffer 2 Ladepumpe",
+        "translation_key": "puffer2_ladepumpe",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:pump",
+        "is_string": True,
+    },
+    "puffer3_volumen": {
+        "component": "puffer3",
+        "name": "Puffer 3 effektives Volumen",
+        "translation_key": "puffer3_volumen",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:storage-tank-outline",
+        "device_class": SensorDeviceClass.VOLUME_STORAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "L",
+    },
+    "puffer3_ladepumpe": {
+        "component": "puffer3",
+        "name": "Puffer 3 Ladepumpe",
+        "translation_key": "puffer3_ladepumpe",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:pump",
+        "is_string": True,
     },
     "heizkreis_vorlauf": {
         "component": "hk1",
@@ -618,7 +704,88 @@ SENSORS = {
         "icon": "mdi:pump",
         "is_string": True,
     },
+    "brenner_zustand": {
+        "component": "brenner",
+        "name": "Brenner Zustand",
+        "translation_key": "brenner_zustand",
+        "icon": "mdi:fire-circle",
+        "is_string": True,
+    },
+    "brenner_anforderung": {
+        "component": "brenner",
+        "name": "Brenner Anforderung",
+        "translation_key": "brenner_anforderung",
+        "icon": "mdi:fire-alert",
+        "is_string": True,
+    },
+    "brenner_temperatur": {
+        "component": "brenner",
+        "name": "Brenner Temperatur",
+        "translation_key": "brenner_temperatur",
+        "icon": "mdi:thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "brenner_leistung_soll": {
+        "component": "brenner",
+        "name": "Brenner Leistung Soll",
+        "translation_key": "brenner_leistung_soll",
+        "icon": "mdi:gauge",
+        "device_class": SensorDeviceClass.POWER,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "kW",
+    },
+    "brenner_volllaststunden": {
+        "component": "brenner",
+        "name": "Brenner Volllaststunden",
+        "translation_key": "brenner_volllaststunden",
+        "icon": "mdi:timer-outline",
+        "device_class": SensorDeviceClass.DURATION,
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "default_unit": "s",
+        "suggested_unit": "h",
+    },
+    "fernleitung_zustand": {
+        "component": "fernleitung",
+        "name": "Fernleitung Zustand",
+        "translation_key": "fernleitung_zustand",
+        "icon": "mdi:pipe",
+        "is_string": True,
+    },
+    "fernleitung_pumpe": {
+        "component": "fernleitung",
+        "name": "Fernleitung Pumpe",
+        "translation_key": "fernleitung_pumpe",
+        "icon": "mdi:pump",
+        "is_string": True,
+    },
+    "fernleitung_kesseltemperatur": {
+        "component": "fernleitung",
+        "name": "Fernleitung Kesseltemperatur",
+        "translation_key": "fernleitung_kesseltemperatur",
+        "icon": "mdi:thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "fernleitung_angefordert": {
+        "component": "fernleitung",
+        "name": "Fernleitung angeforderte Temperatur",
+        "translation_key": "fernleitung_angefordert",
+        "icon": "mdi:thermometer-chevron-up",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
 }
+"""Alle Messwerte, die die Integration kennt.
+
+Was der Menübaum einer Anlage nicht hergibt, wird trotzdem als Entität
+mit "-" angelegt - außer bei "nur_wenn_vorhanden": Das gibt es nur an
+manchen Anlagen desselben Aufbaus, etwa die Ladepumpe eines dezentral
+geladenen Puffers, und ein dauerhaftes "-" wäre dort bloß Ballast.
+"""
 
 PUFFER_FUEHLER_MAX = 9
 """Mehr Fühler kennt PufferFlex nicht."""
@@ -630,8 +797,9 @@ PufferFlex hat immer mindestens drei (oben, Mitte, unten).
 """
 
 
-def puffer_fuehler_info(index, is_last):
+def puffer_fuehler_info(index, is_last, komponente="puffer"):
     """Baut den Info-Eintrag (Name/Icon/Klassen) für einen Puffer-Fühler."""
+    zusatz = PUFFER_SPEICHER[komponente]
     if index == 1:
         position = "oben"
     elif is_last:
@@ -639,9 +807,9 @@ def puffer_fuehler_info(index, is_last):
     else:
         position = None
     return {
-        "name": f"Puffer Fühler {index}",
-        "translation_key": f"puffer_fuehler_{index}",
-        "component": "puffer",
+        "name": f"Puffer{zusatz} Fühler {index}",
+        "translation_key": f"{komponente}_fuehler_{index}",
+        "component": komponente,
         "position": position,
         "icon": "mdi:thermometer-lines",
         "device_class": SensorDeviceClass.TEMPERATURE,
@@ -655,6 +823,8 @@ FUB_ROLE_DEFAULT_NAMES = {
     "twin": ["Twin"],
     "sys": ["Sys"],
     "pufferflex": ["PufferFlex", "Puffer"],
+    "pufferflex2": ["PufferFlex 2", "PufferFlex2", "Puffer 2", "Puffer2"],
+    "pufferflex3": ["PufferFlex 3", "PufferFlex3", "Puffer 3", "Puffer3"],
     "fwm": ["FWM", "WW"],
     "hk": ["HK", "HK1", "HK 1"],
     "hk2": ["HK2", "HK 2"],
@@ -663,6 +833,8 @@ FUB_ROLE_DEFAULT_NAMES = {
     "lager": ["Lager"],
     "solar": ["Solar"],
     "pvm": ["PVM"],
+    "brenner": ["Brenner"],
+    "fernleitung": ["Fernl", "Fernleitung"],
 }
 
 

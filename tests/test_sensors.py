@@ -174,7 +174,7 @@ async def test_jeder_sensor_einer_komponente_existiert(hass, entry):
     coordinator, _ = await setup_integration(hass, entry)
     aktiv = set(coordinator.components)
     for key, info in SENSORS.items():
-        if info["component"] in aktiv:
+        if info["component"] in aktiv and not info.get("nur_wenn_vorhanden"):
             assert key in coordinator.sensor_defs, key
 
 
@@ -1080,3 +1080,14 @@ def test_abgewaehlter_verbrauch_je_zeitraum_wird_aufgeraeumt():
     assert entitaet_vorgesehen(
         "pellet_kosten_jahr", ["kessel"], False, False, True, mit_zeitraeumen=False
     ) is False
+
+
+async def test_fuehler_mit_unterbrechung_zeigt_keinen_wert(hass, entry):
+    """Die Anlage meldet "---", der Sensor darf keine alte Zahl zeigen."""
+    from eta_webservices.api import ETAValue
+
+    coordinator, by_name = await setup_integration(hass, entry)
+    fuehler = by_name["Puffer Fühler 1"]
+    coordinator.data["puffer_fuehler_1"] = ETAValue(None, "---", "°C", False, 1)
+    assert fuehler.native_value is None
+    assert fuehler.extra_state_attributes["status"] == "kein_messwert"

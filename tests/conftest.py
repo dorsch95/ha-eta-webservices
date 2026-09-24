@@ -136,6 +136,8 @@ class FakeSession:
         self.gesetzte_werte: list[tuple[str, str]] = []
         self.geschrieben: dict[str, str] = {}
         self.schreibbar = True
+        self.unbekannt: set[str] = set()
+        """URIs, die diese Anlage nicht kennt - sie antwortet mit 404."""
         self.traege = False
         """Wenn True, meldet die Anlage geschriebene Werte noch nicht zurück.
 
@@ -225,6 +227,8 @@ class FakeSession:
             )
         if "/user/menu" in url:
             return self._tracked(self.menu)
+        if any(url.endswith(uri) for uri in self.unbekannt):
+            return FakeResponse("", status=404)
         return self._tracked(var_xml(**self._wert_fuer(url)))
 
     def _wert_fuer(self, uri: str) -> dict:
@@ -258,7 +262,7 @@ class FakeSession:
             return {"value": "1803", "str_value": "Heizen", "text_offset": "1802"}
         if "12423" in uri:
             return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
-        if uri.endswith("/13520"):
+        if uri.endswith("/12499"):
             return {"value": "825", "str_value": "825", "unit": "l"}
         return {"value": "555", "str_value": "55,5", "unit": "°C", "scale": "10"}
 

@@ -18,7 +18,7 @@ from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
+from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import ids_vorschlagen
 from . import prognose
 from .prognose_koordinator import ETAPrognoseKoordinator
@@ -50,7 +50,7 @@ async def async_setup_entry(
                 entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum, kosten=True))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerFuellstandSensor(coordinator))
-    if coordinator.puffer_volumen:
+    if "puffer" in coordinator.puffer_mit_volumen:
         entities.append(ETAPufferEnergieSensor(coordinator))
     if coordinator.prognose is not None:
         schluessel = list(PROGNOSE)
@@ -137,6 +137,8 @@ class ETAMeasurementSensor(ETABaseSensor):
 
         if not info.get("is_string"):
             self._attr_native_unit_of_measurement = info.get("default_unit")
+            if info.get("suggested_unit"):
+                self._attr_suggested_unit_of_measurement = info["suggested_unit"]
             self._attr_suggested_display_precision = _nachkommastellen(
                 coordinator, key
             )
@@ -190,6 +192,7 @@ class ETAPlaceholderSensor(ETAMeasurementSensor):
         self._attr_device_class = None
         self._attr_state_class = None
         self._attr_native_unit_of_measurement = None
+        self._attr_suggested_unit_of_measurement = None
         self._attr_suggested_display_precision = None
 
     @property
@@ -260,36 +263,36 @@ class ETAPufferEnergieSensor(ETABaseSensor):
 
     Aus Volumen und Pufferfühlern: Jeder Fühler steht für einen gleich
     großen Teil des Speichers, gezählt wird die Wärme über
-    prognose.PUFFER_BEZUG. Das Volumen liest die Integration bei PufferFlex
-    aus der Anlage, beim Puffer trägt es der Nutzer ein. Fehlt ein Fühler,
-    bleibt der Wert leer, statt schief zu sein.
+    prognose.PUFFER_BEZUG. Das Volumen ist das effektive, das die Anlage
+    selbst meldet. Fehlt ein Fühler, bleibt der Wert leer, statt schief zu
+    sein.
+
+    Nur für den ersten Puffer - weitere fließen in die Prognose ein, ohne
+    eigene Entität.
     """
 
     _attr_icon = "mdi:heat-wave"
-    _attr_translation_key = "puffer_energieinhalt"
     _attr_device_class = SensorDeviceClass.ENERGY_STORAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "kWh"
     _attr_suggested_display_precision = 1
 
-    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
-        super().__init__(coordinator, "puffer_energieinhalt")
-        self._fuehler = sorted(
-            (k for k in coordinator.sensor_defs if k.startswith("puffer_fuehler_")),
-            key=lambda k: int(k.rsplit("_", 1)[1]),
-        )
+    def __init__(self, coordinator: ETADataUpdateCoordinator, komponente: str = "puffer") -> None:
+        super().__init__(coordinator, f"{komponente}_energieinhalt")
+        self._attr_translation_key = f"{komponente}_energieinhalt"
+        self._komponente = komponente
+        self._fuehler = puffer_fuehler_schluessel(coordinator.sensor_defs, komponente)
 
     @property
     def native_value(self) -> float | None:
         werte = prognose.puffer_temperaturen(self.coordinator.data, self._fuehler)
-        inhalt = prognose.puffer_energieinhalt(werte, self.coordinator.puffer_volumen)
+        inhalt = prognose.puffer_energieinhalt(werte, self.coordinator.volumen(self._komponente))
         return round(inhalt, 2) if inhalt is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {
-            "volumen_liter": self.coordinator.puffer_volumen,
-            "volumen_quelle": self.coordinator.puffer_volumen_quelle,
+            "volumen_liter": self.coordinator.volumen(self._komponente),
             "ab_temperatur": prognose.PUFFER_BEZUG,
         }
 

@@ -615,6 +615,24 @@ def puffer_tagesenden(
     return enden
 
 
+def puffer_energie_enden(
+    puffer: list[tuple[dict[date, float], float]],
+) -> dict[date, float]:
+    """Wärme in allen Puffern zusammen am Ende jedes Tages (kWh).
+
+    puffer enthält je Speicher seine Tagesend-Temperaturen und kWh je
+    Grad. Gezählt werden nur Tage, für die jeder Speicher einen Wert hat -
+    sonst sähe ein fehlender Tag wie ein leergelaufener Puffer aus.
+    """
+    if not puffer:
+        return {}
+    gemeinsam = set.intersection(*(set(enden) for enden, _ in puffer))
+    return {
+        datum: sum(enden[datum] * kwh_je_kelvin for enden, kwh_je_kelvin in puffer)
+        for datum in gemeinsam
+    }
+
+
 def puffer_ausgleichen(
     tage: list[Tag], enden: dict[date, float], kwh_je_kelvin: float, kwh_je_kg: float
 ) -> tuple[list[Tag], int]:

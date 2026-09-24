@@ -22,13 +22,6 @@
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
         }
       },
-      "puffer": {
-        "title": "Buffer tank",
-        "description": "How many litres does your buffer tank hold? The integration uses it to calculate how much heat is stored, and the pellet prognosis assigns consumption to the right day. With PufferFlex it reads the volume from the system - then you can leave 0. An entered value takes precedence.",
-        "data": {
-          "puffer_volumen": "Buffer volume (litres, 0 = from the system)"
-        }
-      },
       "fub_names": {
         "title": "Confirm function block names",
         "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names.",
@@ -44,7 +37,11 @@
           "pvm": "FUB name: PV heating module (PVM)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
           "hk4": "FUB name: heating circuit 4 (HK4)",
-          "lager": "FUB name: pellet store (Lager)"
+          "lager": "FUB name: pellet store (Lager)",
+          "pufferflex2": "FUB name: buffer tank 2 (PufferFlex 2)",
+          "pufferflex3": "FUB name: buffer tank 3 (PufferFlex 3)",
+          "brenner": "FUB name: burner (Brenner)",
+          "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
       "reconfigure": {
@@ -89,13 +86,6 @@
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
         }
       },
-      "puffer": {
-        "title": "Buffer tank",
-        "description": "How many litres does your buffer tank hold? The integration uses it to calculate how much heat is stored, and the pellet prognosis assigns consumption to the right day. With PufferFlex it reads the volume from the system - then you can leave 0. An entered value takes precedence.",
-        "data": {
-          "puffer_volumen": "Buffer volume (litres, 0 = from the system)"
-        }
-      },
       "fub_names": {
         "title": "Confirm function block names",
         "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names or your previous entries.",
@@ -111,7 +101,11 @@
           "pvm": "FUB name: PV heating module (PVM)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
           "hk4": "FUB name: heating circuit 4 (HK4)",
-          "lager": "FUB name: pellet store (Lager)"
+          "lager": "FUB name: pellet store (Lager)",
+          "pufferflex2": "FUB name: buffer tank 2 (PufferFlex 2)",
+          "pufferflex3": "FUB name: buffer tank 3 (PufferFlex 3)",
+          "brenner": "FUB name: burner (Brenner)",
+          "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
       "switch_warning": {
@@ -132,7 +126,11 @@
         "pvm": "PV heating module (PVM)",
         "hk3": "Heating circuit 3",
         "hk4": "Heating circuit 4",
-        "lager": "Pellet store"
+        "lager": "Pellet store",
+        "puffer2": "Buffer tank 2",
+        "puffer3": "Buffer tank 3",
+        "brenner": "Burner (second heat source, e.g. gas boiler)",
+        "fernleitung": "Transfer line (to another building)"
       }
     }
   },
@@ -208,8 +206,35 @@
       "aussentemperatur": {
         "name": "Outside temperature"
       },
+      "brenner_anforderung": {
+        "name": "Burner demand"
+      },
+      "brenner_leistung_soll": {
+        "name": "Burner target output"
+      },
+      "brenner_temperatur": {
+        "name": "Burner temperature"
+      },
+      "brenner_volllaststunden": {
+        "name": "Burner full-load hours"
+      },
+      "brenner_zustand": {
+        "name": "Burner state"
+      },
       "entaschung_verbrauch": {
         "name": "Consumption since de-ashing"
+      },
+      "fernleitung_angefordert": {
+        "name": "Transfer line requested temperature"
+      },
+      "fernleitung_kesseltemperatur": {
+        "name": "Transfer line boiler temperature"
+      },
+      "fernleitung_pumpe": {
+        "name": "Transfer line pump"
+      },
+      "fernleitung_zustand": {
+        "name": "Transfer line state"
       },
       "fwm_warmwasser": {
         "name": "Hot water temperature"
@@ -253,6 +278,12 @@
       "kessel_zustand": {
         "name": "Boiler state"
       },
+      "komponente_brenner": {
+        "name": "Burner component"
+      },
+      "komponente_fernleitung": {
+        "name": "Transfer line component"
+      },
       "komponente_fwm": {
         "name": "Hot water module component"
       },
@@ -276,6 +307,12 @@
       },
       "komponente_puffer": {
         "name": "Buffer tank component"
+      },
+      "komponente_puffer2": {
+        "name": "Buffer tank 2 component"
+      },
+      "komponente_puffer3": {
+        "name": "Buffer tank 3 component"
       },
       "komponente_pvm": {
         "name": "PV heating module component"
@@ -346,6 +383,72 @@
       "pellet_verbrauch_woche": {
         "name": "Pellet consumption this week"
       },
+      "puffer2_fuehler_1": {
+        "name": "Buffer 2 sensor 1"
+      },
+      "puffer2_fuehler_2": {
+        "name": "Buffer 2 sensor 2"
+      },
+      "puffer2_fuehler_3": {
+        "name": "Buffer 2 sensor 3"
+      },
+      "puffer2_fuehler_4": {
+        "name": "Buffer 2 sensor 4"
+      },
+      "puffer2_fuehler_5": {
+        "name": "Buffer 2 sensor 5"
+      },
+      "puffer2_fuehler_6": {
+        "name": "Buffer 2 sensor 6"
+      },
+      "puffer2_fuehler_7": {
+        "name": "Buffer 2 sensor 7"
+      },
+      "puffer2_fuehler_8": {
+        "name": "Buffer 2 sensor 8"
+      },
+      "puffer2_fuehler_9": {
+        "name": "Buffer 2 sensor 9"
+      },
+      "puffer2_ladepumpe": {
+        "name": "Buffer 2 charging pump"
+      },
+      "puffer2_volumen": {
+        "name": "Buffer 2 effective volume"
+      },
+      "puffer3_fuehler_1": {
+        "name": "Buffer 3 sensor 1"
+      },
+      "puffer3_fuehler_2": {
+        "name": "Buffer 3 sensor 2"
+      },
+      "puffer3_fuehler_3": {
+        "name": "Buffer 3 sensor 3"
+      },
+      "puffer3_fuehler_4": {
+        "name": "Buffer 3 sensor 4"
+      },
+      "puffer3_fuehler_5": {
+        "name": "Buffer 3 sensor 5"
+      },
+      "puffer3_fuehler_6": {
+        "name": "Buffer 3 sensor 6"
+      },
+      "puffer3_fuehler_7": {
+        "name": "Buffer 3 sensor 7"
+      },
+      "puffer3_fuehler_8": {
+        "name": "Buffer 3 sensor 8"
+      },
+      "puffer3_fuehler_9": {
+        "name": "Buffer 3 sensor 9"
+      },
+      "puffer3_ladepumpe": {
+        "name": "Buffer 3 charging pump"
+      },
+      "puffer3_volumen": {
+        "name": "Buffer 3 effective volume"
+      },
       "puffer_energieinhalt": {
         "name": "Buffer energy content"
       },
@@ -376,8 +479,14 @@
       "puffer_fuehler_9": {
         "name": "Buffer sensor 9"
       },
+      "puffer_ladepumpe": {
+        "name": "Buffer charging pump"
+      },
       "puffer_ladezustand": {
         "name": "Buffer charge level"
+      },
+      "puffer_volumen": {
+        "name": "Buffer effective volume"
       },
       "pvm_ertrag_gestern": {
         "name": "PV heating module yield yesterday"
