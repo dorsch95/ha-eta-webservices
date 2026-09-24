@@ -221,11 +221,14 @@ class ETAApiClient:
             return None
 
         gueltige: dict[str, str] = {}
+        grenzen: dict[str, float | None] = {"min": None, "max": None}
         werte = variable.get("validValues")
         if isinstance(werte, dict):
             for eintrag in _as_list(werte.get("value")):
                 if isinstance(eintrag, dict) and eintrag.get("@strValue"):
                     gueltige[eintrag["@strValue"]] = (eintrag.get("#text") or "").strip()
+            for grenze in grenzen:
+                grenzen[grenze] = _zahl(werte.get(grenze))
 
         return {
             "name": variable.get("@name"),
@@ -235,6 +238,9 @@ class ETAApiClient:
             "writable": variable.get("@isWritable") == "1",
             "valid_values": list(gueltige),
             "raw_values": gueltige,
+            "scale": _zahl(variable.get("@scaleFactor")) or 1.0,
+            "min_roh": grenzen["min"],
+            "max_roh": grenzen["max"],
         }
 
     async def async_set_value(self, uri: str, raw_value: str) -> None:
@@ -364,6 +370,16 @@ def _ganzzahl(node: dict, schluessel: str) -> int | None:
     try:
         return int(node[schluessel])
     except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _zahl(knoten) -> float | None:
+    """Eine Zahl aus einem Attribut oder einem Element wie <min>-200.0</min>."""
+    if isinstance(knoten, dict):
+        knoten = knoten.get("#text")
+    try:
+        return float(str(knoten).strip())
+    except (TypeError, ValueError):
         return None
 
 

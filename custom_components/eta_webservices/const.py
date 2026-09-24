@@ -25,6 +25,7 @@ und jeder Heizkreis eine eigene Grafik.
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
+    Platform.CLIMATE,
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
@@ -315,6 +316,48 @@ SELECTS = {
 }
 """Je Heizkreis eine Auswahl der Betriebsart."""
 
+THERMOSTATE = {
+    "hk1": {"role": "hk", "praefix": "heizkreis", "betriebsart": "heizkreis_betriebsart"},
+    "hk2": {"role": "hk2", "praefix": "heizkreis2", "betriebsart": "heizkreis2_betriebsart"},
+    "hk3": {"role": "hk3", "praefix": "heizkreis3", "betriebsart": "heizkreis3_betriebsart"},
+    "hk4": {"role": "hk4", "praefix": "heizkreis4", "betriebsart": "heizkreis4_betriebsart"},
+}
+"""Je Heizkreis ein Thermostat - nur, wenn er einen Raumfühler über die externe Schnittstelle hat.
+
+Das ist der Fall, wenn der Heizkreis im ETA-Assistenten mit "Raumfühler
+ext. Schnittstelle" eingerichtet ist: Dann führt sein Menübaum
+"Raumtemperatur über externe Schnittstellen". Der Thermostat zeigt als
+Istwert "Raum" - den Wert, mit dem die Anlage gerade regelt - und stellt
+"Raum Soll". Die Betriebsart kommt von der Auswahl desselben Heizkreises.
+Beides schreibt in die Anlage und entsteht deshalb nur mit freigegebenem
+Schreibzugriff.
+"""
+
+THERMOSTAT_SOLL_GRENZEN = (10.0, 30.0)
+"""In diesem Bereich lässt sich "Raum Soll" stellen.
+
+Die Anlage nimmt 0 bis 80 °C an. Für einen Raum ergibt das nichts
+Sinnvolles, und ein Tippfehler soll das Haus weder auskühlen noch
+überheizen.
+"""
+
+RAUMFUEHLER_TAKT = 30
+"""So oft (Sekunden) schreibt die Integration die Raumtemperatur in die Anlage.
+
+Höchstens halb so lang wie die Zeitüberwachung der Anlage, siehe
+raumfuehler.py.
+"""
+
+
+def raumfuehler_schluessel(heizkreis):
+    """Unter welchem Schlüssel das gewählte Thermometer eines Heizkreises steht."""
+    return f"{heizkreis}_raumfuehler"
+
+
+def zeitueberwachung_schluessel(heizkreis):
+    """Feld im Dialog für die Zeitüberwachung eines Heizkreises, in Minuten."""
+    return f"{heizkreis}_zeitueberwachung"
+
 LEGACY_SCHEMA_COMPONENTS = {
     "Kessel": ["kessel"],
     "Kessel + Puffer": ["kessel", "puffer"],
@@ -545,6 +588,46 @@ SENSORS = {
         "translation_key": "heizkreis_anforderung",
         "icon": "mdi:heat-wave",
         "is_string": True,
+    },
+    "heizkreis_raum": {
+        "component": "hk1",
+        "name": "Heizkreis Raumtemperatur",
+        "translation_key": "heizkreis_raum",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:home-thermometer-outline",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "heizkreis2_raum": {
+        "component": "hk2",
+        "name": "Heizkreis 2 Raumtemperatur",
+        "translation_key": "heizkreis2_raum",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:home-thermometer-outline",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "heizkreis3_raum": {
+        "component": "hk3",
+        "name": "Heizkreis 3 Raumtemperatur",
+        "translation_key": "heizkreis3_raum",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:home-thermometer-outline",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "heizkreis4_raum": {
+        "component": "hk4",
+        "name": "Heizkreis 4 Raumtemperatur",
+        "translation_key": "heizkreis4_raum",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:home-thermometer-outline",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
     },
     "fwm_warmwasser": {
         "component": "fwm",

@@ -18,6 +18,7 @@ from .const import (
     FUB_ROLE_DEFAULT_NAMES,
     PUFFER_FUEHLER_MAX,
     PUFFER_SPEICHER,
+    THERMOSTATE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,6 +59,10 @@ DISCOVERY_PATHS = {
     "heizkreis3_anforderung": ("hk3", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "heizkreis4_vorlauf": ("hk4", ["Eingänge", "Vorlauf"]),
     "heizkreis4_anforderung": ("hk4", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
+    "heizkreis_raum": ("hk", ["Eingänge", "Raumtemperatur über externe Schnittstellen", "Raum"]),
+    "heizkreis2_raum": ("hk2", ["Eingänge", "Raumtemperatur über externe Schnittstellen", "Raum"]),
+    "heizkreis3_raum": ("hk3", ["Eingänge", "Raumtemperatur über externe Schnittstellen", "Raum"]),
+    "heizkreis4_raum": ("hk4", ["Eingänge", "Raumtemperatur über externe Schnittstellen", "Raum"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     "lager_vorrat": ("lager", ["Vorrat"]),
     "lager_warngrenze": ("lager", ["Vorrat", "Vorrat Warngrenze"]),
@@ -258,6 +263,30 @@ BETRIEBSART_ROLES = {
     "heizkreis4_betriebsart": "hk4",
 }
 """Welcher Funktionsblock zu welcher Betriebsart-Auswahl gehört."""
+
+RAUM_EXTERN = ["Eingänge", "Raumtemperatur über externe Schnittstellen"]
+"""Wohin ein Raumfühler über die externe Schnittstelle seinen Wert schreibt.
+
+Das Objekt gibt es nur, wenn der Heizkreis im ETA-Assistenten mit
+"Raumfühler ext. Schnittstelle" eingerichtet ist. Darunter liegen "Raum"
+(der Wert, mit dem die Anlage regelt) und "Zeitüberwachung" (nach so
+vielen Sekunden ohne neuen Wert verwirft sie ihn).
+"""
+
+
+def thermostat_objekte(praefix):
+    """Die beschreibbaren Objekte eines Thermostats und wie sie gefunden werden.
+
+    Nur über den Namen, nie über die Kennung - wie bei Tasten und
+    Schaltern. Ein Pfad ist eine Liste, ein bloßer Name wird im ganzen
+    Funktionsblock gesucht.
+    """
+    return {
+        f"{praefix}_raum_extern": RAUM_EXTERN,
+        f"{praefix}_zeitueberwachung": [*RAUM_EXTERN, "Zeitüberwachung"],
+        f"{praefix}_raum_soll": "Raum Soll",
+    }
+
 
 SWITCH_ROLES = {
     "kessel_schalter": "kessel",
@@ -518,6 +547,19 @@ async def async_discover_uris(
         uri = _finde_pumpe(fubs_by_role.get(role), stichwort)
         if uri:
             discovered[key] = uri
+
+    for definition in THERMOSTATE.values():
+        fub = fubs_by_role.get(definition["role"])
+        if fub is None or _find_path(fub, RAUM_EXTERN) is None:
+            continue
+        for key, weg in thermostat_objekte(definition["praefix"]).items():
+            if isinstance(weg, list):
+                gefunden = _find_path(fub, weg)
+                uri = gefunden.get("@uri") if gefunden is not None else None
+            else:
+                uri = _finde_nach_namen(fub, weg)
+            if uri:
+                discovered[key] = uri
 
     for key, role in SWITCH_ROLES.items():
         fub = fubs_by_role.get(role)

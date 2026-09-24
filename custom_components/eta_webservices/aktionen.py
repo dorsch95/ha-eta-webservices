@@ -35,7 +35,7 @@ AKTION_KARTE = "karte_erzeugen"
 CONF_EINTRAG = "config_entry_id"
 
 _ENTITAET = re.compile(
-    r"\b(?:sensor|binary_sensor|switch|select)\.eta_heizung_[a-z0-9_]+"
+    r"\b(?:sensor|binary_sensor|switch|select|climate)\.eta_heizung_[a-z0-9_]+"
 )
 
 

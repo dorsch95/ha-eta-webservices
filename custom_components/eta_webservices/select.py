@@ -27,6 +27,7 @@ async def async_setup_entry(
         ETABetriebsartSelect(coordinator, key, definition)
         for key, definition in coordinator.select_defs.items()
     ]
+    coordinator.betriebsart_auswahl.update({e.schluessel: e for e in entities})
     ids_vorschlagen(coordinator.deutsche_namen, "select", entities)
     async_add_entities(entities)
 
@@ -50,6 +51,7 @@ class ETABetriebsartSelect(
     ) -> None:
         super().__init__(coordinator)
         self._key = key
+        self.schluessel = key
         self._tasten = definition["tasten"]
         self._schalter = definition["schalter"]
         self._attr_translation_key = definition["translation_key"]
@@ -60,24 +62,9 @@ class ETABetriebsartSelect(
         self._erwartet: str | None = None
         self._widerspruch = 0
 
-    def _steht_auf_ein(self, modus: str) -> bool | None:
-        """Sagt, ob eine der drei Tasten gerade auf "Ein" steht."""
-        reading = self.coordinator.data.get(f"{self._key}_{modus}")
-        if reading is None or not reading.text:
-            return None
-        return reading.text.strip().casefold() == (
-            self._tasten[modus]["ein_text"].strip().casefold()
-        )
-
     def _gemeldet(self) -> str | None:
         """Die Betriebsart, die die Anlage zuletzt gemeldet hat."""
-        zustaende = {modus: self._steht_auf_ein(modus) for modus in self._tasten}
-        if all(zustand is None for zustand in zustaende.values()):
-            return None
-        for modus, zustand in zustaende.items():
-            if zustand:
-                return modus
-        return BETRIEBSART_AUS
+        return self.coordinator.betriebsart_gemeldet(self._key)
 
     @property
     def current_option(self) -> str | None:

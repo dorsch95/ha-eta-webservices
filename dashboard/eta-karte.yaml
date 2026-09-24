@@ -2258,6 +2258,36 @@ cards:
         - type: conditional
           conditions:
           - condition: state
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 85%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
+              font-size: 85%
+        - type: conditional
+          conditions:
+          - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
           - condition: state
@@ -2550,6 +2580,36 @@ cards:
               top: 23%
               left: 50%
               color: '#d5d9de'
+              font-size: 85%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 85%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
               font-size: 85%
         - type: conditional
           conditions:
@@ -2850,6 +2910,36 @@ cards:
         - type: conditional
           conditions:
           - condition: state
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 85%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
+              font-size: 85%
+        - type: conditional
+          conditions:
+          - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
           - condition: state
@@ -3142,6 +3232,36 @@ cards:
               top: 23%
               left: 50%
               color: '#d5d9de'
+              font-size: 85%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 85%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
               font-size: 85%
         - type: conditional
           conditions:
@@ -6144,6 +6264,36 @@ cards:
         - type: conditional
           conditions:
           - condition: state
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
+              font-size: 90%
+        - type: conditional
+          conditions:
+          - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
           - condition: state
@@ -6436,6 +6586,36 @@ cards:
               top: 23%
               left: 50%
               color: '#d5d9de'
+              font-size: 90%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
               font-size: 90%
         - type: conditional
           conditions:
@@ -6736,6 +6916,36 @@ cards:
         - type: conditional
           conditions:
           - condition: state
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
+              font-size: 90%
+        - type: conditional
+          conditions:
+          - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
           - condition: state
@@ -7028,6 +7238,36 @@ cards:
               top: 23%
               left: 50%
               color: '#d5d9de'
+              font-size: 90%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 90%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
               font-size: 90%
         - type: conditional
           conditions:
@@ -10030,6 +10270,36 @@ cards:
         - type: conditional
           conditions:
           - condition: state
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
+              font-size: 95%
+        - type: conditional
+          conditions:
+          - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
             state_not: unknown
           - condition: state
@@ -10322,6 +10592,36 @@ cards:
               top: 23%
               left: 50%
               color: '#d5d9de'
+              font-size: 95%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
               font-size: 95%
         - type: conditional
           conditions:
@@ -10622,6 +10922,36 @@ cards:
         - type: conditional
           conditions:
           - condition: state
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
+              font-size: 95%
+        - type: conditional
+          conditions:
+          - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
             state_not: unknown
           - condition: state
@@ -10914,6 +11244,36 @@ cards:
               top: 23%
               left: 50%
               color: '#d5d9de'
+              font-size: 95%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            state_not: unknown
+          elements:
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            attribute: current_temperature
+            prefix: 'Raum: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 30%
+              color: '#ffffff'
+              font-size: 95%
+          - type: state-label
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            attribute: temperature
+            prefix: 'Soll: '
+            suffix: ' °C'
+            tap_action:
+              action: more-info
+            style:
+              top: 31%
+              left: 70%
+              color: '#e2867f'
               font-size: 95%
         - type: conditional
           conditions:

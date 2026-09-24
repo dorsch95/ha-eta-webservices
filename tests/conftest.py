@@ -260,7 +260,30 @@ class FakeSession:
             return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
         if uri.endswith("/12499"):
             return {"value": "825", "str_value": "825", "unit": "l"}
+        pfad = uri.split("/user/var", 1)[-1]
+        if pfad.endswith(("/13046", "/12127", "/13168", "/12634")):
+            return self._raumwert(pfad)
         return {"value": "555", "str_value": "55,5", "unit": "°C", "scale": "10"}
+
+    def _raumwert(self, pfad: str) -> dict:
+        """Externe Schnittstelle eines Heizkreises, wie an der Testanlage beobachtet.
+
+        "Raum" zeigt "---", bis ein Raumwert geschrieben wurde, und dann
+        genau diesen. "Raum Soll" steht ab Werk auf 21,0 °C, die
+        Zeitüberwachung auf 60 Sekunden.
+        """
+        stamm = pfad.rsplit("/", 1)[0]
+        if pfad.endswith("/12634"):
+            geschrieben = self.geschrieben.get(f"{stamm}/13046")
+            if geschrieben is None:
+                return {"value": "210", "str_value": "---", "unit": "", "scale": "10"}
+            return {"value": geschrieben, "str_value": geschrieben, "unit": "°C", "scale": "10"}
+        if pfad.endswith("/13168"):
+            roh = self.geschrieben.get(pfad, "60")
+            return {"value": roh, "str_value": roh, "unit": "s"}
+        vorgabe = "210" if pfad.endswith("/12127") else "0"
+        roh = self.geschrieben.get(pfad, vorgabe)
+        return {"value": roh, "str_value": roh, "unit": "°C", "scale": "10"}
 
     def _varset_lesen(self, url: str):
         name = url.split("/user/vars/", 1)[1]
@@ -300,6 +323,21 @@ class FakeSession:
                 '<value strValue="Glutabbrand">2007</value>'
                 "</validValues></variable></varInfo></eta>"
             )
+        for ende, (skala, untere, obere) in {
+            "/13046": ("10", "-200.0", "500.0"),
+            "/12127": ("10", "0.0", "800.0"),
+            "/13168": ("1", "0", "3600"),
+        }.items():
+            if url.endswith(ende):
+                return self._tracked(
+                    '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
+                    f'name="Wert" fullName="x" unit="" decPlaces="1" scaleFactor="{skala}" '
+                    f'advTextOffset="0" isWritable="{1 if self.schreibbar else 0}">'
+                    "<type>DEFAULT</type><validValues>"
+                    f'<min strValue="x" unit="">{untere}</min>'
+                    f'<max strValue="x" unit="">{obere}</max>'
+                    "</validValues></variable></varInfo></eta>"
+                )
         if not any(t in url for t in ("12080", "12125", "12126", "12230")):
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '

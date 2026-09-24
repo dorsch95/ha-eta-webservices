@@ -54,11 +54,14 @@ from .const import (
     MIN_PELLET_KWH_PER_KG,
     MIN_SCAN_INTERVAL,
     PUFFER_SPEICHER,
+    THERMOSTATE,
     components_from_config,
     fub_role_default,
     fub_roles_for_components,
     normalize_components,
     puffer_volumen_schluessel,
+    raumfuehler_schluessel,
+    zeitueberwachung_schluessel,
 )
 
 
@@ -68,36 +71,97 @@ async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     return await client.async_test_connection()
 
 
-async def _puffer_ohne_volumen(
+async def _anlage_pruefen(
     hass: HomeAssistant,
     host: str | None,
     port: int,
     fub_names: dict[str, str],
     komponenten: list[str],
-) -> list[str]:
-    """Die angekreuzten Puffer, die ihr effektives Volumen nicht melden.
+    schreiben: bool,
+) -> tuple[list[str], dict[str, dict]]:
+    """Liest einmal den Menübaum und sagt, welche Schritte noch folgen.
 
-    Das ist der ältere Funktionsblock "Puffer": Er kennt das Volumen am
-    Display, gibt es aber nicht an die Webservices weiter. PufferFlex nennt
-    es im Menübaum. Gefragt wird nur für Puffer, deren Fühler gefunden
-    wurden - einer, den die Erkennung gar nicht findet, hätte mit dem
-    Volumen nichts gewonnen. Ist der Menübaum nicht lesbar, wird nicht
-    gefragt.
+    Erstens die angekreuzten Puffer, die ihr effektives Volumen nicht
+    melden. Das ist der ältere Funktionsblock "Puffer": Er kennt das Volumen
+    am Display, gibt es aber nicht an die Webservices weiter. Gefragt wird
+    nur für Puffer, deren Fühler gefunden wurden.
+
+    Zweitens - nur mit Schreibzugriff - die Heizkreise mit Raumfühler über
+    die externe Schnittstelle, je mit URI und aktuellem Wert ihrer
+    Zeitüberwachung in Sekunden.
+
+    Ist der Menübaum nicht lesbar, folgt keiner der beiden Schritte.
     """
     if not host:
-        return []
+        return [], {}
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     try:
         gefunden, _ = await async_discover_uris(client, fub_names)
     except ETAApiError:
-        return []
-    return [
+        return [], {}
+    ohne_volumen = [
         komponente
         for komponente in PUFFER_SPEICHER
         if komponente in komponenten
         and f"{komponente}_volumen" not in gefunden
         and any(key.startswith(f"{komponente}_fuehler_") for key in gefunden)
     ]
+    thermostate: dict[str, dict] = {}
+    if not schreiben:
+        return ohne_volumen, thermostate
+    for heizkreis, definition in THERMOSTATE.items():
+        praefix = definition["praefix"]
+        if heizkreis not in komponenten or f"{praefix}_raum_extern" not in gefunden:
+            continue
+        uri = gefunden.get(f"{praefix}_zeitueberwachung")
+        sekunden = None
+        if uri:
+            try:
+                sekunden = int(float((await client.async_get_value(uri)).value))
+            except (ETAApiError, TypeError, ValueError):
+                sekunden = None
+        thermostate[heizkreis] = {"uri": uri, "sekunden": sekunden}
+    return ohne_volumen, thermostate
+
+
+async def _zeitueberwachung_schreiben(
+    hass: HomeAssistant, host: str, port: int, uri: str, sekunden: int
+) -> None:
+    """Setzt die Zeitüberwachung eines Heizkreises - nur, wenn die Anlage sie als beschreibbar meldet."""
+    client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
+    info = await client.async_get_varinfo(uri)
+    if not info or not info.get("writable"):
+        raise ETAApiError("Die Zeitüberwachung ist an dieser Anlage nicht beschreibbar")
+    skala = info.get("scale") or 1.0
+    await client.async_set_value(uri, str(round(sekunden * skala)))
+
+
+MAX_ZEITUEBERWACHUNG_MINUTEN = 60
+"""Mehr nimmt die Anlage nicht an (3600 Sekunden)."""
+
+
+def _raumfuehler_schema(thermostate: dict[str, dict], current: dict[str, Any]) -> vol.Schema:
+    """Je Heizkreis mit externer Schnittstelle: Thermometer und Zeitüberwachung.
+
+    Das Thermometer ist freiwillig. Die Zeitüberwachung steht in Minuten da,
+    vorbelegt mit dem Wert der Anlage; 0 gibt es nicht, weil die Anlage
+    einen alten Wert dann womöglich nie verwirft. Steht sie an der Anlage
+    auf 0 oder ist unbekannt, sind 10 Minuten vorgeschlagen.
+    """
+    felder: dict = {}
+    for heizkreis, info in thermostate.items():
+        schluessel = raumfuehler_schluessel(heizkreis)
+        felder[
+            vol.Optional(schluessel, description={"suggested_value": current.get(schluessel)})
+        ] = EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature"))
+        if info.get("uri"):
+            minuten = current.get(zeitueberwachung_schluessel(heizkreis))
+            if not minuten:
+                minuten = max(1, round(info["sekunden"] / 60)) if info.get("sekunden") else 10
+            felder[vol.Required(zeitueberwachung_schluessel(heizkreis), default=int(minuten))] = vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=MAX_ZEITUEBERWACHUNG_MINUTEN)
+            )
+    return vol.Schema(felder)
 
 
 def _puffer_schema(komponenten: list[str], current: dict[str, Any]) -> vol.Schema:
@@ -234,7 +298,82 @@ def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
     )
 
 
-class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
+class _Anlagenschritte:
+    """Die Schritte nach den Funktionsblock-Namen, gleich für Einrichten und Konfigurieren.
+
+    Liefert die Unterklasse _adresse(), _bisher und _fertig(daten).
+    """
+
+    async def _nach_fub_namen(self) -> ConfigFlowResult:
+        host, port = self._adresse()
+        self._ohne_volumen, self._thermostate = await _anlage_pruefen(
+            self.hass,
+            host,
+            port,
+            self._data[CONF_FUB_NAMES],
+            self._data[CONF_COMPONENTS],
+            bool(self._data.get(CONF_ENABLE_SWITCHES)),
+        )
+        if self._ohne_volumen:
+            return await self.async_step_puffer()
+        return await self._nach_puffer()
+
+    async def _nach_puffer(self) -> ConfigFlowResult:
+        if self._thermostate:
+            return await self.async_step_raumfuehler()
+        return self._fertig(self._data)
+
+    async def async_step_puffer(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Fragt nach den Litern der Puffer, die ihr Volumen nicht melden."""
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self._nach_puffer()
+        return self.async_show_form(
+            step_id="puffer", data_schema=_puffer_schema(self._ohne_volumen, self._bisher)
+        )
+
+    async def async_step_raumfuehler(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Thermometer als Raumfühler und Zeitüberwachung je Heizkreis mit externer Schnittstelle.
+
+        Die Zeitüberwachung ist eine Einstellung der Anlage. Sie wird nur
+        geschrieben, wenn der Wert im Formular von dem der Anlage abweicht,
+        und nicht in der Integration gespeichert.
+        """
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            host, port = self._adresse()
+            try:
+                for heizkreis, info in self._thermostate.items():
+                    feld = zeitueberwachung_schluessel(heizkreis)
+                    if feld not in user_input or not info.get("uri"):
+                        continue
+                    sekunden = int(user_input[feld]) * 60
+                    if sekunden != info.get("sekunden"):
+                        await _zeitueberwachung_schreiben(self.hass, host, port, info["uri"], sekunden)
+                        info["sekunden"] = sekunden
+            except ETAApiError:
+                errors["base"] = "zeitueberwachung_nicht_geschrieben"
+            else:
+                self._data.update(
+                    {
+                        raumfuehler_schluessel(hk): user_input[raumfuehler_schluessel(hk)]
+                        for hk in self._thermostate
+                        if user_input.get(raumfuehler_schluessel(hk))
+                    }
+                )
+                return self._fertig(self._data)
+        return self.async_show_form(
+            step_id="raumfuehler",
+            data_schema=_raumfuehler_schema(self._thermostate, user_input or self._bisher),
+            errors=errors,
+        )
+
+
+class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
     """Einrichtung der Integration in zwei Schritten.
 
     Ab Unterversion 2 stehen IP-Adresse und Port nur noch in den Daten des
@@ -248,6 +387,15 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
+        self._thermostate: dict[str, dict] = {}
+
+    _bisher: dict[str, Any] = {}
+
+    def _adresse(self) -> tuple[str | None, int]:
+        return self._data.get(CONF_HOST), self._data.get(CONF_PORT, DEFAULT_PORT)
+
+    def _fertig(self, daten: dict[str, Any]) -> ConfigFlowResult:
+        return self.async_create_entry(title="ETA Heizung", data=daten)
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -337,32 +485,11 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
-            self._ohne_volumen = await _puffer_ohne_volumen(
-                self.hass,
-                self._data[CONF_HOST],
-                self._data[CONF_PORT],
-                self._data[CONF_FUB_NAMES],
-                self._data[CONF_COMPONENTS],
-            )
-            if self._ohne_volumen:
-                return await self.async_step_puffer()
-            return self.async_create_entry(title="ETA Heizung", data=self._data)
+            return await self._nach_fub_namen()
 
         return self.async_show_form(
             step_id="fub_names",
             data_schema=_fub_names_schema(roles, {}),
-        )
-
-    async def async_step_puffer(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Fragt nach den Litern der Puffer, die ihr Volumen nicht melden."""
-        if user_input is not None:
-            return self.async_create_entry(
-                title="ETA Heizung", data={**self._data, **user_input}
-            )
-        return self.async_show_form(
-            step_id="puffer", data_schema=_puffer_schema(self._ohne_volumen, {})
         )
 
     @staticmethod
@@ -371,16 +498,27 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
         return ETAOptionsFlow()
 
 
-class ETAOptionsFlow(OptionsFlowWithReload):
+class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     """Nachträgliches Ändern von Komponenten, Freigaben und FUB-Namen."""
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
+        self._thermostate: dict[str, dict] = {}
 
     @property
     def _current(self) -> dict[str, Any]:
         return {**self.config_entry.data, **self.config_entry.options}
+
+    @property
+    def _bisher(self) -> dict[str, Any]:
+        return self._current
+
+    def _adresse(self) -> tuple[str | None, int]:
+        return self._current.get(CONF_HOST), self._current.get(CONF_PORT, DEFAULT_PORT)
+
+    def _fertig(self, daten: dict[str, Any]) -> ConfigFlowResult:
+        return self.async_create_entry(title="", data=daten)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -421,31 +559,11 @@ class ETAOptionsFlow(OptionsFlowWithReload):
 
         if user_input is not None:
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
-            self._ohne_volumen = await _puffer_ohne_volumen(
-                self.hass,
-                self._current.get(CONF_HOST),
-                self._current.get(CONF_PORT, DEFAULT_PORT),
-                self._data[CONF_FUB_NAMES],
-                self._data[CONF_COMPONENTS],
-            )
-            if self._ohne_volumen:
-                return await self.async_step_puffer()
-            return self.async_create_entry(title="", data=self._data)
+            return await self._nach_fub_namen()
 
         return self.async_show_form(
             step_id="fub_names",
             data_schema=_fub_names_schema(
                 roles, self._current.get(CONF_FUB_NAMES, {})
             ),
-        )
-
-    async def async_step_puffer(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Wie im Einrichtungsdialog, vorbelegt mit den bisherigen Litern."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data={**self._data, **user_input})
-        return self.async_show_form(
-            step_id="puffer",
-            data_schema=_puffer_schema(self._ohne_volumen, self._current),
         )

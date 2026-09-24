@@ -53,6 +53,20 @@
           "puffer3_volumen": "Pufferspeicher 3 (Liter)"
         }
       },
+      "raumfuehler": {
+        "title": "Raumfühler aus Home Assistant",
+        "description": "Diese Heizkreise sind mit „Raumfühler ext. Schnittstelle“ eingerichtet. Wähle je Heizkreis ein Thermometer aus Home Assistant - die Integration schreibt seine Temperatur alle 30 Sekunden als Raumtemperatur in die Anlage. Ohne Auswahl bekommt die Anlage keinen Raumwert.\n\nDie **Zeitüberwachung** ist eine Einstellung der Anlage: Kommt so lange kein neuer Wert, verwirft sie den alten und meldet „Raumfühler: Keine Verbindung“. Ab Werk steht sie auf 1 Minute - dann meldet die Anlage das bei jedem Neustart von Home Assistant. 10 Minuten überbrücken einen Neustart. Geschrieben wird nur, wenn du den Wert änderst.",
+        "data": {
+          "hk1_raumfuehler": "Heizkreis 1: Thermometer als Raumfühler",
+          "hk1_zeitueberwachung": "Heizkreis 1: Zeitüberwachung (Minuten)",
+          "hk2_raumfuehler": "Heizkreis 2: Thermometer als Raumfühler",
+          "hk2_zeitueberwachung": "Heizkreis 2: Zeitüberwachung (Minuten)",
+          "hk3_raumfuehler": "Heizkreis 3: Thermometer als Raumfühler",
+          "hk3_zeitueberwachung": "Heizkreis 3: Zeitüberwachung (Minuten)",
+          "hk4_raumfuehler": "Heizkreis 4: Thermometer als Raumfühler",
+          "hk4_zeitueberwachung": "Heizkreis 4: Zeitüberwachung (Minuten)"
+        }
+      },
       "reconfigure": {
         "title": "IP-Adresse der Heizung ändern",
         "data": {
@@ -67,7 +81,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind."
+      "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind.",
+      "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden."
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
@@ -126,10 +141,27 @@
           "puffer3_volumen": "Pufferspeicher 3 (Liter)"
         }
       },
+      "raumfuehler": {
+        "title": "Raumfühler aus Home Assistant",
+        "description": "Diese Heizkreise sind mit „Raumfühler ext. Schnittstelle“ eingerichtet. Wähle je Heizkreis ein Thermometer aus Home Assistant - die Integration schreibt seine Temperatur alle 30 Sekunden als Raumtemperatur in die Anlage. Ohne Auswahl bekommt die Anlage keinen Raumwert.\n\nDie **Zeitüberwachung** ist eine Einstellung der Anlage: Kommt so lange kein neuer Wert, verwirft sie den alten und meldet „Raumfühler: Keine Verbindung“. Ab Werk steht sie auf 1 Minute - dann meldet die Anlage das bei jedem Neustart von Home Assistant. 10 Minuten überbrücken einen Neustart. Geschrieben wird nur, wenn du den Wert änderst.",
+        "data": {
+          "hk1_raumfuehler": "Heizkreis 1: Thermometer als Raumfühler",
+          "hk1_zeitueberwachung": "Heizkreis 1: Zeitüberwachung (Minuten)",
+          "hk2_raumfuehler": "Heizkreis 2: Thermometer als Raumfühler",
+          "hk2_zeitueberwachung": "Heizkreis 2: Zeitüberwachung (Minuten)",
+          "hk3_raumfuehler": "Heizkreis 3: Thermometer als Raumfühler",
+          "hk3_zeitueberwachung": "Heizkreis 3: Zeitüberwachung (Minuten)",
+          "hk4_raumfuehler": "Heizkreis 4: Thermometer als Raumfühler",
+          "hk4_zeitueberwachung": "Heizkreis 4: Zeitüberwachung (Minuten)"
+        }
+      },
       "switch_warning": {
         "title": "Schalten schreibt in deine Heizung",
         "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
       }
+    },
+    "error": {
+      "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden."
     }
   },
   "selector": {
@@ -168,6 +200,20 @@
       },
       "stoerung": {
         "name": "Störung"
+      }
+    },
+    "climate": {
+      "heizkreis2_thermostat": {
+        "name": "Heizkreis 2 Thermostat"
+      },
+      "heizkreis3_thermostat": {
+        "name": "Heizkreis 3 Thermostat"
+      },
+      "heizkreis4_thermostat": {
+        "name": "Heizkreis 4 Thermostat"
+      },
+      "heizkreis_thermostat": {
+        "name": "Heizkreis 1 Thermostat"
       }
     },
     "select": {
@@ -251,11 +297,17 @@
       "heizkreis2_anforderung": {
         "name": "Heizkreis 2 Anforderung"
       },
+      "heizkreis2_raum": {
+        "name": "Heizkreis 2 Raumtemperatur"
+      },
       "heizkreis2_vorlauf": {
         "name": "Heizkreis 2 Vorlauftemperatur"
       },
       "heizkreis3_anforderung": {
         "name": "Heizkreis 3 Anforderung"
+      },
+      "heizkreis3_raum": {
+        "name": "Heizkreis 3 Raumtemperatur"
       },
       "heizkreis3_vorlauf": {
         "name": "Heizkreis 3 Vorlauftemperatur"
@@ -263,11 +315,17 @@
       "heizkreis4_anforderung": {
         "name": "Heizkreis 4 Anforderung"
       },
+      "heizkreis4_raum": {
+        "name": "Heizkreis 4 Raumtemperatur"
+      },
       "heizkreis4_vorlauf": {
         "name": "Heizkreis 4 Vorlauftemperatur"
       },
       "heizkreis_anforderung": {
         "name": "Heizkreis Anforderung"
+      },
+      "heizkreis_raum": {
+        "name": "Heizkreis Raumtemperatur"
       },
       "heizkreis_vorlauf": {
         "name": "Heizkreis Vorlauftemperatur"

@@ -40,9 +40,12 @@ from .const import (
     SENSORS,
     SWITCHES,
     URL_GRAFIKEN,
+    THERMOSTATE,
     components_from_config,
     puffer_volumen_schluessel,
+    raumfuehler_schluessel,
 )
+from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import deutsche_namen
@@ -120,7 +123,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     _verwaiste_entitaeten_entfernen(hass, entry, coordinator)
     if coordinator.prognose is not None:
         entry.async_on_unload(async_at_started(hass, _prognose_starten(coordinator)))
+    _raumfuehler_starten(hass, entry, coordinator, config)
     return True
+
+
+def _raumfuehler_starten(
+    hass: HomeAssistant,
+    entry: ETAConfigEntry,
+    coordinator: ETADataUpdateCoordinator,
+    config: dict,
+) -> None:
+    """Startet je Heizkreis mit gewähltem Thermometer den Sender.
+
+    Nur für Heizkreise, deren Thermostat die Anlage bestätigt hat - also
+    mit freigegebenem Schreibzugriff und externer Schnittstelle.
+    """
+    for heizkreis in coordinator.thermostat_defs:
+        entity_id = config.get(raumfuehler_schluessel(heizkreis))
+        if not entity_id:
+            continue
+        sender = RaumfuehlerSender(hass, coordinator, heizkreis, entity_id)
+        sender.starten()
+        entry.async_on_unload(sender.stoppen)
+        _LOGGER.info("ETA: %s schreibt %s als Raumtemperatur", heizkreis, entity_id)
 
 
 def _prognose_moeglich(hass: HomeAssistant, coordinator: ETADataUpdateCoordinator) -> bool:
@@ -252,6 +277,11 @@ def entitaet_vorgesehen(
         return "puffer" in aktiv and "puffer" in puffer_mit_volumen
     if key in _EIGENE_ENTITAETEN:
         return _EIGENE_ENTITAETEN[key] in aktiv
+    thermostat = next(
+        (hk for hk, d in THERMOSTATE.items() if key == f"{d['praefix']}_thermostat"), None
+    )
+    if thermostat:
+        return enable_switches and thermostat in aktiv
     fuehler = re.fullmatch(r"(puffer\d?)_fuehler_\d+", key)
     if fuehler:
         return fuehler.group(1) in aktiv

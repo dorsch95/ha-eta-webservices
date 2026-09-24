@@ -135,6 +135,43 @@ def betriebsart(entity, top, schrift):
     )
 
 
+def thermostat_zeile(entity, top, schrift):
+    """Raum- und Solltemperatur des Thermostats; ein Tippen öffnet ihn.
+
+    Den Thermostat gibt es nur bei Heizkreisen mit Raumfühler über die
+    externe Schnittstelle und freigegebenem Schreibzugriff - sonst bleibt
+    die Zeile leer. Die Tasten − und + stecken im geöffneten Thermostat:
+    Eine picture-elements-Karte kann einen Sollwert nur auf einen festen
+    Wert setzen, nicht um einen Schritt verändern.
+    """
+    entitaet = f"climate.eta_heizung_{entity}"
+
+    def wert(attribut, prefix, links, farbe):
+        return {
+            "type": "state-label",
+            "entity": entitaet,
+            "attribute": attribut,
+            "prefix": prefix,
+            "suffix": " °C",
+            "tap_action": {"action": "more-info"},
+            "style": {
+                "top": f"{top}%",
+                "left": f"{links}%",
+                "color": FARBEN[farbe],
+                "font-size": f"{schrift}%",
+            },
+        }
+
+    return {
+        "type": "conditional",
+        "conditions": [{"condition": "state", "entity": entitaet, "state_not": "unknown"}],
+        "elements": [
+            wert("current_temperature", "Raum: ", 30, "weiss"),
+            wert("temperature", "Soll: ", 70, "soll"),
+        ],
+    }
+
+
 PUFFER_OBEN = 36
 PUFFER_UNTEN = 88
 PUFFER_MIN = 2
@@ -721,6 +758,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_1_betriebsart", 23, schrift - 5),
+                    thermostat_zeile("heizkreis_1_thermostat", 31, schrift - 5),
                     *modus_tasten("heizkreis_1_betriebsart", 90),
                 ],
             ),
@@ -734,6 +772,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_2_betriebsart", 23, schrift - 5),
+                    thermostat_zeile("heizkreis_2_thermostat", 31, schrift - 5),
                     *modus_tasten("heizkreis_2_betriebsart", 90),
                 ],
             ),
@@ -747,6 +786,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_3_betriebsart", 23, schrift - 5),
+                    thermostat_zeile("heizkreis_3_thermostat", 31, schrift - 5),
                     *modus_tasten("heizkreis_3_betriebsart", 90),
                 ],
             ),
@@ -760,6 +800,7 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_4_betriebsart", 23, schrift - 5),
+                    thermostat_zeile("heizkreis_4_thermostat", 31, schrift - 5),
                     *modus_tasten("heizkreis_4_betriebsart", 90),
                 ],
             ),

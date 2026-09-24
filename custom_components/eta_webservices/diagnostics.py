@@ -192,6 +192,7 @@ async def async_get_config_entry_diagnostics(
             "freigegeben": coordinator.enable_switches,
             "schalter": sorted(coordinator.switch_defs),
             "betriebsarten": sorted(coordinator.select_defs),
+            "thermostate": sorted(coordinator.thermostat_defs),
         },
         "letzte_abfrage": {
             "erfolgreich": coordinator.last_update_success,

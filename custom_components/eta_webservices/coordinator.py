@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import ETAApiClient, ETAApiError, ETAError, ETAValue
 from .const import (
+    BETRIEBSART_AUS,
     BETRIEBSART_TASTEN,
     COMPONENTS,
     SELECTS,
@@ -21,6 +22,7 @@ from .const import (
     PUFFER_FUEHLER_MINDEST,
     PUFFER_SPEICHER,
     SENSORS,
+    THERMOSTATE,
     normalize_components,
     puffer_fuehler_info,
 )
@@ -141,6 +143,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.discovered_uris: dict[str, str] = {}
         self.ueber_kennung: set[str] = set()
         self.fub_namen: dict[str, str] = {}
+        self.thermostat_defs: dict[str, dict] = {}
+        self.betriebsart_auswahl: dict[str, object] = {}
+        """Die Betriebsart-Auswahlen je Schlüssel - der Thermostat stellt über sie um."""
         self.components_without_data: list[str] = []
         self.api_version: str | None = None
         self.errors: list[ETAError] = []
@@ -346,6 +351,87 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 "ETA: Betriebsart %s erkannt (%s)", key, ", ".join(sorted(tasten))
             )
 
+    async def _thermostate_pruefen(self) -> None:
+        """Prüft je Heizkreis mit externer Schnittstelle, ob sich ein Thermostat bedienen lässt.
+
+        Nur mit freigegebenem Schreibzugriff. Das Ziel des Raumwerts und
+        "Raum Soll" müssen beide als beschreibbar gemeldet sein; Skalierung
+        und Grenzen kommen aus /user/varinfo. Die Zeitüberwachung ist
+        Zugabe - ohne sie gibt es den Thermostat trotzdem, nur ohne Feld im
+        Dialog.
+
+        "Raum Soll" und die Zeitüberwachung kommen mit "platform":
+        "climate" in die Sensordefinitionen, damit sie im selben
+        Abfragezyklus mitgelesen werden.
+        """
+        if not self.enable_switches:
+            return
+
+        for heizkreis, definition in THERMOSTATE.items():
+            if heizkreis not in self.components:
+                continue
+            praefix = definition["praefix"]
+            objekte = {}
+            for teil in ("raum_extern", "raum_soll", "zeitueberwachung"):
+                uri = self.discovered_uris.get(f"{praefix}_{teil}")
+                if not uri:
+                    continue
+                info = await self.client.async_get_varinfo(uri)
+                if info and info.get("writable"):
+                    objekte[teil] = {
+                        "uri": uri,
+                        "scale": info["scale"],
+                        "min_roh": info["min_roh"],
+                        "max_roh": info["max_roh"],
+                    }
+            if "raum_extern" not in objekte or "raum_soll" not in objekte:
+                continue
+
+            self.thermostat_defs[heizkreis] = {**definition, **objekte}
+            for teil in ("raum_soll", "zeitueberwachung"):
+                if teil in objekte:
+                    self.sensor_defs[f"{praefix}_{teil}"] = {
+                        "component": heizkreis,
+                        "translation_key": f"{praefix}_thermostat",
+                        "uri": objekte[teil]["uri"],
+                        "platform": "climate",
+                    }
+            _LOGGER.info(
+                "ETA: Thermostat für %s erkannt (%s)", heizkreis, ", ".join(sorted(objekte))
+            )
+
+    def betriebsart_gemeldet(self, key: str) -> str | None:
+        """Die Betriebsart eines Heizkreises, wie die Anlage sie zuletzt gemeldet hat.
+
+        Aus den drei Tasten: Steht eine auf "Ein", ist das die Betriebsart;
+        stehen alle auf "Aus", ist der Heizkreis aus. None, solange keine
+        Taste gelesen wurde.
+        """
+        definition = self.select_defs.get(key)
+        if definition is None:
+            return None
+        zustaende = {}
+        for modus, taste in definition["tasten"].items():
+            reading = (self.data or {}).get(f"{key}_{modus}")
+            zustaende[modus] = (
+                None
+                if reading is None or not reading.text
+                else reading.text.strip().casefold() == taste["ein_text"].strip().casefold()
+            )
+        if all(zustand is None for zustand in zustaende.values()):
+            return None
+        return next((modus for modus, zustand in zustaende.items() if zustand), BETRIEBSART_AUS)
+
+    def zahl(self, key: str) -> float | None:
+        """Ein gelesener Wert als Zahl, oder None ohne gültigen Messwert."""
+        wert = (self.data or {}).get(key)
+        if wert is None or wert.is_text:
+            return None
+        try:
+            return float(wert.value)
+        except (TypeError, ValueError):
+            return None
+
     async def _varinfo_laden(self) -> None:
         """Holt zu den Textwerten ihre gültigen Zustände.
 
@@ -387,6 +473,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._varinfo_laden()
         await self._schalter_pruefen()
         await self._betriebsarten_pruefen()
+        await self._thermostate_pruefen()
         await self._varset_anlegen()
 
     def funktionsblock(self, komponente: str) -> str:

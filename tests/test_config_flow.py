@@ -281,7 +281,7 @@ def test_optionen_fragen_nicht_nach_der_adresse():
 
 
 async def _keiner_ohne_volumen(*_):
-    return []
+    return [], {}
 
 
 async def options_schritt(monkeypatch, bisher, eingabe):
@@ -290,7 +290,7 @@ async def options_schritt(monkeypatch, bisher, eingabe):
 
     flow = modul.ETAOptionsFlow()
     monkeypatch.setattr(modul.ETAOptionsFlow, "_current", property(lambda self: bisher))
-    monkeypatch.setattr(modul, "_puffer_ohne_volumen", _keiner_ohne_volumen)
+    monkeypatch.setattr(modul, "_anlage_pruefen", _keiner_ohne_volumen)
     monkeypatch.setattr(
         modul.ETAOptionsFlow,
         "async_show_form",
@@ -454,9 +454,9 @@ async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
     flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
 
     async def nur_puffer2(*_):
-        return ["puffer2"]
+        return ["puffer2"], {}
 
-    monkeypatch.setattr(modul, "_puffer_ohne_volumen", nur_puffer2)
+    monkeypatch.setattr(modul, "_anlage_pruefen", nur_puffer2)
     schritt = await flow.async_step_fub_names(
         {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
     )
@@ -485,14 +485,107 @@ async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
     monkeypatch.setattr(modul, "async_discover_uris", menue)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
     komponenten = ["kessel", "puffer", "puffer2", "puffer3"]
-    assert await modul._puffer_ohne_volumen(None, "h", 8080, {}, komponenten) == ["puffer2"]
-    assert await modul._puffer_ohne_volumen(None, "h", 8080, {}, ["kessel", "puffer"]) == []
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == (["puffer2"], {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "puffer"], False) == ([], {})
 
     async def kaputt(client, fub_names):
         raise modul.ETAApiError("kein Menübaum")
 
     monkeypatch.setattr(modul, "async_discover_uris", kaputt)
-    assert await modul._puffer_ohne_volumen(None, "h", 8080, {}, komponenten) == []
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) == ([], {})
+
+
+async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
+    """Nur mit Schreibzugriff, nur angekreuzte Heizkreise, mit dem Wert der Zeitüberwachung."""
+    from eta_webservices import config_flow as modul
+    from eta_webservices.api import ETAApiClient, ETAValue
+
+    async def menue(client, fub_names):
+        return {
+            "heizkreis_raum_extern": "/1/5/0/0/13046",
+            "heizkreis_zeitueberwachung": "/1/5/0/0/13168",
+            "heizkreis2_vorlauf": "/1/6/0/11060/0",
+        }, []
+
+    async def wert(self, uri):
+        return ETAValue(60.0, "0h 1m", "s", False, 0)
+
+    monkeypatch.setattr(modul, "async_discover_uris", menue)
+    monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
+    monkeypatch.setattr(ETAApiClient, "async_get_value", wert)
+    komponenten = ["kessel", "hk1", "hk2"]
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) == (
+        [],
+        {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}},
+    )
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == ([], {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "hk2"], True) == ([], {})
+
+
+async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
+    """Die Zeitüberwachung wird nur geschrieben, wenn sie sich ändert - und nicht gespeichert."""
+    from eta_webservices import config_flow as modul
+
+    bisher = {"host": "192.0.2.10", "port": 8080, "hk1_raumfuehler": "sensor.alt"}
+    flow, _ = await options_schritt(
+        monkeypatch, bisher, optionen(components=["hk1"], enable_switches=True)
+    )
+
+    async def mit_thermostat(*_):
+        return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}}
+
+    geschrieben = []
+
+    async def schreiben(hass, host, port, uri, sekunden):
+        geschrieben.append((host, uri, sekunden))
+
+    monkeypatch.setattr(modul, "_anlage_pruefen", mit_thermostat)
+    monkeypatch.setattr(modul, "_zeitueberwachung_schreiben", schreiben)
+    schritt = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
+    assert schritt["step_id"] == "raumfuehler"
+    schema = schritt["data_schema"]
+    standard = {str(k): k.default() for k in schema.schema if k.default is not vol.UNDEFINED}
+    assert standard == {"hk1_zeitueberwachung": 1}
+    vorschlag = {str(k): (k.description or {}).get("suggested_value") for k in schema.schema}
+    assert vorschlag["hk1_raumfuehler"] == "sensor.alt"
+    with pytest.raises(vol.Invalid):
+        schema({"hk1_zeitueberwachung": 0})
+    with pytest.raises(vol.Invalid):
+        schema({"hk1_zeitueberwachung": 61})
+
+    fertig = await flow.async_step_raumfuehler(
+        {"hk1_raumfuehler": "sensor.wohnzimmer", "hk1_zeitueberwachung": 10}
+    )
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["hk1_raumfuehler"] == "sensor.wohnzimmer"
+    assert "hk1_zeitueberwachung" not in fertig["data"]
+    assert geschrieben == [("192.0.2.10", "/1/5/0/0/13168", 600)]
+
+    geschrieben.clear()
+    await flow.async_step_raumfuehler({"hk1_zeitueberwachung": 10})
+    assert geschrieben == [], "unverändert - nichts zu schreiben"
+
+
+async def test_zeitueberwachung_nicht_geschrieben_zeigt_einen_fehler(monkeypatch):
+    from eta_webservices import config_flow as modul
+
+    flow, _ = await options_schritt(
+        monkeypatch, {"host": "h"}, optionen(components=["hk1"], enable_switches=True)
+    )
+
+    async def mit_thermostat(*_):
+        return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 0}}
+
+    async def abgelehnt(*_):
+        raise modul.ETAApiError("nein")
+
+    monkeypatch.setattr(modul, "_anlage_pruefen", mit_thermostat)
+    monkeypatch.setattr(modul, "_zeitueberwachung_schreiben", abgelehnt)
+    schritt = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
+    standard = {str(k): k.default() for k in schritt["data_schema"].schema if k.default is not vol.UNDEFINED}
+    assert standard == {"hk1_zeitueberwachung": 10}, "0 an der Anlage: 10 Minuten vorgeschlagen"
+    ergebnis = await flow.async_step_raumfuehler({"hk1_zeitueberwachung": 10})
+    assert ergebnis["errors"] == {"base": "zeitueberwachung_nicht_geschrieben"}
 
 
 async def test_weitere_puffer_brenner_und_fernleitung_fragen_ihren_fub_namen(monkeypatch):

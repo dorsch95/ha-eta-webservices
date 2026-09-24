@@ -53,6 +53,20 @@
           "puffer3_volumen": "Buffer tank 3 (litres)"
         }
       },
+      "raumfuehler": {
+        "title": "Room sensor from Home Assistant",
+        "description": "These heating circuits are set up with 'Raumfühler ext. Schnittstelle' (room sensor via external interface). Pick a thermometer from Home Assistant for each circuit - the integration writes its temperature to the system every 30 seconds as the room temperature. Without a selection the system gets no room value.\n\nThe **time monitoring** is a setting of the system: if no new value arrives for that long, it discards the old one and reports 'Raumfühler: Keine Verbindung'. It is 1 minute by default - the system then reports this on every Home Assistant restart. 10 minutes bridge a restart. It is only written if you change the value.",
+        "data": {
+          "hk1_raumfuehler": "Heating circuit 1: thermometer as room sensor",
+          "hk1_zeitueberwachung": "Heating circuit 1: time monitoring (minutes)",
+          "hk2_raumfuehler": "Heating circuit 2: thermometer as room sensor",
+          "hk2_zeitueberwachung": "Heating circuit 2: time monitoring (minutes)",
+          "hk3_raumfuehler": "Heating circuit 3: thermometer as room sensor",
+          "hk3_zeitueberwachung": "Heating circuit 3: time monitoring (minutes)",
+          "hk4_raumfuehler": "Heating circuit 4: thermometer as room sensor",
+          "hk4_zeitueberwachung": "Heating circuit 4: time monitoring (minutes)"
+        }
+      },
       "reconfigure": {
         "title": "Change the heating system's IP address",
         "data": {
@@ -67,7 +81,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler."
+      "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler.",
+      "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written."
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
@@ -126,10 +141,27 @@
           "puffer3_volumen": "Buffer tank 3 (litres)"
         }
       },
+      "raumfuehler": {
+        "title": "Room sensor from Home Assistant",
+        "description": "These heating circuits are set up with 'Raumfühler ext. Schnittstelle' (room sensor via external interface). Pick a thermometer from Home Assistant for each circuit - the integration writes its temperature to the system every 30 seconds as the room temperature. Without a selection the system gets no room value.\n\nThe **time monitoring** is a setting of the system: if no new value arrives for that long, it discards the old one and reports 'Raumfühler: Keine Verbindung'. It is 1 minute by default - the system then reports this on every Home Assistant restart. 10 minutes bridge a restart. It is only written if you change the value.",
+        "data": {
+          "hk1_raumfuehler": "Heating circuit 1: thermometer as room sensor",
+          "hk1_zeitueberwachung": "Heating circuit 1: time monitoring (minutes)",
+          "hk2_raumfuehler": "Heating circuit 2: thermometer as room sensor",
+          "hk2_zeitueberwachung": "Heating circuit 2: time monitoring (minutes)",
+          "hk3_raumfuehler": "Heating circuit 3: thermometer as room sensor",
+          "hk3_zeitueberwachung": "Heating circuit 3: time monitoring (minutes)",
+          "hk4_raumfuehler": "Heating circuit 4: thermometer as room sensor",
+          "hk4_zeitueberwachung": "Heating circuit 4: time monitoring (minutes)"
+        }
+      },
       "switch_warning": {
         "title": "Switching writes to your heating system",
         "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
       }
+    },
+    "error": {
+      "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written."
     }
   },
   "selector": {
@@ -168,6 +200,20 @@
       },
       "stoerung": {
         "name": "Fault"
+      }
+    },
+    "climate": {
+      "heizkreis2_thermostat": {
+        "name": "Heating circuit 2 thermostat"
+      },
+      "heizkreis3_thermostat": {
+        "name": "Heating circuit 3 thermostat"
+      },
+      "heizkreis4_thermostat": {
+        "name": "Heating circuit 4 thermostat"
+      },
+      "heizkreis_thermostat": {
+        "name": "Heating circuit 1 thermostat"
       }
     },
     "select": {
@@ -251,11 +297,17 @@
       "heizkreis2_anforderung": {
         "name": "Heating circuit 2 demand"
       },
+      "heizkreis2_raum": {
+        "name": "Heating circuit 2 room temperature"
+      },
       "heizkreis2_vorlauf": {
         "name": "Heating circuit 2 flow temperature"
       },
       "heizkreis3_anforderung": {
         "name": "Heating circuit 3 demand"
+      },
+      "heizkreis3_raum": {
+        "name": "Heating circuit 3 room temperature"
       },
       "heizkreis3_vorlauf": {
         "name": "Heating circuit 3 flow temperature"
@@ -263,11 +315,17 @@
       "heizkreis4_anforderung": {
         "name": "Heating circuit 4 demand"
       },
+      "heizkreis4_raum": {
+        "name": "Heating circuit 4 room temperature"
+      },
       "heizkreis4_vorlauf": {
         "name": "Heating circuit 4 flow temperature"
       },
       "heizkreis_anforderung": {
         "name": "Heating circuit demand"
+      },
+      "heizkreis_raum": {
+        "name": "Heating circuit room temperature"
       },
       "heizkreis_vorlauf": {
         "name": "Heating circuit flow temperature"
