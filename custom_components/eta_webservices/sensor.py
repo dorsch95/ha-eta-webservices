@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
+from . import prognose
 from .prognose_koordinator import ETAPrognoseKoordinator
 
 
@@ -47,6 +48,8 @@ async def async_setup_entry(
                 entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum, kosten=True))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerFuellstandSensor(coordinator))
+    if coordinator.puffer_volumen:
+        entities.append(ETAPufferEnergieSensor(coordinator))
     if coordinator.prognose is not None:
         schluessel = list(PROGNOSE)
         if "lager_vorrat" not in coordinator.sensor_defs:
@@ -248,6 +251,45 @@ class ETALagerFuellstandSensor(ETABaseSensor):
         if maximum_kg <= 0:
             return None
         return round(max(0.0, vorrat_kg / maximum_kg * 100))
+
+
+class ETAPufferEnergieSensor(ETABaseSensor):
+    """Wie viel nutzbare Wärme im Pufferspeicher steckt, in kWh.
+
+    Aus Volumen und Pufferfühlern: Jeder Fühler steht für einen gleich
+    großen Teil des Speichers, gezählt wird die Wärme über
+    prognose.PUFFER_BEZUG. Das Volumen liest die Integration bei PufferFlex
+    aus der Anlage, beim Puffer trägt es der Nutzer ein. Fehlt ein Fühler,
+    bleibt der Wert leer, statt schief zu sein.
+    """
+
+    _attr_icon = "mdi:heat-wave"
+    _attr_translation_key = "puffer_energieinhalt"
+    _attr_device_class = SensorDeviceClass.ENERGY_STORAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "kWh"
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator, "puffer_energieinhalt")
+        self._fuehler = sorted(
+            (k for k in coordinator.sensor_defs if k.startswith("puffer_fuehler_")),
+            key=lambda k: int(k.rsplit("_", 1)[1]),
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        werte = prognose.puffer_temperaturen(self.coordinator.data, self._fuehler)
+        inhalt = prognose.puffer_energieinhalt(werte, self.coordinator.puffer_volumen)
+        return round(inhalt, 2) if inhalt is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "volumen_liter": self.coordinator.puffer_volumen,
+            "volumen_quelle": self.coordinator.puffer_volumen_quelle,
+            "ab_temperatur": prognose.PUFFER_BEZUG,
+        }
 
 
 ZEITRAEUME = ("heute", "woche", "jahr")
@@ -585,6 +627,7 @@ class ETAPrognoseSensor(CoordinatorEntity[ETAPrognoseKoordinator], SensorEntity)
                 "standort_waermer_als_mittel": _gerundet(e.klima_abweichung),
                 "wetter": self.coordinator.wetter_id,
                 "vorhersage_tage": self.coordinator.vorhersage_tage,
+                "puffer_ausgeglichene_tage": self.coordinator.puffer_tage,
             }
         if self._key == "lager_reicht_bis":
             attribute = {

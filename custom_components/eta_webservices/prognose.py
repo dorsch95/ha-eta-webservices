@@ -18,6 +18,11 @@ gerechnet. Gegengerechnet wird, indem das Modell für jeden der letzten
 Tage nur mit den Tagen davor gelernt wird und seine Schätzung mit dem
 tatsächlichen Verbrauch verglichen wird.
 
+Ist das Volumen des Pufferspeichers bekannt, wird vorher herausgerechnet,
+was der Puffer von einem Tag in den nächsten mitnimmt: Lädt der Kessel
+abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst
+morgen gebraucht.
+
 Das Modul kommt ohne Home Assistant aus, damit es sich vollständig
 prüfen lässt; die Daten holt prognose_koordinator.py.
 """
@@ -82,6 +87,22 @@ KLIMA_MONATSMITTEL = [0.9, 1.5, 4.5, 8.9, 12.9, 16.3, 18.3, 18.0, 14.0, 9.5, 5.0
 """Langjährige Monatsmittel der Lufttemperatur in Deutschland (DWD, 1991-2020)."""
 
 VERGLEICHSTAGE = 14
+
+WASSER_KWH_JE_LITER_KELVIN = 0.001163
+"""So viel Wärme nimmt ein Liter Wasser je Grad auf: 4,187 kJ = 1,163 Wh."""
+
+KESSEL_WIRKUNGSGRAD = 0.9
+"""Anteil der Pelletenergie, der im Puffer ankommt.
+
+Nur für die Umrechnung der Puffer-Energie in Kilogramm; liegt er
+daneben, verschiebt sich die ohnehin kleine Korrektur um wenige Prozent.
+"""
+
+PUFFER_BEZUG = 30.0
+"""Ab dieser Temperatur zählt Pufferwasser als nutzbare Wärme.
+
+Kälter kommt es von Heizkörpern und Fußbodenheizung ohnehin zurück.
+"""
 
 
 @dataclass
@@ -543,3 +564,76 @@ def tagesmittel_aus_vorhersage(
         for datum, liste in werte.items()
         if len(liste) >= noetig
     }
+
+
+def puffer_temperaturen(daten, schluessel) -> list[float]:
+    """Die aktuellen Temperaturen aller Pufferfühler - leer, wenn einer fehlt.
+
+    Mit einem fehlenden Fühler wäre das Mittel schief, weil jeder für
+    einen gleich großen Teil des Speichers steht.
+    """
+    werte = []
+    for key in schluessel:
+        wert = (daten or {}).get(key)
+        try:
+            werte.append(float(wert.value))
+        except (AttributeError, TypeError, ValueError):
+            return []
+    return werte
+
+
+def puffer_energieinhalt(temperaturen: list[float], volumen: float) -> float | None:
+    """Nutzbare Wärme im Puffer in kWh: alles über PUFFER_BEZUG."""
+    if not temperaturen or not volumen:
+        return None
+    ueber = sum(max(0.0, t - PUFFER_BEZUG) for t in temperaturen) / len(temperaturen)
+    return ueber * volumen * WASSER_KWH_JE_LITER_KELVIN
+
+
+def puffer_tagesenden(
+    fuehler: list[list[tuple[float, float]]],
+    lokale_stunde: Callable[[float], tuple[date, int]],
+) -> dict[date, float]:
+    """Mittlere Puffertemperatur in der letzten Stunde jedes Tages.
+
+    fuehler enthält je Pufferfühler die Stundenmittel als Paare
+    (Zeitstempel, °C). Eine Stunde zählt nur, wenn alle Fühler einen
+    Wert haben.
+    """
+    je_stunde: dict[float, list[float]] = defaultdict(list)
+    for reihe in fuehler:
+        for zeit, wert in reihe:
+            if wert is not None:
+                je_stunde[zeit].append(float(wert))
+    enden = {}
+    for zeit, werte in je_stunde.items():
+        if len(werte) != len(fuehler):
+            continue
+        datum, stunde = lokale_stunde(zeit)
+        if stunde == 23:
+            enden[datum] = sum(werte) / len(werte)
+    return enden
+
+
+def puffer_ausgleichen(
+    tage: list[Tag], enden: dict[date, float], kwh_je_kelvin: float, kwh_je_kg: float
+) -> tuple[list[Tag], int]:
+    """Rechnet heraus, was der Puffer über Mitternacht mitgenommen hat.
+
+    Ist er am Tagesende wärmer als am Vorabend, steckt ein Teil der heute
+    verbrannten Pellets noch im Puffer - der gehört zum Verbrauch von
+    morgen. Ist er kälter, hat das Haus von gestern gezehrt. Liefert die
+    ausgeglichenen Tage und wie viele davon ausgeglichen wurden; Tage
+    ohne beide Tagesenden bleiben wie sie sind.
+    """
+    ergebnis, ausgeglichen = [], 0
+    for tag in tage:
+        heute = enden.get(tag.datum)
+        vorher = enden.get(tag.datum - timedelta(days=1))
+        if heute is None or vorher is None or kwh_je_kg <= 0:
+            ergebnis.append(tag)
+            continue
+        verschoben = (heute - vorher) * kwh_je_kelvin / kwh_je_kg
+        ergebnis.append(Tag(tag.datum, max(0.0, tag.verbrauch - verschoben), tag.temperatur))
+        ausgeglichen += 1
+    return ergebnis, ausgeglichen

@@ -18,6 +18,156 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/kessel.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: &id009
+            - Heizen
+            - Heizen Start
+            - Anheizen
+            - Pellet Betrieb
+            - Heizen, Vorbereitung auf Messung
+            - Heizen, Teillastmessung durchführen
+            - Heizen, Nennlastmessung durchführen
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_flamme.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: &id010
+            - Zünden
+            - Heizversuch
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_zuendung.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: &id011
+            - Entaschen
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_entaschen.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: &id012
+            - Störung
+            - Störung beim Entaschen
+            - Wartung
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_stoerung.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: &id013
+            - Glutabbrand
+            - Glutabbrand wegen Entaschung
+            - Glutabbrand da ausgeschaltet
+            - Glutabbrand weil Aschebox fehlt
+            - Glutabbrand wegen Störung
+            - Glutabbrand wegen Verriegelung
+            - Ausbrand
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_glut.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_aussentemperatur
           style:
@@ -106,26 +256,26 @@ cards:
               --mdc-icon-size: 30px
         entity: sensor.eta_heizung_kessel_zustand
         state_image:
-          Heizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
-          Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
-          Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
-          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
-          Entaschen: /eta_webservices/grafiken/kessel_entaschen.webp
-          Störung: /eta_webservices/grafiken/kessel_stoerung.webp
-          Störung beim Entaschen: /eta_webservices/grafiken/kessel_stoerung.webp
-          Wartung: /eta_webservices/grafiken/kessel_stoerung.webp
-          Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.webp
-          Ausbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Heizen: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen Start: /eta_webservices/grafiken/kessel_flamme.png
+          Anheizen: /eta_webservices/grafiken/kessel_flamme.png
+          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.png
+          Zünden: /eta_webservices/grafiken/kessel_zuendung.png
+          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.png
+          Entaschen: /eta_webservices/grafiken/kessel_entaschen.png
+          Störung: /eta_webservices/grafiken/kessel_stoerung.png
+          Störung beim Entaschen: /eta_webservices/grafiken/kessel_stoerung.png
+          Wartung: /eta_webservices/grafiken/kessel_stoerung.png
+          Glutabbrand: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.png
+          Ausbrand: /eta_webservices/grafiken/kessel_glut.png
           Ausgeschaltet: /eta_webservices/grafiken/kessel_aus.png
           Klappe Öffnen: /eta_webservices/grafiken/kessel_aus.png
           Pelletsbehälter auffüllen: /eta_webservices/grafiken/kessel_aus.png
@@ -661,8 +811,15 @@ cards:
             entity: sensor.eta_heizung_heizkreis_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id001
+            condition: state
             entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: &id001
+            state_not: &id002
             - Aus
             - '-'
             - unavailable
@@ -670,6 +827,30 @@ cards:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id001
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -929,12 +1110,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_2_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id003
+            condition: state
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id003
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -1194,12 +1406,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_3_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id004
+            condition: state
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id004
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -1459,12 +1702,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_4_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id005
+            condition: state
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id005
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -1827,12 +2101,43 @@ cards:
             entity: sensor.eta_heizung_lager_austragung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id006
+            condition: state
             entity: sensor.eta_heizung_lager_austragung
             state: Fördern
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
             image: /eta_webservices/grafiken/lager_schnecke.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id006
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_austragung
+            image: /eta_webservices/grafiken/lager_schnecke.png
             tap_action:
               action: none
             hold_action:
@@ -1926,13 +2231,44 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_solar_leistung
             state_not: unknown
-          - condition: numeric_state
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id007
+            condition: numeric_state
             entity: sensor.eta_heizung_solar_leistung
             above: 0.05
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
             image: /eta_webservices/grafiken/solar_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id007
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_aktiv.png
             tap_action:
               action: none
             hold_action:
@@ -1999,13 +2335,44 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             state_not: unknown
-          - condition: numeric_state
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id008
+            condition: numeric_state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             above: 0.05
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             image: /eta_webservices/grafiken/pvm_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id008
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_aktiv.png
             tap_action:
               action: none
             hold_action:
@@ -2056,6 +2423,136 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/kessel.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id009
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_flamme.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id010
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_zuendung.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id011
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_entaschen.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id012
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_stoerung.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id013
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_glut.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_aussentemperatur
           style:
@@ -2144,26 +2641,26 @@ cards:
               --mdc-icon-size: 30px
         entity: sensor.eta_heizung_kessel_zustand
         state_image:
-          Heizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
-          Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
-          Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
-          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
-          Entaschen: /eta_webservices/grafiken/kessel_entaschen.webp
-          Störung: /eta_webservices/grafiken/kessel_stoerung.webp
-          Störung beim Entaschen: /eta_webservices/grafiken/kessel_stoerung.webp
-          Wartung: /eta_webservices/grafiken/kessel_stoerung.webp
-          Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.webp
-          Ausbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Heizen: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen Start: /eta_webservices/grafiken/kessel_flamme.png
+          Anheizen: /eta_webservices/grafiken/kessel_flamme.png
+          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.png
+          Zünden: /eta_webservices/grafiken/kessel_zuendung.png
+          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.png
+          Entaschen: /eta_webservices/grafiken/kessel_entaschen.png
+          Störung: /eta_webservices/grafiken/kessel_stoerung.png
+          Störung beim Entaschen: /eta_webservices/grafiken/kessel_stoerung.png
+          Wartung: /eta_webservices/grafiken/kessel_stoerung.png
+          Glutabbrand: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.png
+          Ausbrand: /eta_webservices/grafiken/kessel_glut.png
           Ausgeschaltet: /eta_webservices/grafiken/kessel_aus.png
           Klappe Öffnen: /eta_webservices/grafiken/kessel_aus.png
           Pelletsbehälter auffüllen: /eta_webservices/grafiken/kessel_aus.png
@@ -2699,12 +3196,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id014
+            condition: state
             entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id014
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -2964,12 +3492,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_2_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id015
+            condition: state
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id015
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -3229,12 +3788,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_3_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id016
+            condition: state
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id016
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -3494,12 +4084,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_4_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id017
+            condition: state
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id017
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -3862,12 +4483,43 @@ cards:
             entity: sensor.eta_heizung_lager_austragung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id018
+            condition: state
             entity: sensor.eta_heizung_lager_austragung
             state: Fördern
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
             image: /eta_webservices/grafiken/lager_schnecke.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id018
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_austragung
+            image: /eta_webservices/grafiken/lager_schnecke.png
             tap_action:
               action: none
             hold_action:
@@ -3961,13 +4613,44 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_solar_leistung
             state_not: unknown
-          - condition: numeric_state
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id019
+            condition: numeric_state
             entity: sensor.eta_heizung_solar_leistung
             above: 0.05
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
             image: /eta_webservices/grafiken/solar_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id019
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_aktiv.png
             tap_action:
               action: none
             hold_action:
@@ -4034,13 +4717,44 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             state_not: unknown
-          - condition: numeric_state
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id020
+            condition: numeric_state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             above: 0.05
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             image: /eta_webservices/grafiken/pvm_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id020
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_aktiv.png
             tap_action:
               action: none
             hold_action:
@@ -4091,6 +4805,136 @@ cards:
         type: picture-elements
         image: /eta_webservices/grafiken/kessel.png
         elements:
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id009
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_flamme.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id010
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_zuendung.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id011
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_entaschen.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id012
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_stoerung.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - condition: state
+            entity: sensor.eta_heizung_kessel_zustand
+            state: *id013
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_kessel_zustand
+            image: /eta_webservices/grafiken/kessel_glut.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
         - type: state-label
           entity: sensor.eta_heizung_aussentemperatur
           style:
@@ -4179,26 +5023,26 @@ cards:
               --mdc-icon-size: 30px
         entity: sensor.eta_heizung_kessel_zustand
         state_image:
-          Heizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen Start: /eta_webservices/grafiken/kessel_flamme.webp
-          Anheizen: /eta_webservices/grafiken/kessel_flamme.webp
-          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
-          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.webp
-          Zünden: /eta_webservices/grafiken/kessel_zuendung.webp
-          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.webp
-          Entaschen: /eta_webservices/grafiken/kessel_entaschen.webp
-          Störung: /eta_webservices/grafiken/kessel_stoerung.webp
-          Störung beim Entaschen: /eta_webservices/grafiken/kessel_stoerung.webp
-          Wartung: /eta_webservices/grafiken/kessel_stoerung.webp
-          Glutabbrand: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.webp
-          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.webp
-          Ausbrand: /eta_webservices/grafiken/kessel_glut.webp
+          Heizen: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen Start: /eta_webservices/grafiken/kessel_flamme.png
+          Anheizen: /eta_webservices/grafiken/kessel_flamme.png
+          Pellet Betrieb: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Vorbereitung auf Messung: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Teillastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.png
+          Heizen, Nennlastmessung durchführen: /eta_webservices/grafiken/kessel_flamme.png
+          Zünden: /eta_webservices/grafiken/kessel_zuendung.png
+          Heizversuch: /eta_webservices/grafiken/kessel_zuendung.png
+          Entaschen: /eta_webservices/grafiken/kessel_entaschen.png
+          Störung: /eta_webservices/grafiken/kessel_stoerung.png
+          Störung beim Entaschen: /eta_webservices/grafiken/kessel_stoerung.png
+          Wartung: /eta_webservices/grafiken/kessel_stoerung.png
+          Glutabbrand: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Entaschung: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand da ausgeschaltet: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand weil Aschebox fehlt: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Störung: /eta_webservices/grafiken/kessel_glut.png
+          Glutabbrand wegen Verriegelung: /eta_webservices/grafiken/kessel_glut.png
+          Ausbrand: /eta_webservices/grafiken/kessel_glut.png
           Ausgeschaltet: /eta_webservices/grafiken/kessel_aus.png
           Klappe Öffnen: /eta_webservices/grafiken/kessel_aus.png
           Pelletsbehälter auffüllen: /eta_webservices/grafiken/kessel_aus.png
@@ -4734,12 +5578,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id021
+            condition: state
             entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id021
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -4999,12 +5874,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_2_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id022
+            condition: state
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id022
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_2_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -5264,12 +6170,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_3_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id023
+            condition: state
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id023
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_3_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -5529,12 +6466,43 @@ cards:
             entity: sensor.eta_heizung_heizkreis_4_anforderung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id024
+            condition: state
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            state_not: *id001
+            state_not: *id002
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
             image: /eta_webservices/grafiken/heizkreis_fluss.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id024
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_heizkreis_4_anforderung
+            image: /eta_webservices/grafiken/heizkreis_fluss.png
             tap_action:
               action: none
             hold_action:
@@ -5897,12 +6865,43 @@ cards:
             entity: sensor.eta_heizung_lager_austragung
             state_not: unknown
           - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id025
+            condition: state
             entity: sensor.eta_heizung_lager_austragung
             state: Fördern
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
             image: /eta_webservices/grafiken/lager_schnecke.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_lager_austragung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id025
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_lager_austragung
+            image: /eta_webservices/grafiken/lager_schnecke.png
             tap_action:
               action: none
             hold_action:
@@ -5996,13 +6995,44 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_solar_leistung
             state_not: unknown
-          - condition: numeric_state
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id026
+            condition: numeric_state
             entity: sensor.eta_heizung_solar_leistung
             above: 0.05
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
             image: /eta_webservices/grafiken/solar_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_solar_leistung
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id026
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_solar_leistung
+            image: /eta_webservices/grafiken/solar_aktiv.png
             tap_action:
               action: none
             hold_action:
@@ -6069,13 +7099,44 @@ cards:
           - condition: state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             state_not: unknown
-          - condition: numeric_state
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'on'
+          - &id027
+            condition: numeric_state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             above: 0.05
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             image: /eta_webservices/grafiken/pvm_aktiv.webp
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            style:
+              top: 50%
+              left: 50%
+              width: 100%
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state_not: unknown
+          - condition: state
+            entity: switch.eta_heizung_animationen
+            state: 'off'
+          - *id027
+          elements:
+          - type: image
+            entity: sensor.eta_heizung_pv_heizmodul_heizstab
+            image: /eta_webservices/grafiken/pvm_aktiv.png
             tap_action:
               action: none
             hold_action:

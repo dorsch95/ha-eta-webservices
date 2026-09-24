@@ -258,6 +258,8 @@ class FakeSession:
             return {"value": "1803", "str_value": "Heizen", "text_offset": "1802"}
         if "12423" in uri:
             return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
+        if uri.endswith("/13520"):
+            return {"value": "825", "str_value": "825", "unit": "l"}
         return {"value": "555", "str_value": "55,5", "unit": "°C", "scale": "10"}
 
     def _varset_lesen(self, url: str):

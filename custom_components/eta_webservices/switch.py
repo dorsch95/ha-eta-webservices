@@ -1,8 +1,11 @@
-"""Schalter für Kessel und Heizkreise.
+"""Schalter für Kessel und Heizkreise, dazu der Schalter für die Animationen.
 
-Ein Schalter entsteht nur, wenn die Anlage die Variable als beschreibbar
-meldet und genau zwei Zustände kennt. Die Rohwerte für Ein und Aus
-stammen aus /user/varinfo.
+Ein Schalter der Anlage entsteht nur, wenn die Anlage die Variable als
+beschreibbar meldet und genau zwei Zustände kennt. Die Rohwerte für Ein
+und Aus stammen aus /user/varinfo.
+
+Der Schalter "Animationen" gehört allein zu Home Assistant: Er schreibt
+nichts in die Anlage und entsteht deshalb auch ohne Schreibzugriff.
 """
 
 from __future__ import annotations
@@ -10,9 +13,11 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.const import STATE_OFF, EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
@@ -42,11 +47,12 @@ async def async_setup_entry(
     Einträgen ist.
     """
     coordinator = entry.runtime_data
-    entities = [
+    entities: list[SwitchEntity] = [
         ETASwitch(coordinator, key, definition)
         for key, definition in coordinator.switch_defs.items()
         if not definition.get("nur_fuer_auswahl")
     ]
+    entities.append(ETAAnimationenSwitch(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "switch", entities)
     async_add_entities(entities)
 
@@ -130,3 +136,43 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
         self._widerspruch = 0
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
+
+
+class ETAAnimationenSwitch(SwitchEntity, RestoreEntity):
+    """Bewegte oder stehende Bilder auf der Dashboard-Karte.
+
+    Die Karte fragt diesen Schalter ab: An zeigt sie Flamme, Funken,
+    Schnecke und Fluss in Bewegung, aus je ein Standbild mit derselben
+    Aussage - etwa für ein Wandtablet, das sparsam laufen soll. Nach einem
+    Neustart gilt die letzte Einstellung, anfangs an.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "animationen"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = False
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        self._attr_unique_id = (
+            f"eta_switch_{coordinator.config_entry.entry_id}_animationen"
+        )
+        self._attr_device_info = coordinator.device_info
+        self._attr_is_on = True
+
+    @property
+    def icon(self) -> str:
+        return "mdi:animation-play" if self.is_on else "mdi:image-outline"
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        letzter = await self.async_get_last_state()
+        if letzter is not None:
+            self._attr_is_on = letzter.state != STATE_OFF
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        self._attr_is_on = False
+        self.async_write_ha_state()

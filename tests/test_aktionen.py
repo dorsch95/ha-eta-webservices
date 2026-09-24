@@ -75,7 +75,8 @@ async def test_ohne_schreibzugriff_fehlen_die_bedienelemente(hass, entry):
     await eingerichtet(hass, entry)
     text = json.dumps(karte_fuer_eintrag(hass, entry))
 
-    assert "switch." not in text
+    assert "switch.eta_heizung_animationen" in text, "gehört zur Anzeige, nicht zur Anlage"
+    assert "switch." not in text.replace("switch.eta_heizung_animationen", "")
     assert "select." not in text
     assert "sensor.eta_heizung_kesseltemperatur" in text
 
@@ -152,7 +153,8 @@ async def test_kessel_wechselt_das_bild_mit_dem_zustand(hass, entry):
     assert len(kessel) == 3
     for kachel in kessel:
         assert kachel["entity"] == "sensor.eta_heizung_kessel_zustand"
-        assert kachel["state_image"]["Heizen"].endswith("kessel_flamme.webp")
+        assert kachel["state_image"]["Heizen"].endswith("kessel_flamme.png")
+        assert "kessel_flamme.webp" in json.dumps(kachel["elements"])
 
 
 def test_ohne_kessel_zustand_bleibt_das_grundbild():

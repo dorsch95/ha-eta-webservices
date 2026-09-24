@@ -329,20 +329,65 @@ Flamme.
 """
 
 
+KESSEL_BEWEGT = [
+    (KESSEL_FLAMME, "kessel_flamme"),
+    (KESSEL_ZUENDUNG, "kessel_zuendung"),
+    (KESSEL_ENTASCHEN, "kessel_entaschen"),
+    (KESSEL_STOERUNG, "kessel_stoerung"),
+    (KESSEL_GLUT, "kessel_glut"),
+]
+"""Kessel-Zustände mit bewegtem Bild und dessen Name ohne Endung.
+
+Zu jedem gibt es ein Standbild (.png) und die Bewegung (.webp).
+"""
+
+KESSEL_ZUSTAND = "sensor.eta_heizung_kessel_zustand"
+
+
 def kessel_zustandsbilder():
-    """Welches Bild die Kessel-Kachel bei welchem Zustand zeigt."""
+    """Welches Standbild die Kessel-Kachel bei welchem Zustand zeigt.
+
+    Die Bewegung liegt als Auflage darüber, siehe kessel_bewegung.
+    """
     bilder = {}
-    for zustaende, bild in (
-        (KESSEL_FLAMME, "kessel_flamme.webp"),
-        (KESSEL_ZUENDUNG, "kessel_zuendung.webp"),
-        (KESSEL_ENTASCHEN, "kessel_entaschen.webp"),
-        (KESSEL_STOERUNG, "kessel_stoerung.webp"),
-        (KESSEL_GLUT, "kessel_glut.webp"),
-        (KESSEL_AUS, "kessel_aus.png"),
-    ):
+    for zustaende, bild in (*KESSEL_BEWEGT, (KESSEL_AUS, "kessel_aus")):
         for zustand in zustaende:
-            bilder[zustand] = f"{BILDPFAD}/{bild}"
+            bilder[zustand] = f"{BILDPFAD}/{bild}.png"
     return bilder
+
+
+ANIMATIONEN = "switch.eta_heizung_animationen"
+"""Der Schalter, mit dem der Nutzer die Bewegung auf der Karte abschaltet."""
+
+
+def animationen(zustand):
+    """Bedingungen: Der Schalter Animationen steht auf an bzw. aus."""
+    return [
+        {"condition": "state", "entity": ANIMATIONEN, "state_not": "unknown"},
+        {"condition": "state", "entity": ANIMATIONEN, "state": zustand},
+    ]
+
+
+def kessel_bewegung():
+    """Die bewegten Kesselbilder über dem Standbild der Kachel.
+
+    Nur bei eingeschalteten Animationen; sonst bleibt das Standbild aus
+    state_image stehen, das dasselbe zeigt, nur still.
+    """
+    return [
+        auflage(f"{bild}.webp", KESSEL_ZUSTAND,
+                [*animationen("on"),
+                 {"condition": "state", "entity": KESSEL_ZUSTAND, "state": zustaende}])
+        for zustaende, bild in KESSEL_BEWEGT
+    ]
+
+
+def bewegt_oder_still(bild, entitaet, bedingungen):
+    """Das bewegte Bild bei eingeschalteten Animationen, sonst sein Standbild."""
+    return [
+        auflage(f"{bild}.webp", entitaet, [*animationen("on"), *bedingungen]),
+        auflage(f"{bild}.png", entitaet, [*animationen("off"), *bedingungen]),
+    ]
 
 
 def auflage(bild, entitaet, bedingungen):
@@ -400,9 +445,9 @@ def lager_auflagen():
             grenze["below"] = unter
         elemente.append(auflage(bild, LAGER_FUELLSTAND, [grenze]))
     austragung = "sensor.eta_heizung_lager_austragung"
-    elemente.append(
-        auflage("lager_schnecke.webp", austragung,
-                [{"condition": "state", "entity": austragung, "state": LAGER_FOERDERN}])
+    elemente.extend(
+        bewegt_oder_still("lager_schnecke", austragung,
+                          [{"condition": "state", "entity": austragung, "state": LAGER_FOERDERN}])
     )
     warnung = "binary_sensor.eta_heizung_pelletvorrat_niedrig"
     elemente.append(
@@ -435,10 +480,14 @@ HEIZKREIS_OHNE_FLUSS = ["Aus", "-", "unavailable"]
 
 
 def heizkreis_fluss(entitaet):
-    """Helle Pulse wandern durch den Heizkreis, solange er angefordert ist."""
+    """Helle Pulse wandern durch den Heizkreis, solange er angefordert ist.
+
+    Ohne Animationen stehen die Pulse still - der Heizkreis bleibt
+    trotzdem sichtbar hervorgehoben.
+    """
     entitaet = f"sensor.eta_heizung_{entitaet}"
-    return auflage(
-        "heizkreis_fluss.webp",
+    return bewegt_oder_still(
+        "heizkreis_fluss",
         entitaet,
         [{"condition": "state", "entity": entitaet, "state_not": HEIZKREIS_OHNE_FLUSS}],
     )
@@ -451,15 +500,15 @@ LEISTUNG_AB = 0.05
 def aktiv_oder_ruhe(bild, entitaet):
     """Motiv bewegt, solange Leistung anliegt, sonst blass.
 
-    Meldet die Anlage keine Leistung, greift keine der beiden Auflagen
-    und es bleibt beim Grundbild.
+    Ohne Animationen leuchtet es still. Meldet die Anlage keine Leistung,
+    greift keine der Auflagen und es bleibt beim Grundbild.
     """
     entitaet = f"sensor.eta_heizung_{entitaet}"
     return [
         auflage(f"{bild}_ruhe.png", entitaet,
                 [{"condition": "numeric_state", "entity": entitaet, "below": LEISTUNG_AB}]),
-        auflage(f"{bild}_aktiv.webp", entitaet,
-                [{"condition": "numeric_state", "entity": entitaet, "above": LEISTUNG_AB}]),
+        *bewegt_oder_still(f"{bild}_aktiv", entitaet,
+                           [{"condition": "numeric_state", "entity": entitaet, "above": LEISTUNG_AB}]),
     ]
 
 
@@ -494,7 +543,7 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
 
 def grid(spalten, schrift, kurz):
     """Alle Kacheln nebeneinander, für eine der drei Bildschirmbreiten."""
-    kessel = [
+    kessel = kessel_bewegung() + [
         label(
             entity,
             kurz_text if kurz else lang_text,
@@ -544,7 +593,7 @@ def grid(spalten, schrift, kurz):
                 "hk1",
                 "heizkreis",
                 [
-                    heizkreis_fluss("heizkreis_anforderung"),
+                    *heizkreis_fluss("heizkreis_anforderung"),
                     label("heizkreis_vorlauftemperatur", "HK1: " if kurz else "Vorlauf HK1: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -557,7 +606,7 @@ def grid(spalten, schrift, kurz):
                 "hk2",
                 "heizkreis",
                 [
-                    heizkreis_fluss("heizkreis_2_anforderung"),
+                    *heizkreis_fluss("heizkreis_2_anforderung"),
                     label("heizkreis_2_vorlauftemperatur", "HK2: " if kurz else "Vorlauf HK2: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -570,7 +619,7 @@ def grid(spalten, schrift, kurz):
                 "hk3",
                 "heizkreis",
                 [
-                    heizkreis_fluss("heizkreis_3_anforderung"),
+                    *heizkreis_fluss("heizkreis_3_anforderung"),
                     label("heizkreis_3_vorlauftemperatur", "HK3: " if kurz else "Vorlauf HK3: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
@@ -583,7 +632,7 @@ def grid(spalten, schrift, kurz):
                 "hk4",
                 "heizkreis",
                 [
-                    heizkreis_fluss("heizkreis_4_anforderung"),
+                    *heizkreis_fluss("heizkreis_4_anforderung"),
                     label("heizkreis_4_vorlauftemperatur", "HK4: " if kurz else "Vorlauf HK4: ",
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),

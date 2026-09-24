@@ -111,6 +111,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.pellet_kwh_per_kg = pellet_kwh_per_kg
         self.pellet_preis = 0.0
         self.prognose = None
+        self.puffer_volumen_einstellung = 0.0
+        self.puffer_volumen_anlage: float | None = None
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors
         self.sensor_defs: dict[str, dict] = {}
@@ -354,10 +356,44 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             set(self.discovered_uris),
         )
         self.api_version = await self.client.async_get_api_version()
+        await self._puffervolumen_lesen()
         await self._varinfo_laden()
         await self._schalter_pruefen()
         await self._betriebsarten_pruefen()
         await self._varset_anlegen()
+
+    async def _puffervolumen_lesen(self) -> None:
+        """Liest einmal das Gesamtvolumen, das an PufferFlex eingestellt ist.
+
+        Unplausible Werte - kein Puffer hat unter 50 oder über 100000 Liter -
+        gelten als nicht eingestellt.
+        """
+        self.puffer_volumen_anlage = None
+        uri = self.discovered_uris.get("puffer_gesamtvolumen")
+        if not uri or "puffer" not in self.components:
+            return
+        try:
+            wert = float((await self.client.async_get_value(uri)).value)
+        except (ETAApiError, TypeError, ValueError) as err:
+            _LOGGER.debug("ETA: Puffervolumen nicht lesbar: %s", err)
+            return
+        if 50 <= wert <= 100000:
+            self.puffer_volumen_anlage = wert
+
+    @property
+    def puffer_volumen(self) -> float | None:
+        """Das geltende Puffervolumen: eingetragen, sonst von der Anlage."""
+        if "puffer" not in self.components:
+            return None
+        if self.puffer_volumen_einstellung > 0:
+            return self.puffer_volumen_einstellung
+        return self.puffer_volumen_anlage
+
+    @property
+    def puffer_volumen_quelle(self) -> str | None:
+        if self.puffer_volumen is None:
+            return None
+        return "Einstellung" if self.puffer_volumen_einstellung > 0 else "Anlage"
 
     async def _async_update_data(self) -> dict[str, ETAValue]:
         """Liest alle bekannten Messwerte und mischt sie in den Bestand.

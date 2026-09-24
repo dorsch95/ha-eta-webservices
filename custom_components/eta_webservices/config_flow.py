@@ -33,6 +33,7 @@ from .const import (
     CONF_FUB_NAMES,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
+    CONF_PUFFER_VOLUMEN,
     CONF_SCAN_INTERVAL,
     CONF_WETTER,
     DEFAULT_ENABLE_ERRORS,
@@ -44,6 +45,7 @@ from .const import (
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
     MAX_PELLET_PREIS,
+    MAX_PUFFER_VOLUMEN,
     MAX_SCAN_INTERVAL,
     MIN_PELLET_KWH_PER_KG,
     MIN_SCAN_INTERVAL,
@@ -154,6 +156,21 @@ def _options_schema(current: dict[str, Any], wetter: str | None = None) -> vol.S
     return vol.Schema(_einstellung_felder(current, wetter))
 
 
+def _puffer_schema(current: dict[str, Any]) -> vol.Schema:
+    """Das Volumen des Pufferspeichers in Litern.
+
+    PufferFlex nennt es selbst, dann darf das Feld auf 0 bleiben. Beim
+    Funktionsblock "Puffer" ist es die einzige Quelle.
+    """
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_PUFFER_VOLUMEN, default=int(current.get(CONF_PUFFER_VOLUMEN) or 0)
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_PUFFER_VOLUMEN)),
+        }
+    )
+
+
 def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
     """Formular zur Bestätigung/Änderung der Funktionsblock-Namen.
 
@@ -242,7 +259,7 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
                 if self._data.get(CONF_ENABLE_SWITCHES):
                     return await self.async_step_switch_warning()
-                return await self.async_step_fub_names()
+                return await self._weiter()
             errors["base"] = "cannot_connect"
 
         eingabe = user_input or {}
@@ -262,8 +279,23 @@ class ETAConfigFlow(ConfigFlow, domain=DOMAIN):
         Erscheint nur, wenn Schalter eingeschaltet werden.
         """
         if user_input is not None:
-            return await self.async_step_fub_names()
+            return await self._weiter()
         return self.async_show_form(step_id="switch_warning")
+
+    async def _weiter(self) -> ConfigFlowResult:
+        """Nach den Einstellungen: erst der Puffer, falls angekreuzt, dann die Namen."""
+        if "puffer" in self._data[CONF_COMPONENTS]:
+            return await self.async_step_puffer()
+        return await self.async_step_fub_names()
+
+    async def async_step_puffer(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Fragt nach dem Puffervolumen, wenn ein Pufferspeicher angekreuzt ist."""
+        if user_input is not None:
+            self._data[CONF_PUFFER_VOLUMEN] = user_input[CONF_PUFFER_VOLUMEN]
+            return await self.async_step_fub_names()
+        return self.async_show_form(step_id="puffer", data_schema=_puffer_schema({}))
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None
@@ -315,7 +347,7 @@ class ETAOptionsFlow(OptionsFlowWithReload):
                 CONF_ENABLE_SWITCHES
             ):
                 return await self.async_step_switch_warning()
-            return await self.async_step_fub_names()
+            return await self._weiter()
 
         return self.async_show_form(
             step_id="init",
@@ -329,8 +361,24 @@ class ETAOptionsFlow(OptionsFlowWithReload):
     ) -> ConfigFlowResult:
         """Wie im Einrichtungsdialog: Schreibzugriff bestätigen lassen."""
         if user_input is not None:
-            return await self.async_step_fub_names()
+            return await self._weiter()
         return self.async_show_form(step_id="switch_warning")
+
+    async def _weiter(self) -> ConfigFlowResult:
+        if "puffer" in self._data[CONF_COMPONENTS]:
+            return await self.async_step_puffer()
+        return await self.async_step_fub_names()
+
+    async def async_step_puffer(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wie im Einrichtungsdialog, vorbelegt mit dem bisherigen Volumen."""
+        if user_input is not None:
+            self._data[CONF_PUFFER_VOLUMEN] = user_input[CONF_PUFFER_VOLUMEN]
+            return await self.async_step_fub_names()
+        return self.async_show_form(
+            step_id="puffer", data_schema=_puffer_schema(self._current)
+        )
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None

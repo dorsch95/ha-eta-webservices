@@ -22,6 +22,7 @@ from .const import (
     CONF_ENABLE_SWITCHES,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
+    CONF_PUFFER_VOLUMEN,
     CONF_SCAN_INTERVAL,
     CONF_WETTER,
     DEFAULT_ENABLE_ERRORS,
@@ -89,6 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     )
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
+    coordinator.puffer_volumen_einstellung = float(config.get(CONF_PUFFER_VOLUMEN) or 0)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
@@ -100,6 +102,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
             coordinator,
             config.get(CONF_WETTER),
             lambda: _statistik_ids(hass, entry),
+            lambda: _puffer_ids(hass, entry, coordinator),
         )
 
     entry.runtime_data = coordinator
@@ -137,6 +140,21 @@ def _statistik_ids(hass: HomeAssistant, entry: ETAConfigEntry) -> tuple[str | No
     )
 
 
+def _puffer_ids(
+    hass: HomeAssistant, entry: ETAConfigEntry, coordinator: ETADataUpdateCoordinator
+) -> list[str | None]:
+    """Die Entitäts-IDs der Pufferfühler, oben zuerst - für ihre Statistik."""
+    registry = er.async_get(hass)
+    schluessel = sorted(
+        (k for k in coordinator.sensor_defs if k.startswith("puffer_fuehler_")),
+        key=lambda k: int(k.rsplit("_", 1)[1]),
+    )
+    return [
+        registry.async_get_entity_id("sensor", DOMAIN, f"eta_static_{entry.entry_id}_{key}")
+        for key in schluessel
+    ]
+
+
 def _prognose_starten(coordinator: ETADataUpdateCoordinator):
     """Rechnet die Prognose erst, wenn Home Assistant ganz gestartet ist.
 
@@ -151,6 +169,7 @@ def _prognose_starten(coordinator: ETADataUpdateCoordinator):
 
 
 _EIGENE_ENTITAETEN = {
+    "animationen": "kessel",
     "aschebox_status": "kessel",
     "aschebox_faellig": "kessel",
     "pellet_energie_gesamt": "kessel",
@@ -167,6 +186,7 @@ _EIGENE_ENTITAETEN = {
     "lager_reichweite": "lager",
 }
 _KOSTEN = {"pellet_kosten_heute", "pellet_kosten_woche", "pellet_kosten_jahr"}
+_MIT_PUFFERVOLUMEN = {"puffer_energieinhalt"}
 _STOERUNG = {"aktive_fehler", "stoerung"}
 
 
@@ -176,6 +196,7 @@ def entitaet_vorgesehen(
     enable_switches: bool,
     enable_errors: bool,
     mit_kosten: bool = False,
+    mit_puffervolumen: bool = False,
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -200,6 +221,8 @@ def entitaet_vorgesehen(
         return enable_errors
     if key in _KOSTEN:
         return mit_kosten and "kessel" in aktiv
+    if key in _MIT_PUFFERVOLUMEN:
+        return mit_puffervolumen and "puffer" in aktiv
     if key in _EIGENE_ENTITAETEN:
         return _EIGENE_ENTITAETEN[key] in aktiv
     if re.fullmatch(r"puffer_fuehler_\d+", key):
@@ -230,6 +253,7 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.enable_switches,
             coordinator.enable_errors,
             coordinator.pellet_preis > 0,
+            coordinator.puffer_volumen is not None,
         )
         if vorgesehen is False:
             _LOGGER.info(

@@ -75,8 +75,9 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein. Trägst du den **Pelletpreis** in Euro je Tonne ein, rechnet die Integration auch die Kosten aus - bei 0 bleibt es beim Verbrauch in kg.
 7. Wähle optional eine **Wettervorhersage** für die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers). Gibt es in deinem Home Assistant genau eine Wetter-Entität, ist sie schon vorausgewählt.
 8. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-9. Im zweiten Schritt siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
-10. Klicke auf **Absenden**.
+9. Hast du einen **Pufferspeicher** angekreuzt, fragt der nächste Schritt nach seinem **Volumen in Litern**. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) wird genauer. Bei **PufferFlex** liest sie das Volumen selbst aus der Anlage - dann lässt du 0 stehen. Beim älteren Funktionsblock **Puffer** führt die Anlage es nicht; trag es dann vom Typenschild oder aus den Unterlagen ein. Ein eingetragener Wert geht immer vor.
+10. Danach siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+11. Klicke auf **Absenden**.
 
 Alle Einstellungen lassen sich später jederzeit über **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ändern, ohne die Integration neu einrichten zu müssen. Nur die **IP-Adresse** steht woanders: Bekommt die Heizung eine neue, trägst du sie im Drei-Punkte-Menü der Integration unter **Neu konfigurieren** ein.
 
@@ -132,6 +133,7 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `switch.eta_heizung_kessel` | Kessel | Schalter |
 | **Pufferspeicher** | | |
 | `sensor.eta_heizung_puffer_ladezustand` | Puffer Ladezustand | % |
+| `sensor.eta_heizung_puffer_energieinhalt` | Wärme im Puffer über 30 °C - nur mit bekanntem Volumen | kWh |
 | **FWM** | | |
 | `sensor.eta_heizung_fwm_warmwassertemperatur` | FWM Warmwassertemperatur | °C |
 | `sensor.eta_heizung_fwm_zirkulationspumpe` | FWM Zirkulationspumpe | Text |
@@ -184,6 +186,7 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `binary_sensor.eta_heizung_storung` | an, sobald eine Störung ansteht | |
 | `binary_sensor.eta_heizung_aschebox_leeren` | an, sobald die Schwelle erreicht ist | |
 | `binary_sensor.eta_heizung_pelletvorrat_niedrig` | an, sobald der Vorrat die Warngrenze erreicht | |
+| `switch.eta_heizung_animationen` | bewegte oder stehende Bilder auf der Dashboard-Karte | Schalter |
 
 </details>
 
@@ -233,6 +236,8 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
 Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck. Hat die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) genug gelernt, steht im Dach des Lagers, bis wann der Vorrat reicht.
+
+Wer keine Bewegung möchte - etwa auf einem Wandtablet, das sparsam laufen soll -, schaltet `switch.eta_heizung_animationen` aus (Gerät *ETA Heizung*, Bereich *Konfiguration*). Die Karte zeigt dann Standbilder mit derselben Aussage: Flamme, Funken, Glut und Warndreieck stehen still, Sonne und Blitz leuchten, Heizkreis und Förderschnecke bleiben hervorgehoben. Das Umschalten wirkt sofort und gilt für alle Dashboards. Der Schalter gehört nur zu Home Assistant, schreibt nichts in die Heizung und ist auch ohne Schreibzugriff da.
 
 ### Einrichten
 
@@ -334,6 +339,8 @@ Wie viele Pellets ein Haus braucht, hängt vor allem an der Außentemperatur. Di
 Jüngere Tage zählen mehr als alte, damit sich die Prognose anpasst, wenn sich am Haus etwas ändert. Einzelne Ausreißer - Urlaub, Störung, Besuch - verbiegen sie nicht; was an solchen Tagen mehr verbrannt wurde, rechnet sie trotzdem mit ein. Weil die Statistik seit dem Einrichten der Integration mitläuft, lernt die Prognose nach einem Update sofort aus allem, was schon da ist.
 
 **So rechnet sie voraus:** Für die nächsten Tage gilt die Wettervorhersage, danach das langjährige Temperaturmittel in Deutschland (DWD 1991-2020). Um wie viel dein Standort wärmer oder kälter ist, lernt sie nach und nach aus der eigenen Außentemperatur. Mit dieser Temperatur rechnet sie den Vorrat im Lager Tag für Tag herunter.
+
+**Mit Pufferspeicher:** Ist sein Volumen bekannt (siehe Einrichtung), rechnet die Prognose außerdem heraus, was der Puffer über Mitternacht mitnimmt: Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht - bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Dafür nimmt sie die mittlere Temperatur aller Pufferfühler in der letzten Stunde jedes Tages. An der Reichweite des Lagers ändert das wenig, weil sich die Verschiebung nach ein paar Tagen ausgleicht; die einzelnen Tage und damit *morgen* und die Treffsicherheit werden deutlich genauer. In einer Simulation mit einem Puffer, der um Mitternacht mal fast leer, mal voll ist, stieg die Treffsicherheit bei 1000 Litern von 75 auf 92 %. Auch ein grob geschätztes Volumen hilft: War es um die Hälfte zu klein oder zu groß eingetragen, lag sie immer noch bei 85 %.
 
 **So prüft sie sich selbst:** Für jeden der letzten 14 Tage lernt sie nur aus den Tagen davor, schätzt den Verbrauch aus der tatsächlichen Außentemperatur und vergleicht mit dem, was wirklich verbrannt wurde. Das Ergebnis ist die **Treffsicherheit** (100 % = aufs Kilogramm genau), Schätzung und Wirklichkeit von gestern stehen in ihren Attributen.
 

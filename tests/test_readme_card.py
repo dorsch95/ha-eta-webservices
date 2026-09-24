@@ -690,12 +690,13 @@ def test_kessel_zustandsbilder_gibt_es_und_sie_bewegen_sich():
     from eta_webservices import GRAFIKEN
     from eta_webservices.karte import kessel_zustandsbilder
 
-    dateien = {pfad.rsplit("/", 1)[1] for pfad in kessel_zustandsbilder().values()}
-    assert dateien == {
-        "kessel_flamme.webp", "kessel_zuendung.webp", "kessel_entaschen.webp",
-        "kessel_stoerung.webp", "kessel_glut.webp", "kessel_aus.png",
+    standbilder = {pfad.rsplit("/", 1)[1] for pfad in kessel_zustandsbilder().values()}
+    assert standbilder == {
+        "kessel_flamme.png", "kessel_zuendung.png", "kessel_entaschen.png",
+        "kessel_stoerung.png", "kessel_glut.png", "kessel_aus.png",
     }
-    for datei in dateien:
+    bewegt = {d.replace(".png", ".webp") for d in standbilder} - {"kessel_aus.webp"}
+    for datei in standbilder | bewegt:
         with Image.open(GRAFIKEN / datei) as bild:
             assert bild.size == (255, 501), datei
             if datei.endswith(".webp"):
@@ -707,14 +708,29 @@ def test_kessel_kachel_wechselt_mit_dem_zustand(karte):
         kessel = gitter["cards"][0]["card"]
         assert kessel["entity"] == "sensor.eta_heizung_kessel_zustand"
         assert kessel["image"].endswith("/kessel.png")
-        assert kessel["state_image"]["Heizen"].endswith("/kessel_flamme.webp")
-        assert kessel["state_image"]["Glutabbrand"].endswith("/kessel_glut.webp")
-        assert kessel["state_image"]["Zünden"].endswith("/kessel_zuendung.webp")
-        assert kessel["state_image"]["Heizversuch"].endswith("/kessel_zuendung.webp")
-        assert kessel["state_image"]["Entaschen"].endswith("/kessel_entaschen.webp")
+        assert kessel["state_image"]["Heizen"].endswith("/kessel_flamme.png")
+        assert kessel["state_image"]["Glutabbrand"].endswith("/kessel_glut.png")
+        assert kessel["state_image"]["Zünden"].endswith("/kessel_zuendung.png")
+        assert kessel["state_image"]["Heizversuch"].endswith("/kessel_zuendung.png")
+        assert kessel["state_image"]["Entaschen"].endswith("/kessel_entaschen.png")
         for zustand in ("Störung", "Störung beim Entaschen", "Wartung"):
-            assert kessel["state_image"][zustand].endswith("/kessel_stoerung.webp")
+            assert kessel["state_image"][zustand].endswith("/kessel_stoerung.png")
         assert kessel["state_image"]["Bereit"].endswith("/kessel_aus.png")
+
+        bewegung = {
+            e["elements"][0]["image"].rsplit("/", 1)[1]: e["conditions"]
+            for e in kessel["elements"]
+            if e["type"] == "conditional" and e["elements"][0]["type"] == "image"
+        }
+        assert set(bewegung) == {
+            "kessel_flamme.webp", "kessel_zuendung.webp", "kessel_entaschen.webp",
+            "kessel_stoerung.webp", "kessel_glut.webp",
+        }
+        zuendung = next(
+            b["state"] for b in bewegung["kessel_zuendung.webp"]
+            if b["entity"] == "sensor.eta_heizung_kessel_zustand" and "state" in b
+        )
+        assert sorted(zuendung) == ["Heizversuch", "Zünden"]
 
 
 def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
@@ -730,6 +746,7 @@ def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
         ]
         assert bilder == [b for b, _, _ in LAGER_STUFEN] + [
             "lager_schnecke.webp",
+            "lager_schnecke.png",
             "lager_warnung.png",
         ]
         erstes_label = next(
@@ -777,10 +794,13 @@ def test_heizkreise_fliessen_bei_anforderung(karte):
         heizkreise = [k for k in gitter["cards"] if k["card"]["image"].endswith("/heizkreis.png")]
         assert len(heizkreise) == 4
         for kachel in heizkreise:
-            (fluss,) = _auflagen(kachel)
-            assert fluss["elements"][0]["image"].endswith("/heizkreis_fluss.webp")
-            assert fluss["conditions"][1]["state_not"] == HEIZKREIS_OHNE_FLUSS
-            assert fluss["conditions"][1]["entity"].endswith("_anforderung")
+            bewegt, still = _auflagen(kachel)
+            assert bewegt["elements"][0]["image"].endswith("/heizkreis_fluss.webp")
+            assert still["elements"][0]["image"].endswith("/heizkreis_fluss.png")
+            for fluss in (bewegt, still):
+                anforderung = fluss["conditions"][-1]
+                assert anforderung["state_not"] == HEIZKREIS_OHNE_FLUSS
+                assert anforderung["entity"].endswith("_anforderung")
 
 
 @pytest.mark.parametrize("bild, entitaet", [
@@ -790,11 +810,15 @@ def test_heizkreise_fliessen_bei_anforderung(karte):
 def test_solar_und_pvm_bewegen_sich_nur_mit_leistung(karte, bild, entitaet):
     for gitter in raster(karte):
         kachel = next(k for k in gitter["cards"] if k["card"]["image"].endswith(f"/{bild}.png"))
-        ruhe, aktiv = _auflagen(kachel)
+        ruhe, aktiv, still = _auflagen(kachel)
         assert ruhe["elements"][0]["image"].endswith(f"/{bild}_ruhe.png")
         assert aktiv["elements"][0]["image"].endswith(f"/{bild}_aktiv.webp")
-        assert ruhe["conditions"][1] == {"condition": "numeric_state", "entity": entitaet, "below": 0.05}
-        assert aktiv["conditions"][1] == {"condition": "numeric_state", "entity": entitaet, "above": 0.05}
+        assert still["elements"][0]["image"].endswith(f"/{bild}_aktiv.png")
+        assert ruhe["conditions"][-1] == {"condition": "numeric_state", "entity": entitaet, "below": 0.05}
+        for leuchtet in (aktiv, still):
+            assert leuchtet["conditions"][-1] == {
+                "condition": "numeric_state", "entity": entitaet, "above": 0.05
+            }
 
 
 def test_bewegte_auflagen_gibt_es():
@@ -828,3 +852,52 @@ def test_lager_nennt_im_dach_bis_wann_der_vorrat_reicht(karte):
         assert label["type"] == "state-label"
         assert label["attribute"] == "datum"
         assert label["style"]["top"] == "25.5%"
+
+
+def _bilder_mit_bedingungen(karte):
+    for element in alle_elemente(karte):
+        if element["type"] == "conditional" and element["elements"][0]["type"] == "image":
+            yield element["elements"][0]["image"].rsplit("/", 1)[1], element["conditions"]
+
+
+def test_bewegung_nur_mit_eingeschalteten_animationen(karte):
+    """Jede Bewegung hängt am Schalter, und jede hat ihr Standbild.
+
+    Das Standbild erscheint unter denselben Bedingungen, nur mit dem
+    Schalter auf aus - so zeigt die Karte in beiden Fällen dasselbe.
+    """
+    from eta_webservices.karte import ANIMATIONEN
+
+    def schalter(bedingungen):
+        return [b for b in bedingungen if b["entity"] == ANIMATIONEN]
+
+    def rest(bedingungen):
+        return [b for b in bedingungen if b["entity"] != ANIMATIONEN]
+
+    paare = list(_bilder_mit_bedingungen(karte))
+    bewegt = [(bild, b) for bild, b in paare if bild.endswith(".webp")]
+    assert bewegt
+    for bild, bedingungen in bewegt:
+        assert schalter(bedingungen) == [
+            {"condition": "state", "entity": ANIMATIONEN, "state_not": "unknown"},
+            {"condition": "state", "entity": ANIMATIONEN, "state": "on"},
+        ], bild
+        if bild.startswith("kessel_"):
+            continue
+        still = [
+            b for s, b in paare
+            if s == bild.replace(".webp", ".png") and rest(b) == rest(bedingungen)
+        ]
+        assert still, bild
+        assert schalter(still[0])[1]["state"] == "off"
+
+
+def test_jede_bewegung_hat_ein_gleich_grosses_standbild():
+    from PIL import Image
+
+    from eta_webservices import GRAFIKEN
+
+    for bewegt in GRAFIKEN.glob("*.webp"):
+        with Image.open(bewegt) as a, Image.open(bewegt.with_suffix(".png")) as b:
+            assert a.size == b.size == (255, 501), bewegt.name
+            assert a.n_frames > 1

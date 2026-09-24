@@ -59,6 +59,7 @@ ERWARTETE_IDS = {
     "pellet_prognose_status": "sensor.eta_heizung_pelletprognose_status",
     "pellet_prognose_treffsicherheit": "sensor.eta_heizung_pelletprognose_treffsicherheit",
     "pellet_tagesbehaelter": "sensor.eta_heizung_pellet_inhalt_tagesbehalter",
+    "puffer_energieinhalt": "sensor.eta_heizung_puffer_energieinhalt",
     "puffer_fuehler_1": "sensor.eta_heizung_puffer_fuhler_1",
     "puffer_ladezustand": "sensor.eta_heizung_puffer_ladezustand",
     "pvm_ertrag_gestern": "sensor.eta_heizung_pv_heizmodul_ertrag_gestern",

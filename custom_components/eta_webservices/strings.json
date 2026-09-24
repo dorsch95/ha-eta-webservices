@@ -18,6 +18,13 @@
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
         }
       },
+      "puffer": {
+        "title": "Buffer tank",
+        "description": "How many litres does your buffer tank hold? The integration uses it to calculate how much heat is stored, and the pellet prognosis assigns consumption to the right day. With PufferFlex it reads the volume from the system - then you can leave 0. An entered value takes precedence.",
+        "data": {
+          "puffer_volumen": "Buffer volume (litres, 0 = from the system)"
+        }
+      },
       "fub_names": {
         "title": "Confirm function block names",
         "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names.",
@@ -72,6 +79,13 @@
         },
         "data_description": {
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
+        }
+      },
+      "puffer": {
+        "title": "Buffer tank",
+        "description": "How many litres does your buffer tank hold? The integration uses it to calculate how much heat is stored, and the pellet prognosis assigns consumption to the right day. With PufferFlex it reads the volume from the system - then you can leave 0. An entered value takes precedence.",
+        "data": {
+          "puffer_volumen": "Buffer volume (litres, 0 = from the system)"
         }
       },
       "fub_names": {
@@ -324,6 +338,9 @@
       "pellet_verbrauch_woche": {
         "name": "Pellet consumption this week"
       },
+      "puffer_energieinhalt": {
+        "name": "Buffer energy content"
+      },
       "puffer_fuehler_1": {
         "name": "Buffer sensor 1"
       },
@@ -401,6 +418,9 @@
       }
     },
     "switch": {
+      "animationen": {
+        "name": "Animations"
+      },
       "heizkreis2_schalter": {
         "name": "Heating circuit 2"
       },

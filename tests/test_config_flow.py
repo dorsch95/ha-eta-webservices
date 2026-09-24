@@ -314,14 +314,17 @@ async def test_konfigurieren_warnt_vor_dem_schreibzugriff(monkeypatch):
     assert ergebnis["step_id"] == "switch_warning"
 
     weiter = await flow.async_step_switch_warning({})
+    assert weiter["step_id"] == "puffer", "Puffer angekreuzt"
+    weiter = await flow.async_step_puffer({"puffer_volumen": 825})
     assert weiter["step_id"] == "fub_names"
+    assert flow._data["puffer_volumen"] == 825
 
 
 async def test_bereits_freigegebener_schreibzugriff_warnt_nicht_erneut(monkeypatch):
     _, ergebnis = await options_schritt(
         monkeypatch, {"enable_switches": True}, optionen(enable_switches=True)
     )
-    assert ergebnis["step_id"] == "fub_names"
+    assert ergebnis["step_id"] == "puffer"
 
 
 async def test_konfigurieren_speichert_keine_adresse(monkeypatch):
@@ -428,3 +431,25 @@ def test_wetter_vorschlag():
     assert wetter_vorschlag(hass("weather.a", "weather.b"), {}) is None
     assert wetter_vorschlag(hass("weather.zuhause"), {"wetter": ""}) is None
     assert wetter_vorschlag(hass("weather.zuhause"), {"wetter": "weather.a"}) == "weather.a"
+
+
+
+async def test_ohne_puffer_keine_frage_nach_dem_volumen(monkeypatch):
+    _, ergebnis = await options_schritt(monkeypatch, {}, optionen(components=["fwm"]))
+    assert ergebnis["step_id"] == "fub_names"
+
+
+async def test_puffervolumen_ist_vorbelegt_und_begrenzt(monkeypatch):
+    from eta_webservices.config_flow import _puffer_schema
+
+    flow, ergebnis = await options_schritt(monkeypatch, {"puffer_volumen": 825}, optionen())
+    assert ergebnis["step_id"] == "puffer"
+    schema = _puffer_schema({"puffer_volumen": 825})
+    assert schema({}) == {"puffer_volumen": 825}
+    assert _puffer_schema({})({}) == {"puffer_volumen": 0}
+    with pytest.raises(vol.Invalid):
+        schema({"puffer_volumen": -5})
+    weiter = await flow.async_step_puffer({"puffer_volumen": 1000})
+    assert weiter["step_id"] == "fub_names"
+    fertig = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex"})
+    assert fertig["data"]["puffer_volumen"] == 1000

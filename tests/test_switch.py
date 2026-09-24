@@ -56,7 +56,7 @@ async def test_kein_schalter_wenn_die_anlage_nicht_schreiben_laesst(hass, entry)
     hass.session.schreibbar = False
     coordinator, schalter = await schalter_von(hass, entry)
     assert coordinator.switch_defs == {}
-    assert schalter == {}
+    assert set(schalter) == {"Animationen"}, "nur der Anzeige-Schalter"
 
 
 async def test_kein_schalter_ohne_varinfo(hass, entry):
@@ -64,7 +64,7 @@ async def test_kein_schalter_ohne_varinfo(hass, entry):
     hass.session.varinfo_unterstuetzt = False
     coordinator, schalter = await schalter_von(hass, entry)
     assert coordinator.switch_defs == {}
-    assert schalter == {}
+    assert set(schalter) == {"Animationen"}, "nur der Anzeige-Schalter"
 
 
 async def test_kein_schalter_bei_mehr_als_zwei_zustaenden(hass, entry, monkeypatch):
@@ -243,7 +243,7 @@ async def test_nur_der_kessel_bekommt_einen_schalter(hass, entry):
     assert "kessel_schalter" in coordinator.switch_defs
     assert "heizkreis_schalter" in coordinator.switch_defs
 
-    assert set(schalter) == {"Kessel"}
+    assert set(schalter) == {"Kessel", "Animationen"}
 
 
 async def test_die_auswahl_kann_weiterhin_auf_aus_schalten(hass, entry):
@@ -268,7 +268,7 @@ async def test_ohne_freigabe_entsteht_kein_schalter(hass, entry):
     entry.data["enable_switches"] = False
     coordinator, schalter = await schalter_von(hass, entry)
     assert coordinator.switch_defs == {}
-    assert schalter == {}
+    assert set(schalter) == {"Animationen"}, "nur der Anzeige-Schalter"
 
 
 async def test_standard_ist_ohne_schalter(hass, entry):
@@ -276,7 +276,7 @@ async def test_standard_ist_ohne_schalter(hass, entry):
     entry.data.pop("enable_switches")
     coordinator, schalter = await schalter_von(hass, entry)
     assert coordinator.switch_defs == {}
-    assert schalter == {}
+    assert set(schalter) == {"Animationen"}, "nur der Anzeige-Schalter"
 
 
 async def test_ohne_freigabe_wird_gar_nicht_erst_nachgefragt(hass, entry):
@@ -284,3 +284,37 @@ async def test_ohne_freigabe_wird_gar_nicht_erst_nachgefragt(hass, entry):
     entry.data["enable_switches"] = False
     coordinator, _ = await schalter_von(hass, entry)
     assert not any(k.endswith("_schalter") for k in coordinator.sensor_defs)
+
+
+async def test_animationen_schalten_nur_die_anzeige(hass, entry):
+    """Der Schalter gehört zu Home Assistant und schreibt nichts in die Anlage."""
+    entry.data["enable_switches"] = False
+    coordinator, schalter = await schalter_von(hass, entry)
+    animationen = schalter["Animationen"]
+    assert animationen.is_on is True
+    assert animationen.entity_category == "config"
+    assert animationen.unique_id == f"eta_switch_{entry.entry_id}_animationen"
+    assert animationen.device_info == coordinator.device_info
+
+    hass.session.gesetzte_werte.clear()
+    await animationen.async_turn_off()
+    assert animationen.is_on is False
+    assert animationen.icon == "mdi:image-outline"
+    await animationen.async_turn_on()
+    assert animationen.is_on is True
+    assert hass.session.gesetzte_werte == []
+
+
+@pytest.mark.parametrize("gespeichert, erwartet", [("off", False), ("on", True), (None, True)])
+async def test_animationen_behalten_ihre_einstellung(hass, entry, gespeichert, erwartet):
+    from types import SimpleNamespace
+
+    _, schalter = await schalter_von(hass, entry)
+    animationen = schalter["Animationen"]
+
+    async def letzter_zustand():
+        return None if gespeichert is None else SimpleNamespace(state=gespeichert)
+
+    animationen.async_get_last_state = letzter_zustand
+    await animationen.async_added_to_hass()
+    assert animationen.is_on is erwartet

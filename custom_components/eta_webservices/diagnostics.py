@@ -66,6 +66,7 @@ def prognose_diagnose(coordinator) -> dict[str, Any]:
         ),
         "wetter_genutzt": prognose.wetter_id,
         "vorhersage_tage": prognose.vorhersage_tage,
+        "puffer_ausgeglichene_tage": prognose.puffer_tage,
     }
     if ergebnis is None:
         return {**ausgabe, "status": "noch nicht gerechnet"}
@@ -155,6 +156,8 @@ async def async_get_config_entry_diagnostics(
                 CONF_FUB_NAMES: {**entry.data, **entry.options}.get(
                     CONF_FUB_NAMES, {}
                 ),
+                "puffer_volumen": coordinator.puffer_volumen,
+                "puffer_volumen_quelle": coordinator.puffer_volumen_quelle,
                 "abfrageintervall": (
                     coordinator.update_interval.total_seconds()
                     if coordinator.update_interval

@@ -18,6 +18,13 @@
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },
+      "puffer": {
+        "title": "Pufferspeicher",
+        "description": "Wie viele Liter fasst dein Pufferspeicher? Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose ordnet den Verbrauch dem richtigen Tag zu. Bei PufferFlex liest sie das Volumen aus der Anlage - dann kannst du 0 stehen lassen. Ein eingetragener Wert geht vor.",
+        "data": {
+          "puffer_volumen": "Puffervolumen (Liter, 0 = von der Anlage)"
+        }
+      },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
         "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen vorausgefüllt.",
@@ -72,6 +79,13 @@
         },
         "data_description": {
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
+        }
+      },
+      "puffer": {
+        "title": "Pufferspeicher",
+        "description": "Wie viele Liter fasst dein Pufferspeicher? Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose ordnet den Verbrauch dem richtigen Tag zu. Bei PufferFlex liest sie das Volumen aus der Anlage - dann kannst du 0 stehen lassen. Ein eingetragener Wert geht vor.",
+        "data": {
+          "puffer_volumen": "Puffervolumen (Liter, 0 = von der Anlage)"
         }
       },
       "fub_names": {
@@ -324,6 +338,9 @@
       "pellet_verbrauch_woche": {
         "name": "Pelletverbrauch diese Woche"
       },
+      "puffer_energieinhalt": {
+        "name": "Puffer Energieinhalt"
+      },
       "puffer_fuehler_1": {
         "name": "Puffer Fühler 1"
       },
@@ -401,6 +418,9 @@
       }
     },
     "switch": {
+      "animationen": {
+        "name": "Animationen"
+      },
       "heizkreis2_schalter": {
         "name": "Heizkreis 2"
       },

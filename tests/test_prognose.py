@@ -401,9 +401,9 @@ def prognose_koordinator(hass, entry, monkeypatch):
     heute_morgen = _stundenwerte([p.Tag(HEUTE, 24 * 0.5, 0.0)], zone)
     abrufe = []
 
-    async def stundenwerte(_hass, verbrauch_id, temperatur_id, heute):
+    async def stundenwerte(_hass, verbrauch_id, temperatur_id, heute, puffer_ids=()):
         abrufe.append((verbrauch_id, temperatur_id, heute))
-        return verbrauch + heute_morgen[0][:10], temperatur + heute_morgen[1][:10]
+        return verbrauch + heute_morgen[0][:10], temperatur + heute_morgen[1][:10], []
 
     monkeypatch.setattr(modul, "async_stundenwerte", stundenwerte)
     _mit_wetter(
@@ -590,6 +590,7 @@ async def test_prognose_steht_in_der_diagnose(hass, entry, monkeypatch):
         "wetter_gewaehlt": "automatisch",
         "wetter_genutzt": None,
         "vorhersage_tage": 0,
+        "puffer_ausgeglichene_tage": 0,
         "status": "noch nicht gerechnet",
     }
     tage = tage_aus_formel(4.0, 1.2, 15.0, herbst_und_winter())
@@ -625,3 +626,117 @@ def test_prognose_entitaeten_werden_mit_ihrer_komponente_aufgeraeumt():
     assert entitaet_vorgesehen("pellet_prognose_morgen", ["kessel"], False, False)
     assert entitaet_vorgesehen("lager_reicht_bis", ["kessel"], False, False) is False
     assert entitaet_vorgesehen("lager_reichweite", ["kessel", "lager"], False, False)
+
+
+def test_puffertemperaturen_nur_wenn_alle_fuehler_da_sind():
+    daten = {"puffer_fuehler_1": _wert(70), "puffer_fuehler_2": _wert(50)}
+    assert p.puffer_temperaturen(daten, ["puffer_fuehler_1", "puffer_fuehler_2"]) == [70.0, 50.0]
+    assert p.puffer_temperaturen(daten, ["puffer_fuehler_1", "puffer_fuehler_3"]) == []
+    assert p.puffer_temperaturen(None, ["puffer_fuehler_1"]) == []
+
+
+def test_energieinhalt_zaehlt_nur_waerme_ueber_dem_bezug():
+    assert p.puffer_energieinhalt([70.0, 50.0, 30.0, 20.0], 1000) == pytest.approx(
+        (40 + 20 + 0 + 0) / 4 * 1.163
+    )
+    assert p.puffer_energieinhalt([], 1000) is None
+    assert p.puffer_energieinhalt([60.0], None) is None
+
+
+def test_tagesende_ist_die_letzte_stunde_mit_allen_fuehlern():
+    def stunde(zeit):
+        return HEUTE + timedelta(days=int(zeit // 24)), int(zeit % 24)
+
+    oben = [(22, 70.0), (23, 68.0), (47, 50.0)]
+    unten = [(22, 40.0), (23, 38.0)]
+    assert p.puffer_tagesenden([oben, unten], stunde) == {HEUTE: 53.0}
+
+
+def test_puffer_ausgleich_schiebt_pellets_zum_richtigen_tag():
+    tage = [
+        p.Tag(HEUTE - timedelta(days=2), 20.0, 0.0),
+        p.Tag(HEUTE - timedelta(days=1), 30.0, 0.0),
+        p.Tag(HEUTE, 10.0, 0.0),
+    ]
+    enden = {
+        HEUTE - timedelta(days=2): 50.0,
+        HEUTE - timedelta(days=1): 60.0,
+        HEUTE: 50.0,
+    }
+    kwh_je_kelvin, kwh_je_kg = 1.0, 1.0
+    ausgeglichen, anzahl = p.puffer_ausgleichen(tage, enden, kwh_je_kelvin, kwh_je_kg)
+    assert anzahl == 2, "der erste Tag hat kein Tagesende davor"
+    assert [t.verbrauch for t in ausgeglichen] == [20.0, 20.0, 20.0]
+
+
+def _puffer_haus(seed, volumen, kwh_je_kg):
+    """Ein Haus mit Puffer, der um Mitternacht mal fast leer, mal voll ist."""
+    zufall = random.Random(seed)
+    wahr = p.Modell(zufall.uniform(2, 6), zufall.uniform(0.6, 1.8), 15.0, 0, 0, 0)
+    kwh_je_kelvin = volumen * p.WASSER_KWH_JE_LITER_KELVIN
+    start = date(2025, 10, 1)
+    tage, enden, vorher = [], {start - timedelta(days=1): 45.0}, 45.0
+    for i in range(200):
+        d = start + timedelta(days=i)
+        temperatur = p.klima(d) + zufall.gauss(0, 3.0)
+        bedarf = max(0.0, wahr.verbrauch(temperatur) + zufall.gauss(0, 0.08 * wahr.verbrauch(temperatur) + 0.3))
+        ende = zufall.uniform(35, 70)
+        tage.append(p.Tag(d, max(0.0, bedarf + (ende - vorher) * kwh_je_kelvin / kwh_je_kg), temperatur))
+        enden[d] = vorher = ende
+    return tage, enden, kwh_je_kelvin
+
+
+def test_simulierter_puffer_macht_die_tage_treffsicherer():
+    kwh_je_kg = 4.8 * p.KESSEL_WIRKUNGSGRAD
+    ohne, mit = [], []
+    for seed in range(20):
+        tage, enden, kwh_je_kelvin = _puffer_haus(seed, 1000, kwh_je_kg)
+        ohne.append(p.gegenrechnen(tage, 30)[0])
+        ausgeglichen, _ = p.puffer_ausgleichen(tage, enden, kwh_je_kelvin, kwh_je_kg)
+        mit.append(p.gegenrechnen(ausgeglichen, 30)[0])
+    assert median(mit) >= median(ohne) + 10
+    assert median(mit) >= 88
+
+
+async def test_koordinator_gleicht_den_puffer_aus(prognose_koordinator, monkeypatch):
+    from homeassistant.util import dt as dt_util
+
+    from eta_webservices import prognose_koordinator as modul
+
+    zone = dt_util.get_default_time_zone()
+    haupt = prognose_koordinator.haupt
+    haupt.puffer_volumen = 1000
+    haupt.pellet_kwh_per_kg = 4.8
+    haupt.sensor_defs = {"puffer_fuehler_1": {}, "puffer_fuehler_2": {}}
+    haupt.data["puffer_fuehler_1"] = _wert(60)
+    haupt.data["puffer_fuehler_2"] = _wert(40)
+    prognose_koordinator._puffer_ids = lambda: ["sensor.oben", "sensor.unten"]
+
+    ohne_puffer = await prognose_koordinator._async_update_data()
+    original = modul.async_stundenwerte
+
+    async def mit_puffer(_hass, verbrauch_id, temperatur_id, heute, puffer_ids=()):
+        verbrauch, temperatur, _ = await original(_hass, verbrauch_id, temperatur_id, heute)
+        assert list(puffer_ids) == ["sensor.oben", "sensor.unten"]
+        from datetime import datetime
+
+        reihe = []
+        for i in range(1, 30):
+            tag = HEUTE - timedelta(days=i)
+            zeit = datetime(tag.year, tag.month, tag.day, 23, tzinfo=zone).timestamp()
+            reihe.append((zeit, 40.0 if i % 2 else 50.0))
+        return verbrauch, temperatur, [reihe, reihe]
+
+    monkeypatch.setattr(modul, "async_stundenwerte", mit_puffer)
+    prognose_koordinator._gegenrechnung_bis = None
+    ergebnis = await prognose_koordinator._async_update_data()
+    assert prognose_koordinator.puffer_tage >= 20
+    assert ergebnis.bereit
+    assert ergebnis.lerntage == ohne_puffer.lerntage
+    assert ergebnis.modell.faktor != ohne_puffer.modell.faktor
+
+
+async def test_ohne_volumen_kein_ausgleich(prognose_koordinator):
+    prognose_koordinator._puffer_ids = lambda: ["sensor.oben"]
+    await prognose_koordinator._async_update_data()
+    assert prognose_koordinator.puffer_tage == 0

@@ -175,6 +175,15 @@ unter "ueber_kennung_gefunden". Nur Messwerte: Tasten und Schalter
 werden weiter ausschließlich über ihren Namen gefunden.
 """
 
+PUFFER_VOLUMEN = ("Gesamtvolumen", "0/0/13520")
+"""Name und Kennung des eingestellten Puffervolumens in Litern.
+
+Kein Messwert und keine Entität: Die Integration liest es einmal beim
+Start, um den Energieinhalt des Puffers zu berechnen. Nur PufferFlex
+führt es, beim Funktionsblock "Puffer" fehlt es. Die Kennung ist
+unbelegt.
+"""
+
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
 
 _SCHALTER_NAMEN = (
@@ -459,6 +468,13 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
     for index, uri in puffer_fuehler.items():
         discovered[f"puffer_fuehler_{index}"] = uri
 
+    puffer = fubs_by_role.get("pufferflex")
+    volumen = _finde_nach_namen(puffer, PUFFER_VOLUMEN[0]) or _finde_nach_kennung(
+        puffer, PUFFER_VOLUMEN[1]
+    )
+    if volumen:
+        discovered["puffer_gesamtvolumen"] = volumen
+
     gesucht = set(DISCOVERY_PATHS) | set(PUMPEN)
     messwerte = (gesucht & set(discovered)) | set(puffer_fuehler)
     _LOGGER.info(
@@ -467,7 +483,7 @@ async def async_discover_uris(client, fub_name_overrides=None, ueber_kennung=Non
         len(messwerte),
         len(gesucht) + len(puffer_fuehler_indices),
         len(puffer_fuehler_indices),
-        len(discovered) - len(messwerte),
+        len(discovered) - len(messwerte) - (1 if volumen else 0),
     )
     missing = sorted(gesucht - set(discovered))
     if missing:

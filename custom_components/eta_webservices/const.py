@@ -57,6 +57,15 @@ CONF_PELLET_PREIS = "pellet_preis"
 DEFAULT_PELLET_PREIS = 0.0
 MAX_PELLET_PREIS = 2000.0
 
+CONF_PUFFER_VOLUMEN = "puffer_volumen"
+"""Volumen des Pufferspeichers in Litern, 0 = von der Anlage übernehmen.
+
+PufferFlex führt sein Gesamtvolumen selbst, der ältere Funktionsblock
+"Puffer" nicht - dort trägt der Nutzer es beim Einrichten ein. Ein
+eingetragener Wert geht dem der Anlage vor.
+"""
+MAX_PUFFER_VOLUMEN = 100000
+
 CONF_WETTER = "wetter"
 """Wetter-Entität, deren Vorhersage die Verbrauchsprognose nutzt.
 
