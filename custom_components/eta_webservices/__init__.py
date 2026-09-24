@@ -22,6 +22,7 @@ from .const import (
     CONF_ENABLE_SWITCHES,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
+    ASCHEBOX_ENTITAETEN,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_WETTER,
@@ -45,6 +46,7 @@ from .const import (
     puffer_volumen_schluessel,
     raumfuehler_schluessel,
 )
+from .aschebox import AscheboxPlan
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
@@ -118,13 +120,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
             lambda: _puffer_quellen(hass, entry, coordinator),
         )
 
+    if _aschebox_moeglich(coordinator):
+        coordinator.aschebox = AscheboxPlan(hass, coordinator)
+        await coordinator.aschebox.laden()
+
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    if coordinator.aschebox is not None:
+        coordinator.aschebox.starten()
+        entry.async_on_unload(coordinator.aschebox.stoppen)
     _verwaiste_entitaeten_entfernen(hass, entry, coordinator)
     if coordinator.prognose is not None:
         entry.async_on_unload(async_at_started(hass, _prognose_starten(coordinator)))
     _raumfuehler_starten(hass, entry, coordinator, config)
     return True
+
+
+def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:
+    """Den Aschebox-Plan gibt es nur, wenn alles dafür bestätigt ist.
+
+    Er schaltet den Kessel über seine Ein/Aus-Taste, drückt die
+    Entaschentaste und liest dafür den Kessel-Zustand.
+    """
+    return (
+        coordinator.entaschen_def is not None
+        and "kessel_schalter" in coordinator.switch_defs
+        and bool(coordinator.sensor_defs.get("kessel_zustand", {}).get("uri"))
+    )
 
 
 def _raumfuehler_starten(
@@ -265,6 +287,8 @@ def entitaet_vorgesehen(
         )
     if key in SELECTS:
         return enable_switches and SELECTS[key]["component"] in aktiv
+    if key in ASCHEBOX_ENTITAETEN:
+        return enable_switches and "kessel" in aktiv
     if key in _STOERUNG:
         return enable_errors
     if key in _ZEITRAUM:

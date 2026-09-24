@@ -25,7 +25,9 @@ und jeder Heizkreis eine eigene Grafik.
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
+    Platform.BUTTON,
     Platform.CLIMATE,
+    Platform.DATETIME,
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
@@ -269,6 +271,35 @@ ist eine davon. Ein zusätzlicher Ein/Aus-Schalter daneben wäre ein
 zweiter Bedienweg für dieselbe Sache. Die Auswahl braucht die Taste
 trotzdem - sie schaltet damit auf "Aus".
 """
+
+ENTASCHEN_TASTE = "Entaschentaste"
+"""So heißt die Taste am Kessel, die eine Entaschung startet.
+
+Sie steht unter "Sonstiges" und kennt die Zustände "Aus" und "Ein". Wie
+jede Taste wird sie nur über den Namen gefunden und erst benutzt, wenn
+/user/varinfo sie als beschreibbar mit genau zwei Zuständen meldet.
+"""
+
+ASCHEBOX_ENTITAETEN = (
+    "kessel_entaschen",
+    "aschebox_leeren_um",
+    "aschebox_plan",
+    "aschebox_plan_abbrechen",
+)
+"""Entaschen-Knopf und Aschebox-Plan - beide nur mit Schreibzugriff am Kessel."""
+
+ASCHEBOX_PHASEN = ["aus", "geplant", "glutabbrand", "entaschen", "leeren"]
+"""Die Schritte des Aschebox-Plans, siehe aschebox.py."""
+
+ASCHEBOX_DAUER_ANFANG = 30 * 60
+"""So lange (Sekunden) vor der gewünschten Zeit schaltet der erste Plan ab.
+
+Glutabbrand und Entaschung dauern laut Nutzer etwa eine halbe Stunde.
+Danach gilt die gemessene Dauer.
+"""
+
+ASCHEBOX_AUFSCHLAG = 5 * 60
+"""Kommt auf die gemessene Dauer obendrauf - die Asche soll etwas abkühlen."""
 
 BETRIEBSART_TASTEN = {
     "automatik": "Auto Taste",

@@ -152,6 +152,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.varinfo: dict[str, dict] = {}
         self.switch_defs: dict[str, dict] = {}
         self.select_defs: dict[str, dict] = {}
+        self.entaschen_def: dict | None = None
+        self.aschebox = None
         self.fehlzyklen: dict[str, int] = {}
         self.deutsche_namen: Namen = {}
         self._varset_name = f"ha{entry.entry_id}"[:32]
@@ -275,6 +277,31 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 geprueft["aus_text"],
                 geprueft["aus_roh"],
             )
+
+    async def _entaschen_pruefen(self) -> None:
+        """Prüft die Entaschentaste des Kessels - wie einen Schalter.
+
+        Wird sie bestätigt, entsteht der Knopf "Kessel entaschen". Ihr
+        Zustand wird mitgelesen: Der Aschebox-Plan stellt sie zurück, falls
+        die Anlage das nicht selbst tut.
+        """
+        self.entaschen_def = None
+        uri = self.discovered_uris.get("kessel_entaschen")
+        if not self.enable_switches or "kessel" not in self.components or not uri:
+            return
+        geprueft = await self._zweizustand_pruefen("kessel_entaschen", uri)
+        if geprueft is None:
+            return
+        self.entaschen_def = {"uri": uri, **geprueft}
+        self.sensor_defs["kessel_entaschen"] = {
+            "component": "kessel",
+            "translation_key": "kessel_entaschen",
+            "icon": "mdi:delete-sweep",
+            "is_string": True,
+            "uri": uri,
+            "platform": "button",
+        }
+        _LOGGER.info("ETA: Entaschentaste erkannt (%s)", uri)
 
     async def _zweizustand_pruefen(self, key: str, uri: str) -> dict | None:
         """Prüft an der Anlage nach, ob sich eine Taste schalten lässt.
@@ -483,6 +510,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.api_version = await self.client.async_get_api_version()
         await self._varinfo_laden()
         await self._schalter_pruefen()
+        await self._entaschen_pruefen()
         await self._betriebsarten_pruefen()
         await self._thermostate_pruefen()
         await self._varset_anlegen()

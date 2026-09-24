@@ -97,22 +97,6 @@ def nur_mit_wert(element):
     return geschuetzt
 
 
-def schalter(entity, top, left, groesse=30):
-    """Ein antippbares Symbol, das den Schalter umlegt."""
-    return nur_wenn_vorhanden(
-        {
-            "type": "state-icon",
-            "entity": f"switch.eta_heizung_{entity}",
-            "tap_action": {"action": "toggle"},
-            "style": {
-                "top": f"{top}%",
-                "left": f"{left}%",
-                "--mdc-icon-size": f"{groesse}px",
-            },
-        }
-    )
-
-
 def betriebsart(entity, top, schrift):
     """Die Betriebsart als Text; ein Tippen öffnet die Auswahl.
 
@@ -398,6 +382,128 @@ gleich aussehen - auch mit einem eigenen Theme.
 """
 
 
+def leuchtendes_symbol(entitaet, symbol, top, left, aktiv_wenn, tap_action, titel, groesse=26):
+    """Ein antippbares Symbol, das leuchtet, solange aktiv_wenn gilt.
+
+    Wie bei den Modus-Tasten gibt es das Symbol zweimal, je mit einer
+    Bedingung - leuchtend oder hell, nie beide zugleich. aktiv_wenn ist
+    eine Bedingung mit "state", das Gegenstück entsteht mit "state_not".
+    Fehlt die Entität auf dieser Anlage, erscheint keines von beiden.
+    """
+    elemente = []
+    for aktiv in (True, False):
+        stil = {
+            "top": f"{top}%",
+            "left": f"{left}%",
+            "color": AKTIV if aktiv else FARBEN["hell"],
+            "--mdc-icon-size": f"{groesse}px",
+        }
+        if aktiv:
+            stil["filter"] = f"drop-shadow(0 0 6px {AKTIV})"
+        bedingung = dict(aktiv_wenn)
+        if not aktiv:
+            bedingung["state_not"] = bedingung.pop("state")
+        elemente.append(
+            {
+                "type": "conditional",
+                "conditions": [
+                    {"condition": "state", "entity": entitaet, "state_not": "unknown"},
+                    bedingung,
+                ],
+                "elements": [
+                    {
+                        "type": "icon",
+                        "icon": symbol,
+                        "title": titel,
+                        "entity": entitaet,
+                        "tap_action": tap_action,
+                        "style": stil,
+                    }
+                ],
+            }
+        )
+    return elemente
+
+
+def kessel_knoepfe():
+    """Ein/Aus, Entaschen und der Aschebox-Plan unten auf der Kessel-Kachel.
+
+    Ein/Aus leuchtet wie die Modus-Tasten am Heizkreis, solange der Kessel
+    an ist. Entaschen fragt vorher nach, denn der Kessel geht dafür in den
+    Glutabbrand; es leuchtet, solange er entascht. Das Uhr-Symbol öffnet
+    Datum und Uhrzeit zum Leeren der Aschebox und leuchtet, solange ein
+    Plan läuft. Entaschen und Plan gibt es nur mit Schreibzugriff und
+    einer Entaschentaste an der Anlage.
+
+    Beide hängen am Sensor des Aschebox-Plans statt an ihrer eigenen
+    Entität: Ein Knopf meldet "unknown", bis er zum ersten Mal gedrückt
+    wurde, und die Uhrzeit ohne Plan ebenfalls - genau das, woran die
+    Karte sonst eine fehlende Entität erkennt. Die drei Symbole stehen
+    in einer Reihe unter dem Kessel, wie die Modus-Tasten am Heizkreis.
+    """
+    schalter_ = "switch.eta_heizung_kessel"
+    entaschen = "button.eta_heizung_kessel_entaschen"
+    zeit = "datetime.eta_heizung_aschebox_leeren_um"
+    return [
+        *leuchtendes_symbol(
+            ASCHEBOX_PLAN, "mdi:delete-clock", 90, 30,
+            {"condition": "state", "entity": ASCHEBOX_PLAN, "state": ASCHEBOX_LAEUFT},
+            {"action": "more-info", "entity": zeit}, "Aschebox leeren um",
+        ),
+        *leuchtendes_symbol(
+            ASCHEBOX_PLAN, "mdi:delete-sweep", 90, 50,
+            {"condition": "state", "entity": KESSEL_ZUSTAND, "state": KESSEL_ENTASCHEN},
+            {
+                "action": "perform-action",
+                "perform_action": "button.press",
+                "target": {"entity_id": entaschen},
+                "confirmation": {"text": "Kessel jetzt entaschen? Er geht dafür in den Glutabbrand."},
+            },
+            "Entaschen",
+        ),
+        *leuchtendes_symbol(
+            schalter_, "mdi:power", 90, 70,
+            {"condition": "state", "entity": schalter_, "state": "on"},
+            {"action": "toggle"}, "Ein/Aus",
+        ),
+    ]
+
+
+def aschebox_status(schrift):
+    """Oben rechts, solange ein Aschebox-Plan läuft: sein Schritt.
+
+    Antippen bricht den Plan nach einer Rückfrage ab.
+    """
+    abbrechen = "button.eta_heizung_aschebox_plan_abbrechen"
+    return {
+        "type": "conditional",
+        "conditions": [
+            {"condition": "state", "entity": ASCHEBOX_PLAN, "state_not": "unknown"},
+            {"condition": "state", "entity": ASCHEBOX_PLAN, "state": ASCHEBOX_LAEUFT},
+        ],
+        "elements": [
+            {
+                "type": "state-label",
+                "entity": ASCHEBOX_PLAN,
+                "suffix": " ✕",
+                "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {"entity_id": abbrechen},
+                    "confirmation": {"text": "Aschebox-Plan abbrechen?"},
+                },
+                "style": {
+                    "top": "4%",
+                    "left": "94%",
+                    "transform": "translate(-100%, -50%)",
+                    "color": FARBEN["aschebox"],
+                    "font-size": f"{schrift}%",
+                },
+            }
+        ],
+    }
+
+
 def modus_tasten(entity, top, groesse=26):
     """Schaltet die Betriebsart direkt auf der Kachel um.
 
@@ -538,6 +644,10 @@ Zu jedem gibt es ein Standbild (.png) und die Bewegung (.webp).
 """
 
 KESSEL_ZUSTAND = "sensor.eta_heizung_kessel_zustand"
+
+ASCHEBOX_PLAN = "sensor.eta_heizung_aschebox_plan"
+ASCHEBOX_LAEUFT = ["geplant", "glutabbrand", "entaschen", "leeren"]
+"""Die Schritte des Aschebox-Plans, in denen einer läuft."""
 
 
 def kessel_zustandsbilder():
@@ -762,7 +872,8 @@ def grid(spalten, schrift, kurz):
         )
         for entity, lang_text, kurz_text, farbe, top in KESSEL_ZEILEN
     ]
-    kessel.append(schalter("kessel", 92, 86))
+    kessel.extend(kessel_knoepfe())
+    kessel.append(aschebox_status(schrift - 10))
     return {
         "type": "grid",
         "columns": spalten,

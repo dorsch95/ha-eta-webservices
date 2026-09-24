@@ -202,6 +202,14 @@
         "name": "Störung"
       }
     },
+    "button": {
+      "aschebox_plan_abbrechen": {
+        "name": "Aschebox-Plan abbrechen"
+      },
+      "kessel_entaschen": {
+        "name": "Kessel entaschen"
+      }
+    },
     "climate": {
       "heizkreis2_thermostat": {
         "name": "Heizkreis 2 Thermostat"
@@ -214,6 +222,11 @@
       },
       "heizkreis_thermostat": {
         "name": "Heizkreis 1 Thermostat"
+      }
+    },
+    "datetime": {
+      "aschebox_leeren_um": {
+        "name": "Aschebox leeren um"
       }
     },
     "select": {
@@ -257,6 +270,16 @@
     "sensor": {
       "aktive_fehler": {
         "name": "Aktive Fehler"
+      },
+      "aschebox_plan": {
+        "name": "Aschebox-Plan",
+        "state": {
+          "aus": "Kein Plan",
+          "geplant": "Geplant",
+          "glutabbrand": "Glutabbrand",
+          "entaschen": "Entaschen",
+          "leeren": "Aschebox leeren"
+        }
       },
       "aschebox_schwelle": {
         "name": "Aschebox Leeren nach"

@@ -202,6 +202,14 @@
         "name": "Fault"
       }
     },
+    "button": {
+      "aschebox_plan_abbrechen": {
+        "name": "Cancel ash box plan"
+      },
+      "kessel_entaschen": {
+        "name": "Boiler de-ashing"
+      }
+    },
     "climate": {
       "heizkreis2_thermostat": {
         "name": "Heating circuit 2 thermostat"
@@ -214,6 +222,11 @@
       },
       "heizkreis_thermostat": {
         "name": "Heating circuit 1 thermostat"
+      }
+    },
+    "datetime": {
+      "aschebox_leeren_um": {
+        "name": "Empty ash box at"
       }
     },
     "select": {
@@ -257,6 +270,16 @@
     "sensor": {
       "aktive_fehler": {
         "name": "Active errors"
+      },
+      "aschebox_plan": {
+        "name": "Ash box plan",
+        "state": {
+          "aus": "No plan",
+          "geplant": "Scheduled",
+          "glutabbrand": "Burning out",
+          "entaschen": "De-ashing",
+          "leeren": "Empty ash box"
+        }
       },
       "aschebox_schwelle": {
         "name": "Empty ash box after"

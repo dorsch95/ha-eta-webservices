@@ -18,6 +18,7 @@ from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
+from .const import ASCHEBOX_PHASEN
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import ids_vorschlagen
 from . import prognose
@@ -60,6 +61,8 @@ async def async_setup_entry(
             ETAPrognoseSensor(coordinator.prognose, coordinator, key) for key in schluessel
         )
     entities.append(_pellet_energie(coordinator))
+    if coordinator.aschebox is not None:
+        entities.append(ETAAscheboxPlanSensor(coordinator))
     if coordinator.enable_errors:
         entities.append(ETAErrorSensor(coordinator))
     entities.extend(
@@ -237,6 +240,51 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
             return f"{float(verbrauch.value):.0f}/{float(schwelle.value):.0f}kg"
         except (TypeError, ValueError):
             return None
+
+
+class ETAAscheboxPlanSensor(SensorEntity):
+    """In welchem Schritt der Aschebox-Plan gerade ist, siehe aschebox.py.
+
+    Die Attribute nennen die gewünschte Zeit, wann der Kessel ausgeht und
+    wie lange Glutabbrand und Entaschung zuletzt gedauert haben.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "aschebox_plan"
+    _attr_icon = "mdi:delete-clock"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(ASCHEBOX_PHASEN)
+    _attr_should_poll = False
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        self._key = "aschebox_plan"
+        self._plan = coordinator.aschebox
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_aschebox_plan"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def native_value(self) -> str:
+        return self._plan.phase
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        aktiv = self._plan.phase != "aus"
+        gelernt = self._plan.gelernt
+        return {
+            "ziel": self._plan.ziel.isoformat() if aktiv and self._plan.ziel else None,
+            "abschalten_um": (
+                self._plan.abschalten_um.isoformat() if aktiv and self._plan.abschalten_um else None
+            ),
+            "vorlauf_minuten": round(self._plan.dauer.total_seconds() / 60),
+            "gemessen_minuten": None if gelernt is None else round(gelernt.total_seconds() / 60),
+        }
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self._plan.zuhoeren(self._geaendert))
+
+    @callback
+    def _geaendert(self) -> None:
+        self.async_write_ha_state()
 
 
 class ETALagerFuellstandSensor(ETABaseSensor):

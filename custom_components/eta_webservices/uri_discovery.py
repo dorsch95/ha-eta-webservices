@@ -15,6 +15,7 @@ import re
 from .const import (
     BETRIEBSART_TASTEN,
     COMPONENTS,
+    ENTASCHEN_TASTE,
     FUB_ROLE_DEFAULT_NAMES,
     PUFFER_FUEHLER_MAX,
     PUFFER_SPEICHER,
@@ -574,6 +575,10 @@ async def async_discover_uris(
         uri = _finde_schalter(fub)
         if uri:
             discovered[key] = uri
+
+    entaschen = _finde_nach_namen(fubs_by_role.get("kessel"), ENTASCHEN_TASTE)
+    if entaschen:
+        discovered["kessel_entaschen"] = entaschen
 
     for key, role in BETRIEBSART_ROLES.items():
         fub = fubs_by_role.get(role)

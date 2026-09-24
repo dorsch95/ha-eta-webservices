@@ -136,6 +136,10 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_rucklauftemperatur` | Rücklauftemperatur | °C |
 | `sensor.eta_heizung_verbrauch_seit_entaschung` | Verbrauch seit Entaschung | kg |
 | `switch.eta_heizung_kessel` | Kessel | Schalter |
+| `button.eta_heizung_kessel_entaschen` | Kessel entaschen - nur mit Schreibzugriff und Entaschentaste | Knopf |
+| `datetime.eta_heizung_aschebox_leeren_um` | Aschebox leeren um - startet den Aschebox-Plan | Datum/Uhrzeit |
+| `sensor.eta_heizung_aschebox_plan` | Aschebox-Plan: Kein Plan, Geplant, Glutabbrand, Entaschen, Aschebox leeren | Text |
+| `button.eta_heizung_aschebox_plan_abbrechen` | Aschebox-Plan abbrechen | Knopf |
 | **Pufferspeicher** | | |
 | `sensor.eta_heizung_puffer_ladezustand` | Puffer Ladezustand | % |
 | `sensor.eta_heizung_puffer_zustand` | Puffer Zustand | Text |
@@ -432,7 +436,7 @@ Der Zähler *Verbrauch seit Aschebox leeren* wird dafür **nicht** verwendet: Er
 
 Schalter sind **standardmäßig ausgeschaltet** - sie schreiben in die Heizungssteuerung, und dazu soll niemand durch ein Update kommen. Einschalten kannst du sie beim Einrichten oder später unter **Konfigurieren**; dabei erscheint ein Hinweis, was das bedeutet.
 
-Ist der Schreibzugriff freigegeben und findet die Integration am Kessel eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel`.
+Ist der Schreibzugriff freigegeben und findet die Integration am Kessel eine **Ein/Aus-Taste**, legt sie dafür einen Schalter an: `switch.eta_heizung_kessel`. Auf der Kessel-Kachel leuchtet das Ein/Aus-Symbol, solange der Kessel an ist - wie die Modus-Tasten am Heizkreis.
 
 **Heizkreise bekommen keinen Ein/Aus-Schalter.** Dort gibt es stattdessen die Betriebsart-Auswahl, in der "Aus" einer von vier Einträgen ist - ein zusätzlicher Schalter daneben wäre ein zweiter Bedienweg für dieselbe Sache.
 
@@ -457,6 +461,19 @@ logger:
 ```
 
 > ⚠️ Der Schalter greift direkt in die Heizungssteuerung ein. Im Winter einen Heizkreis oder den Kessel per Automation abzuschalten kann Räume auskühlen lassen; für den Frostschutz ist weiterhin die Anlage selbst zuständig.
+
+### Entaschen und Aschebox leeren
+
+Findet die Integration am Kessel zusätzlich die **Entaschentaste** (am Display unter *Sonstiges*), kommen zwei Dinge dazu - wie alle Schalter nur mit freigegebenem Schreibzugriff:
+
+* **`button.eta_heizung_kessel_entaschen`** drückt die Entaschentaste, wie am Display. Der Kessel geht dafür in den Glutabbrand und entascht danach. Auf der Kessel-Kachel ist das der Besen neben dem Ein/Aus-Symbol; er fragt vorher nach und leuchtet, solange der Kessel entascht.
+* **Aschebox leeren um …**: Die Aschebox darf man nur bei ausgeschaltetem Kessel abnehmen. Das Uhr-Symbol auf der Kachel öffnet `datetime.eta_heizung_aschebox_leeren_um` - dort stellst du Datum und Uhrzeit ein, zu der du leeren willst. Home Assistant erledigt den Rest:
+  1. Es schaltet den Kessel so früh aus, dass Glutabbrand und Entaschung bis dahin durch sind. Beim ersten Mal 30 Minuten vorher, danach mit der gemessenen Dauer vom letzten Mal plus 5 Minuten, damit die Asche etwas abkühlt.
+  2. Meldet der Kessel nach dem Glutabbrand *Bereit* oder *Ausgeschaltet*, drückt es die Entaschentaste - **immer**, auch wenn der Kessel vorher schon von selbst entascht hat. So kommt auch der Rest der Asche heraus.
+  3. Ist die Entaschung durch, kommt eine Meldung: Die Aschebox kann geleert werden.
+  4. Sobald die Box abgenommen und wieder eingesetzt ist (der Kessel meldet *Aschebox fehlt* und danach nicht mehr, oder der Zähler *Verbrauch seit Aschebox leeren* fällt), schaltet es den Kessel wieder ein. Wird die Box nicht innerhalb von 2 Stunden geleert, geht der Kessel trotzdem wieder an - im Winter soll das Haus nicht auskühlen.
+
+  `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab; hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst wieder ein, endet der Plan ebenfalls. Der Plan übersteht einen Neustart von Home Assistant. Jeder Schritt löst zusätzlich das Ereignis `eta_webservices_aschebox` aus (mit `phase` und `nachricht`) - damit lässt sich die Meldung etwa aufs Handy schicken.
 
 ### Betriebsart je Heizkreis
 

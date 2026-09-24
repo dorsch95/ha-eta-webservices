@@ -193,6 +193,15 @@ async def async_get_config_entry_diagnostics(
             "schalter": sorted(coordinator.switch_defs),
             "betriebsarten": sorted(coordinator.select_defs),
             "thermostate": sorted(coordinator.thermostat_defs),
+            "entaschentaste": coordinator.entaschen_def is not None,
+            "aschebox_plan": (
+                None
+                if coordinator.aschebox is None
+                else {
+                    "phase": coordinator.aschebox.phase,
+                    "vorlauf_minuten": round(coordinator.aschebox.dauer.total_seconds() / 60),
+                }
+            ),
         },
         "letzte_abfrage": {
             "erfolgreich": coordinator.last_update_success,

@@ -11,9 +11,11 @@ Hardware.
 from __future__ import annotations
 
 import asyncio
+import copy
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from homeassistant.core import callback
@@ -136,6 +138,8 @@ class FakeSession:
         self.gesetzte_werte: list[tuple[str, str]] = []
         self.geschrieben: dict[str, str] = {}
         self.schreibbar = True
+        self.kessel_zustand = "Heizen"
+        self.asche_roh = "2370"
         self.traege = False
         """Wenn True, meldet die Anlage geschriebene Werte noch nicht zurück.
 
@@ -182,7 +186,7 @@ class FakeSession:
         """
         if self.traege:
             return vorgabe
-        return self.geschrieben.get(uri, vorgabe)
+        return self.geschrieben.get(uri.split("/user/var", 1)[-1], vorgabe)
 
     def _merken(self, uri: str, wert: str) -> None:
         """Behält geschriebene Werte - und schaltet Modustasten gegenseitig ab.
@@ -234,7 +238,14 @@ class FakeSession:
         Wege dieselben Werte liefern. Geschriebene Werte gehen vor.
         """
         if "12013" in uri:
-            return {"value": "2370", "str_value": "23,70", "unit": "kg", "scale": "100"}
+            return {"value": self.asche_roh, "str_value": "x", "unit": "kg", "scale": "100"}
+        if uri.endswith("/12112"):
+            roh = self.geschrieben.get(uri.split("/user/var", 1)[-1], "1802")
+            return {
+                "value": roh,
+                "str_value": "Ein" if roh == "1803" else "Aus",
+                "text_offset": "1802",
+            }
         if "12120" in uri:
             return {"value": "1000", "str_value": "1000", "unit": "kg"}
         if uri.endswith(("/12125", "/12126", "/12230")):
@@ -255,7 +266,7 @@ class FakeSession:
         if "2001" in uri:
             return {"value": "951", "str_value": "Ein", "text_offset": "950"}
         if "12000" in uri:
-            return {"value": "1803", "str_value": "Heizen", "text_offset": "1802"}
+            return {"value": "1803", "str_value": self.kessel_zustand, "text_offset": "1802"}
         if "12423" in uri:
             return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
         if uri.endswith("/12499"):
@@ -330,6 +341,17 @@ class FakeSession:
                 '<value strValue="Glutabbrand">2007</value>'
                 "</validValues></variable></varInfo></eta>"
             )
+        if url.endswith("/12112"):
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
+                'name="Entaschentaste" fullName="Sonstiges > Entaschentaste" '
+                'unit="" decPlaces="0" scaleFactor="1" advTextOffset="1802" '
+                f'isWritable="{1 if self.schreibbar else 0}">'
+                "<type>TEXT</type><validValues>"
+                '<value strValue="Aus">1802</value>'
+                '<value strValue="Ein">1803</value>'
+                "</validValues></variable></varInfo></eta>"
+            )
         if url.endswith("/12113/0/1109"):
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
@@ -398,6 +420,7 @@ class FakeConfigEntry:
         from homeassistant.config_entries import ConfigEntryState
 
         self.state = ConfigEntryState.SETUP_IN_PROGRESS
+        self.pref_disable_polling = False
         self.data = data
         self.options = options or {}
         self.entry_id = "testeintrag"
@@ -496,6 +519,11 @@ class FakeHass:
         self.data: dict = {}
         self.session = FakeSession(menu)
         self.entity_registry = FakeEntityRegistry()
+        self.is_stopping = False
+        self.ereignisse: list[tuple[str, dict]] = []
+        self.bus = SimpleNamespace(
+            async_fire=lambda art, daten=None: self.ereignisse.append((art, daten or {}))
+        )
 
     async def async_add_executor_job(self, func, *args):
         return func(*args)
@@ -548,6 +576,42 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
         lambda registry, config_entry_id: registry.fuer_eintrag(config_entry_id),
     )
     return instance
+
+
+@pytest.fixture(autouse=True)
+def aschebox_ohne_hass(monkeypatch) -> SimpleNamespace:
+    """Speicher, Meldungen und Zeitgeber des Aschebox-Plans ohne laufendes Home Assistant.
+
+    Der Speicher lebt nur im Arbeitsspeicher, bleibt aber über ein neues
+    Einrichten hinweg erhalten - so lässt sich ein Neustart nachstellen.
+    """
+    from eta_webservices import aschebox
+
+    stand = SimpleNamespace(speicher={}, meldungen=[], zeitgeber=[])
+
+    class Speicher:
+        def __init__(self, hass, version, schluessel):
+            self.schluessel = schluessel
+
+        async def async_load(self):
+            return copy.deepcopy(stand.speicher.get(self.schluessel))
+
+        async def async_save(self, daten):
+            stand.speicher[self.schluessel] = copy.deepcopy(daten)
+
+    def zeitgeber(hass, aktion, zeitpunkt):
+        eintrag = (zeitpunkt, aktion)
+        stand.zeitgeber.append(eintrag)
+        return lambda: stand.zeitgeber.remove(eintrag) if eintrag in stand.zeitgeber else None
+
+    monkeypatch.setattr(aschebox, "Store", Speicher)
+    monkeypatch.setattr(aschebox, "async_track_point_in_utc_time", zeitgeber)
+    monkeypatch.setattr(
+        aschebox,
+        "persistent_notification",
+        SimpleNamespace(async_create=lambda hass, text, **kwargs: stand.meldungen.append(text)),
+    )
+    return stand
 
 
 @pytest.fixture(autouse=True)
