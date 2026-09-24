@@ -22,14 +22,18 @@ from .const import (
     CONF_ENABLE_SWITCHES,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
+    CONF_PROGNOSE,
     CONF_PUFFER_VOLUMEN,
     CONF_SCAN_INTERVAL,
     CONF_WETTER,
+    CONF_ZEITRAEUME,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_PELLET_PREIS,
+    DEFAULT_PROGNOSE,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_ZEITRAEUME,
     DOMAIN,
     PLATFORMS,
     SELECTS,
@@ -91,11 +95,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
     coordinator.puffer_volumen_einstellung = float(config.get(CONF_PUFFER_VOLUMEN) or 0)
+    coordinator.mit_prognose = config.get(CONF_PROGNOSE, DEFAULT_PROGNOSE)
+    coordinator.mit_zeitraeumen = config.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
     await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
 
-    if _prognose_moeglich(hass, coordinator):
+    if coordinator.mit_prognose and _prognose_moeglich(hass, coordinator):
         coordinator.prognose = ETAPrognoseKoordinator(
             hass,
             entry,
@@ -173,18 +179,18 @@ _EIGENE_ENTITAETEN = {
     "aschebox_status": "kessel",
     "aschebox_faellig": "kessel",
     "pellet_energie_gesamt": "kessel",
-    "pellet_verbrauch_heute": "kessel",
-    "pellet_verbrauch_woche": "kessel",
-    "pellet_verbrauch_jahr": "kessel",
+    "lager_niedrig": "lager",
+    "lager_fuellstand": "lager",
+}
+_PROGNOSE = {
     "pellet_prognose_morgen": "kessel",
     "pellet_prognose_treffsicherheit": "kessel",
     "pellet_prognose_status": "kessel",
-    "lager_niedrig": "lager",
-    "lager_fuellstand": "lager",
     "lager_reicht_bis": "lager",
     "lager_bestellen_bis": "lager",
     "lager_reichweite": "lager",
 }
+_ZEITRAUM = {"pellet_verbrauch_heute", "pellet_verbrauch_woche", "pellet_verbrauch_jahr"}
 _KOSTEN = {"pellet_kosten_heute", "pellet_kosten_woche", "pellet_kosten_jahr"}
 _MIT_PUFFERVOLUMEN = {"puffer_energieinhalt"}
 _STOERUNG = {"aktive_fehler", "stoerung"}
@@ -197,6 +203,8 @@ def entitaet_vorgesehen(
     enable_errors: bool,
     mit_kosten: bool = False,
     mit_puffervolumen: bool = False,
+    mit_prognose: bool = True,
+    mit_zeitraeumen: bool = True,
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -219,8 +227,12 @@ def entitaet_vorgesehen(
         return enable_switches and SELECTS[key]["component"] in aktiv
     if key in _STOERUNG:
         return enable_errors
+    if key in _ZEITRAUM:
+        return mit_zeitraeumen and "kessel" in aktiv
     if key in _KOSTEN:
-        return mit_kosten and "kessel" in aktiv
+        return mit_kosten and mit_zeitraeumen and "kessel" in aktiv
+    if key in _PROGNOSE:
+        return mit_prognose and _PROGNOSE[key] in aktiv
     if key in _MIT_PUFFERVOLUMEN:
         return mit_puffervolumen and "puffer" in aktiv
     if key in _EIGENE_ENTITAETEN:
@@ -254,6 +266,8 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.enable_errors,
             coordinator.pellet_preis > 0,
             coordinator.puffer_volumen is not None,
+            coordinator.mit_prognose,
+            coordinator.mit_zeitraeumen,
         )
         if vorgesehen is False:
             _LOGGER.info(

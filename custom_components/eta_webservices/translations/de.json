@@ -12,9 +12,13 @@
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
+          "prognose": "Pelletprognose und Reichweite des Lagers",
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
+          "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
+          "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },
@@ -75,9 +79,13 @@
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
+          "prognose": "Pelletprognose und Reichweite des Lagers",
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
+          "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
+          "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }
       },

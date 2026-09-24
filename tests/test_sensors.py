@@ -1060,3 +1060,23 @@ async def test_aussetzer_beim_start_loescht_keine_schalter(hass, entry):
 
     assert "kessel_schalter" not in coordinator.switch_defs
     assert "switch.eta_heizung_kessel" in hass.entity_registry.eintraege
+
+
+async def test_verbrauch_je_zeitraum_laesst_sich_abwaehlen(hass, entry):
+    entry.data["verbrauch_zeitraeume"] = False
+    entry.data["pellet_preis"] = 380.0
+    _, by_name = await setup_integration(hass, entry)
+    assert not [n for n in by_name if n.startswith(("Pelletverbrauch", "Pelletkosten"))]
+    assert "Pellet Gesamtverbrauch" in by_name
+
+
+def test_abgewaehlter_verbrauch_je_zeitraum_wird_aufgeraeumt():
+    from eta_webservices import entitaet_vorgesehen
+
+    assert entitaet_vorgesehen("pellet_verbrauch_heute", ["kessel"], False, False) is True
+    assert entitaet_vorgesehen(
+        "pellet_verbrauch_heute", ["kessel"], False, False, mit_zeitraeumen=False
+    ) is False
+    assert entitaet_vorgesehen(
+        "pellet_kosten_jahr", ["kessel"], False, False, True, mit_zeitraeumen=False
+    ) is False

@@ -740,3 +740,21 @@ async def test_ohne_volumen_kein_ausgleich(prognose_koordinator):
     prognose_koordinator._puffer_ids = lambda: ["sensor.oben"]
     await prognose_koordinator._async_update_data()
     assert prognose_koordinator.puffer_tage == 0
+
+
+async def test_prognose_laesst_sich_abwaehlen(hass, entry, monkeypatch):
+    entry.data["prognose"] = False
+    coordinator, by_name, gestartet = await _mit_prognose(
+        hass, entry, monkeypatch, ["kessel", "lager"]
+    )
+    assert coordinator.prognose is None
+    assert gestartet == []
+    assert not [n for n in by_name if "prognose" in n.lower() or n.startswith("Lager reicht")]
+
+
+def test_abgewaehlte_prognose_wird_aufgeraeumt():
+    from eta_webservices import entitaet_vorgesehen
+
+    for key in ("pellet_prognose_morgen", "lager_reicht_bis", "lager_reichweite"):
+        assert entitaet_vorgesehen(key, ["kessel", "lager"], False, False, mit_prognose=False) is False
+        assert entitaet_vorgesehen(key, ["kessel", "lager"], False, False, mit_prognose=True)

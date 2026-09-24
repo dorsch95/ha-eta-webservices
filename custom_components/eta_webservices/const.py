@@ -57,6 +57,14 @@ CONF_PELLET_PREIS = "pellet_preis"
 DEFAULT_PELLET_PREIS = 0.0
 MAX_PELLET_PREIS = 2000.0
 
+CONF_PROGNOSE = "prognose"
+"""Selbstlernende Pelletprognose und Reichweite des Lagers anlegen."""
+DEFAULT_PROGNOSE = True
+
+CONF_ZEITRAEUME = "verbrauch_zeitraeume"
+"""Pelletverbrauch (und -kosten) für heute, diese Woche und dieses Jahr anlegen."""
+DEFAULT_ZEITRAEUME = True
+
 CONF_PUFFER_VOLUMEN = "puffer_volumen"
 """Volumen des Pufferspeichers in Litern, 0 = von der Anlage übernehmen.
 

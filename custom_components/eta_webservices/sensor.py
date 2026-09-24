@@ -41,7 +41,9 @@ async def async_setup_entry(
     ]
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
-    if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
+    if coordinator.mit_zeitraeumen and coordinator.sensor_defs.get(
+        "pellet_gesamtverbrauch", {}
+    ).get("uri"):
         for zeitraum in ZEITRAEUME:
             entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum))
             if coordinator.pellet_preis > 0:

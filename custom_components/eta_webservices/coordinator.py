@@ -112,6 +112,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.pellet_preis = 0.0
         self.prognose = None
         self.puffer_volumen_einstellung = 0.0
+        self.mit_prognose = True
+        self.mit_zeitraeumen = True
         self.puffer_volumen_anlage: float | None = None
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors

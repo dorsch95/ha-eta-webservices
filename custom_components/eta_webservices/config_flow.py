@@ -33,14 +33,18 @@ from .const import (
     CONF_FUB_NAMES,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
+    CONF_PROGNOSE,
     CONF_PUFFER_VOLUMEN,
     CONF_SCAN_INTERVAL,
     CONF_WETTER,
+    CONF_ZEITRAEUME,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
+    DEFAULT_PROGNOSE,
+    DEFAULT_ZEITRAEUME,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
@@ -88,7 +92,10 @@ def wetter_vorschlag(hass: HomeAssistant, current: dict[str, Any]) -> str | None
 
 
 def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> dict:
-    """Komponenten, Abfrageintervall, Freigaben, Heizwert, Preis und Wetter.
+    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Wetter.
+
+    Verbrauch je Zeitraum und Prognose sind abwählbar - wer nur die
+    Messwerte will, bekommt dann auch nur die.
 
     Statt einer Liste fertiger Anlagenschemata wird hier angekreuzt, was an
     der Anlage vorhanden ist. Der Kessel steht nicht zur Wahl, den hat jede
@@ -121,6 +128,14 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
         vol.Required(
             CONF_ENABLE_SWITCHES,
             default=current.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
+        ): cv.boolean,
+        vol.Required(
+            CONF_ZEITRAEUME,
+            default=current.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME),
+        ): cv.boolean,
+        vol.Required(
+            CONF_PROGNOSE,
+            default=current.get(CONF_PROGNOSE, DEFAULT_PROGNOSE),
         ): cv.boolean,
         vol.Required(
             CONF_PELLET_KWH_PER_KG,

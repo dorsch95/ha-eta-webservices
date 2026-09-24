@@ -453,3 +453,11 @@ async def test_puffervolumen_ist_vorbelegt_und_begrenzt(monkeypatch):
     assert weiter["step_id"] == "fub_names"
     fertig = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex"})
     assert fertig["data"]["puffer_volumen"] == 1000
+
+
+def test_zusatzfunktionen_sind_waehlbar_und_anfangs_an():
+    marker = {str(k): k for k in _connection_schema({}).schema}
+    assert marker["prognose"].default() is True
+    assert marker["verbrauch_zeitraeume"].default() is True
+    abgewaehlt = {str(k): k for k in _connection_schema({"prognose": False}).schema}
+    assert abgewaehlt["prognose"].default() is False

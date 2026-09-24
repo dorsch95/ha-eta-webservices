@@ -71,7 +71,7 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 2. Suche nach **ETA Web-Services**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
 4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, PV-Heizmodul, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
-5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet.
+5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet. Außerdem wählst du, ob du den **Pelletverbrauch je Zeitraum** (heute, Woche, Jahr) und die **Pelletprognose mit Reichweite des Lagers** haben möchtest. Beides ist vorausgewählt; wer nur die Messwerte der Anlage braucht, wählt es ab und bekommt entsprechend weniger Entitäten.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein. Trägst du den **Pelletpreis** in Euro je Tonne ein, rechnet die Integration auch die Kosten aus - bei 0 bleibt es beim Verbrauch in kg.
 7. Wähle optional eine **Wettervorhersage** für die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers). Gibt es in deinem Home Assistant genau eine Wetter-Entität, ist sie schon vorausgewählt.
 8. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
@@ -324,7 +324,7 @@ Aus dem Gesamtverbrauch der Anlage zählt die Integration mit, was **heute**, **
 
 Gezählt wird ab dem Einrichten: Am ersten Tag steht unter *heute* nur, was seitdem verbrannt wurde, unter *dieses Jahr* entsprechend weniger als das ganze Jahr. Den Pelletpreis änderst du unter **Konfigurieren**, etwa nach einer neuen Lieferung - die Kosten rechnen ab dann mit dem neuen Preis.
 
-Nur Kesseltypen mit Gesamtverbrauch (Pellets, SH TWIN) haben diese Werte.
+Nur Kesseltypen mit Gesamtverbrauch (Pellets, SH TWIN) haben diese Werte. Wer sie nicht braucht, wählt unter **Konfigurieren** *Pelletverbrauch je Zeitraum* ab.
 
 ## 🔮 Verbrauchsprognose und Reichweite des Lagers
 
@@ -368,7 +368,7 @@ Jüngere Tage zählen mehr als alte, damit sich die Prognose anpasst, wenn sich 
 | 60 Tagen | 4 Tage |
 | 120 Tagen | 6 Tage |
 
-Die Prognose rechnet nur in Home Assistant und schreibt nichts in die Heizung. Was sie gelernt hat, steht auch in der Diagnose-Datei unter `prognose`.
+Wer die Prognose nicht möchte, wählt unter **Konfigurieren** *Pelletprognose und Reichweite des Lagers* ab - ihre Entitäten verschwinden dann. Die Prognose rechnet nur in Home Assistant und schreibt nichts in die Heizung. Was sie gelernt hat, steht auch in der Diagnose-Datei unter `prognose`.
 
 ## ⚡ Pelletverbrauch im Energie-Dashboard
 

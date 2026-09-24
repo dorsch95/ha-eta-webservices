@@ -12,9 +12,13 @@
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits",
+          "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
+          "prognose": "Pellet prognosis and store range",
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
+          "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
+          "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
         }
       },
@@ -75,9 +79,13 @@
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits",
+          "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
+          "prognose": "Pellet prognosis and store range",
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
+          "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
+          "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
         }
       },
