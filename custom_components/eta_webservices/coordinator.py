@@ -432,6 +432,17 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         except (TypeError, ValueError):
             return None
 
+    def zustand(self, key: str) -> str | None:
+        """Ein Textwert als einer der festen Zustände seiner Sensordefinition.
+
+        None ohne Wert oder bei einem Klartext, den die Definition nicht kennt.
+        """
+        zustaende = self.sensor_defs.get(key, {}).get("zustaende")
+        wert = (self.data or {}).get(key)
+        if not zustaende or wert is None or not wert.text:
+            return None
+        return zustaende.get(wert.text.strip().casefold())
+
     async def _varinfo_laden(self) -> None:
         """Holt zu den Textwerten ihre gültigen Zustände.
 

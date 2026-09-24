@@ -187,6 +187,7 @@ class ETAThermostat(CoordinatorEntity[ETADataUpdateCoordinator], ClimateEntity):
         return {
             "raumfuehler": self._raumfuehler,
             "zeitueberwachung": self.coordinator.zahl(f"{self._praefix}_zeitueberwachung"),
+            "zeitprogramm": self.coordinator.zustand(f"{self._praefix}_zeitprogramm"),
         }
 
     async def async_set_temperature(self, **kwargs: Any) -> None:

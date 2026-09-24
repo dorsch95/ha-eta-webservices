@@ -81,6 +81,11 @@
 </object>
 </fub>
 <fub uri="/120/10101" name="HK">
+<object uri="/120/10101/0/0/19404" name="Heizkreis">
+<object uri="/120/10101/12113/0/0" name="Heizzeiten">
+<object uri="/120/10101/12113/0/1109" name="Schaltzustand"/>
+</object>
+</object>
 <object uri="/120/10101/0/0/10990" name="Eingänge">
 <object uri="/120/10101/0/11060/0" name="Vorlauf"/>
 </object>

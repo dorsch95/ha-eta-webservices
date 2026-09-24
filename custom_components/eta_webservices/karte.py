@@ -135,6 +135,30 @@ def betriebsart(entity, top, schrift):
     )
 
 
+ZEITPROGRAMM_OHNE_WIRKUNG = ["heizen", "absenken", "aus"]
+"""In diesen Betriebsarten bestimmt das Zeitprogramm nichts."""
+
+
+def zeitprogramm(entity, betriebsart_, top, schrift, kurz):
+    """Heizzeit oder Absenkzeit - nur, solange das Zeitprogramm gilt.
+
+    Das tut es im Auto-Modus. Gibt es keine Auswahl der Betriebsart, weil
+    der Schreibzugriff fehlt, steht die Zeile immer da: Home Assistant
+    wertet die fehlende Auswahl als "unknown".
+    """
+    element = nur_wenn_vorhanden(
+        label(entity, "" if kurz else "Zeitprogramm: ", "gedaempft", top, 50, schrift)
+    )
+    element["conditions"].append(
+        {
+            "condition": "state",
+            "entity": f"select.eta_heizung_{betriebsart_}",
+            "state_not": ZEITPROGRAMM_OHNE_WIRKUNG,
+        }
+    )
+    return element
+
+
 def thermostat_zeile(entity, top, schrift):
     """Raum- und Solltemperatur des Thermostats; ein Tippen öffnet ihn.
 
@@ -143,6 +167,9 @@ def thermostat_zeile(entity, top, schrift):
     die Zeile leer. Die Tasten − und + stecken im geöffneten Thermostat:
     Eine picture-elements-Karte kann einen Sollwert nur auf einen festen
     Wert setzen, nicht um einen Schritt verändern.
+
+    Kommt kein Raumwert an, fehlt "Raum" - statt eines leeren "Raum: °C".
+    Home Assistant wertet ein fehlendes Attribut als "unknown".
     """
     entitaet = f"climate.eta_heizung_{entity}"
 
@@ -162,14 +189,22 @@ def thermostat_zeile(entity, top, schrift):
             },
         }
 
-    return {
-        "type": "conditional",
-        "conditions": [{"condition": "state", "entity": entitaet, "state_not": "unknown"}],
-        "elements": [
-            wert("current_temperature", "Raum: ", 30, "weiss"),
-            wert("temperature", "Soll: ", 70, "soll"),
-        ],
-    }
+    vorhanden = {"condition": "state", "entity": entitaet, "state_not": "unknown"}
+    return [
+        {
+            "type": "conditional",
+            "conditions": [
+                vorhanden,
+                {**vorhanden, "attribute": "current_temperature"},
+            ],
+            "elements": [wert("current_temperature", "Raum: ", 30, "weiss")],
+        },
+        {
+            "type": "conditional",
+            "conditions": [dict(vorhanden)],
+            "elements": [wert("temperature", "Soll: ", 70, "soll")],
+        },
+    ]
 
 
 PUFFER_OBEN = 36
@@ -758,7 +793,9 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_1_betriebsart", 23, schrift - 5),
-                    thermostat_zeile("heizkreis_1_thermostat", 31, schrift - 5),
+                    zeitprogramm("heizkreis_zeitprogramm", "heizkreis_1_betriebsart", 31,
+                                 schrift - 5, kurz),
+                    *thermostat_zeile("heizkreis_1_thermostat", 39, schrift - 5),
                     *modus_tasten("heizkreis_1_betriebsart", 90),
                 ],
             ),
@@ -772,7 +809,9 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_2_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_2_betriebsart", 23, schrift - 5),
-                    thermostat_zeile("heizkreis_2_thermostat", 31, schrift - 5),
+                    zeitprogramm("heizkreis_2_zeitprogramm", "heizkreis_2_betriebsart", 31,
+                                 schrift - 5, kurz),
+                    *thermostat_zeile("heizkreis_2_thermostat", 39, schrift - 5),
                     *modus_tasten("heizkreis_2_betriebsart", 90),
                 ],
             ),
@@ -786,7 +825,9 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_3_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_3_betriebsart", 23, schrift - 5),
-                    thermostat_zeile("heizkreis_3_thermostat", 31, schrift - 5),
+                    zeitprogramm("heizkreis_3_zeitprogramm", "heizkreis_3_betriebsart", 31,
+                                 schrift - 5, kurz),
+                    *thermostat_zeile("heizkreis_3_thermostat", 39, schrift - 5),
                     *modus_tasten("heizkreis_3_betriebsart", 90),
                 ],
             ),
@@ -800,7 +841,9 @@ def grid(spalten, schrift, kurz):
                           "kessel", 8, 50, schrift),
                     label("heizkreis_4_anforderung", "Anforderung: ", "hell", 15, 50, schrift - 5),
                     betriebsart("heizkreis_4_betriebsart", 23, schrift - 5),
-                    thermostat_zeile("heizkreis_4_thermostat", 31, schrift - 5),
+                    zeitprogramm("heizkreis_4_zeitprogramm", "heizkreis_4_betriebsart", 31,
+                                 schrift - 5, kurz),
+                    *thermostat_zeile("heizkreis_4_thermostat", 39, schrift - 5),
                     *modus_tasten("heizkreis_4_betriebsart", 90),
                 ],
             ),

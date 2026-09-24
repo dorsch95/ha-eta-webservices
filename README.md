@@ -159,24 +159,28 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_heizkreis_anforderung` | Heizkreis Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_vorlauftemperatur` | Heizkreis Vorlauftemperatur | °C |
 | `sensor.eta_heizung_heizkreis_raumtemperatur` | Heizkreis Raumtemperatur | °C |
+| `sensor.eta_heizung_heizkreis_zeitprogramm` | Heizkreis Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_1_thermostat` | Heizkreis 1 Thermostat - nur mit externer Schnittstelle und Schreibzugriff | Thermostat |
 | **Heizkreis 2** | | |
 | `select.eta_heizung_heizkreis_2_betriebsart` | Heizkreis 2 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_2_anforderung` | Heizkreis 2 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_2_vorlauftemperatur` | Heizkreis 2 Vorlauftemperatur | °C |
 | `sensor.eta_heizung_heizkreis_2_raumtemperatur` | Heizkreis 2 Raumtemperatur | °C |
+| `sensor.eta_heizung_heizkreis_2_zeitprogramm` | Heizkreis 2 Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_2_thermostat` | Heizkreis 2 Thermostat - nur mit externer Schnittstelle und Schreibzugriff | Thermostat |
 | **Heizkreis 3** | | |
 | `select.eta_heizung_heizkreis_3_betriebsart` | Heizkreis 3 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_3_anforderung` | Heizkreis 3 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_3_vorlauftemperatur` | Heizkreis 3 Vorlauftemperatur | °C |
 | `sensor.eta_heizung_heizkreis_3_raumtemperatur` | Heizkreis 3 Raumtemperatur | °C |
+| `sensor.eta_heizung_heizkreis_3_zeitprogramm` | Heizkreis 3 Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_3_thermostat` | Heizkreis 3 Thermostat - nur mit externer Schnittstelle und Schreibzugriff | Thermostat |
 | **Heizkreis 4** | | |
 | `select.eta_heizung_heizkreis_4_betriebsart` | Heizkreis 4 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_4_anforderung` | Heizkreis 4 Anforderung | Text |
 | `sensor.eta_heizung_heizkreis_4_vorlauftemperatur` | Heizkreis 4 Vorlauftemperatur | °C |
 | `sensor.eta_heizung_heizkreis_4_raumtemperatur` | Heizkreis 4 Raumtemperatur | °C |
+| `sensor.eta_heizung_heizkreis_4_zeitprogramm` | Heizkreis 4 Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_4_thermostat` | Heizkreis 4 Thermostat - nur mit externer Schnittstelle und Schreibzugriff | Thermostat |
 | **Pelletlager** | | |
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
@@ -467,6 +471,8 @@ Findet die Integration am Heizkreis zusätzlich die Tasten **Auto**, **Heizen** 
 
 Die Bezeichnungen folgen dem Display der Anlage. In Automatisierungen zählen dagegen die internen Werte `automatik`, `heizen`, `absenken` und `aus`.
 
+Ob das Zeitprogramm gerade eine **Heizzeit** oder eine **Absenkzeit** hat, zeigt `sensor.eta_heizung_heizkreis_zeitprogramm` (bis `_4_`), in Automatisierungen `heizzeit` bzw. `absenkzeit`. Auf der Heizkreis-Kachel steht es unter dem Modus - nur im Auto-Modus, denn bei *Dauer*, *ECO* und *Aus* bestimmt das Zeitprogramm nichts.
+
 An der Anlage sind das vier getrennte Tasten, die sich wie Radioknöpfe verhalten: Läuft der Heizkreis, steht genau eine der drei Betriebsarten auf "Ein"; ist er aus, stehen alle drei auf "Aus". Home Assistant fasst sie zu einer Auswahl zusammen. Wählst du aus dem Zustand "Aus" heraus eine Betriebsart, wird der Heizkreis vorher eingeschaltet - sonst bliebe die Auswahl wirkungslos.
 
 Die Auswahl entsteht nur, wenn die Integration die Ein/Aus-Taste des Heizkreises findet - ohne sie gäbe es keinen Weg nach "Aus" und zurück. Als eigene Entität erscheint diese Taste aber nicht.
@@ -475,8 +481,8 @@ Die Auswahl entsteht nur, wenn die Integration die Ein/Aus-Taste des Heizkreises
 
 Ist ein Heizkreis im ETA-Assistenten mit **„Raumfühler ext. Schnittstelle“** eingerichtet, kann Home Assistant der Anlage die Raumtemperatur liefern - etwa von einem Zigbee-Thermometer. Die Integration erkennt das selbst am Menübaum (dort steht dann „Raumtemperatur über externe Schnittstellen“). Mit freigegebenem Schreibzugriff entsteht dann:
 
-* **`climate.eta_heizung_heizkreis_1_thermostat`** (bis `_4_`): Istwert ist „Raum“ - der Wert, mit dem die Anlage gerade regelt -, Sollwert „Raum Soll“ (einstellbar von 10 bis 30 °C in halben Grad). Die Modi sind die Betriebsarten: *Automatik*, *Heizen* (Dauer), *Aus*; *Absenken* ist die Voreinstellung *Eco*. Damit funktionieren die Thermostat-Karte, Sprachassistenten und Automatisierungen.
-* Auf der **Heizkreis-Kachel** eine Zeile „Raum … · Soll …“. Antippen öffnet den Thermostat mit − und +. Bei Heizkreisen ohne externe Schnittstelle bleibt die Zeile leer.
+* **`climate.eta_heizung_heizkreis_1_thermostat`** (bis `_4_`): Istwert ist „Raum“ - der Wert, mit dem die Anlage gerade regelt -, Sollwert „Raum Soll“ (einstellbar von 10 bis 30 °C in halben Grad). „Raum Soll“ ist der gerade geltende Sollwert und folgt im Auto-Modus dem Zeitprogramm - in der Absenkzeit zeigt der Thermostat also von selbst die Absenktemperatur. Die Modi sind die Betriebsarten: *Automatik*, *Heizen* (Dauer), *Aus*; *Absenken* ist die Voreinstellung *Eco*. Damit funktionieren die Thermostat-Karte, Sprachassistenten und Automatisierungen.
+* Auf der **Heizkreis-Kachel** eine Zeile „Raum … · Soll …“. Antippen öffnet den Thermostat mit − und +. Ohne gültigen Raumwert steht dort nur „Soll“; bei Heizkreisen ohne externe Schnittstelle bleibt die Zeile leer.
 * Unter **Konfigurieren** ein eigener Schritt **„Raumfühler aus Home Assistant“**: je Heizkreis ein Thermometer und die **Zeitüberwachung** in Minuten.
 
 Das gewählte Thermometer schreibt die Integration alle 30 Sekunden (und bei jeder Änderung) als Raumtemperatur in die Anlage. Die übernimmt den Wert binnen Sekunden. Kommt innerhalb der **Zeitüberwachung** kein neuer Wert, verwirft sie ihn und meldet „Raumfühler: Keine Verbindung“ - fällt Home Assistant aus, regelt die Anlage also nicht mit einem alten Wert weiter. Ab Werk steht die Zeitüberwachung auf 1 Minute; dann meldet die Anlage das bei jedem Neustart von Home Assistant. **10 Minuten** überbrücken einen Neustart. Die Integration schreibt die Zeitüberwachung nur, wenn du sie im Formular änderst (1 bis 60 Minuten). Steht sie an der Anlage auf 0, schreibt sie gar keine Raumtemperatur - die Anlage würde einen alten Wert sonst womöglich nie verwerfen.

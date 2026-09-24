@@ -144,6 +144,9 @@ class ETAMeasurementSensor(ETABaseSensor):
             )
 
         self._position = info.get("position")
+        self._zustaende = info.get("zustaende")
+        if self._zustaende:
+            self._attr_options = list(dict.fromkeys(self._zustaende.values()))
 
     @property
     def available(self) -> bool:
@@ -164,6 +167,8 @@ class ETAMeasurementSensor(ETABaseSensor):
         reading = self.coordinator.data.get(self._key)
         if reading is None:
             return self._missing_value
+        if self._zustaende:
+            return self.coordinator.zustand(self._key)
         return reading.display
 
 
@@ -194,6 +199,7 @@ class ETAPlaceholderSensor(ETAMeasurementSensor):
         self._attr_native_unit_of_measurement = None
         self._attr_suggested_unit_of_measurement = None
         self._attr_suggested_display_precision = None
+        self._attr_options = None
 
     @property
     def native_value(self) -> str:

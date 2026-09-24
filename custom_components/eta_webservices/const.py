@@ -349,6 +349,16 @@ raumfuehler.py.
 """
 
 
+ZEITPROGRAMM_ZUSTAENDE = {"ein": "heizzeit", "aus": "absenkzeit"}
+"""Was der Schaltzustand der Heizzeiten eines Heizkreises bedeutet.
+
+"Ein" meldet die Anlage, solange eines der Zeitfenster läuft, sonst
+"Aus" - dann gilt die Absenktemperatur. Das Zeitprogramm läuft auch in
+den Betriebsarten "Heizen" und "Absenken" weiter, bestimmt dort aber
+nichts; die Karte zeigt es deshalb nur im Auto-Modus.
+"""
+
+
 def raumfuehler_schluessel(heizkreis):
     """Unter welchem Schlüssel das gewählte Thermometer eines Heizkreises steht."""
     return f"{heizkreis}_raumfuehler"
@@ -629,6 +639,46 @@ SENSORS = {
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     },
+    "heizkreis_zeitprogramm": {
+        "component": "hk1",
+        "name": "Heizkreis Zeitprogramm",
+        "translation_key": "heizkreis_zeitprogramm",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:calendar-clock",
+        "device_class": SensorDeviceClass.ENUM,
+        "is_string": True,
+        "zustaende": ZEITPROGRAMM_ZUSTAENDE,
+    },
+    "heizkreis2_zeitprogramm": {
+        "component": "hk2",
+        "name": "Heizkreis 2 Zeitprogramm",
+        "translation_key": "heizkreis2_zeitprogramm",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:calendar-clock",
+        "device_class": SensorDeviceClass.ENUM,
+        "is_string": True,
+        "zustaende": ZEITPROGRAMM_ZUSTAENDE,
+    },
+    "heizkreis3_zeitprogramm": {
+        "component": "hk3",
+        "name": "Heizkreis 3 Zeitprogramm",
+        "translation_key": "heizkreis3_zeitprogramm",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:calendar-clock",
+        "device_class": SensorDeviceClass.ENUM,
+        "is_string": True,
+        "zustaende": ZEITPROGRAMM_ZUSTAENDE,
+    },
+    "heizkreis4_zeitprogramm": {
+        "component": "hk4",
+        "name": "Heizkreis 4 Zeitprogramm",
+        "translation_key": "heizkreis4_zeitprogramm",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:calendar-clock",
+        "device_class": SensorDeviceClass.ENUM,
+        "is_string": True,
+        "zustaende": ZEITPROGRAMM_ZUSTAENDE,
+    },
     "fwm_warmwasser": {
         "component": "fwm",
         "name": "FWM Warmwassertemperatur",
@@ -896,6 +946,10 @@ Was der Menübaum einer Anlage nicht hergibt, wird trotzdem als Entität
 mit "-" angelegt - außer bei "nur_wenn_vorhanden": Das gibt es nur an
 manchen Anlagen desselben Aufbaus, etwa die Ladepumpe eines dezentral
 geladenen Puffers, und ein dauerhaftes "-" wäre dort bloß Ballast.
+
+"zustaende" übersetzt den Klartext der Anlage in feste Zustände, die
+Home Assistant in der Sprache der Oberfläche zeigt - aus "Ein" wird so
+"Heizzeit".
 """
 
 PUFFER_FUEHLER_MAX = 9

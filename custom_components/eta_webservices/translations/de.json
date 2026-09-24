@@ -303,6 +303,13 @@
       "heizkreis2_vorlauf": {
         "name": "Heizkreis 2 Vorlauftemperatur"
       },
+      "heizkreis2_zeitprogramm": {
+        "name": "Heizkreis 2 Zeitprogramm",
+        "state": {
+          "heizzeit": "Heizzeit",
+          "absenkzeit": "Absenkzeit"
+        }
+      },
       "heizkreis3_anforderung": {
         "name": "Heizkreis 3 Anforderung"
       },
@@ -311,6 +318,13 @@
       },
       "heizkreis3_vorlauf": {
         "name": "Heizkreis 3 Vorlauftemperatur"
+      },
+      "heizkreis3_zeitprogramm": {
+        "name": "Heizkreis 3 Zeitprogramm",
+        "state": {
+          "heizzeit": "Heizzeit",
+          "absenkzeit": "Absenkzeit"
+        }
       },
       "heizkreis4_anforderung": {
         "name": "Heizkreis 4 Anforderung"
@@ -321,6 +335,13 @@
       "heizkreis4_vorlauf": {
         "name": "Heizkreis 4 Vorlauftemperatur"
       },
+      "heizkreis4_zeitprogramm": {
+        "name": "Heizkreis 4 Zeitprogramm",
+        "state": {
+          "heizzeit": "Heizzeit",
+          "absenkzeit": "Absenkzeit"
+        }
+      },
       "heizkreis_anforderung": {
         "name": "Heizkreis Anforderung"
       },
@@ -329,6 +350,13 @@
       },
       "heizkreis_vorlauf": {
         "name": "Heizkreis Vorlauftemperatur"
+      },
+      "heizkreis_zeitprogramm": {
+        "name": "Heizkreis Zeitprogramm",
+        "state": {
+          "heizzeit": "Heizzeit",
+          "absenkzeit": "Absenkzeit"
+        }
       },
       "kessel_druck": {
         "name": "Kesseldruck"

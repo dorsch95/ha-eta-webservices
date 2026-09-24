@@ -169,3 +169,18 @@ def test_thermostat_wird_mit_dem_schreibzugriff_aufgeraeumt():
     assert entitaet_vorgesehen("heizkreis_thermostat", ["kessel", "hk1"], True, False)
     assert entitaet_vorgesehen("heizkreis_thermostat", ["kessel", "hk1"], False, False) is False
     assert entitaet_vorgesehen("heizkreis2_thermostat", ["kessel", "hk1"], True, False) is False
+
+
+def test_kachel_zeigt_raum_nur_mit_raumwert():
+    """Sonst stünde dort ein leeres "Raum: °C"."""
+    from eta_webservices import karte
+
+    raum, soll = karte.thermostat_zeile("heizkreis_1_thermostat", 39, 95)
+    entitaet = "climate.eta_heizung_heizkreis_1_thermostat"
+    assert raum["conditions"] == [
+        {"condition": "state", "entity": entitaet, "state_not": "unknown"},
+        {"condition": "state", "entity": entitaet, "state_not": "unknown", "attribute": "current_temperature"},
+    ]
+    assert raum["elements"][0]["attribute"] == "current_temperature"
+    assert soll["conditions"] == [{"condition": "state", "entity": entitaet, "state_not": "unknown"}]
+    assert soll["elements"][0]["attribute"] == "temperature"

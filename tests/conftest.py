@@ -260,6 +260,13 @@ class FakeSession:
             return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
         if uri.endswith("/12499"):
             return {"value": "825", "str_value": "825", "unit": "l"}
+        if uri.endswith("/12113/0/1109"):
+            roh = self.geschrieben.get(uri.split("/user/var", 1)[-1], "1803")
+            return {
+                "value": roh,
+                "str_value": "Ein" if roh == "1803" else "Aus",
+                "text_offset": "1802",
+            }
         pfad = uri.split("/user/var", 1)[-1]
         if pfad.endswith(("/13046", "/12127", "/13168", "/12634")):
             return self._raumwert(pfad)
@@ -321,6 +328,16 @@ class FakeSession:
                 '<value strValue="Ausgeschaltet">2000</value>'
                 '<value strValue="Heizen">2006</value>'
                 '<value strValue="Glutabbrand">2007</value>'
+                "</validValues></variable></varInfo></eta>"
+            )
+        if url.endswith("/12113/0/1109"):
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
+                'name="Schaltzustand" fullName="Heizkreis > Heizzeiten > Schaltzustand" '
+                'unit="" decPlaces="0" scaleFactor="1" advTextOffset="1802" isWritable="0">'
+                "<type>TEXT</type><validValues>"
+                '<value strValue="Aus">1802</value>'
+                '<value strValue="Ein">1803</value>'
                 "</validValues></variable></varInfo></eta>"
             )
         for ende, (skala, untere, obere) in {

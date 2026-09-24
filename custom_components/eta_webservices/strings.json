@@ -303,6 +303,13 @@
       "heizkreis2_vorlauf": {
         "name": "Heating circuit 2 flow temperature"
       },
+      "heizkreis2_zeitprogramm": {
+        "name": "Heating circuit 2 schedule",
+        "state": {
+          "heizzeit": "Heating period",
+          "absenkzeit": "Setback period"
+        }
+      },
       "heizkreis3_anforderung": {
         "name": "Heating circuit 3 demand"
       },
@@ -311,6 +318,13 @@
       },
       "heizkreis3_vorlauf": {
         "name": "Heating circuit 3 flow temperature"
+      },
+      "heizkreis3_zeitprogramm": {
+        "name": "Heating circuit 3 schedule",
+        "state": {
+          "heizzeit": "Heating period",
+          "absenkzeit": "Setback period"
+        }
       },
       "heizkreis4_anforderung": {
         "name": "Heating circuit 4 demand"
@@ -321,6 +335,13 @@
       "heizkreis4_vorlauf": {
         "name": "Heating circuit 4 flow temperature"
       },
+      "heizkreis4_zeitprogramm": {
+        "name": "Heating circuit 4 schedule",
+        "state": {
+          "heizzeit": "Heating period",
+          "absenkzeit": "Setback period"
+        }
+      },
       "heizkreis_anforderung": {
         "name": "Heating circuit demand"
       },
@@ -329,6 +350,13 @@
       },
       "heizkreis_vorlauf": {
         "name": "Heating circuit flow temperature"
+      },
+      "heizkreis_zeitprogramm": {
+        "name": "Heating circuit schedule",
+        "state": {
+          "heizzeit": "Heating period",
+          "absenkzeit": "Setback period"
+        }
       },
       "kessel_druck": {
         "name": "Boiler pressure"
