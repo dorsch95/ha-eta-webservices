@@ -169,7 +169,9 @@ def thermostat_zeile(entity, top, schrift):
     Wert setzen, nicht um einen Schritt verändern.
 
     Kommt kein Raumwert an, fehlt "Raum" - statt eines leeren "Raum: °C".
-    Home Assistant wertet ein fehlendes Attribut als "unknown".
+    Home Assistant wertet ein fehlendes Attribut als "unknown". "Soll"
+    steht in jedem Modus außer "Aus": Bei "Dauer" und "ECO" gilt er ja
+    weiter, nur ein ausgeschalteter Heizkreis hat keinen.
     """
     entitaet = f"climate.eta_heizung_{entity}"
 
@@ -201,7 +203,7 @@ def thermostat_zeile(entity, top, schrift):
         },
         {
             "type": "conditional",
-            "conditions": [dict(vorhanden)],
+            "conditions": [dict(vorhanden), {**vorhanden, "state_not": "off"}],
             "elements": [wert("temperature", "Soll: ", 70, "soll")],
         },
     ]

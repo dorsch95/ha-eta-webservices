@@ -2301,6 +2301,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_1_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_1_thermostat
@@ -2653,6 +2656,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_2_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_2_thermostat
@@ -3005,6 +3011,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_3_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_3_thermostat
@@ -3357,6 +3366,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_4_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_4_thermostat
@@ -6412,6 +6424,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_1_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_1_thermostat
@@ -6765,6 +6780,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_2_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_2_thermostat
@@ -7118,6 +7136,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_3_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_3_thermostat
@@ -7471,6 +7492,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_4_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_4_thermostat
@@ -10526,6 +10550,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_1_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_1_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_1_thermostat
@@ -10879,6 +10906,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_2_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_2_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_2_thermostat
@@ -11232,6 +11262,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_3_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_3_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_3_thermostat
@@ -11585,6 +11618,9 @@ cards:
           - condition: state
             entity: climate.eta_heizung_heizkreis_4_thermostat
             state_not: unknown
+          - condition: state
+            entity: climate.eta_heizung_heizkreis_4_thermostat
+            state_not: 'off'
           elements:
           - type: state-label
             entity: climate.eta_heizung_heizkreis_4_thermostat

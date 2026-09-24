@@ -172,7 +172,7 @@ def test_thermostat_wird_mit_dem_schreibzugriff_aufgeraeumt():
 
 
 def test_kachel_zeigt_raum_nur_mit_raumwert():
-    """Sonst stünde dort ein leeres "Raum: °C"."""
+    """Sonst stünde dort ein leeres "Raum: °C". Soll fehlt nur bei "Aus"."""
     from eta_webservices import karte
 
     raum, soll = karte.thermostat_zeile("heizkreis_1_thermostat", 39, 95)
@@ -182,5 +182,8 @@ def test_kachel_zeigt_raum_nur_mit_raumwert():
         {"condition": "state", "entity": entitaet, "state_not": "unknown", "attribute": "current_temperature"},
     ]
     assert raum["elements"][0]["attribute"] == "current_temperature"
-    assert soll["conditions"] == [{"condition": "state", "entity": entitaet, "state_not": "unknown"}]
+    assert soll["conditions"] == [
+        {"condition": "state", "entity": entitaet, "state_not": "unknown"},
+        {"condition": "state", "entity": entitaet, "state_not": "off"},
+    ], "Soll in jedem Modus außer Aus"
     assert soll["elements"][0]["attribute"] == "temperature"
