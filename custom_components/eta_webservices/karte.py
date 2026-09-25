@@ -427,13 +427,16 @@ gleich aussehen - auch mit einem eigenen Theme.
 """
 
 
-def leuchtendes_symbol(entitaet, symbol, top, left, aktiv_wenn, tap_action, titel, groesse=26):
+def leuchtendes_symbol(
+    entitaet, symbol, top, left, aktiv_wenn, tap_action, titel, groesse=26, nur_wenn=()
+):
     """Ein antippbares Symbol, das leuchtet, solange aktiv_wenn gilt.
 
     Wie bei den Modus-Tasten gibt es das Symbol zweimal, je mit einer
     Bedingung - leuchtend oder hell, nie beide zugleich. aktiv_wenn ist
     eine Bedingung mit "state", das Gegenstück entsteht mit "state_not".
     Fehlt die Entität auf dieser Anlage, erscheint keines von beiden.
+    nur_wenn sind weitere Bedingungen für beide.
     """
     elemente = []
     for aktiv in (True, False):
@@ -454,6 +457,7 @@ def leuchtendes_symbol(entitaet, symbol, top, left, aktiv_wenn, tap_action, tite
                 "conditions": [
                     {"condition": "state", "entity": entitaet, "state_not": "unknown"},
                     bedingung,
+                    *nur_wenn,
                 ],
                 "elements": [
                     {
@@ -485,6 +489,8 @@ def kessel_knoepfe():
     wurde, und die Uhrzeit ohne Plan ebenfalls - genau das, woran die
     Karte sonst eine fehlende Entität erkennt. Die drei Symbole stehen
     in einer Reihe unter dem Kessel, wie die Modus-Tasten am Heizkreis.
+    Ohne Entaschentaste - etwa beim Stückholzkessel - gibt es beide nicht,
+    und Ein/Aus rückt allein in die Mitte.
     """
     schalter_ = "switch.eta_heizung_kessel"
     entaschen = "button.eta_heizung_kessel_entaschen"
@@ -506,10 +512,15 @@ def kessel_knoepfe():
             },
             "Entaschen",
         ),
-        *leuchtendes_symbol(
-            schalter_, "mdi:power", 90, 70,
-            {"condition": "state", "entity": schalter_, "state": "on"},
-            {"action": "toggle"}, "Ein/Aus",
+        *(
+            symbol
+            for links, plan in ((70, {"state_not": "unknown"}), (50, {"state": "unknown"}))
+            for symbol in leuchtendes_symbol(
+                schalter_, "mdi:power", 90, links,
+                {"condition": "state", "entity": schalter_, "state": "on"},
+                {"action": "toggle"}, "Ein/Aus",
+                nur_wenn=[{"condition": "state", "entity": ASCHEBOX_PLAN, **plan}],
+            )
         ),
     ]
 

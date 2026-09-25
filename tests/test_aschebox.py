@@ -343,8 +343,17 @@ def test_aschebox_entitaeten_nur_mit_schreibzugriff():
 def test_kessel_knoepfe_leuchten_wie_am_heizkreis():
     knoepfe = karte.kessel_knoepfe()
     ein_aus = [k for k in knoepfe if k["elements"][0]["entity"] == "switch.eta_heizung_kessel"]
-    assert len(ein_aus) == 2
-    leuchtend, hell = ein_aus
+    assert len(ein_aus) == 4, "leuchtend und hell, je mit und ohne Entaschentaste"
+    leuchtend, hell = ein_aus[:2]
+    plan = "sensor.eta_heizung_aschebox_plan"
+    mit = {"condition": "state", "entity": plan, "state_not": "unknown"}
+    ohne = {"condition": "state", "entity": plan, "state": "unknown"}
+    for knopf in ein_aus[:2]:
+        assert mit in knopf["conditions"]
+        assert knopf["elements"][0]["style"]["left"] == "70%"
+    for knopf in ein_aus[2:]:
+        assert ohne in knopf["conditions"], "ohne Plan allein in der Mitte"
+        assert knopf["elements"][0]["style"]["left"] == "50%"
     assert {"condition": "state", "entity": "switch.eta_heizung_kessel", "state": "on"} in leuchtend["conditions"]
     assert {"condition": "state", "entity": "switch.eta_heizung_kessel", "state_not": "on"} in hell["conditions"]
     assert leuchtend["elements"][0]["style"]["color"] == karte.AKTIV
