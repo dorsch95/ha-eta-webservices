@@ -329,8 +329,8 @@
       "heizkreis2_zeitprogramm": {
         "name": "Heating circuit 2 schedule",
         "state": {
-          "heizzeit": "Heating period",
-          "absenkzeit": "Setback period"
+          "heizzeit": "Day",
+          "absenkzeit": "Setback"
         }
       },
       "heizkreis3_anforderung": {
@@ -345,8 +345,8 @@
       "heizkreis3_zeitprogramm": {
         "name": "Heating circuit 3 schedule",
         "state": {
-          "heizzeit": "Heating period",
-          "absenkzeit": "Setback period"
+          "heizzeit": "Day",
+          "absenkzeit": "Setback"
         }
       },
       "heizkreis4_anforderung": {
@@ -361,8 +361,8 @@
       "heizkreis4_zeitprogramm": {
         "name": "Heating circuit 4 schedule",
         "state": {
-          "heizzeit": "Heating period",
-          "absenkzeit": "Setback period"
+          "heizzeit": "Day",
+          "absenkzeit": "Setback"
         }
       },
       "heizkreis_anforderung": {
@@ -377,8 +377,8 @@
       "heizkreis_zeitprogramm": {
         "name": "Heating circuit schedule",
         "state": {
-          "heizzeit": "Heating period",
-          "absenkzeit": "Setback period"
+          "heizzeit": "Day",
+          "absenkzeit": "Setback"
         }
       },
       "kessel_druck": {

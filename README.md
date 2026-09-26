@@ -488,7 +488,7 @@ Findet die Integration am Heizkreis zusätzlich die Tasten **Auto**, **Heizen** 
 
 Die Bezeichnungen folgen dem Display der Anlage. In Automatisierungen zählen dagegen die internen Werte `automatik`, `heizen`, `absenken` und `aus`.
 
-Ob das Zeitprogramm gerade eine **Heizzeit** oder eine **Absenkzeit** hat, zeigt `sensor.eta_heizung_heizkreis_zeitprogramm` (bis `_4_`), in Automatisierungen `heizzeit` bzw. `absenkzeit`. Auf der Heizkreis-Kachel steht es unter dem Modus - nur im Auto-Modus, denn bei *Dauer*, *ECO* und *Aus* bestimmt das Zeitprogramm nichts.
+Ob das Zeitprogramm gerade eine Heizzeit oder eine Absenkzeit hat, zeigt `sensor.eta_heizung_heizkreis_zeitprogramm` (bis `_4_`) als **Tag** bzw. **Absenk**, in Automatisierungen `heizzeit` bzw. `absenkzeit`. Auf der Heizkreis-Kachel steht es unter dem Modus - nur im Auto-Modus, denn bei *Dauer*, *ECO* und *Aus* bestimmt das Zeitprogramm nichts.
 
 An der Anlage sind das vier getrennte Tasten, die sich wie Radioknöpfe verhalten: Läuft der Heizkreis, steht genau eine der drei Betriebsarten auf "Ein"; ist er aus, stehen alle drei auf "Aus". Home Assistant fasst sie zu einer Auswahl zusammen. Wählst du aus dem Zustand "Aus" heraus eine Betriebsart, wird der Heizkreis vorher eingeschaltet - sonst bliebe die Auswahl wirkungslos.
 

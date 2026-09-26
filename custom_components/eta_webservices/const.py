@@ -980,7 +980,7 @@ geladenen Puffers, und ein dauerhaftes "-" wäre dort bloß Ballast.
 
 "zustaende" übersetzt den Klartext der Anlage in feste Zustände, die
 Home Assistant in der Sprache der Oberfläche zeigt - aus "Ein" wird so
-"Heizzeit".
+"heizzeit", auf Deutsch angezeigt als "Tag".
 """
 
 PUFFER_FUEHLER_MAX = 9

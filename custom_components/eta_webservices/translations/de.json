@@ -329,8 +329,8 @@
       "heizkreis2_zeitprogramm": {
         "name": "Heizkreis 2 Zeitprogramm",
         "state": {
-          "heizzeit": "Heizzeit",
-          "absenkzeit": "Absenkzeit"
+          "heizzeit": "Tag",
+          "absenkzeit": "Absenk"
         }
       },
       "heizkreis3_anforderung": {
@@ -345,8 +345,8 @@
       "heizkreis3_zeitprogramm": {
         "name": "Heizkreis 3 Zeitprogramm",
         "state": {
-          "heizzeit": "Heizzeit",
-          "absenkzeit": "Absenkzeit"
+          "heizzeit": "Tag",
+          "absenkzeit": "Absenk"
         }
       },
       "heizkreis4_anforderung": {
@@ -361,8 +361,8 @@
       "heizkreis4_zeitprogramm": {
         "name": "Heizkreis 4 Zeitprogramm",
         "state": {
-          "heizzeit": "Heizzeit",
-          "absenkzeit": "Absenkzeit"
+          "heizzeit": "Tag",
+          "absenkzeit": "Absenk"
         }
       },
       "heizkreis_anforderung": {
@@ -377,8 +377,8 @@
       "heizkreis_zeitprogramm": {
         "name": "Heizkreis Zeitprogramm",
         "state": {
-          "heizzeit": "Heizzeit",
-          "absenkzeit": "Absenkzeit"
+          "heizzeit": "Tag",
+          "absenkzeit": "Absenk"
         }
       },
       "kessel_druck": {
