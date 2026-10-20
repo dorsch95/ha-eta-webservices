@@ -1,6 +1,6 @@
 # ETA Web-Services für Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Diese Integration liest **ETA Heizsysteme** komplett lokal über die integrierten RESTful Webservices (ETAtouch) aus - Pellet-, Stückholz- und Hackgutkessel samt Pufferspeichern, Frischwassermodul, Heizkreisen, Solaranlage, PV-Heizmodul, Pelletlager, zweitem Wärmeerzeuger (Brenner) und Fernleitung. Es geht nichts ins Internet.
@@ -50,16 +50,7 @@ Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` 
 1. **HACS** öffnen, nach **ETA Web-Services** suchen und **Herunterladen**.
 2. Home Assistant vollständig neu starten.
 
-<details>
-<summary>Nicht gefunden? So fügst du das Repository von Hand hinzu</summary>
-
-Solange die Aufnahme in den HACS-Store noch läuft, geht es über ein benutzerdefiniertes Repository:
-
-1. In **HACS** oben rechts auf die drei Punkte (`...`) -> **Benutzerdefinierte Repositories**.
-2. `https://github.com/dorsch95/ha-eta-webservices` einfügen, Kategorie **Integration**, **Hinzufügen**.
-3. Danach wie oben: suchen, herunterladen, Home Assistant neu starten.
-
-</details>
+Die Integration steht im Standard-Store von HACS; ein benutzerdefiniertes Repository ist nicht nötig.
 
 ---
 
