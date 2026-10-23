@@ -8,9 +8,9 @@ import pytest
 from homeassistant.components.climate import PRESET_ECO, HVACAction, HVACMode
 from homeassistant.exceptions import HomeAssistantError
 
-from eta_webservices import climate as climate_platform
-from eta_webservices import select as select_platform
-from eta_webservices.raumfuehler import RaumfuehlerSender, raumwert_roh, takt
+from eta_heating_ws import climate as climate_platform
+from eta_heating_ws import select as select_platform
+from eta_heating_ws.raumfuehler import RaumfuehlerSender, raumwert_roh, takt
 
 from .test_sensors import setup_integration
 
@@ -164,7 +164,7 @@ async def test_geschriebener_raumwert_erscheint_als_istwert(hass, entry, menu_xm
 
 
 def test_thermostat_wird_mit_dem_schreibzugriff_aufgeraeumt():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     assert entitaet_vorgesehen("heizkreis_thermostat", ["kessel", "hk1"], True, False)
     assert entitaet_vorgesehen("heizkreis_thermostat", ["kessel", "hk1"], False, False) is False
@@ -173,7 +173,7 @@ def test_thermostat_wird_mit_dem_schreibzugriff_aufgeraeumt():
 
 def test_kachel_zeigt_raum_nur_mit_raumwert():
     """Sonst stünde dort ein leeres "Raum: °C". Soll fehlt nur bei "Aus"."""
-    from eta_webservices import karte
+    from eta_heating_ws import karte
 
     raum, soll = karte.thermostat_zeile("heizkreis_1_thermostat", 39, 95)
     entitaet = "climate.eta_heizung_heizkreis_1_thermostat"

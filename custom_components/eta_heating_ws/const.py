@@ -10,7 +10,7 @@ Menübaum.
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import Platform
 
-DOMAIN = "eta_webservices"
+DOMAIN = "eta_heating_ws"
 DEFAULT_PORT = 8080
 
 URL_GRAFIKEN = f"/{DOMAIN}/grafiken"
@@ -21,6 +21,22 @@ jedem Update mit. Je Komponente genau eine Kachel (255x501); die
 Beschriftungen stecken bewusst nicht im Bild, sondern kommen in der
 Dashboard-Karte aus state-label-Elementen - sonst bräuchte jede Sprache
 und jeder Heizkreis eine eigene Grafik.
+"""
+
+ALTE_DOMAIN = "eta_webservices"
+"""So hieß die Integration intern bis Version 0.25.
+
+Denselben Namen benutzt seit 2022 eine andere ETA-Integration (nigl,
+Tidone, heute meinETA). Beide landeten im selben Ordner und überschrieben
+sich gegenseitig, deshalb seit 0.26 eta_heating_ws. Was alte
+Einrichtungen übernimmt, steht in uebernahme.py.
+"""
+
+ALTE_URL_GRAFIKEN = (f"/{ALTE_DOMAIN}/grafiken", f"/{ALTE_DOMAIN}/grafiken/0.25.0")
+"""Bildadressen von vor dem Umbenennen, für bereits eingefügte Karten.
+
+Karten bis 0.25 nennen die Adresse ohne Version, Karten aus der Zeit
+danach bis zum Umbenennen die mit 0.25.0 im Pfad.
 """
 
 PLATFORMS = [

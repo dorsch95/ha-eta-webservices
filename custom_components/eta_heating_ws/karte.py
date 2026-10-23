@@ -21,14 +21,21 @@ VERSION = json.loads(
 )["version"]
 """Die Version der Integration, aus manifest.json."""
 
-BILDPFAD = f"/eta_webservices/grafiken/{VERSION}"
-"""Dort liefert die Integration die Kachelgrafiken aus, siehe URL_GRAFIKEN.
+BILDPFAD = "/eta_heating_ws/grafiken"
+"""Dort liefert die Integration die Kachelgrafiken aus, siehe URL_GRAFIKEN."""
 
-Die Version steckt in der Adresse: Die Bilder behalten bei einem Update
-ihre Namen, und Browser wie die Home-Assistant-App zeigten sonst noch
-lange die alten aus ihrem Zwischenspeicher. Mit jeder Version ist es
-eine neue Adresse, also holen sie die neuen Bilder.
-"""
+
+def bildadresse(datei: str) -> str:
+    """Adresse einer Kachelgrafik, mit der Version als Anhang.
+
+    Die Bilder behalten bei einem Update ihre Namen, und Browser wie die
+    Home-Assistant-App zeigten sonst noch lange die alten aus ihrem
+    Zwischenspeicher. Mit jeder Version ist es eine neue Adresse, also
+    holen sie die neuen Bilder. Die Version steht hinter dem Fragezeichen
+    und nicht im Pfad: So findet eine eingefügte Karte ihre Bilder auch
+    nach dem nächsten Update noch.
+    """
+    return f"{BILDPFAD}/{datei}?v={VERSION}"
 
 FARBEN = {
     "aussen": "#9aa5b1",
@@ -714,7 +721,7 @@ def kessel_zustandsbilder():
     bilder = {}
     for zustaende, bild in (*KESSEL_BEWEGT, (KESSEL_AUS, "kessel_aus")):
         for zustand in zustaende:
-            bilder[zustand] = f"{BILDPFAD}/{bild}.png"
+            bilder[zustand] = bildadresse(f"{bild}.png")
     return bilder
 
 
@@ -769,7 +776,7 @@ def auflage(bild, entitaet, bedingungen):
             {
                 "type": "image",
                 "entity": entitaet,
-                "image": f"{BILDPFAD}/{bild}",
+                "image": bildadresse(bild),
                 "tap_action": {"action": "none"},
                 "hold_action": {"action": "none"},
                 "style": {"top": "50%", "left": "50%", "width": "100%"},
@@ -894,7 +901,7 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     """
     karte = {
         "type": "picture-elements",
-        "image": f"{BILDPFAD}/{bild}.png",
+        "image": bildadresse(f"{bild}.png"),
         "elements": elemente,
     }
     if zustandsbilder:

@@ -14,7 +14,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from eta_webservices.const import COMPONENTS
+from eta_heating_ws.const import COMPONENTS
+
+from .conftest import ohne_version
 
 WURZEL = Path(__file__).resolve().parents[1]
 README = WURZEL / "README.md"
@@ -123,7 +125,7 @@ def test_karten_verweisen_auf_die_richtige_grafik(karte):
     for gitter in raster(karte):
         for komponente, unterkarte in zip(MIT_KACHEL, gitter["cards"]):
             erwartet = f"{COMPONENTS[komponente]['image']}.png"
-            assert unterkarte["card"]["image"].endswith(erwartet)
+            assert ohne_version(unterkarte["card"]["image"]).endswith(erwartet)
 
 
 def test_nur_gueltige_elementtypen(karte):
@@ -160,8 +162,8 @@ async def test_jede_referenzierte_entitaet_existiert(hass, entry, karte):
 
     from .test_sensors import setup_integration
 
-    from eta_webservices import select as select_platform
-    from eta_webservices import switch as switch_platform
+    from eta_heating_ws import select as select_platform
+    from eta_heating_ws import switch as switch_platform
 
     entry.data["components"] = list(COMPONENTS)
     entry.data["enable_switches"] = True
@@ -225,7 +227,7 @@ def test_puffer_zeigt_fuer_jede_fuehleranzahl_genau_eine_gruppe(karte):
     diesen zweiten Teil griffen bei fünf Fühlern auch die Blöcke für drei
     und vier, und die Beschriftungen lägen übereinander.
     """
-    from eta_webservices.karte import PUFFER_MAX, PUFFER_MIN
+    from eta_heating_ws.karte import PUFFER_MAX, PUFFER_MIN
 
     gruppen = [
         element
@@ -258,7 +260,7 @@ def test_puffer_zeigt_fuer_jede_fuehleranzahl_genau_eine_gruppe(karte):
 
 def test_puffer_fuehler_sitzen_gleichmaessig_im_speicher(karte):
     """Fühler 1 misst oben, der letzte unten - das muss das Bild zeigen."""
-    from eta_webservices.karte import PUFFER_MAX, PUFFER_MIN, PUFFER_OBEN, PUFFER_UNTEN
+    from eta_heating_ws.karte import PUFFER_MAX, PUFFER_MIN, PUFFER_OBEN, PUFFER_UNTEN
 
     for element in alle_elemente(karte):
         if element["type"] != "conditional":
@@ -339,7 +341,7 @@ def test_genannte_grenzwerte_stimmen_mit_dem_code_ueberein():
     import json
     from pathlib import Path
 
-    from eta_webservices.const import (
+    from eta_heating_ws.const import (
         DEFAULT_PELLET_KWH_PER_KG,
         DEFAULT_SCAN_INTERVAL,
         MAX_SCAN_INTERVAL,
@@ -367,8 +369,8 @@ def test_genannte_bilder_werden_ausgeliefert():
     """Jede Grafik, auf die Karte oder README zeigen, liegt der Integration bei."""
     import re
 
-    from eta_webservices import GRAFIKEN
-    from eta_webservices.const import URL_GRAFIKEN
+    from eta_heating_ws import GRAFIKEN
+    from eta_heating_ws.const import URL_GRAFIKEN
 
     text = readme_text() + KARTE.read_text(encoding="utf-8")
     bilder = set(re.findall(rf"{re.escape(URL_GRAFIKEN)}/(?:[0-9.]+/)?([a-z0-9_]+\.png)", text))
@@ -382,7 +384,7 @@ def test_jede_komponente_hat_ihre_kachel():
     """Je Komponente eine Kachel im Format 255x501, so wie die Karte sie setzt."""
     import struct
 
-    from eta_webservices import GRAFIKEN
+    from eta_heating_ws import GRAFIKEN
 
     for key in MIT_KACHEL:
         info = COMPONENTS[key]
@@ -395,13 +397,13 @@ def test_karte_kennt_die_bildadresse():
     """Mit der Version darin - sonst zeigen Browser nach einem Update alte Bilder."""
     import json
 
-    from eta_webservices import GRAFIKEN
-    from eta_webservices.const import URL_GRAFIKEN
-    from eta_webservices.karte import BILDPFAD
+    from eta_heating_ws import GRAFIKEN
+    from eta_heating_ws.const import URL_GRAFIKEN
+    from eta_heating_ws.karte import BILDPFAD
 
     version = json.loads((GRAFIKEN.parent / "manifest.json").read_text(encoding="utf-8"))["version"]
-    assert BILDPFAD == f"{URL_GRAFIKEN}/{version}"
-    assert f"{BILDPFAD}/kessel.png" in KARTE.read_text(encoding="utf-8")
+    assert BILDPFAD == URL_GRAFIKEN
+    assert f"{BILDPFAD}/kessel.png?v={version}" in KARTE.read_text(encoding="utf-8")
 
 
 def test_kartendatei_ist_aktuell():
@@ -427,7 +429,7 @@ def test_kartendatei_ist_aktuell():
 
 
 def test_fub_standardnamen_stehen_in_der_tabelle():
-    from eta_webservices.const import FUB_ROLE_DEFAULT_NAMES
+    from eta_heating_ws.const import FUB_ROLE_DEFAULT_NAMES
 
     text = readme_text()
     for rolle, namen in FUB_ROLE_DEFAULT_NAMES.items():
@@ -444,7 +446,7 @@ def nur_intern(entitaeten: dict) -> set[str]:
     """
     from homeassistant.util import slugify
 
-    from eta_webservices.const import SWITCHES
+    from eta_heating_ws.const import SWITCHES
 
     return {
         f"switch.{slugify('ETA Heizung ' + entitaeten['switch'][info['translation_key']]['name'])}"
@@ -459,7 +461,7 @@ def entitaetstabelle() -> list[str]:
 
     from homeassistant.util import slugify
 
-    from eta_webservices.const import SELECTS, SENSORS, SWITCHES
+    from eta_heating_ws.const import SELECTS, SENSORS, SWITCHES
 
     from .conftest import UEBERSETZUNGEN
 
@@ -514,7 +516,7 @@ def test_name_ist_ueberall_derselbe():
 
     wurzel = Path(__file__).resolve().parents[1]
     manifest = json.loads(
-        (wurzel / "custom_components" / "eta_webservices" / "manifest.json").read_text(
+        (wurzel / "custom_components" / "eta_heating_ws" / "manifest.json").read_text(
             encoding="utf-8"
         )
     )
@@ -534,32 +536,34 @@ def test_domain_und_geraetename_sind_unveraendert():
     Die Domain steht in jedem Config Entry und in jeder unique_id, der
     Gerätename bestimmt die Entity-IDs (sensor.eta_heizung_...). Eine
     Umbenennung hier nimmt allen Nutzern ihre Historie, ihre Dashboards
-    und ihre Automatisierungen.
+    und ihre Automatisierungen. Der eine Wechsel von eta_webservices zu
+    eta_heating_ws in 0.26 (Namensgleichheit mit einer anderen
+    ETA-Integration) geht nur mit der Übernahme in uebernahme.py.
     """
     import json
     from pathlib import Path
 
-    from eta_webservices.const import DOMAIN
+    from eta_heating_ws.const import DOMAIN
 
     wurzel = Path(__file__).resolve().parents[1]
     manifest = json.loads(
-        (wurzel / "custom_components" / "eta_webservices" / "manifest.json").read_text(
+        (wurzel / "custom_components" / "eta_heating_ws" / "manifest.json").read_text(
             encoding="utf-8"
         )
     )
 
-    assert DOMAIN == "eta_webservices"
-    assert manifest["domain"] == "eta_webservices"
+    assert DOMAIN == "eta_heating_ws"
+    assert manifest["domain"] == "eta_heating_ws"
 
     koordinator = (
-        wurzel / "custom_components" / "eta_webservices" / "coordinator.py"
+        wurzel / "custom_components" / "eta_heating_ws" / "coordinator.py"
     ).read_text(encoding="utf-8")
     assert 'name="ETA Heizung",' in koordinator
 
 
 def zugeschnitten(komponenten, fuehler):
     """Erzeugt eine auf eine konkrete Anlage zugeschnittene Karte."""
-    from eta_webservices.karte import responsive_karte
+    from eta_heating_ws.karte import responsive_karte
 
     return responsive_karte(komponenten, fuehler)
 
@@ -614,7 +618,7 @@ def test_zuschnitt_behaelt_alle_drei_bildschirmbreiten():
 
 def test_ohne_angaben_entsteht_die_universelle_karte():
     """Die Karte im Repo muss zu jeder Anlage passen, ohne Nachfragen."""
-    from eta_webservices.karte import responsive_karte
+    from eta_heating_ws.karte import responsive_karte
 
     import yaml
 
@@ -635,7 +639,7 @@ def test_geltende_betriebsart_leuchtet(karte):
     Die beiden schließen sich aus: leuchtend nur bei genau dieser
     Betriebsart, hell bei jeder anderen.
     """
-    from eta_webservices.karte import AKTIV, MODUS_TASTEN
+    from eta_heating_ws.karte import AKTIV, MODUS_TASTEN
 
     gruppen = [
         element
@@ -675,7 +679,7 @@ ALLE_KESSEL_ZUSTAENDE = [
 
 
 def test_jeder_kessel_zustand_hat_genau_ein_bild():
-    from eta_webservices.karte import (
+    from eta_heating_ws.karte import (
         KESSEL_AUS,
         KESSEL_ENTASCHEN,
         KESSEL_FLAMME,
@@ -695,10 +699,10 @@ def test_jeder_kessel_zustand_hat_genau_ein_bild():
 def test_kessel_zustandsbilder_gibt_es_und_sie_bewegen_sich():
     from PIL import Image
 
-    from eta_webservices import GRAFIKEN
-    from eta_webservices.karte import kessel_zustandsbilder
+    from eta_heating_ws import GRAFIKEN
+    from eta_heating_ws.karte import kessel_zustandsbilder
 
-    standbilder = {pfad.rsplit("/", 1)[1] for pfad in kessel_zustandsbilder().values()}
+    standbilder = {ohne_version(pfad).rsplit("/", 1)[1] for pfad in kessel_zustandsbilder().values()}
     assert standbilder == {
         "kessel_flamme.png", "kessel_zuendung.png", "kessel_entaschen.png",
         "kessel_stoerung.png", "kessel_glut.png", "kessel_aus.png",
@@ -715,18 +719,18 @@ def test_kessel_kachel_wechselt_mit_dem_zustand(karte):
     for gitter in raster(karte):
         kessel = gitter["cards"][0]["card"]
         assert kessel["entity"] == "sensor.eta_heizung_kessel_zustand"
-        assert kessel["image"].endswith("/kessel.png")
-        assert kessel["state_image"]["Heizen"].endswith("/kessel_flamme.png")
-        assert kessel["state_image"]["Glutabbrand"].endswith("/kessel_glut.png")
-        assert kessel["state_image"]["Zünden"].endswith("/kessel_zuendung.png")
-        assert kessel["state_image"]["Heizversuch"].endswith("/kessel_zuendung.png")
-        assert kessel["state_image"]["Entaschen"].endswith("/kessel_entaschen.png")
+        assert ohne_version(kessel["image"]).endswith("/kessel.png")
+        assert ohne_version(kessel["state_image"]["Heizen"]).endswith("/kessel_flamme.png")
+        assert ohne_version(kessel["state_image"]["Glutabbrand"]).endswith("/kessel_glut.png")
+        assert ohne_version(kessel["state_image"]["Zünden"]).endswith("/kessel_zuendung.png")
+        assert ohne_version(kessel["state_image"]["Heizversuch"]).endswith("/kessel_zuendung.png")
+        assert ohne_version(kessel["state_image"]["Entaschen"]).endswith("/kessel_entaschen.png")
         for zustand in ("Störung", "Störung beim Entaschen", "Wartung"):
-            assert kessel["state_image"][zustand].endswith("/kessel_stoerung.png")
-        assert kessel["state_image"]["Bereit"].endswith("/kessel_aus.png")
+            assert ohne_version(kessel["state_image"][zustand]).endswith("/kessel_stoerung.png")
+        assert ohne_version(kessel["state_image"]["Bereit"]).endswith("/kessel_aus.png")
 
         bewegung = {
-            e["elements"][0]["image"].rsplit("/", 1)[1]: e["conditions"]
+            ohne_version(e["elements"][0]["image"]).rsplit("/", 1)[1]: e["conditions"]
             for e in kessel["elements"]
             if e["type"] == "conditional" and e["elements"][0]["type"] == "image"
         }
@@ -743,12 +747,12 @@ def test_kessel_kachel_wechselt_mit_dem_zustand(karte):
 
 def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
     """Je Füllstand genau ein Bild, dazu Schnecke und Warnung als Auflage."""
-    from eta_webservices.karte import LAGER_STUFEN
+    from eta_heating_ws.karte import LAGER_STUFEN
 
     for gitter in raster(karte):
-        lager = next(k for k in gitter["cards"] if k["card"]["image"].endswith("/lager.png"))
+        lager = next(k for k in gitter["cards"] if ohne_version(k["card"]["image"]).endswith("/lager.png"))
         bilder = [
-            e["elements"][0]["image"].rsplit("/", 1)[1]
+            ohne_version(e["elements"][0]["image"]).rsplit("/", 1)[1]
             for e in lager["card"]["elements"]
             if e["type"] == "conditional" and e["elements"][0]["type"] == "image"
         ]
@@ -765,7 +769,7 @@ def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
 
 @pytest.mark.parametrize("prozent", range(0, 121))
 def test_jeder_fuellstand_trifft_genau_eine_stufe(prozent):
-    from eta_webservices.karte import LAGER_STUFEN
+    from eta_heating_ws.karte import LAGER_STUFEN
 
     treffer = [
         bild
@@ -778,7 +782,7 @@ def test_jeder_fuellstand_trifft_genau_eine_stufe(prozent):
 def test_lagerbilder_gibt_es():
     from PIL import Image
 
-    from eta_webservices import GRAFIKEN
+    from eta_heating_ws import GRAFIKEN
 
     for datei in ("lager_100.png", "lager_75.png", "lager_50.png", "lager_25.png",
                   "lager_leer.png", "lager_warnung.png", "lager_schnecke.webp"):
@@ -796,15 +800,15 @@ def _auflagen(kachel):
 
 
 def test_heizkreise_fliessen_bei_anforderung(karte):
-    from eta_webservices.karte import HEIZKREIS_OHNE_FLUSS
+    from eta_heating_ws.karte import HEIZKREIS_OHNE_FLUSS
 
     for gitter in raster(karte):
-        heizkreise = [k for k in gitter["cards"] if k["card"]["image"].endswith("/heizkreis.png")]
+        heizkreise = [k for k in gitter["cards"] if ohne_version(k["card"]["image"]).endswith("/heizkreis.png")]
         assert len(heizkreise) == 4
         for kachel in heizkreise:
             bewegt, still = _auflagen(kachel)
-            assert bewegt["elements"][0]["image"].endswith("/heizkreis_fluss.webp")
-            assert still["elements"][0]["image"].endswith("/heizkreis_fluss.png")
+            assert ohne_version(bewegt["elements"][0]["image"]).endswith("/heizkreis_fluss.webp")
+            assert ohne_version(still["elements"][0]["image"]).endswith("/heizkreis_fluss.png")
             for fluss in (bewegt, still):
                 anforderung = fluss["conditions"][-1]
                 assert anforderung["state_not"] == HEIZKREIS_OHNE_FLUSS
@@ -817,11 +821,11 @@ def test_heizkreise_fliessen_bei_anforderung(karte):
 ])
 def test_solar_und_pvm_bewegen_sich_nur_mit_leistung(karte, bild, entitaet):
     for gitter in raster(karte):
-        kachel = next(k for k in gitter["cards"] if k["card"]["image"].endswith(f"/{bild}.png"))
+        kachel = next(k for k in gitter["cards"] if ohne_version(k["card"]["image"]).endswith(f"/{bild}.png"))
         ruhe, aktiv, still = _auflagen(kachel)
-        assert ruhe["elements"][0]["image"].endswith(f"/{bild}_ruhe.png")
-        assert aktiv["elements"][0]["image"].endswith(f"/{bild}_aktiv.webp")
-        assert still["elements"][0]["image"].endswith(f"/{bild}_aktiv.png")
+        assert ohne_version(ruhe["elements"][0]["image"]).endswith(f"/{bild}_ruhe.png")
+        assert ohne_version(aktiv["elements"][0]["image"]).endswith(f"/{bild}_aktiv.webp")
+        assert ohne_version(still["elements"][0]["image"]).endswith(f"/{bild}_aktiv.png")
         assert ruhe["conditions"][-1] == {"condition": "numeric_state", "entity": entitaet, "below": 0.05}
         for leuchtet in (aktiv, still):
             assert leuchtet["conditions"][-1] == {
@@ -832,7 +836,7 @@ def test_solar_und_pvm_bewegen_sich_nur_mit_leistung(karte, bild, entitaet):
 def test_bewegte_auflagen_gibt_es():
     from PIL import Image
 
-    from eta_webservices import GRAFIKEN
+    from eta_heating_ws import GRAFIKEN
 
     for datei in ("heizkreis_fluss.webp", "solar_aktiv.webp", "solar_ruhe.png",
                   "pvm_aktiv.webp", "pvm_ruhe.png"):
@@ -849,7 +853,7 @@ def test_lager_nennt_im_dach_bis_wann_der_vorrat_reicht(karte):
     Solange die Prognose lernt, ist er "unknown" und das Dach bleibt leer.
     """
     for gitter in raster(karte):
-        lager = next(k for k in gitter["cards"] if k["card"]["image"].endswith("/lager.png"))
+        lager = next(k for k in gitter["cards"] if ohne_version(k["card"]["image"]).endswith("/lager.png"))
         reicht = [
             e for e in lager["card"]["elements"]
             if e["type"] == "conditional"
@@ -865,7 +869,7 @@ def test_lager_nennt_im_dach_bis_wann_der_vorrat_reicht(karte):
 def _bilder_mit_bedingungen(karte):
     for element in alle_elemente(karte):
         if element["type"] == "conditional" and element["elements"][0]["type"] == "image":
-            yield element["elements"][0]["image"].rsplit("/", 1)[1], element["conditions"]
+            yield ohne_version(element["elements"][0]["image"]).rsplit("/", 1)[1], element["conditions"]
 
 
 def test_bewegung_nur_mit_eingeschalteten_animationen(karte):
@@ -874,7 +878,7 @@ def test_bewegung_nur_mit_eingeschalteten_animationen(karte):
     Das Standbild erscheint unter denselben Bedingungen, nur mit dem
     Schalter auf aus - so zeigt die Karte in beiden Fällen dasselbe.
     """
-    from eta_webservices.karte import ANIMATIONEN
+    from eta_heating_ws.karte import ANIMATIONEN
 
     def schalter(bedingungen):
         return [b for b in bedingungen if b["entity"] == ANIMATIONEN]
@@ -903,7 +907,7 @@ def test_bewegung_nur_mit_eingeschalteten_animationen(karte):
 def test_jede_bewegung_hat_ein_gleich_grosses_standbild():
     from PIL import Image
 
-    from eta_webservices import GRAFIKEN
+    from eta_heating_ws import GRAFIKEN
 
     for bewegt in GRAFIKEN.glob("*.webp"):
         with Image.open(bewegt) as a, Image.open(bewegt.with_suffix(".png")) as b:

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass
 
-from eta_webservices import karte
-from eta_webservices.api import ETAApiClient
-from eta_webservices.uri_discovery import async_discover_uris
+from eta_heating_ws import karte
+from eta_heating_ws.api import ETAApiClient
+from eta_heating_ws.uri_discovery import async_discover_uris
 
 from .test_sensors import setup_integration
 from .test_thermostat import aufbauen

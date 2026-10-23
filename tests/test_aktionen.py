@@ -8,13 +8,14 @@ import re
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from eta_webservices import binary_sensor, select, sensor, switch
-from eta_webservices.aktionen import (
+from eta_heating_ws import binary_sensor, select, sensor, switch
+from eta_heating_ws.aktionen import (
     _eintrag_waehlen,
     karte_anpassen,
     karte_fuer_eintrag,
 )
 
+from .conftest import ohne_version
 from .test_sensors import setup_integration
 
 ENTITAET = re.compile(
@@ -148,12 +149,12 @@ async def test_kessel_wechselt_das_bild_mit_dem_zustand(hass, entry):
         kachel["card"]
         for variante in karte["cards"]
         for kachel in variante["card"]["cards"]
-        if kachel["card"]["image"].endswith("/kessel.png")
+        if ohne_version(kachel["card"]["image"]).endswith("/kessel.png")
     ]
     assert len(kessel) == 3
     for kachel in kessel:
         assert kachel["entity"] == "sensor.eta_heizung_kessel_zustand"
-        assert kachel["state_image"]["Heizen"].endswith("kessel_flamme.png")
+        assert ohne_version(kachel["state_image"]["Heizen"]).endswith("kessel_flamme.png")
         assert "kessel_flamme.webp" in json.dumps(kachel["elements"])
 
 
@@ -162,7 +163,7 @@ def test_ohne_kessel_zustand_bleibt_das_grundbild():
 
     Sonst meldet Spook eine unbekannte Entität. Das Grundbild bleibt.
     """
-    from eta_webservices.karte import responsive_karte
+    from eta_heating_ws.karte import responsive_karte
 
     karte = responsive_karte(["kessel"])
     ohne = {

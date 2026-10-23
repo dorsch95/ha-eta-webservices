@@ -53,5 +53,5 @@ body:
     id: protokoll
     attributes:
       label: Protokoll (optional)
-      description: Zeilen aus dem Protokoll, die "eta_webservices" enthalten.
+      description: Zeilen aus dem Protokoll, die "eta_heating_ws" enthalten.
       render: text

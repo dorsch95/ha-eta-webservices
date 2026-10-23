@@ -9,10 +9,10 @@ import pytest
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
-from eta_webservices import aschebox, karte
-from eta_webservices import button as button_platform
-from eta_webservices import datetime as datetime_platform
-from eta_webservices import sensor as sensor_platform
+from eta_heating_ws import aschebox, karte
+from eta_heating_ws import button as button_platform
+from eta_heating_ws import datetime as datetime_platform
+from eta_heating_ws import sensor as sensor_platform
 
 from .conftest import ohne_objekt
 from .test_sensors import setup_integration
@@ -128,6 +128,18 @@ async def test_ganzer_ablauf_mit_lernwert(hass, entry, uhr, aschebox_ohne_hass):
     ziel = uhr.jetzt + timedelta(hours=3)
     await plan.planen(ziel)
     assert plan.abschalten_um == ziel - timedelta(minutes=45), "gemessen 40 plus 5 Minuten"
+
+
+async def test_ereignis_unter_neuem_und_altem_namen(hass, entry, uhr, aschebox_ohne_hass):
+    """Automatisierungen aus 0.25 hören noch auf eta_webservices_aschebox."""
+    _, plan = await aufbauen(hass, entry)
+    await plan.planen(uhr.jetzt + timedelta(hours=2))
+
+    neu = [daten for art, daten in hass.ereignisse if art == "eta_heating_ws_aschebox"]
+    alt = [daten for art, daten in hass.ereignisse if art == "eta_webservices_aschebox"]
+    assert neu, "kein Ereignis"
+    assert neu == alt
+    assert neu[-1]["phase"] == "geplant"
 
 
 async def test_entascht_immer_auch_nach_eigener_entaschung(hass, entry, uhr, aschebox_ohne_hass):
@@ -332,7 +344,7 @@ async def test_entitaeten_und_ids(hass, entry, uhr):
 
 
 def test_aschebox_entitaeten_nur_mit_schreibzugriff():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     for key in ("kessel_entaschen", "aschebox_leeren_um", "aschebox_plan", "aschebox_plan_abbrechen"):
         assert entitaet_vorgesehen(key, ["kessel"], True, False)
@@ -379,7 +391,7 @@ def test_kessel_knoepfe_leuchten_wie_am_heizkreis():
 
 async def test_ohne_messwert_zeigt_die_karte_einen_strich(hass, entry):
     """Die Lambdasonde ist bei "Bereit" aus - dann "-" statt "Unbekannt"."""
-    from eta_webservices.api import ETAValue
+    from eta_heating_ws.api import ETAValue
 
     coordinator, by_name = await setup_integration(hass, entry)
     sensor = by_name["Restsauerstoff"]

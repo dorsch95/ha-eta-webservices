@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from eta_webservices.api import ETAApiClient
-from eta_webservices.const import fub_role_default
-from eta_webservices.uri_discovery import async_discover_uris
+from eta_heating_ws.api import ETAApiClient
+from eta_heating_ws.const import fub_role_default
+from eta_heating_ws.uri_discovery import async_discover_uris
 
 
 async def discover(hass, overrides=None):
@@ -343,7 +343,7 @@ async def test_tasten_werden_nie_ueber_kennungen_gefunden(hass, menu_xml):
 
 
 def test_kennungen_gehoeren_zu_gesuchten_messwerten():
-    from eta_webservices.uri_discovery import DISCOVERY_PATHS, KENNUNGEN, SWITCH_ROLES
+    from eta_heating_ws.uri_discovery import DISCOVERY_PATHS, KENNUNGEN, SWITCH_ROLES
 
     assert set(KENNUNGEN) <= set(DISCOVERY_PATHS)
     assert not set(KENNUNGEN) & set(SWITCH_ROLES)
@@ -353,7 +353,7 @@ def test_kennungen_gehoeren_zu_gesuchten_messwerten():
 
 async def test_kennungen_passen_zum_echten_menuebaum(hass):
     """Jede Kennung stimmt mit dem, was der Namenspfad an der Anlage findet."""
-    from eta_webservices.uri_discovery import KENNUNGEN
+    from eta_heating_ws.uri_discovery import KENNUNGEN
 
     uris, _ = await discover(hass)
     for key, kennung in KENNUNGEN.items():

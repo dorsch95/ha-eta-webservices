@@ -122,7 +122,7 @@ def test_entity_id_bleibt_unveraendert(key, entity_id):
 
 
 def test_neue_entitaeten_sind_hier_eingetragen():
-    from eta_webservices.const import (
+    from eta_heating_ws.const import (
         SENSORS,
     )
 
@@ -146,7 +146,7 @@ async def test_jede_entitaet_schlaegt_ihre_deutsche_id_vor(hass, entry):
     und Karte und README zeigten ins Leere. Deshalb schlägt jede Entität die
     ID einer deutschsprachigen Installation selbst vor.
     """
-    from eta_webservices import binary_sensor, select, sensor, switch
+    from eta_heating_ws import binary_sensor, select, sensor, switch
 
     from .test_sensors import setup_integration
 
@@ -164,7 +164,7 @@ async def test_jede_entitaet_schlaegt_ihre_deutsche_id_vor(hass, entry):
 
 
 async def test_vorschlag_passt_zu_den_eingefrorenen_ids(hass, entry):
-    from eta_webservices import sensor
+    from eta_heating_ws import sensor
 
     from .test_sensors import setup_integration
 

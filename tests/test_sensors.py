@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-import eta_webservices
-from eta_webservices import sensor as sensor_platform
+import eta_heating_ws
+from eta_heating_ws import sensor as sensor_platform
 
 from .conftest import entity_name, ohne_objekt
 
 
 async def setup_integration(hass, entry):
-    assert await eta_webservices.async_setup_entry(hass, entry) is True
+    assert await eta_heating_ws.async_setup_entry(hass, entry) is True
     coordinator = entry.runtime_data
     entities: list = []
     await sensor_platform.async_setup_entry(hass, entry, entities.extend)
@@ -42,7 +42,7 @@ async def test_nachkommastellen_kommen_von_der_anlage(hass, entry):
     Bis 0.20 wurde das gelesen, aber nie benutzt: Ein Kesseldruck von
     1,48 bar erschien als 1,5 bar.
     """
-    from eta_webservices.sensor import ETAMeasurementSensor
+    from eta_heating_ws.sensor import ETAMeasurementSensor
 
     coordinator, by_name = await setup_integration(hass, entry)
     assert by_name["Kesseltemperatur"].suggested_display_precision == 1
@@ -137,8 +137,8 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
     Integration aus - ohne Browser-Zwischenspeicher, damit geänderte
     Grafiken nach einem Update sofort ankommen.
     """
-    import eta_webservices
-    from eta_webservices.const import URL_GRAFIKEN
+    import eta_heating_ws
+    from eta_heating_ws.const import URL_GRAFIKEN
 
     class Http:
         def __init__(self) -> None:
@@ -158,16 +158,20 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
         http = Http()
         services = Dienste()
 
-    assert await eta_webservices.async_setup(Hass(), {}) is True
-    assert Hass.services.angemeldet == [("eta_webservices", "karte_erzeugen")]
+    assert await eta_heating_ws.async_setup(Hass(), {}) is True
+    assert Hass.services.angemeldet == [("eta_heating_ws", "karte_erzeugen")]
 
-    from eta_webservices.karte import BILDPFAD
+    from eta_heating_ws.const import ALTE_URL_GRAFIKEN
+    from eta_heating_ws.karte import BILDPFAD
 
-    assert [p.url_path for p in Hass.http.pfade] == [BILDPFAD, URL_GRAFIKEN], (
-        "mit Version für neue Karten, ohne für ältere"
-    )
+    assert BILDPFAD == URL_GRAFIKEN
+    assert [p.url_path for p in Hass.http.pfade] == [
+        "/eta_heating_ws/grafiken",
+        "/eta_webservices/grafiken",
+        "/eta_webservices/grafiken/0.25.0",
+    ] == [URL_GRAFIKEN, *ALTE_URL_GRAFIKEN], "die alten Adressen für Karten von vor dem Umbenennen"
     for pfad in Hass.http.pfade:
-        assert pfad.path == str(eta_webservices.GRAFIKEN)
+        assert pfad.path == str(eta_heating_ws.GRAFIKEN)
         assert pfad.cache_headers is False
 
 
@@ -180,7 +184,7 @@ async def test_setup_schreibt_nichts_nach_www(hass, entry):
 
 async def test_jeder_sensor_einer_komponente_existiert(hass, entry):
     """Auch ohne Fund im Menübaum entsteht die Entität - mit "-"."""
-    from eta_webservices.const import SENSORS
+    from eta_heating_ws.const import SENSORS
 
     coordinator, _ = await setup_integration(hass, entry)
     aktiv = set(coordinator.components)
@@ -229,7 +233,7 @@ async def test_strich_sensor_meldet_keine_klassen(hass, entry, menu_xml):
 async def test_diagnose_zeigt_erkennung_und_messwerte(hass, entry):
     from homeassistant.components.diagnostics import REDACTED
 
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     coordinator, _ = await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
@@ -253,7 +257,7 @@ async def test_diagnose_enthaelt_den_menuebaum(hass, entry):
     Genau dieser Baum fehlt, um die Integration an eine fremde Anlage
     anzupassen - Solar, Lager, Hackgut, weitere Heizkreise.
     """
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
@@ -267,7 +271,7 @@ async def test_diagnose_enthaelt_den_menuebaum(hass, entry):
 
 async def test_diagnose_nennt_die_moeglichen_zustandstexte(hass, entry):
     """Damit lässt sich die Kessel-Kachel auf andere Kesseltypen abstimmen."""
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
@@ -281,7 +285,7 @@ async def test_diagnose_nennt_die_moeglichen_zustandstexte(hass, entry):
 
 
 async def test_diagnose_kommt_auch_ohne_menuebaum_zustande(hass, entry):
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     await setup_integration(hass, entry)
     hass.session.fail_uris = {"/user/menu"}
@@ -292,7 +296,7 @@ async def test_diagnose_kommt_auch_ohne_menuebaum_zustande(hass, entry):
 
 
 async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
     await setup_integration(hass, entry)
@@ -304,7 +308,7 @@ async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
 
 async def test_diagnose_nennt_version_und_schreibzugriff(hass, entry):
     """Ohne diese Angaben lässt sich ein fehlender Schalter nicht beurteilen."""
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     coordinator, _ = await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
@@ -320,7 +324,7 @@ async def test_diagnose_nennt_version_und_schreibzugriff(hass, entry):
 async def test_diagnose_ist_serialisierbar(hass, entry):
     import json
 
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
@@ -499,7 +503,7 @@ async def test_nach_einem_ausfall_kehrt_die_sammelabfrage_zurueck(hass, entry):
     Bis 0.20 las die Integration danach bis zum nächsten Neustart von Home
     Assistant jeden Wert einzeln - 30 Anfragen je Abfrage statt 2.
     """
-    from eta_webservices.coordinator import VARSET_WARTEZYKLEN
+    from eta_heating_ws.coordinator import VARSET_WARTEZYKLEN
 
     coordinator, _ = await setup_integration(hass, entry)
 
@@ -521,7 +525,7 @@ async def test_ohne_variablensaetze_wird_nicht_bei_jeder_abfrage_neu_versucht(
     hass, entry
 ):
     """Kennt die Anlage keine Variablensätze, bleibt es bei seltenen Versuchen."""
-    from eta_webservices.coordinator import VARSET_WARTEZYKLEN
+    from eta_heating_ws.coordinator import VARSET_WARTEZYKLEN
 
     hass.session.varset_unterstuetzt = False
     coordinator, _ = await setup_integration(hass, entry)
@@ -547,12 +551,12 @@ async def test_ohne_variablensaetze_wird_einzeln_gelesen(hass, entry):
 
 
 async def test_variablensatz_wird_beim_entladen_freigegeben(hass, entry):
-    import eta_webservices
+    import eta_heating_ws
 
     await setup_integration(hass, entry)
     assert hass.session.varsets
 
-    await eta_webservices.async_unload_entry(hass, entry)
+    await eta_heating_ws.async_unload_entry(hass, entry)
     assert not hass.session.varsets, "Variablensatz blieb auf der Anlage liegen"
 
 
@@ -703,7 +707,7 @@ async def test_pv_heizmodul_liefert_nur_lesende_werte(hass, entry):
 
 async def test_lager_fuellstand_in_prozent(hass, entry):
     """Vorrat 3420 kg bei 6000 kg maximalem Vorrat sind 57 Prozent."""
-    from eta_webservices.api import ETAValue
+    from eta_heating_ws.api import ETAValue
 
     entry.data["components"] = ["kessel", "lager"]
     coordinator, by_name = await setup_integration(hass, entry)
@@ -721,7 +725,7 @@ async def test_lager_fuellstand_in_prozent(hass, entry):
 
 
 def _kg(zahl):
-    from eta_webservices.api import ETAValue
+    from eta_heating_ws.api import ETAValue
 
     return ETAValue(zahl, str(zahl), "kg", False, 0)
 
@@ -731,7 +735,7 @@ def test_zeitraum_beginnt_mitternacht_montag_neujahr():
 
     from homeassistant.util import dt as dt_util
 
-    from eta_webservices.sensor import zeitraum_beginn
+    from eta_heating_ws.sensor import zeitraum_beginn
 
     jetzt = datetime(2026, 9, 24, 15, 30, tzinfo=dt_util.get_default_time_zone())
     assert zeitraum_beginn("heute", jetzt).date().isoformat() == "2026-09-24"
@@ -745,7 +749,7 @@ async def test_pelletverbrauch_zaehlt_ab_beginn_des_zeitraums(hass, entry, monke
 
     from homeassistant.util import dt as dt_util
 
-    from eta_webservices import sensor as sensor_modul
+    from eta_heating_ws import sensor as sensor_modul
 
     coordinator, by_name = await setup_integration(hass, entry)
     heute = by_name["Pelletverbrauch heute"]
@@ -809,7 +813,7 @@ async def test_pelletkosten_rechnen_mit_dem_preis_je_tonne(hass, entry):
 
 async def test_status_unterscheidet_fehlend_von_unerreichbar(hass, entry, menu_xml):
     """"-" heißt "hat die Anlage nicht", nicht "gerade nicht lesbar"."""
-    from eta_webservices.coordinator import VERALTET_AB
+    from eta_heating_ws.coordinator import VERALTET_AB
 
     hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/0/12180")
     hass.session.varset_unterstuetzt = False
@@ -850,7 +854,7 @@ async def test_ein_einzelner_aussetzer_kippt_nichts(hass, entry):
 async def test_stoerungsmelder_haengt_an_den_fehlern(hass, entry):
     from .test_api import FEHLER_XML
 
-    from eta_webservices import binary_sensor as bs
+    from eta_heating_ws import binary_sensor as bs
 
     hass.session.errors_xml = FEHLER_XML
     coordinator, _ = await setup_integration(hass, entry)
@@ -866,7 +870,7 @@ async def test_stoerungsmelder_haengt_an_den_fehlern(hass, entry):
 
 
 async def test_ohne_stoerungsmeldungen_kein_melder(hass, entry):
-    from eta_webservices import binary_sensor as bs
+    from eta_heating_ws import binary_sensor as bs
 
     entry.data["enable_errors"] = False
     await setup_integration(hass, entry)
@@ -877,7 +881,7 @@ async def test_ohne_stoerungsmeldungen_kein_melder(hass, entry):
 
 async def test_aschebox_erinnerung_vergleicht_die_werte_der_anlage(hass, entry):
     """Die Schwelle kommt von der Anlage, nicht aus einer Annahme."""
-    from eta_webservices import binary_sensor as bs
+    from eta_heating_ws import binary_sensor as bs
 
     coordinator, _ = await setup_integration(hass, entry)
     entities: list = []
@@ -892,7 +896,7 @@ async def test_aschebox_erinnerung_vergleicht_die_werte_der_anlage(hass, entry):
 
 async def test_aschebox_erinnerung_ist_ohne_werte_unbekannt(hass, entry, menu_xml):
     """Ohne Schwelle weiß der Melder nichts - weder "fällig" noch "OK"."""
-    from eta_webservices import binary_sensor as bs
+    from eta_heating_ws import binary_sensor as bs
 
     hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/0/12120")
     await setup_integration(hass, entry)
@@ -940,7 +944,7 @@ async def test_lager_entsteht_nur_bei_angekreuzter_komponente(hass, entry):
 
 
 async def test_lagervorrat_und_warnung(hass, entry):
-    from eta_webservices import binary_sensor as bs
+    from eta_heating_ws import binary_sensor as bs
 
     entry.data["components"] = ["kessel", "lager"]
     coordinator, by_name = await setup_integration(hass, entry)
@@ -959,7 +963,7 @@ async def test_lagervorrat_und_warnung(hass, entry):
 
 
 async def test_lagerwarnung_ist_ohne_grenze_unbekannt(hass, entry, menu_xml):
-    from eta_webservices import binary_sensor as bs
+    from eta_heating_ws import binary_sensor as bs
 
     hass.session.menu = ohne_objekt(menu_xml, "/264/10201/0/0/12042")
     entry.data["components"] = ["kessel", "lager"]
@@ -1003,7 +1007,7 @@ async def test_lager_austragung_ist_klartext(hass, entry):
     ],
 )
 def test_vorgesehene_entitaeten(key, erwartet):
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     assert (
         entitaet_vorgesehen(
@@ -1014,7 +1018,7 @@ def test_vorgesehene_entitaeten(key, erwartet):
 
 
 def test_ohne_freigaben_sind_schalter_und_stoerung_nicht_vorgesehen():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     for key in ("kessel_schalter", "heizkreis_betriebsart", "stoerung", "aktive_fehler"):
         assert entitaet_vorgesehen(key, ["kessel", "hk1"], False, False) is False
@@ -1082,7 +1086,7 @@ async def test_verbrauch_je_zeitraum_laesst_sich_abwaehlen(hass, entry):
 
 
 def test_abgewaehlter_verbrauch_je_zeitraum_wird_aufgeraeumt():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     assert entitaet_vorgesehen("pellet_verbrauch_heute", ["kessel"], False, False) is True
     assert entitaet_vorgesehen(
@@ -1095,7 +1099,7 @@ def test_abgewaehlter_verbrauch_je_zeitraum_wird_aufgeraeumt():
 
 async def test_fuehler_mit_unterbrechung_zeigt_keinen_wert(hass, entry):
     """Die Anlage meldet "---", der Sensor darf keine alte Zahl zeigen."""
-    from eta_webservices.api import ETAValue
+    from eta_heating_ws.api import ETAValue
 
     coordinator, by_name = await setup_integration(hass, entry)
     fuehler = by_name["Puffer Fühler 1"]

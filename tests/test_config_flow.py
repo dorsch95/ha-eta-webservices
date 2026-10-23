@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 import voluptuous as vol
 
-from eta_webservices.config_flow import _connection_schema, _fub_names_schema
-from eta_webservices.const import (
+from eta_heating_ws.config_flow import _connection_schema, _fub_names_schema
+from eta_heating_ws.const import (
     COMPONENTS,
     DEFAULT_SCAN_INTERVAL,
     LEGACY_SCHEMA_COMPONENTS,
@@ -85,7 +85,7 @@ def test_jede_komponente_hat_fub_rollen(komponente):
 
 def test_twin_steht_in_der_auswahl_am_ende():
     """Nur wenige Anlagen sind ein SH TWIN - die Auswahl beginnt beim Puffer."""
-    from eta_webservices.config_flow import _WAEHLBARE_KOMPONENTEN
+    from eta_heating_ws.config_flow import _WAEHLBARE_KOMPONENTEN
 
     assert _WAEHLBARE_KOMPONENTEN[0] == "puffer"
     assert _WAEHLBARE_KOMPONENTEN[-1] == "twin"
@@ -130,7 +130,7 @@ def test_warnschritt_ist_in_allen_sprachen_beschrieben():
     import json
     from pathlib import Path
 
-    basis = Path(__file__).resolve().parents[1] / "custom_components" / "eta_webservices"
+    basis = Path(__file__).resolve().parents[1] / "custom_components" / "eta_heating_ws"
     for datei in ("strings.json", "translations/de.json", "translations/en.json"):
         daten = json.loads((basis / datei).read_text(encoding="utf-8"))
         for bereich in ("config", "options"):
@@ -143,7 +143,7 @@ def test_warnung_nennt_die_wesentlichen_punkte():
     import json
     from pathlib import Path
 
-    basis = Path(__file__).resolve().parents[1] / "custom_components" / "eta_webservices"
+    basis = Path(__file__).resolve().parents[1] / "custom_components" / "eta_heating_ws"
     text = json.loads(
         (basis / "translations" / "de.json").read_text(encoding="utf-8")
     )["config"]["step"]["switch_warning"]["description"].lower()
@@ -187,7 +187,7 @@ class FakeHass:
 
 async def reconfigure_schritt(monkeypatch, eintrag, eingabe, erreichbar=True, andere=()):
     """Führt Neu-Konfigurieren aus, ohne echte Anlage und ohne Instanz."""
-    from eta_webservices import config_flow as modul
+    from eta_heating_ws import config_flow as modul
 
     async def verbindung(hass, host, port):
         return erreichbar
@@ -272,7 +272,7 @@ async def test_neu_konfigurieren_auf_vergebene_adresse_bricht_ab(monkeypatch):
 
 
 def test_optionen_fragen_nicht_nach_der_adresse():
-    from eta_webservices.config_flow import _options_schema
+    from eta_heating_ws.config_flow import _options_schema
 
     felder = feldnamen(_options_schema({}))
     assert "host" not in felder
@@ -286,7 +286,7 @@ async def _keiner_ohne_volumen(*_):
 
 async def options_schritt(monkeypatch, bisher, eingabe):
     """Führt den ersten Schritt von Konfigurieren aus."""
-    from eta_webservices import config_flow as modul
+    from eta_heating_ws import config_flow as modul
 
     flow = modul.ETAOptionsFlow()
     monkeypatch.setattr(modul.ETAOptionsFlow, "_current", property(lambda self: bisher))
@@ -340,7 +340,7 @@ async def test_konfigurieren_speichert_keine_adresse(monkeypatch):
 
 async def test_migration_holt_die_adresse_aus_den_optionen():
     """Die Optionen gewannen bisher - ihr Wert ist der, mit dem es lief."""
-    from eta_webservices import async_migrate_entry
+    from eta_heating_ws import async_migrate_entry
 
     eintrag = FakeEintrag(
         minor_version=1,
@@ -356,7 +356,7 @@ async def test_migration_holt_die_adresse_aus_den_optionen():
 
 
 async def test_migration_laesst_eintraege_ohne_optionen_unveraendert():
-    from eta_webservices import async_migrate_entry
+    from eta_heating_ws import async_migrate_entry
 
     eintrag = FakeEintrag(minor_version=1)
     await async_migrate_entry(FakeHass(eintrag), eintrag)
@@ -366,7 +366,7 @@ async def test_migration_laesst_eintraege_ohne_optionen_unveraendert():
 
 
 async def test_migration_uebernimmt_keine_fremde_kennung():
-    from eta_webservices import async_migrate_entry
+    from eta_heating_ws import async_migrate_entry
 
     eintrag = FakeEintrag(minor_version=1, options={"host": "192.0.2.50"})
     anderer = FakeEintrag(host="192.0.2.50")
@@ -384,7 +384,7 @@ async def test_neu_konfigurieren_wirkt_auch_nach_gespeicherten_optionen(monkeypa
     neue Adresse eingetragen: Beim Start muss die neue gelten. Bis 0.20
     überdeckten die Optionen sie still.
     """
-    from eta_webservices import async_migrate_entry
+    from eta_heating_ws import async_migrate_entry
 
     eintrag = FakeEintrag(
         minor_version=1,
@@ -422,7 +422,7 @@ def test_wetter_ist_freiwillig():
 def test_wetter_vorschlag():
     from types import SimpleNamespace
 
-    from eta_webservices.config_flow import wetter_vorschlag
+    from eta_heating_ws.config_flow import wetter_vorschlag
 
     def hass(*wetter):
         return SimpleNamespace(
@@ -448,7 +448,7 @@ async def test_puffer_mit_eigenem_volumen_wird_nicht_gefragt(monkeypatch):
 
 async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
     """Nur für den Puffer, der sein Volumen nicht meldet; vorbelegt mit dem bisherigen Wert."""
-    from eta_webservices import config_flow as modul
+    from eta_heating_ws import config_flow as modul
 
     bisher = {"host": "192.0.2.10", "port": 8080, "puffer2_volumen": 650}
     flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
@@ -473,7 +473,7 @@ async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
 
 async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
     """Fühler gefunden, Volumen nicht: der ältere Funktionsblock "Puffer"."""
-    from eta_webservices import config_flow as modul
+    from eta_heating_ws import config_flow as modul
 
     async def menue(client, fub_names):
         return {
@@ -497,8 +497,8 @@ async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
 
 async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
     """Nur mit Schreibzugriff, nur angekreuzte Heizkreise, mit dem Wert der Zeitüberwachung."""
-    from eta_webservices import config_flow as modul
-    from eta_webservices.api import ETAApiClient, ETAValue
+    from eta_heating_ws import config_flow as modul
+    from eta_heating_ws.api import ETAApiClient, ETAValue
 
     async def menue(client, fub_names):
         return {
@@ -524,7 +524,7 @@ async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
 
 async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
     """Die Zeitüberwachung wird nur geschrieben, wenn sie sich ändert - und nicht gespeichert."""
-    from eta_webservices import config_flow as modul
+    from eta_heating_ws import config_flow as modul
 
     bisher = {"host": "192.0.2.10", "port": 8080, "hk1_raumfuehler": "sensor.alt"}
     flow, _ = await options_schritt(
@@ -567,7 +567,7 @@ async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
 
 
 async def test_zeitueberwachung_nicht_geschrieben_zeigt_einen_fehler(monkeypatch):
-    from eta_webservices import config_flow as modul
+    from eta_heating_ws import config_flow as modul
 
     flow, _ = await options_schritt(
         monkeypatch, {"host": "h"}, optionen(components=["hk1"], enable_switches=True)

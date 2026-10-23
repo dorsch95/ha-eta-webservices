@@ -14,7 +14,7 @@ blueprint:
         entity:
           filter:
             - domain: binary_sensor
-              integration: eta_webservices
+              integration: eta_heating_ws
     aktion:
       name: Benachrichtigung
       description: >-

@@ -1,6 +1,18 @@
 {
   "config": {
     "step": {
+      "wahl": {
+        "title": "Bestehende Einrichtung gefunden",
+        "description": "Bis Version 0.25 hieß diese Integration intern „eta_webservices“. Deine Einrichtung von damals lässt sich mit allen Einstellungen, Entitäten und dem Verlauf übernehmen.",
+        "menu_options": {
+          "uebernahme": "Bestehende Einrichtung übernehmen (empfohlen)",
+          "neu": "Eine weitere Anlage neu einrichten"
+        }
+      },
+      "uebernahme": {
+        "title": "Einrichtung übernehmen",
+        "description": "Übernommen wird: {anlagen}.\n\nEinstellungen, Entitäten mit ihren IDs, Verlauf, Gerät und Aschebox-Plan bleiben erhalten. Danach werden die alte Einrichtung und der alte Ordner custom_components/eta_webservices entfernt."
+      },
       "user": {
         "title": "ETA Heizung verbinden",
         "data": {
@@ -86,7 +98,8 @@
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
-      "reconfigure_successful": "Einstellungen gespeichert."
+      "reconfigure_successful": "Einstellungen gespeichert.",
+      "keine_alte_einrichtung": "Keine Einrichtung von vor Version 0.26 gefunden."
     }
   },
   "options": {

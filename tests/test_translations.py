@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-COMPONENT = Path(__file__).resolve().parents[1] / "custom_components" / "eta_webservices"
+COMPONENT = Path(__file__).resolve().parents[1] / "custom_components" / "eta_heating_ws"
 STRINGS = COMPONENT / "strings.json"
 TRANSLATIONS = sorted((COMPONENT / "translations").glob("*.json"))
 
@@ -50,7 +50,7 @@ def test_keine_leeren_texte(path):
 
 
 def test_fub_felder_sind_uebersetzt():
-    from eta_webservices.const import FUB_ROLE_DEFAULT_NAMES
+    from eta_heating_ws.const import FUB_ROLE_DEFAULT_NAMES
 
     erwartet = flatten(json.loads(STRINGS.read_text(encoding="utf-8")))
     for role in FUB_ROLE_DEFAULT_NAMES:
@@ -59,7 +59,7 @@ def test_fub_felder_sind_uebersetzt():
 
 
 def test_jede_entitaet_ist_in_allen_sprachen_benannt():
-    from eta_webservices.const import SENSORS
+    from eta_heating_ws.const import SENSORS
 
     schluessel = {info["translation_key"] for info in SENSORS.values()}
     for pfad in TRANSLATIONS:
@@ -88,7 +88,7 @@ def test_uebersetzungsschluessel_sind_gueltig(path):
 def test_sensoren_verweisen_auf_gueltige_uebersetzungsschluessel():
     import re
 
-    from eta_webservices.const import SENSORS, puffer_fuehler_info
+    from eta_heating_ws.const import SENSORS, puffer_fuehler_info
 
     schluessel = [info["translation_key"] for info in SENSORS.values()]
     schluessel += [puffer_fuehler_info(i, False)["translation_key"] for i in range(1, 10)]
@@ -106,8 +106,8 @@ def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
     landet, verschmilzt deshalb mit ihm - der Eintrag verschwindet lautlos,
     ohne Syntaxfehler und ohne dass sich die Anzahl der Einträge ändert.
     """
-    from eta_webservices.const import PUFFER_SPEICHER, SELECTS, SENSORS, SWITCHES
-    from eta_webservices.uri_discovery import (
+    from eta_heating_ws.const import PUFFER_SPEICHER, SELECTS, SENSORS, SWITCHES
+    from eta_heating_ws.uri_discovery import (
         BETRIEBSART_ROLES,
         DISCOVERY_PATHS,
         PUMPEN,

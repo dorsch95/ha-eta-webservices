@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from eta_webservices.api import ETAApiClient, ETAApiError, _parse_value_node
-from eta_webservices.const import MAX_PARALLEL_REQUESTS
+from eta_heating_ws.api import ETAApiClient, ETAApiError, _parse_value_node
+from eta_heating_ws.const import MAX_PARALLEL_REQUESTS
 
 from .conftest import var_xml
 

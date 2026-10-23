@@ -1,6 +1,6 @@
 """Erzeugt eta-karte.yaml, die universelle Dashboard-Karte fürs Repo.
 
-Die eigentliche Karte baut custom_components/eta_webservices/karte.py.
+Die eigentliche Karte baut custom_components/eta_heating_ws/karte.py.
 Nach Änderungen dort einfach dieses Skript ausführen:
 
     python dashboard/karte_bauen.py
@@ -20,7 +20,7 @@ import yaml
 KARTE_PY = (
     pathlib.Path(__file__).resolve().parent.parent
     / "custom_components"
-    / "eta_webservices"
+    / "eta_heating_ws"
     / "karte.py"
 )
 

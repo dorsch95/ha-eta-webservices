@@ -26,7 +26,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 UEBERSETZUNGEN = (
     Path(__file__).resolve().parents[1]
     / "custom_components"
-    / "eta_webservices"
+    / "eta_heating_ws"
     / "translations"
 )
 
@@ -45,6 +45,11 @@ def entity_name(entity, sprache: str = "de") -> str:
         (UEBERSETZUNGEN / f"{sprache}.json").read_text(encoding="utf-8")
     )
     return daten["entity"]["sensor"][entity.translation_key]["name"]
+
+
+def ohne_version(adresse: str) -> str:
+    """Bildadresse ohne den Versionsanhang ?v=..., siehe karte.bildadresse."""
+    return adresse.split("?", 1)[0]
 
 
 RESPONSE_LATENCY = 0.01
@@ -565,14 +570,14 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
         lambda _hass, *args, **kwargs: instance.session,
     )
     monkeypatch.setattr(
-        "eta_webservices.async_get_clientsession",
+        "eta_heating_ws.async_get_clientsession",
         lambda _hass, *args, **kwargs: instance.session,
     )
     monkeypatch.setattr(
-        "eta_webservices.er.async_get", lambda _hass: _hass.entity_registry
+        "eta_heating_ws.er.async_get", lambda _hass: _hass.entity_registry
     )
     monkeypatch.setattr(
-        "eta_webservices.er.async_entries_for_config_entry",
+        "eta_heating_ws.er.async_entries_for_config_entry",
         lambda registry, config_entry_id: registry.fuer_eintrag(config_entry_id),
     )
     return instance
@@ -585,7 +590,7 @@ def aschebox_ohne_hass(monkeypatch) -> SimpleNamespace:
     Der Speicher lebt nur im Arbeitsspeicher, bleibt aber über ein neues
     Einrichten hinweg erhalten - so lässt sich ein Neustart nachstellen.
     """
-    from eta_webservices import aschebox
+    from eta_heating_ws import aschebox
 
     stand = SimpleNamespace(speicher={}, meldungen=[], zeitgeber=[])
 
@@ -632,10 +637,10 @@ def reparaturen(monkeypatch) -> dict[str, list]:
         protokoll["entfernt"].append(issue_id)
 
     monkeypatch.setattr(
-        "eta_webservices.repairs.issue_registry.async_create_issue", anlegen
+        "eta_heating_ws.repairs.issue_registry.async_create_issue", anlegen
     )
     monkeypatch.setattr(
-        "eta_webservices.repairs.issue_registry.async_delete_issue", entfernen
+        "eta_heating_ws.repairs.issue_registry.async_delete_issue", entfernen
     )
     return protokoll
 

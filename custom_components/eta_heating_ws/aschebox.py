@@ -35,12 +35,16 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .api import ETAApiError
-from .const import ASCHEBOX_AUFSCHLAG, ASCHEBOX_DAUER_ANFANG, DOMAIN
+from .const import ALTE_DOMAIN, ASCHEBOX_AUFSCHLAG, ASCHEBOX_DAUER_ANFANG, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 EREIGNIS = f"{DOMAIN}_aschebox"
 """Wird bei jedem Schritt ausgelöst - etwa für eine Nachricht aufs Handy."""
+
+ALTES_EREIGNIS = f"{ALTE_DOMAIN}_aschebox"
+"""Der Name bis 0.25; kommt zusätzlich, damit Automatisierungen von damals
+weiterlaufen."""
 
 KEIN_FEUER = {"bereit", "ausgeschaltet"}
 """So meldet sich der Kessel, wenn Glutabbrand bzw. Entaschung durch sind."""
@@ -86,6 +90,11 @@ def _text(zeit: datetime | None) -> str | None:
     return zeit.isoformat() if zeit else None
 
 
+def speicher(hass: HomeAssistant, entry_id: str, domain: str = DOMAIN) -> Store:
+    """Wo sich der Plan über einen Neustart hinweg merkt, was er gelernt hat."""
+    return Store(hass, _SPEICHER_VERSION, f"{domain}.aschebox_{entry_id}")
+
+
 class AscheboxPlan:
     """Führt den Plan Schritt für Schritt, angestoßen von jeder Abfrage."""
 
@@ -93,7 +102,7 @@ class AscheboxPlan:
         self.hass = hass
         self.coordinator = coordinator
         entry_id = coordinator.config_entry.entry_id
-        self._speicher = Store(hass, _SPEICHER_VERSION, f"{DOMAIN}.aschebox_{entry_id}")
+        self._speicher = speicher(hass, entry_id)
         self._meldung_id = f"{DOMAIN}_aschebox_{entry_id}"
         self._daten: dict = {"phase": "aus"}
         self._gelernt: float | None = None
@@ -381,12 +390,11 @@ class AscheboxPlan:
         persistent_notification.async_create(
             self.hass, nachricht, title="ETA Heizung: Aschebox", notification_id=self._meldung_id
         )
-        self.hass.bus.async_fire(
-            EREIGNIS,
-            {
-                "phase": self.phase,
-                "nachricht": nachricht,
-                "ziel": _text(self.ziel),
-                "config_entry_id": self.coordinator.config_entry.entry_id,
-            },
-        )
+        daten = {
+            "phase": self.phase,
+            "nachricht": nachricht,
+            "ziel": _text(self.ziel),
+            "config_entry_id": self.coordinator.config_entry.entry_id,
+        }
+        for ereignis in (EREIGNIS, ALTES_EREIGNIS):
+            self.hass.bus.async_fire(ereignis, daten)

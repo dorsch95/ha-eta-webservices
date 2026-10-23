@@ -27,7 +27,7 @@ blueprint:
         entity:
           filter:
             - domain: select
-              integration: eta_webservices
+              integration: eta_heating_ws
     fenster:
       name: Fenster oder Tür
       description: Ein oder mehrere Kontakte. Es genügt einer, der offen ist.

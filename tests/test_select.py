@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 
-from eta_webservices import select as select_platform
+from eta_heating_ws import select as select_platform
 
 from .test_sensors import setup_integration
 
@@ -151,7 +151,7 @@ async def test_traege_anlage_laesst_die_betriebsart_nicht_zurueckspringen(hass, 
 
 async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry):
     """Eine Betriebsart, die die Anlage nie übernimmt, darf nicht haften."""
-    from eta_webservices.switch import VERWERFEN_NACH
+    from eta_heating_ws.switch import VERWERFEN_NACH
 
     _, auswahl = await aufbauen(hass, entry)
     betriebsart = auswahl["heizkreis_betriebsart"]

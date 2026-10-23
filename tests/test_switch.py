@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from eta_webservices import switch as switch_platform
+from eta_heating_ws import switch as switch_platform
 
 from .test_sensors import setup_integration
 
@@ -76,7 +76,7 @@ async def test_kein_schalter_bei_mehr_als_zwei_zustaenden(hass, entry, monkeypat
             "type": "TEXT",
         }
 
-    from eta_webservices.api import ETAApiClient
+    from eta_heating_ws.api import ETAApiClient
 
     monkeypatch.setattr(ETAApiClient, "async_get_varinfo", lambda self, uri: drei_zustaende(uri))
     coordinator, _ = await schalter_von(hass, entry)
@@ -92,7 +92,7 @@ async def test_kein_schalter_wenn_unklar_ist_was_aus_bedeutet(hass, entry, monke
             "type": "TEXT",
         }
 
-    from eta_webservices.api import ETAApiClient
+    from eta_heating_ws.api import ETAApiClient
 
     monkeypatch.setattr(ETAApiClient, "async_get_varinfo", lambda self, uri: unklar(uri))
     coordinator, _ = await schalter_von(hass, entry)
@@ -101,7 +101,7 @@ async def test_kein_schalter_wenn_unklar_ist_was_aus_bedeutet(hass, entry, monke
 
 async def test_schalter_erzeugt_keinen_doppelten_sensor(hass, entry):
     coordinator, _ = await setup_integration(hass, entry)
-    from eta_webservices import sensor as sensor_platform
+    from eta_heating_ws import sensor as sensor_platform
 
     sensoren: list = []
     await sensor_platform.async_setup_entry(hass, entry, sensoren.extend)
@@ -156,7 +156,7 @@ async def test_schalter_liest_seinen_zustand_von_der_anlage(hass, entry):
 
 
 async def test_switch_plattform_ist_eingetragen():
-    from eta_webservices.const import PLATFORMS
+    from eta_heating_ws.const import PLATFORMS
 
     assert "switch" in [str(p) for p in PLATFORMS]
 
@@ -216,7 +216,7 @@ async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, en
     Sonst zeigte der Schalter dauerhaft einen Zustand, den die Heizung nie
     eingenommen hat.
     """
-    from eta_webservices.switch import VERWERFEN_NACH
+    from eta_heating_ws.switch import VERWERFEN_NACH
 
     _, schalter = await schalter_von(hass, entry)
     einer = next(iter(schalter.values()))
@@ -248,7 +248,7 @@ async def test_nur_der_kessel_bekommt_einen_schalter(hass, entry):
 
 async def test_die_auswahl_kann_weiterhin_auf_aus_schalten(hass, entry):
     """Ohne die Ein/Aus-Taste wäre "Aus" nicht erreichbar."""
-    from eta_webservices import select as select_platform
+    from eta_heating_ws import select as select_platform
 
     coordinator, _ = await schalter_von(hass, entry)
     auswahlen: list = []

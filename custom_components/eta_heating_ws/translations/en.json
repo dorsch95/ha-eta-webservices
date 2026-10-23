@@ -1,6 +1,18 @@
 {
   "config": {
     "step": {
+      "wahl": {
+        "title": "Existing setup found",
+        "description": "Up to version 0.25 this integration was internally called “eta_webservices”. Your existing setup can be taken over with all settings, entities and history.",
+        "menu_options": {
+          "uebernahme": "Take over the existing setup (recommended)",
+          "neu": "Set up another system from scratch"
+        }
+      },
+      "uebernahme": {
+        "title": "Take over setup",
+        "description": "Taking over: {anlagen}.\n\nSettings, entities with their IDs, history, device and ash box plan are kept. Afterwards the old setup and the old folder custom_components/eta_webservices are removed."
+      },
       "user": {
         "title": "Connect ETA heating system",
         "data": {
@@ -86,7 +98,8 @@
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
-      "reconfigure_successful": "Settings saved."
+      "reconfigure_successful": "Settings saved.",
+      "keine_alte_einrichtung": "No setup from before version 0.26 found."
     }
   },
   "options": {

@@ -14,6 +14,11 @@ from homeassistant.components.blueprint.models import Blueprint, BlueprintInputs
 from homeassistant.util.yaml import loader as ha_yaml
 
 ORDNER = pathlib.Path(__file__).parent.parent / "blueprints" / "automation" / "eta_webservices"
+"""Der Ordner behält den alten Namen der Integration.
+
+Importierte Blueprints merken sich ihre Adresse (source_url). Bliebe der
+Ordner nicht, liefe „Erneut importieren“ nach dem Umbenennen ins Leere.
+"""
 DATEIEN = sorted(ORDNER.glob("*.yaml"))
 
 

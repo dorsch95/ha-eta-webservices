@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from eta_webservices import prognose as p
+from eta_heating_ws import prognose as p
 
 HEUTE = date(2026, 1, 20)
 
@@ -343,7 +343,7 @@ def _mit_wetter(hass, wetter=("weather.zuhause",), antworten=None):
 
 
 async def test_vorhersage_weicht_auf_stundenwerte_aus(hass):
-    from eta_webservices.prognose_koordinator import async_vorhersage
+    from eta_heating_ws.prognose_koordinator import async_vorhersage
 
     stunden = [
         {"datetime": f"2026-01-21T{h:02d}:00:00+00:00", "temperature": -4.0} for h in range(24)
@@ -355,7 +355,7 @@ async def test_vorhersage_weicht_auf_stundenwerte_aus(hass):
 
 
 async def test_ohne_wetter_keine_vorhersage(hass):
-    from eta_webservices.prognose_koordinator import async_vorhersage
+    from eta_heating_ws.prognose_koordinator import async_vorhersage
 
     _mit_wetter(hass, wetter=())
     assert await async_vorhersage(hass, "weather.gibt_es_nicht") == {}
@@ -364,7 +364,7 @@ async def test_ohne_wetter_keine_vorhersage(hass):
 
 
 def test_nur_eine_wetter_entitaet_wird_von_selbst_genommen(hass):
-    from eta_webservices.prognose_koordinator import einzige_wetter_entitaet
+    from eta_heating_ws.prognose_koordinator import einzige_wetter_entitaet
 
     assert einzige_wetter_entitaet(_mit_wetter(hass, ("weather.zuhause",))) == "weather.zuhause"
     assert einzige_wetter_entitaet(_mit_wetter(hass, ("weather.a", "weather.b"))) is None
@@ -389,7 +389,7 @@ def _stundenwerte(tage, zeitzone):
 def prognose_koordinator(hass, entry, monkeypatch):
     from homeassistant.util import dt as dt_util
 
-    from eta_webservices import prognose_koordinator as modul
+    from eta_heating_ws import prognose_koordinator as modul
 
     zone = dt_util.get_default_time_zone()
     jetzt = SimpleNamespace(wert=dt_util.as_local(dt_util.utcnow()).replace(
@@ -423,7 +423,7 @@ def prognose_koordinator(hass, entry, monkeypatch):
 
 
 def _wert(zahl):
-    from eta_webservices.api import ETAValue
+    from eta_heating_ws.api import ETAValue
 
     return ETAValue(zahl, str(zahl), "kg", False, 0)
 
@@ -470,7 +470,7 @@ async def test_ohne_statistik_ids_wartet_die_prognose(prognose_koordinator):
 async def test_unlesbare_statistik_gibt_einen_status(prognose_koordinator, monkeypatch):
     from homeassistant.exceptions import HomeAssistantError
 
-    from eta_webservices import prognose_koordinator as modul
+    from eta_heating_ws import prognose_koordinator as modul
 
     async def kaputt(*_args):
         raise HomeAssistantError("Recorder nicht bereit")
@@ -481,19 +481,19 @@ async def test_unlesbare_statistik_gibt_einen_status(prognose_koordinator, monke
 
 
 async def _mit_prognose(hass, entry, monkeypatch, komponenten=None):
-    import eta_webservices
-    from eta_webservices import sensor as sensor_platform
+    import eta_heating_ws
+    from eta_heating_ws import sensor as sensor_platform
 
     from .conftest import entity_name
 
     hass.config.components = {"recorder"}
     gestartet = []
     monkeypatch.setattr(
-        eta_webservices, "async_at_started", lambda _hass, ziel: gestartet.append(ziel) or (lambda: None)
+        eta_heating_ws, "async_at_started", lambda _hass, ziel: gestartet.append(ziel) or (lambda: None)
     )
     if komponenten:
         entry.data["components"] = komponenten
-    assert await eta_webservices.async_setup_entry(hass, entry)
+    assert await eta_heating_ws.async_setup_entry(hass, entry)
     entitaeten: list = []
     await sensor_platform.async_setup_entry(hass, entry, entitaeten.extend)
     return entry.runtime_data, {entity_name(e): e for e in entitaeten}, gestartet
@@ -581,7 +581,7 @@ async def test_prognose_mit_lager(hass, entry, monkeypatch):
 async def test_prognose_steht_in_der_diagnose(hass, entry, monkeypatch):
     import json
 
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     coordinator, _, _ = await _mit_prognose(hass, entry, monkeypatch)
     diagnose = await async_get_config_entry_diagnostics(hass, entry)
@@ -602,7 +602,7 @@ async def test_prognose_steht_in_der_diagnose(hass, entry, monkeypatch):
 
 
 async def test_diagnose_ohne_prognose(hass, entry):
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     from .test_sensors import setup_integration
 
@@ -612,7 +612,7 @@ async def test_diagnose_ohne_prognose(hass, entry):
 
 
 async def test_statistik_ids_kommen_aus_dem_register(hass, entry, monkeypatch):
-    from eta_webservices import _statistik_ids
+    from eta_heating_ws import _statistik_ids
 
     hass.entity_registry.anlegen(
         "sensor.mein_verbrauch", f"eta_static_{entry.entry_id}_pellet_gesamtverbrauch", entry.entry_id
@@ -621,7 +621,7 @@ async def test_statistik_ids_kommen_aus_dem_register(hass, entry, monkeypatch):
 
 
 def test_prognose_entitaeten_werden_mit_ihrer_komponente_aufgeraeumt():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     assert entitaet_vorgesehen("pellet_prognose_morgen", ["kessel"], False, False)
     assert entitaet_vorgesehen("lager_reicht_bis", ["kessel"], False, False) is False
@@ -701,7 +701,7 @@ def test_simulierter_puffer_macht_die_tage_treffsicherer():
 async def test_koordinator_gleicht_den_puffer_aus(prognose_koordinator, monkeypatch):
     from homeassistant.util import dt as dt_util
 
-    from eta_webservices import prognose_koordinator as modul
+    from eta_heating_ws import prognose_koordinator as modul
 
     zone = dt_util.get_default_time_zone()
     haupt = prognose_koordinator.haupt
@@ -751,7 +751,7 @@ async def test_ohne_volumen_kein_ausgleich(prognose_koordinator):
 
 def test_mehrere_puffer_zaehlen_zusammen():
     """Die Wärme aller Puffer addiert sich; es zählen nur Tage, die jeder kennt."""
-    from eta_webservices import prognose as p
+    from eta_heating_ws import prognose as p
 
     erster = ({date(2026, 1, 1): 50.0, date(2026, 1, 2): 60.0}, 1.0)
     zweiter = ({date(2026, 1, 2): 40.0, date(2026, 1, 3): 45.0}, 0.5)
@@ -762,7 +762,7 @@ def test_mehrere_puffer_zaehlen_zusammen():
 
 async def test_puffer_quellen_mit_zwei_puffern(hass, entry, menu_xml):
     """Je Puffer mit effektivem Volumen eine Quelle, mit den Fühlern oben zuerst."""
-    from eta_webservices import _puffer_quellen
+    from eta_heating_ws import _puffer_quellen
 
     from .test_puffer import ZWEITER_PUFFER, mit_fub
     from .test_sensors import setup_integration
@@ -792,7 +792,7 @@ async def test_prognose_laesst_sich_abwaehlen(hass, entry, monkeypatch):
 
 
 def test_abgewaehlte_prognose_wird_aufgeraeumt():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     for key in ("pellet_prognose_morgen", "lager_reicht_bis", "lager_reichweite"):
         assert entitaet_vorgesehen(key, ["kessel", "lager"], False, False, mit_prognose=False) is False

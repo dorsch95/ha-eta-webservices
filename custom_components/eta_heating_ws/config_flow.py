@@ -6,6 +6,8 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import (
+    SOURCE_IMPORT,
+    ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
@@ -23,6 +25,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
+from . import uebernahme
 from .api import ETAApiClient, ETAApiError
 from .prognose_koordinator import einzige_wetter_entitaet
 from .uri_discovery import async_discover_uris
@@ -388,6 +391,7 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
+        self._neu_gewaehlt = False
 
     _bisher: dict[str, Any] = {}
 
@@ -434,9 +438,82 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_wahl(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Bietet an, eine Einrichtung von vor dem Umbenennen zu übernehmen."""
+        return self.async_show_menu(step_id="wahl", menu_options=["uebernahme", "neu"])
+
+    async def async_step_neu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Richtet trotz alter Einrichtung eine weitere Anlage neu ein."""
+        self._neu_gewaehlt = True
+        return await self.async_step_user()
+
+    async def async_step_uebernahme(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Übernimmt alle alten Einrichtungen mit ihren Einstellungen.
+
+        Ein Dialog legt genau einen Eintrag an. Gibt es mehrere alte
+        Einrichtungen, kommen die übrigen über eigene Abläufe im Hintergrund
+        dazu (async_step_import).
+        """
+        alte = uebernahme.alte_einrichtungen(self.hass)
+        if not alte:
+            return self.async_abort(reason="keine_alte_einrichtung")
+        if user_input is None:
+            return self.async_show_form(
+                step_id="uebernahme",
+                description_placeholders={
+                    "anlagen": ", ".join(f"{e.title} ({e.unique_id})" for e in alte)
+                },
+            )
+        erste, *weitere = alte
+        for eintrag in weitere:
+            self.hass.async_create_task(
+                self.hass.config_entries.flow.async_init(
+                    DOMAIN,
+                    context={"source": SOURCE_IMPORT},
+                    data={uebernahme.UEBERNOMMEN_VON: eintrag.entry_id},
+                )
+            )
+        return await self._uebernehmen(erste)
+
+    async def async_step_import(self, import_data: dict[str, Any]) -> ConfigFlowResult:
+        """Übernimmt eine weitere alte Einrichtung, angestoßen von async_step_uebernahme."""
+        alt = self.hass.config_entries.async_get_entry(
+            import_data[uebernahme.UEBERNOMMEN_VON]
+        )
+        if alt is None or not uebernahme.ist_alte_einrichtung(alt):
+            return self.async_abort(reason="keine_alte_einrichtung")
+        return await self._uebernehmen(alt)
+
+    async def _uebernehmen(self, alt: ConfigEntry) -> ConfigFlowResult:
+        """Neuer Eintrag mit Daten und Optionen der alten Einrichtung.
+
+        Den Rest zieht async_setup_entry beim ersten Start um, siehe
+        uebernahme.async_uebernehmen.
+        """
+        daten, optionen = uebernahme.daten_und_optionen(alt)
+        await self.async_set_unique_id(f"{daten[CONF_HOST]}:{daten[CONF_PORT]}")
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=alt.title,
+            data={**daten, uebernahme.UEBERNOMMEN_VON: alt.entry_id},
+            options=optionen,
+        )
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        if (
+            user_input is None
+            and not self._neu_gewaehlt
+            and uebernahme.alte_einrichtungen(self.hass)
+        ):
+            return await self.async_step_wahl()
         errors: dict[str, str] = {}
 
         if user_input is not None:

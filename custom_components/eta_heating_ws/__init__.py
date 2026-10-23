@@ -41,6 +41,7 @@ from .const import (
     SENSORS,
     SWITCHES,
     URL_GRAFIKEN,
+    ALTE_URL_GRAFIKEN,
     THERMOSTATE,
     components_from_config,
     puffer_volumen_schluessel,
@@ -49,10 +50,10 @@ from .const import (
 from .aschebox import AscheboxPlan
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
-from .karte import BILDPFAD
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import deutsche_namen
 from .prognose_koordinator import ETAPrognoseKoordinator
+from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,14 +68,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     Bis Version 0.20 wurden sie bei jedem Start in den www-Ordner des
     Nutzers geschrieben. Jetzt liefert Home Assistant sie direkt aus dem
     Ordner der Integration aus; ohne Zwischenspeicher im Browser, damit
-    geänderte Grafiken nach einem Update sofort ankommen. Die Karte nennt
-    die Adresse mit der Version darin (siehe karte.BILDPFAD); die ohne
-    Version bleibt für Karten aus älteren Versionen.
+    geänderte Grafiken nach einem Update sofort ankommen (siehe
+    karte.bildadresse). Die alten Adressen bleiben für Karten von vor dem
+    Umbenennen.
     """
     await hass.http.async_register_static_paths(
         [
-            StaticPathConfig(BILDPFAD, str(GRAFIKEN), cache_headers=False),
-            StaticPathConfig(URL_GRAFIKEN, str(GRAFIKEN), cache_headers=False),
+            StaticPathConfig(pfad, str(GRAFIKEN), cache_headers=False)
+            for pfad in (URL_GRAFIKEN, *ALTE_URL_GRAFIKEN)
         ]
     )
     async_aktionen_registrieren(hass)
@@ -83,6 +84,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     """Setzt die Integration über einen Config Entry auf."""
+    if UEBERNOMMEN_VON in entry.data:
+        await async_uebernehmen(hass, entry)
     config = {**entry.data, **entry.options}
     host = config[CONF_HOST]
     port = config[CONF_PORT]

@@ -75,7 +75,7 @@ def mit_fub(menu: str, fub: str) -> str:
 
 
 def _wert(zahl):
-    from eta_webservices.api import ETAValue
+    from eta_heating_ws.api import ETAValue
 
     return ETAValue(zahl, str(zahl), "°C", False, 1)
 
@@ -166,7 +166,7 @@ async def test_energieinhalt_aus_volumen_und_fuehlern(hass, entry, menu_xml):
 
 
 def test_energieinhalt_wird_mit_dem_volumen_aufgeraeumt():
-    from eta_webservices import entitaet_vorgesehen
+    from eta_heating_ws import entitaet_vorgesehen
 
     mit = {"puffer"}
     assert entitaet_vorgesehen("puffer_energieinhalt", ["kessel", "puffer"], False, False, False, mit)
@@ -175,7 +175,7 @@ def test_energieinhalt_wird_mit_dem_volumen_aufgeraeumt():
 
 
 async def test_diagnose_nennt_das_volumen(hass, entry, menu_xml):
-    from eta_webservices.diagnostics import async_get_config_entry_diagnostics
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     await setup_integration(hass, entry)
     diagnose = await async_get_config_entry_diagnostics(hass, entry)
@@ -254,7 +254,7 @@ async def test_alter_puffer_als_zweiter_hat_keinen_ladezustand(hass, entry, menu
 
 
 def test_puffer_fuehler_bekommen_ihren_puffer_im_namen():
-    from eta_webservices.const import puffer_fuehler_info
+    from eta_heating_ws.const import puffer_fuehler_info
 
     info = puffer_fuehler_info(1, False, "puffer3")
     assert info["name"] == "Puffer 3 Fühler 1"
