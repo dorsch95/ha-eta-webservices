@@ -415,6 +415,43 @@ def zeitueberwachung_schluessel(heizkreis):
     """Feld im Dialog für die Zeitüberwachung eines Heizkreises, in Minuten."""
     return f"{heizkreis}_zeitueberwachung"
 
+
+WOCHENTAGE = {
+    "monday": "Montag",
+    "tuesday": "Dienstag",
+    "wednesday": "Mittwoch",
+    "thursday": "Donnerstag",
+    "friday": "Freitag",
+    "saturday": "Samstag",
+    "sunday": "Sonntag",
+}
+"""Die Wochentage, links wie der Zeitplan-Helfer von Home Assistant sie
+nennt, rechts wie sie im Menübaum unter "Heizzeiten" stehen."""
+
+ZEITFENSTER_JE_TAG = 3
+"""So viele Zeitfenster hat das Zeitprogramm eines Heizkreises je Tag."""
+
+ZEITPLAN_TAKT = 300
+"""So oft (Sekunden) sieht die Integration nach, ob sich ein gewählter Zeitplan geändert hat.
+
+Meist merkt sie es sofort: Ein geänderter Helfer schreibt seinen Zustand
+neu. Der Takt ist die Rückfallebene. Gelesen wird dabei nur der Zeitplan,
+nicht die Anlage.
+"""
+
+ZEITPLAN_TEMPERATUR = ("temperatur", "temperature")
+"""Unter diesen Namen darf ein Block des Zeitplans eine Raumtemperatur mitbringen."""
+
+
+def zeitfenster_schluessel(praefix, tag, nummer):
+    """Unter welchem Schlüssel ein Zeitfenster gefunden wird, etwa heizkreis_zeitfenster_monday_1."""
+    return f"{praefix}_zeitfenster_{tag}_{nummer}"
+
+
+def zeitplan_schluessel(heizkreis):
+    """Unter welchem Schlüssel der gewählte Zeitplan eines Heizkreises steht."""
+    return f"{heizkreis}_zeitplan"
+
 LEGACY_SCHEMA_COMPONENTS = {
     "Kessel": ["kessel"],
     "Kessel + Puffer": ["kessel", "puffer"],

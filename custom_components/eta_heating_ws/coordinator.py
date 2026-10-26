@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import timedelta
 
@@ -23,8 +24,11 @@ from .const import (
     PUFFER_SPEICHER,
     SENSORS,
     THERMOSTATE,
+    WOCHENTAGE,
+    ZEITFENSTER_JE_TAG,
     normalize_components,
     puffer_fuehler_info,
+    zeitfenster_schluessel,
 )
 from .entitaets_ids import Namen
 from .repairs import async_check_components
@@ -144,6 +148,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.ueber_kennung: set[str] = set()
         self.fub_namen: dict[str, str] = {}
         self.thermostat_defs: dict[str, dict] = {}
+        self.zeitprogramm_defs: dict[str, dict[tuple[str, int], dict]] = {}
+        """Je Heizkreis mit beschreibbarem Zeitprogramm seine 21 Zeitfenster, siehe zeitplan.py."""
+        self.zeitplan_abgleiche: dict[str, object] = {}
+        """Je Heizkreis mit gewähltem Zeitplan sein Abgleich - für die Diagnose."""
         self.betriebsart_auswahl: dict[str, object] = {}
         """Die Betriebsart-Auswahlen je Schlüssel - der Thermostat stellt über sie um."""
         self.components_without_data: list[str] = []
@@ -427,6 +435,47 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 "ETA: Thermostat für %s erkannt (%s)", heizkreis, ", ".join(sorted(objekte))
             )
 
+    async def _zeitprogramme_pruefen(self) -> None:
+        """Prüft je Heizkreis, ob sich sein Zeitprogramm beschreiben lässt.
+
+        Nur mit freigegebenem Schreibzugriff, und nur, wenn alle Zeitfenster
+        der Woche gefunden und als beschreibbar gemeldet sind - ein halb
+        beschreibbares Programm bleibt besser unangetastet. Ob ein Fenster
+        eine Temperatur trägt und in welchen Grenzen, sagt /user/varinfo.
+        Die Fenster werden nicht mit abgefragt; gelesen werden sie nur, wenn
+        ein Zeitplan übertragen wird.
+        """
+        if not self.enable_switches:
+            return
+
+        for heizkreis, definition in THERMOSTATE.items():
+            if heizkreis not in self.components:
+                continue
+            uris = {
+                (tag, nummer): self.discovered_uris.get(
+                    zeitfenster_schluessel(definition["praefix"], tag, nummer)
+                )
+                for tag in WOCHENTAGE
+                for nummer in range(1, ZEITFENSTER_JE_TAG + 1)
+            }
+            if not all(uris.values()):
+                continue
+            infos = await asyncio.gather(
+                *(self.client.async_get_varinfo(uri) for uri in uris.values())
+            )
+            if not all(
+                info and info.get("writable") and info.get("zeitfenster") for info in infos
+            ):
+                _LOGGER.info(
+                    "ETA: Zeitprogramm von %s gefunden, aber nicht beschreibbar", heizkreis
+                )
+                continue
+            self.zeitprogramm_defs[heizkreis] = {
+                fenster: {"uri": uri, "skala": info["scale"], **info["zeitfenster"]}
+                for (fenster, uri), info in zip(uris.items(), infos)
+            }
+            _LOGGER.info("ETA: Zeitprogramm von %s beschreibbar", heizkreis)
+
     def betriebsart_gemeldet(self, key: str) -> str | None:
         """Die Betriebsart eines Heizkreises, wie die Anlage sie zuletzt gemeldet hat.
 
@@ -513,6 +562,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._entaschen_pruefen()
         await self._betriebsarten_pruefen()
         await self._thermostate_pruefen()
+        await self._zeitprogramme_pruefen()
         await self._varset_anlegen()
 
     def funktionsblock(self, komponente: str) -> str:

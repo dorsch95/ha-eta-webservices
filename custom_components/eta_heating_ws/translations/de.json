@@ -90,6 +90,16 @@
       "switch_warning": {
         "title": "Schalten schreibt in deine Heizung",
         "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
+      },
+      "zeitplaene": {
+        "title": "Zeitprogramm aus Home Assistant",
+        "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
+        "data": {
+          "hk1_zeitplan": "Heizkreis 1: Zeitplan",
+          "hk2_zeitplan": "Heizkreis 2: Zeitplan",
+          "hk3_zeitplan": "Heizkreis 3: Zeitplan",
+          "hk4_zeitplan": "Heizkreis 4: Zeitplan"
+        }
       }
     },
     "error": {
@@ -171,6 +181,16 @@
       "switch_warning": {
         "title": "Schalten schreibt in deine Heizung",
         "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
+      },
+      "zeitplaene": {
+        "title": "Zeitprogramm aus Home Assistant",
+        "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
+        "data": {
+          "hk1_zeitplan": "Heizkreis 1: Zeitplan",
+          "hk2_zeitplan": "Heizkreis 2: Zeitplan",
+          "hk3_zeitplan": "Heizkreis 3: Zeitplan",
+          "hk4_zeitplan": "Heizkreis 4: Zeitplan"
+        }
       }
     },
     "error": {
@@ -201,6 +221,10 @@
     "component_not_found": {
       "title": "Komponente \"{component}\" nicht gefunden",
       "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** und trage den tatsächlichen Namen ein - oder hake die Komponente ab, falls deine Anlage sie nicht hat."
+    },
+    "zeitplan_zu_voll": {
+      "title": "Zeitplan {zeitplan} passt nicht an allen Tagen",
+      "description": "Die Heizung hat je Tag höchstens 3 Zeitfenster. Der Zeitplan {zeitplan} für {heizkreis} hat an diesen Tagen mehr Blöcke: {tage}.\n\nDiese Tage überträgt die Integration nicht, dort bleibt das Zeitprogramm der Heizung, wie es ist. Fasse die Blöcke im Zeitplan zusammen, dann verschwindet dieser Hinweis von selbst."
     }
   },
   "entity": {

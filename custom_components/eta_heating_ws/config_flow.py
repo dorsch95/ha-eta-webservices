@@ -58,12 +58,16 @@ from .const import (
     MIN_SCAN_INTERVAL,
     PUFFER_SPEICHER,
     THERMOSTATE,
+    WOCHENTAGE,
+    ZEITFENSTER_JE_TAG,
     components_from_config,
     fub_role_default,
     fub_roles_for_components,
     normalize_components,
     puffer_volumen_schluessel,
     raumfuehler_schluessel,
+    zeitfenster_schluessel,
+    zeitplan_schluessel,
     zeitueberwachung_schluessel,
 )
 
@@ -81,7 +85,7 @@ async def _anlage_pruefen(
     fub_names: dict[str, str],
     komponenten: list[str],
     schreiben: bool,
-) -> tuple[list[str], dict[str, dict]]:
+) -> tuple[list[str], dict[str, dict], list[str]]:
     """Liest einmal den Menübaum und sagt, welche Schritte noch folgen.
 
     Erstens die angekreuzten Puffer, die ihr effektives Volumen nicht
@@ -93,15 +97,19 @@ async def _anlage_pruefen(
     die externe Schnittstelle, je mit URI und aktuellem Wert ihrer
     Zeitüberwachung in Sekunden.
 
-    Ist der Menübaum nicht lesbar, folgt keiner der beiden Schritte.
+    Drittens - ebenfalls nur mit Schreibzugriff - die Heizkreise, deren
+    Zeitprogramm mit allen Zeitfenstern im Menübaum steht. Ob die Anlage
+    sie auch beschreiben lässt, prüft erst das Einrichten selbst.
+
+    Ist der Menübaum nicht lesbar, folgt keiner der Schritte.
     """
     if not host:
-        return [], {}
+        return [], {}, []
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     try:
         gefunden, _ = await async_discover_uris(client, fub_names)
     except ETAApiError:
-        return [], {}
+        return [], {}, []
     ohne_volumen = [
         komponente
         for komponente in PUFFER_SPEICHER
@@ -111,7 +119,17 @@ async def _anlage_pruefen(
     ]
     thermostate: dict[str, dict] = {}
     if not schreiben:
-        return ohne_volumen, thermostate
+        return ohne_volumen, thermostate, []
+    zeitprogramme = [
+        heizkreis
+        for heizkreis, definition in THERMOSTATE.items()
+        if heizkreis in komponenten
+        and all(
+            zeitfenster_schluessel(definition["praefix"], tag, nummer) in gefunden
+            for tag in WOCHENTAGE
+            for nummer in range(1, ZEITFENSTER_JE_TAG + 1)
+        )
+    ]
     for heizkreis, definition in THERMOSTATE.items():
         praefix = definition["praefix"]
         if heizkreis not in komponenten or f"{praefix}_raum_extern" not in gefunden:
@@ -124,7 +142,7 @@ async def _anlage_pruefen(
             except (ETAApiError, TypeError, ValueError):
                 sekunden = None
         thermostate[heizkreis] = {"uri": uri, "sekunden": sekunden}
-    return ohne_volumen, thermostate
+    return ohne_volumen, thermostate, zeitprogramme
 
 
 async def _zeitueberwachung_schreiben(
@@ -165,6 +183,19 @@ def _raumfuehler_schema(thermostate: dict[str, dict], current: dict[str, Any]) -
                 vol.Coerce(int), vol.Range(min=1, max=MAX_ZEITUEBERWACHUNG_MINUTEN)
             )
     return vol.Schema(felder)
+
+
+def _zeitplaene_schema(zeitprogramme: list[str], current: dict[str, Any]) -> vol.Schema:
+    """Je Heizkreis mit beschreibbarem Zeitprogramm ein Zeitplan-Helfer, freiwillig."""
+    return vol.Schema(
+        {
+            vol.Optional(
+                zeitplan_schluessel(heizkreis),
+                description={"suggested_value": current.get(zeitplan_schluessel(heizkreis))},
+            ): EntitySelector(EntitySelectorConfig(domain="schedule"))
+            for heizkreis in zeitprogramme
+        }
+    )
 
 
 def _puffer_schema(komponenten: list[str], current: dict[str, Any]) -> vol.Schema:
@@ -309,7 +340,7 @@ class _Anlagenschritte:
 
     async def _nach_fub_namen(self) -> ConfigFlowResult:
         host, port = self._adresse()
-        self._ohne_volumen, self._thermostate = await _anlage_pruefen(
+        self._ohne_volumen, self._thermostate, self._zeitprogramme = await _anlage_pruefen(
             self.hass,
             host,
             port,
@@ -324,7 +355,30 @@ class _Anlagenschritte:
     async def _nach_puffer(self) -> ConfigFlowResult:
         if self._thermostate:
             return await self.async_step_raumfuehler()
+        return await self._nach_raumfuehler()
+
+    async def _nach_raumfuehler(self) -> ConfigFlowResult:
+        if self._zeitprogramme:
+            return await self.async_step_zeitplaene()
         return self._fertig(self._data)
+
+    async def async_step_zeitplaene(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Je Heizkreis ein Zeitplan-Helfer, der sein Zeitprogramm vorgibt (siehe zeitplan.py)."""
+        if user_input is not None:
+            self._data.update(
+                {
+                    zeitplan_schluessel(hk): user_input[zeitplan_schluessel(hk)]
+                    for hk in self._zeitprogramme
+                    if user_input.get(zeitplan_schluessel(hk))
+                }
+            )
+            return self._fertig(self._data)
+        return self.async_show_form(
+            step_id="zeitplaene",
+            data_schema=_zeitplaene_schema(self._zeitprogramme, self._bisher),
+        )
 
     async def async_step_puffer(
         self, user_input: dict[str, Any] | None = None
@@ -368,7 +422,7 @@ class _Anlagenschritte:
                         if user_input.get(raumfuehler_schluessel(hk))
                     }
                 )
-                return self._fertig(self._data)
+                return await self._nach_raumfuehler()
         return self.async_show_form(
             step_id="raumfuehler",
             data_schema=_raumfuehler_schema(self._thermostate, user_input or self._bisher),
@@ -391,6 +445,7 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
+        self._zeitprogramme: list[str] = []
         self._neu_gewaehlt = False
 
     _bisher: dict[str, Any] = {}
@@ -582,6 +637,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
+        self._zeitprogramme: list[str] = []
 
     @property
     def _current(self) -> dict[str, Any]:

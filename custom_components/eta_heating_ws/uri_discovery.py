@@ -20,6 +20,9 @@ from .const import (
     PUFFER_FUEHLER_MAX,
     PUFFER_SPEICHER,
     THERMOSTATE,
+    WOCHENTAGE,
+    ZEITFENSTER_JE_TAG,
+    zeitfenster_schluessel,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -297,6 +300,28 @@ def thermostat_objekte(praefix):
     }
 
 
+HEIZZEITEN = ["Heizkreis", "Heizzeiten"]
+"""Darunter liegt das Zeitprogramm eines Heizkreises.
+
+Je Wochentag "Zeitfenster 1" bis "Zeitfenster 3" und der "Wert außerhalb
+der Zeitfenster". So an zwei echten Anlagen gesehen.
+"""
+
+
+def _zeitfenster(fub, praefix):
+    """Die Zeitfenster eines Heizkreises, nur über die Namen - sie werden beschrieben."""
+    heizzeiten = _find_path(fub, HEIZZEITEN) if fub is not None else None
+    if heizzeiten is None:
+        return {}
+    gefunden = {}
+    for tag, name in WOCHENTAGE.items():
+        for nummer in range(1, ZEITFENSTER_JE_TAG + 1):
+            knoten = _find_path(heizzeiten, [name, f"Zeitfenster {nummer}"])
+            if knoten is not None and knoten.get("@uri"):
+                gefunden[zeitfenster_schluessel(praefix, tag, nummer)] = knoten["@uri"]
+    return gefunden
+
+
 SWITCH_ROLES = {
     "kessel_schalter": "kessel",
     "heizkreis_schalter": "hk",
@@ -570,6 +595,11 @@ async def async_discover_uris(
             if uri:
                 discovered[key] = uri
 
+    for definition in THERMOSTATE.values():
+        discovered.update(
+            _zeitfenster(fubs_by_role.get(definition["role"]), definition["praefix"])
+        )
+
     for key, role in SWITCH_ROLES.items():
         fub = fubs_by_role.get(role)
         uri = _finde_schalter(fub)
@@ -607,13 +637,15 @@ async def async_discover_uris(
 
     gesucht = set(DISCOVERY_PATHS) | set(PUMPEN) | {f"{k}_volumen" for k in PUFFER_SPEICHER}
     messwerte = (gesucht & set(discovered)) | alle_fuehler
+    zeitfenster = {key for key in discovered if "_zeitfenster_" in key}
     _LOGGER.info(
         "ETA Webservices: %d von %d Messwerten im Menübaum gefunden "
-        "(%d Pufferfühler), dazu %d Schalt- und Betriebsart-Objekte",
+        "(%d Pufferfühler), dazu %d Schalt- und Betriebsart-Objekte und %d Zeitfenster",
         len(messwerte),
         len(gesucht) + len(alle_fuehler),
         len(alle_fuehler),
-        len(discovered) - len(messwerte),
+        len(discovered) - len(messwerte) - len(zeitfenster),
+        len(zeitfenster),
     )
     missing = sorted(gesucht - set(discovered))
     if missing:

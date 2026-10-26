@@ -1,4 +1,4 @@
-"""Reparatur-Hinweise für Komponenten ohne Messwerte.
+"""Reparatur-Hinweise für Komponenten ohne Messwerte und für zu volle Zeitpläne.
 
 Heißt der Funktionsblock einer ausgewählten Komponente an der Anlage
 anders, bleiben ihre Werte leer. Der Hinweis führt direkt zu den
@@ -55,3 +55,34 @@ def async_check_components(
             issue_registry.async_delete_issue(hass, DOMAIN, issue_id)
 
     return ohne_treffer
+
+
+def async_zeitplan_pruefen(
+    hass: HomeAssistant,
+    entry_id: str,
+    heizkreis: str,
+    entity_id: str,
+    zu_volle_tage: list[str],
+) -> None:
+    """Meldet Tage, an denen der Zeitplan mehr Blöcke hat, als die Anlage Fenster.
+
+    Diese Tage überträgt die Integration nicht. Der Hinweis verschwindet,
+    sobald der Zeitplan wieder passt.
+    """
+    issue_id = f"{entry_id}_{heizkreis}_zeitplan_zu_voll"
+    if not zu_volle_tage:
+        issue_registry.async_delete_issue(hass, DOMAIN, issue_id)
+        return
+    issue_registry.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        severity=issue_registry.IssueSeverity.WARNING,
+        translation_key="zeitplan_zu_voll",
+        translation_placeholders={
+            "zeitplan": entity_id,
+            "heizkreis": COMPONENTS[heizkreis]["name"],
+            "tage": ", ".join(zu_volle_tage),
+        },
+    )

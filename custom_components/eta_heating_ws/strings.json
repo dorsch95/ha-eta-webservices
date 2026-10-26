@@ -90,6 +90,16 @@
       "switch_warning": {
         "title": "Switching writes to your heating system",
         "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
+      },
+      "zeitplaene": {
+        "title": "Heating schedule from Home Assistant",
+        "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
+        "data": {
+          "hk1_zeitplan": "Heating circuit 1: schedule",
+          "hk2_zeitplan": "Heating circuit 2: schedule",
+          "hk3_zeitplan": "Heating circuit 3: schedule",
+          "hk4_zeitplan": "Heating circuit 4: schedule"
+        }
       }
     },
     "error": {
@@ -171,6 +181,16 @@
       "switch_warning": {
         "title": "Switching writes to your heating system",
         "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
+      },
+      "zeitplaene": {
+        "title": "Heating schedule from Home Assistant",
+        "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
+        "data": {
+          "hk1_zeitplan": "Heating circuit 1: schedule",
+          "hk2_zeitplan": "Heating circuit 2: schedule",
+          "hk3_zeitplan": "Heating circuit 3: schedule",
+          "hk4_zeitplan": "Heating circuit 4: schedule"
+        }
       }
     },
     "error": {
@@ -201,6 +221,10 @@
     "component_not_found": {
       "title": "Component \"{component}\" not found",
       "description": "The menu of your ETA heating system contains no values for the component \"{component}\". Its function block is probably named differently on your controller (expected roles: {fub_names}).\n\nOpen **Settings -> Devices & Services -> ETA Web-Services -> Configure** and enter the actual name, or untick the component if your system does not have it."
+    },
+    "zeitplan_zu_voll": {
+      "title": "Schedule {zeitplan} does not fit on every day",
+      "description": "The heating system has at most 3 time windows per day. The schedule {zeitplan} for {heizkreis} has more blocks on these days: {tage}.\n\nThe integration does not transfer these days; the system keeps its own schedule there. Merge the blocks in the schedule and this notice disappears by itself."
     }
   },
   "entity": {

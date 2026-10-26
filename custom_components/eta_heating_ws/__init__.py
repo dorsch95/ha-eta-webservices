@@ -46,6 +46,7 @@ from .const import (
     components_from_config,
     puffer_volumen_schluessel,
     raumfuehler_schluessel,
+    zeitplan_schluessel,
 )
 from .aschebox import AscheboxPlan
 from .raumfuehler import RaumfuehlerSender
@@ -54,6 +55,7 @@ from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehle
 from .entitaets_ids import deutsche_namen
 from .prognose_koordinator import ETAPrognoseKoordinator
 from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
+from .zeitplan import ZeitplanAbgleich
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -142,6 +144,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     if coordinator.prognose is not None:
         entry.async_on_unload(async_at_started(hass, _prognose_starten(coordinator)))
     _raumfuehler_starten(hass, entry, coordinator, config)
+    _zeitplaene_starten(hass, entry, coordinator, config)
     return True
 
 
@@ -177,6 +180,28 @@ def _raumfuehler_starten(
         sender.starten()
         entry.async_on_unload(sender.stoppen)
         _LOGGER.info("ETA: %s schreibt %s als Raumtemperatur", heizkreis, entity_id)
+
+
+def _zeitplaene_starten(
+    hass: HomeAssistant,
+    entry: ETAConfigEntry,
+    coordinator: ETADataUpdateCoordinator,
+    config: dict,
+) -> None:
+    """Startet je Heizkreis mit gewähltem Zeitplan den Abgleich.
+
+    Nur für Heizkreise, deren Zeitprogramm die Anlage als beschreibbar
+    gemeldet hat - also mit freigegebenem Schreibzugriff.
+    """
+    for heizkreis in coordinator.zeitprogramm_defs:
+        entity_id = config.get(zeitplan_schluessel(heizkreis))
+        if not entity_id:
+            continue
+        abgleich = ZeitplanAbgleich(hass, coordinator, heizkreis, entity_id)
+        coordinator.zeitplan_abgleiche[heizkreis] = abgleich
+        abgleich.starten()
+        entry.async_on_unload(abgleich.stoppen)
+        _LOGGER.info("ETA: %s übernimmt den Zeitplan %s", heizkreis, entity_id)
 
 
 def _prognose_moeglich(hass: HomeAssistant, coordinator: ETADataUpdateCoordinator) -> bool:

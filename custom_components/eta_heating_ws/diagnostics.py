@@ -24,6 +24,7 @@ from homeassistant.core import HomeAssistant
 from .api import ETAApiError
 from .const import CONF_COMPONENTS, CONF_FUB_NAMES, PUFFER_SPEICHER
 from .coordinator import ETAConfigEntry, puffer_fuehler_schluessel
+from .zeitplan import als_text
 from .uri_discovery import DISCOVERY_PATHS, _as_list
 
 TO_REDACT = {CONF_HOST}
@@ -147,6 +148,10 @@ async def async_get_config_entry_diagnostics(
         for key, beschreibung in zip(texte, beschreibungen)
         if beschreibung and beschreibung.get("valid_values")
     }
+    zeitprogramme = {
+        heizkreis: await _zeitprogramm(coordinator, heizkreis)
+        for heizkreis in coordinator.zeitprogramm_defs
+    }
 
     return {
         "konfiguration": async_redact_data(
@@ -193,6 +198,7 @@ async def async_get_config_entry_diagnostics(
             "schalter": sorted(coordinator.switch_defs),
             "betriebsarten": sorted(coordinator.select_defs),
             "thermostate": sorted(coordinator.thermostat_defs),
+            "zeitprogramme": zeitprogramme,
             "entaschentaste": coordinator.entaschen_def is not None,
             "aschebox_plan": (
                 None
@@ -214,4 +220,30 @@ async def async_get_config_entry_diagnostics(
         "zustandstexte": zustandstexte,
         "prognose": prognose_diagnose(coordinator),
         "menuebaum": menuebaum,
+    }
+
+
+async def _zeitprogramm(coordinator, heizkreis: str) -> dict[str, Any]:
+    """Gewählter Zeitplan und die Zeitfenster, frisch von der Anlage gelesen.
+
+    Auch ohne gewählten Zeitplan - so lässt sich vor dem ersten Schreiben
+    nachsehen, was an der Anlage steht.
+    """
+    abgleich = coordinator.zeitplan_abgleiche.get(heizkreis)
+    defs = coordinator.zeitprogramm_defs[heizkreis]
+    fenster = list(defs)
+    gelesen = await asyncio.gather(
+        *(coordinator.client.async_get_zeitfenster(defs[f]["uri"]) for f in fenster),
+        return_exceptions=True,
+    )
+    return {
+        "zeitplan": abgleich.entity_id if abgleich is not None else None,
+        "zeitfenster": {
+            f"{tag} {nummer}": (
+                f"nicht lesbar: {wert}"
+                if isinstance(wert, Exception)
+                else als_text(wert, defs[(tag, nummer)]["skala"])
+            )
+            for (tag, nummer), wert in zip(fenster, gelesen)
+        },
     }

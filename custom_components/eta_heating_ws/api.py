@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+import re
+from typing import Any, NamedTuple
 
 import aiohttp
 import xmltodict
@@ -80,6 +81,56 @@ class ETAValue:
         if self.is_text:
             return self.text
         return self.value
+
+
+class Zeitfenster(NamedTuple):
+    """Ein Zeitfenster aus dem Zeitprogramm eines Heizkreises.
+
+    Beginn und Ende in Viertelstunden ab Mitternacht, 0 bis 96. Ein Fenster
+    mit Ende nicht nach dem Beginn ist leer. wert ist die Raumtemperatur als
+    Rohwert (21,0 °C bei Skalierung 10 also 210) - oder None, wenn das
+    Fenster keine Temperatur trägt.
+    """
+
+    beginn: int
+    ende: int
+    wert: int | None
+
+    @property
+    def leer(self) -> bool:
+        return self.ende <= self.beginn
+
+    def gleich(self, anderes: Zeitfenster) -> bool:
+        """Gleich für die Anlage: zwei leere Fenster unterscheiden sich nicht in ihren Zeiten."""
+        if self.leer and anderes.leer:
+            return self.wert == anderes.wert
+        return self == anderes
+
+
+_ZEITFENSTER_RE = re.compile(
+    r"^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})(?:\s+(-?\d+(?:[.,]\d+)?))?"
+)
+
+
+def zeitfenster_aus_text(text: str, skala: float) -> Zeitfenster | None:
+    """Liest ein Zeitfenster aus dem Text, den die Anlage dazu meldet.
+
+    An einer echten Anlage gesehen: "00:00 - 24:00 21,0" mit Temperatur,
+    laut Dokumentation auch "00:00 - 24:00" ohne. None, wenn der Text
+    nicht so aussieht.
+    """
+    treffer = _ZEITFENSTER_RE.match(text or "")
+    if treffer is None:
+        return None
+    von_h, von_m, bis_h, bis_m, temperatur = treffer.groups()
+    wert = None
+    if temperatur is not None:
+        wert = round(float(temperatur.replace(",", ".")) * skala)
+    return Zeitfenster(
+        round((int(von_h) * 60 + int(von_m)) / 15),
+        round((int(bis_h) * 60 + int(bis_m)) / 15),
+        wert,
+    )
 
 
 class ETAApiClient:
@@ -241,7 +292,38 @@ class ETAApiClient:
             "scale": _zahl(variable.get("@scaleFactor")) or 1.0,
             "min_roh": grenzen["min"],
             "max_roh": grenzen["max"],
+            "zeitfenster": (
+                _zeitfenster_grenzen(werte) if variable.get("type") == "TIMESLOT" else None
+            ),
         }
+
+    async def async_get_zeitfenster(self, uri: str) -> Zeitfenster:
+        """Liest ein Zeitfenster.
+
+        Beginn, Ende und Temperatur stehen nur im Text (strValue); der
+        Rohwert daneben ist an der Testanlage 0.
+        """
+        xml_text = await self._get_text(f"/user/var{uri}", REQUEST_TIMEOUT)
+        parsed = await self._parse_xml(xml_text)
+        root = next(iter(parsed.values()), None)
+        knoten = root.get("value") if isinstance(root, dict) else None
+        if not isinstance(knoten, dict):
+            raise ETAApiError(f"Antwort zu {uri} enthält kein <value>-Element")
+        fenster = zeitfenster_aus_text(
+            knoten.get("@strValue", ""), _zahl(knoten.get("@scaleFactor")) or 1.0
+        )
+        if fenster is None:
+            raise ETAApiError(f"{uri} meldet kein Zeitfenster: {knoten.get('@strValue')!r}")
+        return fenster
+
+    async def async_set_zeitfenster(self, uri: str, fenster: Zeitfenster) -> None:
+        """Setzt ein Zeitfenster: Beginn und Ende als Formularfelder, die Temperatur als Rohwert."""
+        daten = {"begin": str(fenster.beginn), "end": str(fenster.ende)}
+        if fenster.wert is not None:
+            daten["value"] = str(fenster.wert)
+        antwort = await self._request("POST", f"/user/var{uri}", REQUEST_TIMEOUT, daten)
+        if "<success" not in antwort:
+            raise ETAApiError(f"Zeitfenster {uri} wurde abgelehnt")
 
     async def async_set_value(self, uri: str, raw_value: str) -> None:
         """Setzt eine Variable auf einen Rohwert.
@@ -381,6 +463,29 @@ def _zahl(knoten) -> float | None:
         return float(str(knoten).strip())
     except (TypeError, ValueError):
         return None
+
+
+def _zeitfenster_grenzen(werte) -> dict[str, Any] | None:
+    """Was /user/varinfo über ein Zeitfenster sagt.
+
+    Ob es eine Temperatur trägt (ein <value> neben <begin> und <end>) und in
+    welchen Grenzen, alles als Rohwert. An der Testanlage: 0 bis 800 bei
+    Skalierung 10, ab Werk 210.
+    """
+    if not isinstance(werte, dict):
+        return None
+    untere, vorgabe, obere = (werte.get(name) for name in ("min", "def", "max"))
+    if not all(isinstance(knoten, dict) and "begin" in knoten for knoten in (untere, obere)):
+        return None
+    mit_wert = "value" in untere
+    return {
+        "mit_wert": mit_wert,
+        "min_roh": _zahl(untere.get("value")) if mit_wert else None,
+        "max_roh": _zahl(obere.get("value")) if mit_wert else None,
+        "vorgabe_roh": (
+            _zahl(vorgabe.get("value")) if mit_wert and isinstance(vorgabe, dict) else None
+        ),
+    }
 
 
 def _ohne_messwert(text: str) -> bool:

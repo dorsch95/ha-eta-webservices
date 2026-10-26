@@ -145,6 +145,10 @@ class FakeSession:
         self.schreibbar = True
         self.kessel_zustand = "Heizen"
         self.asche_roh = "2370"
+        self.zeitfenster: dict[str, tuple[int, int, int | None]] = {}
+        """Zeitfenster der Attrappe: URI -> (Beginn, Ende, Rohwert der Temperatur oder None)."""
+        self.zeitfenster_schreibbar = True
+        self.gesetzte_zeitfenster: list[tuple[str, dict]] = []
         self.traege = False
         """Wenn True, meldet die Anlage geschriebene Werte noch nicht zurück.
 
@@ -179,10 +183,28 @@ class FakeSession:
         uri = url.split("/user/var", 1)[1]
         if not self.schreiben_erlaubt:
             return FakeResponse("", status=403)
+        if uri in self.zeitfenster:
+            return self._zeitfenster_setzen(uri, daten)
         wert = daten.get("value")
         self.gesetzte_werte.append((uri, wert))
         self._merken(uri, wert)
         return self._tracked(f'<eta version="1.0"><success uri="{uri}"/></eta>')
+
+    def _zeitfenster_setzen(self, uri: str, daten: dict):
+        """Nimmt Beginn, Ende und - falls das Fenster eine hat - die Temperatur entgegen."""
+        self.gesetzte_zeitfenster.append((uri, dict(daten)))
+        _, _, wert = self.zeitfenster[uri]
+        neu_wert = int(daten["value"]) if wert is not None and "value" in daten else wert
+        self.zeitfenster[uri] = (int(daten["begin"]), int(daten["end"]), neu_wert)
+        return self._tracked(f'<eta version="1.0"><success uri="{uri}"/></eta>')
+
+    def zeitfenster_text(self, uri: str) -> str:
+        """So meldet die Testanlage ein Zeitfenster: "05:30 - 22:30 20,0"."""
+        beginn, ende, wert = self.zeitfenster[uri]
+        text = f"{beginn // 4:02d}:{beginn % 4 * 15:02d} - {ende // 4:02d}:{ende % 4 * 15:02d}"
+        if wert is not None:
+            text += f" {wert / 10:.1f}".replace(".", ",")
+        return text
 
     def _gemeldet(self, uri: str, vorgabe: str) -> str:
         """Der Rohwert, den die Anlage gerade herausgibt.
@@ -242,6 +264,10 @@ class FakeSession:
         Wird für Einzelabfrage und Variablensatz benutzt, damit beide
         Wege dieselben Werte liefern. Geschriebene Werte gehen vor.
         """
+        pfad = uri.split("/user/var", 1)[-1]
+        if pfad in self.zeitfenster:
+            einheit = "°C" if self.zeitfenster[pfad][2] is not None else ""
+            return {"value": "0", "str_value": self.zeitfenster_text(pfad), "unit": einheit, "scale": "10"}
         if "12013" in uri:
             return {"value": self.asche_roh, "str_value": "x", "unit": "kg", "scale": "100"}
         if uri.endswith("/12112"):
@@ -335,6 +361,9 @@ class FakeSession:
         """
         if not self.varinfo_unterstuetzt:
             return FakeResponse("", status=404)
+        pfad = url.split("/user/varinfo", 1)[-1]
+        if pfad in self.zeitfenster:
+            return self._tracked(self._zeitfenster_varinfo(pfad))
         if url.endswith("/12000"):
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
@@ -398,6 +427,26 @@ class FakeSession:
             '<value strValue="Aus">949</value>'
             f'<value strValue="{"Ein" if "12080" not in url else "Heizbetrieb"}">950</value>'
             "</validValues></variable></varInfo></eta>"
+        )
+
+    def _zeitfenster_varinfo(self, pfad: str) -> str:
+        """Wie an der Testanlage: TIMESLOT, mit Temperatur 0 bis 80 °C, ab Werk 00:00 - 24:00 21,0."""
+        mit_wert = self.zeitfenster[pfad][2] is not None
+        einheit = "°C" if mit_wert else ""
+
+        def grenze(name, beginn, ende, wert):
+            inhalt = f"<begin>{beginn}</begin><end>{ende}</end>"
+            if mit_wert:
+                inhalt += f"<value>{wert}</value>"
+            return f'<{name} strValue="x" unit="{einheit}">{inhalt}</{name}>'
+
+        return (
+            '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" name="Zeitfenster 1" '
+            f'fullName="Heizkreis > Heizzeiten > Montag > Zeitfenster 1" unit="{einheit}" '
+            'decPlaces="1" scaleFactor="10" advTextOffset="0" '
+            f'isWritable="{1 if self.zeitfenster_schreibbar else 0}"><type>TIMESLOT</type>'
+            f"<validValues>{grenze('min', 0, 0, 0)}{grenze('def', 0, 96, 210)}"
+            f"{grenze('max', 96, 96, 800)}</validValues></variable></varInfo></eta>"
         )
 
     def _tracked(self, text: str):
