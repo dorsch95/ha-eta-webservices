@@ -93,7 +93,7 @@
       },
       "zeitplaene": {
         "title": "Heating schedule from Home Assistant",
-        "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
+        "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe heating system currently has:\n\n{programm}\n\nBest draw the schedule exactly like this, then nothing changes when you switch it on. If it differs, the integration asks under **Settings → Repairs** before it writes anything for the first time.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
         "data": {
           "hk1_zeitplan": "Heating circuit 1: schedule",
           "hk2_zeitplan": "Heating circuit 2: schedule",
@@ -184,7 +184,7 @@
       },
       "zeitplaene": {
         "title": "Heating schedule from Home Assistant",
-        "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
+        "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe heating system currently has:\n\n{programm}\n\nBest draw the schedule exactly like this, then nothing changes when you switch it on. If it differs, the integration asks under **Settings → Repairs** before it writes anything for the first time.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
         "data": {
           "hk1_zeitplan": "Heating circuit 1: schedule",
           "hk2_zeitplan": "Heating circuit 2: schedule",
@@ -225,6 +225,20 @@
     "zeitplan_zu_voll": {
       "title": "Schedule {zeitplan} does not fit on every day",
       "description": "The heating system has at most 3 time windows per day. The schedule {zeitplan} for {heizkreis} has more blocks on these days: {tage}.\n\nThe integration does not transfer these days; the system keeps its own schedule there. Merge the blocks in the schedule and this notice disappears by itself."
+    },
+    "zeitplan_bestaetigen": {
+      "title": "Transfer schedule {zeitplan} to the heating program?",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Transfer schedule {zeitplan}",
+            "description": "The schedule {zeitplan} differs from the program of {heizkreis} on the heating system. This would be transferred:\n\n{aenderungen}\n\nWith **Submit** the integration writes these time windows to the system. From then on it transfers every change of the schedule without asking. If you do not want that, adjust the schedule or deselect it under Configure."
+          }
+        },
+        "abort": {
+          "zeitplan_nicht_aktiv": "The schedule is no longer selected or the integration is not running right now."
+        }
+      }
     }
   },
   "entity": {

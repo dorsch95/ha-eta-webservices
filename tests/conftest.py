@@ -636,10 +636,12 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
 def aschebox_ohne_hass(monkeypatch) -> SimpleNamespace:
     """Speicher, Meldungen und Zeitgeber des Aschebox-Plans ohne laufendes Home Assistant.
 
+    Derselbe Speicher dient dem Zeitplan-Abgleich für seine Freigaben.
+
     Der Speicher lebt nur im Arbeitsspeicher, bleibt aber über ein neues
     Einrichten hinweg erhalten - so lässt sich ein Neustart nachstellen.
     """
-    from eta_heating_ws import aschebox
+    from eta_heating_ws import aschebox, zeitplan
 
     stand = SimpleNamespace(speicher={}, meldungen=[], zeitgeber=[])
 
@@ -659,6 +661,7 @@ def aschebox_ohne_hass(monkeypatch) -> SimpleNamespace:
         return lambda: stand.zeitgeber.remove(eintrag) if eintrag in stand.zeitgeber else None
 
     monkeypatch.setattr(aschebox, "Store", Speicher)
+    monkeypatch.setattr(zeitplan, "Store", Speicher)
     monkeypatch.setattr(aschebox, "async_track_point_in_utc_time", zeitgeber)
     monkeypatch.setattr(
         aschebox,
@@ -677,10 +680,11 @@ def reparaturen(monkeypatch) -> dict[str, list]:
     und welche wieder entfernt werden - genau das ist die Logik dieser
     Integration.
     """
-    protokoll: dict[str, list] = {"angelegt": [], "entfernt": []}
+    protokoll: dict = {"angelegt": [], "entfernt": [], "daten": {}}
 
     def anlegen(hass, domain, issue_id, **kwargs):
         protokoll["angelegt"].append((issue_id, kwargs.get("translation_placeholders")))
+        protokoll["daten"][issue_id] = kwargs.get("data")
 
     def entfernen(hass, domain, issue_id):
         protokoll["entfernt"].append(issue_id)

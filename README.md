@@ -514,12 +514,14 @@ Ist das Thermometer nicht verfügbar oder meldet keine Zahl, schreibt die Integr
 
 Mit freigegebenem Schreibzugriff lässt sich das Zeitprogramm eines Heizkreises in Home Assistant pflegen: Lege unter **Einstellungen -> Geräte & Dienste -> Helfer** einen **Zeitplan** an und wähle ihn unter **Konfigurieren** im Schritt **„Zeitprogramm aus Home Assistant“** beim Heizkreis aus. Jeder Block des Zeitplans wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung - wie am Display. Die Heizung läuft danach selbstständig nach ihrem Programm, auch wenn Home Assistant einmal nicht läuft.
 
-* **Wann geschrieben wird:** sobald du den Zeitplan änderst und beim Start der Integration. Geschrieben werden nur die Zeitfenster, die abweichen; danach liest die Integration sie zur Kontrolle nach. Was jemand am Display ändert, gilt bis zur nächsten Änderung des Zeitplans oder bis zum nächsten Neustart.
+* **Beim Auswählen** zeigt der Dialog, was gerade an der Heizung steht, etwa „Montag bis Freitag: 05:30 - 22:30 20,0“. Zeichne den Zeitplan am besten genau so - dann ändert sich beim Einschalten nichts.
+* **Beim ersten Mal fragt die Integration nach:** Weicht der gewählte Zeitplan von der Heizung ab, schreibt sie nichts, sondern zeigt unter **Einstellungen -> Reparaturen** die geplanten Änderungen. Erst mit **Absenden** überträgt sie sie. Stimmt der Zeitplan schon mit der Heizung überein, gibt es nichts zu bestätigen. Wählst du später einen anderen Zeitplan, fragt sie erneut.
+* **Danach** schreibt sie, sobald du den Zeitplan änderst, und beim Start der Integration - ohne Rückfrage. Geschrieben werden nur die Zeitfenster, die abweichen; danach liest die Integration sie zur Kontrolle nach. Was jemand am Display ändert, gilt bis zur nächsten Änderung des Zeitplans oder bis zum nächsten Neustart.
 * **Grenzen der Heizung:** höchstens **3 Zeitfenster je Tag**, Zeiten in Viertelstunden (gerundet). Aneinanderstoßende Blöcke mit gleicher Temperatur werden ein Fenster. Hat ein Tag mehr Blöcke, bleibt er an der Heizung, wie er ist, und unter **Einstellungen -> Reparaturen** erscheint ein Hinweis.
 * **Temperatur:** Nur wenn ein Block sie in seinen zusätzlichen Daten mitbringt (`temperatur: 21`), wird sie geschrieben, begrenzt auf 10 bis 30 °C. Ohne Angabe behält jedes Zeitfenster die Temperatur, die an der Heizung eingestellt ist - so passt es auch für Heizkreise, an denen nur Tag und Absenkung zählen. Die Absenktemperatur stellst du weiter an der Heizung ein.
 * **Nie geschrieben** wird ein Zeitplan ganz ohne Blöcke - das hieße Dauerabsenkung; dafür gibt es die Betriebsart *ECO*.
 * Das Zeitprogramm wirkt nur in der Betriebsart *Auto*. Der **Thermostat** verstellt die Temperatur der Heizzeiten wie bisher; stehen Temperaturen im Zeitplan, setzt der nächste Abgleich wieder diese.
-* Die Diagnose-Datei zeigt unter `schreibzugriff -> zeitprogramme` die Zeitfenster, wie die Heizung sie zuletzt gemeldet hat.
+* Die Diagnose-Datei zeigt unter `schreibzugriff -> zeitprogramme` die Zeitfenster, frisch von der Heizung gelesen - auch bevor ein Zeitplan gewählt ist.
 
 ---
 

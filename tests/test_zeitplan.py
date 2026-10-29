@@ -13,8 +13,10 @@ from eta_heating_ws.const import WOCHENTAGE
 from eta_heating_ws.zeitplan import (
     ZeitplanAbgleich,
     aenderungen,
+    aenderungen_als_text,
     als_text,
     bloecke,
+    programm_zusammenfassen,
     viertelstunde,
 )
 
@@ -58,11 +60,18 @@ def plan(**tage) -> dict:
     return {tag: tage.get(tag, standard) for tag in TAGE}
 
 
-async def aufbauen(hass, entry, menu_xml, mit_wert=True):
+async def aufbauen(hass, entry, menu_xml, mit_wert=True, freigegeben=True):
+    """Heizkreis 1 mit Zeitprogramm und ein Abgleich mit schedule.heizen.
+
+    freigegeben: Der Zeitplan wurde schon einmal bestätigt - sonst fragt
+    der erste Abgleich nach, bevor er schreibt.
+    """
     hass.session.menu = mit_zeitprogramm(menu_xml)
     anlage_mit_fenstern(hass.session, mit_wert)
     coordinator, _ = await setup_integration(hass, entry)
     abgleich = ZeitplanAbgleich(hass, coordinator, "hk1", "schedule.heizen")
+    if freigegeben:
+        await abgleich._bestaetigung_merken()
     return coordinator, abgleich
 
 
@@ -281,6 +290,131 @@ async def test_diagnose_zeigt_die_zeitfenster(hass, entry, menu_xml):
     assert (await _zeitprogramm(coordinator, "hk1"))["zeitfenster"]["monday 1"].startswith(
         "nicht lesbar"
     )
+
+
+def test_programm_der_anlage_in_wenigen_zeilen():
+    texte = {(tag, n): "00:00 - 00:00 0,0" for tag in TAGE for n in (1, 2, 3)}
+    for tag in TAGE[:5]:
+        texte[(tag, 1)] = "05:30 - 22:30 20,0"
+    texte[("saturday", 1)] = "07:00 - 12:00 20,0"
+    texte[("saturday", 2)] = "13:00 - 23:00 20,0"
+    assert programm_zusammenfassen(texte) == (
+        "- Montag bis Freitag: 05:30 - 22:30 20,0\n"
+        "- Samstag: 07:00 - 12:00 20,0 und 13:00 - 23:00 20,0\n"
+        "- Sonntag: ganztägig Absenkung"
+    )
+    texte[("sunday", 2)] = None
+    assert programm_zusammenfassen(texte).endswith("- Sonntag: nicht lesbar")
+
+
+def test_aenderungen_fuer_die_rueckfrage():
+    bestand, defs = _woche(Zeitfenster(22, 90, 200))
+    zu_schreiben = {
+        ("saturday", 1): Zeitfenster(28, 92, 200),
+        ("saturday", 2): Zeitfenster(93, 96, 200),
+    }
+    assert aenderungen_als_text(zu_schreiben, bestand, defs) == (
+        "- Samstag, Fenster 1: 05:30 - 22:30 20,0 → 07:00 - 23:00 20,0\n"
+        "- Samstag, Fenster 2: leer → 23:15 - 24:00 20,0"
+    )
+
+
+async def test_erstes_mal_fragt_nach_statt_zu_schreiben(hass, entry, menu_xml, reparaturen):
+    """Ein frisch gewählter Zeitplan, der von der Anlage abweicht, schreibt nichts von selbst."""
+    _, abgleich = await aufbauen(hass, entry, menu_xml, freigegeben=False)
+    mit_plan(abgleich, plan(saturday=[(28, 92, None)]))
+
+    assert await abgleich.abgleichen() is False
+    assert hass.session.gesetzte_zeitfenster == []
+    (issue_id, angaben) = reparaturen["angelegt"][-1]
+    assert issue_id.endswith("hk1_zeitplan_bestaetigen")
+    assert angaben["aenderungen"] == "- Samstag, Fenster 1: 05:30 - 22:30 20,0 → 07:00 - 23:00 20,0"
+
+    vorher = hass.session.count
+    assert await abgleich.abgleichen() is False
+    assert hass.session.count == vorher, "solange die Rückfrage offen ist, nicht ständig nachlesen"
+
+    await abgleich.bestaetigen()
+    await abgleich.abgleichen()
+    assert [uri for uri, _ in hass.session.gesetzte_zeitfenster] == [fenster_uri("saturday", 1)]
+
+    mit_plan(abgleich, plan(saturday=[(28, 88, None)]))
+    assert await abgleich.abgleichen() is True
+    assert hass.session.zeitfenster_text(fenster_uri("saturday", 1)) == "07:00 - 22:00 20,0", (
+        "danach ohne Rückfrage"
+    )
+
+
+async def test_passender_zeitplan_braucht_keine_rueckfrage(hass, entry, menu_xml, reparaturen):
+    _, abgleich = await aufbauen(hass, entry, menu_xml, freigegeben=False)
+    mit_plan(abgleich, plan())
+
+    assert await abgleich.abgleichen() is True
+    assert not any(i.endswith("zeitplan_bestaetigen") for i, _ in reparaturen["angelegt"])
+
+    mit_plan(abgleich, plan(sunday=[(32, 88, None)]))
+    assert await abgleich.abgleichen() is True
+    assert [uri for uri, _ in hass.session.gesetzte_zeitfenster] == [fenster_uri("sunday", 1)]
+
+
+async def test_angepasster_zeitplan_erledigt_die_rueckfrage(hass, entry, menu_xml, reparaturen):
+    _, abgleich = await aufbauen(hass, entry, menu_xml, freigegeben=False)
+    mit_plan(abgleich, plan(saturday=[(28, 92, None)]))
+    await abgleich.abgleichen()
+
+    mit_plan(abgleich, plan())
+    assert await abgleich.abgleichen() is True
+    assert reparaturen["entfernt"][-1].endswith("hk1_zeitplan_bestaetigen")
+    assert hass.session.gesetzte_zeitfenster == []
+
+
+async def test_anderer_helfer_fragt_erneut(hass, entry, menu_xml, reparaturen):
+    coordinator, abgleich = await aufbauen(hass, entry, menu_xml)
+    anderer = ZeitplanAbgleich(hass, coordinator, "hk1", "schedule.ferien")
+    mit_plan(anderer, plan(saturday=[(28, 92, None)]))
+
+    assert await anderer.abgleichen() is False
+    assert hass.session.gesetzte_zeitfenster == []
+    assert reparaturen["angelegt"][-1][1]["zeitplan"] == "schedule.ferien"
+
+
+async def test_knopf_im_reparaturhinweis(hass, entry, menu_xml, reparaturen):
+    """Mit genau den Daten, die die Rückfrage anlegt."""
+    from eta_heating_ws.repairs import ZeitplanBestaetigen, async_create_fix_flow
+
+    coordinator, abgleich = await aufbauen(hass, entry, menu_xml, freigegeben=False)
+    coordinator.zeitplan_abgleiche["hk1"] = abgleich
+    entry.runtime_data = coordinator
+    mit_plan(abgleich, plan(saturday=[(28, 92, None)]))
+    await abgleich.abgleichen()
+    hass.config_entries.async_get_entry = lambda entry_id: entry if entry_id == "testeintrag" else None
+    issue_id = "testeintrag_hk1_zeitplan_bestaetigen"
+    daten = reparaturen["daten"][issue_id]
+    assert all(isinstance(wert, (str, int, float)) for wert in daten.values()), (
+        "mehr nimmt die Issue-Registry nicht"
+    )
+
+    flow = await async_create_fix_flow(hass, issue_id, daten)
+    assert isinstance(flow, ZeitplanBestaetigen)
+    flow.hass = hass
+    flow.async_show_form = lambda **kwargs: {"type": "form", **kwargs}
+    flow.async_create_entry = lambda **kwargs: {"type": "create_entry", **kwargs}
+    flow.async_abort = lambda **kwargs: {"type": "abort", **kwargs}
+
+    formular = await flow.async_step_init()
+    assert formular["step_id"] == "confirm"
+    assert formular["description_placeholders"] == {
+        "zeitplan": "schedule.heizen",
+        "heizkreis": "Heizkreis 1",
+        "aenderungen": "- Samstag, Fenster 1: 05:30 - 22:30 20,0 → 07:00 - 23:00 20,0",
+    }
+
+    assert (await flow.async_step_confirm({}))["type"] == "create_entry"
+    await abgleich.abgleichen()
+    assert hass.session.zeitfenster_text(fenster_uri("saturday", 1)) == "07:00 - 23:00 20,0"
+
+    coordinator.zeitplan_abgleiche.clear()
+    assert (await flow.async_step_confirm({}))["type"] == "abort"
 
 
 @pytest.fixture

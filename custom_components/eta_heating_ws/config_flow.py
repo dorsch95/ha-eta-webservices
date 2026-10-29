@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import voluptuous as vol
@@ -26,9 +27,10 @@ from homeassistant.helpers.selector import (
 )
 
 from . import uebernahme
-from .api import ETAApiClient, ETAApiError
+from .api import ETAApiClient, ETAApiError, ETAValue
 from .prognose_koordinator import einzige_wetter_entitaet
 from .uri_discovery import async_discover_uris
+from .zeitplan import programm_zusammenfassen
 from .const import (
     COMPONENTS,
     CONF_COMPONENTS,
@@ -85,7 +87,7 @@ async def _anlage_pruefen(
     fub_names: dict[str, str],
     komponenten: list[str],
     schreiben: bool,
-) -> tuple[list[str], dict[str, dict], list[str]]:
+) -> tuple[list[str], dict[str, dict], dict[str, dict[tuple[str, int], str]]]:
     """Liest einmal den Menübaum und sagt, welche Schritte noch folgen.
 
     Erstens die angekreuzten Puffer, die ihr effektives Volumen nicht
@@ -98,18 +100,19 @@ async def _anlage_pruefen(
     Zeitüberwachung in Sekunden.
 
     Drittens - ebenfalls nur mit Schreibzugriff - die Heizkreise, deren
-    Zeitprogramm mit allen Zeitfenstern im Menübaum steht. Ob die Anlage
-    sie auch beschreiben lässt, prüft erst das Einrichten selbst.
+    Zeitprogramm mit allen Zeitfenstern im Menübaum steht, je mit den URIs
+    der Fenster. Ob die Anlage sie auch beschreiben lässt, prüft erst das
+    Einrichten selbst.
 
     Ist der Menübaum nicht lesbar, folgt keiner der Schritte.
     """
     if not host:
-        return [], {}, []
+        return [], {}, {}
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     try:
         gefunden, _ = await async_discover_uris(client, fub_names)
     except ETAApiError:
-        return [], {}, []
+        return [], {}, {}
     ohne_volumen = [
         komponente
         for komponente in PUFFER_SPEICHER
@@ -119,17 +122,16 @@ async def _anlage_pruefen(
     ]
     thermostate: dict[str, dict] = {}
     if not schreiben:
-        return ohne_volumen, thermostate, []
-    zeitprogramme = [
-        heizkreis
-        for heizkreis, definition in THERMOSTATE.items()
-        if heizkreis in komponenten
-        and all(
-            zeitfenster_schluessel(definition["praefix"], tag, nummer) in gefunden
+        return ohne_volumen, thermostate, {}
+    zeitprogramme = {}
+    for heizkreis, definition in THERMOSTATE.items():
+        uris = {
+            (tag, nummer): gefunden.get(zeitfenster_schluessel(definition["praefix"], tag, nummer))
             for tag in WOCHENTAGE
             for nummer in range(1, ZEITFENSTER_JE_TAG + 1)
-        )
-    ]
+        }
+        if heizkreis in komponenten and all(uris.values()):
+            zeitprogramme[heizkreis] = uris
     for heizkreis, definition in THERMOSTATE.items():
         praefix = definition["praefix"]
         if heizkreis not in komponenten or f"{praefix}_raum_extern" not in gefunden:
@@ -185,7 +187,28 @@ def _raumfuehler_schema(thermostate: dict[str, dict], current: dict[str, Any]) -
     return vol.Schema(felder)
 
 
-def _zeitplaene_schema(zeitprogramme: list[str], current: dict[str, Any]) -> vol.Schema:
+async def _programm_der_anlage(
+    hass: HomeAssistant,
+    host: str | None,
+    port: int,
+    zeitprogramme: dict[str, dict[tuple[str, int], str]],
+) -> str:
+    """Was im Zeitprogramm der Anlage steht, je Heizkreis in wenigen Zeilen."""
+    client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
+    absaetze = []
+    for heizkreis, uris in zeitprogramme.items():
+        werte = await asyncio.gather(
+            *(client.async_get_value(uri) for uri in uris.values()), return_exceptions=True
+        )
+        texte = {
+            fenster: wert.text if isinstance(wert, ETAValue) else None
+            for fenster, wert in zip(uris, werte)
+        }
+        absaetze.append(f"**{COMPONENTS[heizkreis]['name']}**\n{programm_zusammenfassen(texte)}")
+    return "\n\n".join(absaetze)
+
+
+def _zeitplaene_schema(zeitprogramme, current: dict[str, Any]) -> vol.Schema:
     """Je Heizkreis mit beschreibbarem Zeitprogramm ein Zeitplan-Helfer, freiwillig."""
     return vol.Schema(
         {
@@ -375,9 +398,15 @@ class _Anlagenschritte:
                 }
             )
             return self._fertig(self._data)
+        host, port = self._adresse()
         return self.async_show_form(
             step_id="zeitplaene",
             data_schema=_zeitplaene_schema(self._zeitprogramme, self._bisher),
+            description_placeholders={
+                "programm": await _programm_der_anlage(
+                    self.hass, host, port, self._zeitprogramme
+                )
+            },
         )
 
     async def async_step_puffer(
@@ -445,7 +474,7 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
-        self._zeitprogramme: list[str] = []
+        self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
         self._neu_gewaehlt = False
 
     _bisher: dict[str, Any] = {}
@@ -637,7 +666,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         self._data: dict[str, Any] = {}
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
-        self._zeitprogramme: list[str] = []
+        self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
 
     @property
     def _current(self) -> dict[str, Any]:

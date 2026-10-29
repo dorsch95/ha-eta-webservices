@@ -93,7 +93,7 @@
       },
       "zeitplaene": {
         "title": "Zeitprogramm aus Home Assistant",
-        "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
+        "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nIm Moment steht an der Heizung:\n\n{programm}\n\nZeichne den Zeitplan am besten genau so, dann ändert sich beim Einschalten nichts. Weicht er ab, fragt die Integration unter **Einstellungen → Reparaturen** nach, bevor sie zum ersten Mal etwas schreibt.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
         "data": {
           "hk1_zeitplan": "Heizkreis 1: Zeitplan",
           "hk2_zeitplan": "Heizkreis 2: Zeitplan",
@@ -184,7 +184,7 @@
       },
       "zeitplaene": {
         "title": "Zeitprogramm aus Home Assistant",
-        "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
+        "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nIm Moment steht an der Heizung:\n\n{programm}\n\nZeichne den Zeitplan am besten genau so, dann ändert sich beim Einschalten nichts. Weicht er ab, fragt die Integration unter **Einstellungen → Reparaturen** nach, bevor sie zum ersten Mal etwas schreibt.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
         "data": {
           "hk1_zeitplan": "Heizkreis 1: Zeitplan",
           "hk2_zeitplan": "Heizkreis 2: Zeitplan",
@@ -225,6 +225,20 @@
     "zeitplan_zu_voll": {
       "title": "Zeitplan {zeitplan} passt nicht an allen Tagen",
       "description": "Die Heizung hat je Tag höchstens 3 Zeitfenster. Der Zeitplan {zeitplan} für {heizkreis} hat an diesen Tagen mehr Blöcke: {tage}.\n\nDiese Tage überträgt die Integration nicht, dort bleibt das Zeitprogramm der Heizung, wie es ist. Fasse die Blöcke im Zeitplan zusammen, dann verschwindet dieser Hinweis von selbst."
+    },
+    "zeitplan_bestaetigen": {
+      "title": "Zeitplan {zeitplan} ins Zeitprogramm übernehmen?",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Zeitplan {zeitplan} übernehmen",
+            "description": "Der Zeitplan {zeitplan} weicht vom Zeitprogramm von {heizkreis} an der Heizung ab. Übernommen würde:\n\n{aenderungen}\n\nMit **Absenden** schreibt die Integration diese Zeitfenster in die Anlage. Danach überträgt sie jede Änderung am Zeitplan ohne Rückfrage. Willst du das nicht, passe den Zeitplan an oder wähle ihn unter Konfigurieren wieder ab."
+          }
+        },
+        "abort": {
+          "zeitplan_nicht_aktiv": "Der Zeitplan ist nicht mehr gewählt oder die Integration läuft gerade nicht."
+        }
+      }
     }
   },
   "entity": {

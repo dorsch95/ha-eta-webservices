@@ -55,6 +55,7 @@ from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehle
 from .entitaets_ids import deutsche_namen
 from .prognose_koordinator import ETAPrognoseKoordinator
 from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
+from .repairs import async_zeitplan_hinweise_entfernen
 from .zeitplan import ZeitplanAbgleich
 
 _LOGGER = logging.getLogger(__name__)
@@ -196,6 +197,7 @@ def _zeitplaene_starten(
     for heizkreis in coordinator.zeitprogramm_defs:
         entity_id = config.get(zeitplan_schluessel(heizkreis))
         if not entity_id:
+            async_zeitplan_hinweise_entfernen(hass, entry.entry_id, heizkreis)
             continue
         abgleich = ZeitplanAbgleich(hass, coordinator, heizkreis, entity_id)
         coordinator.zeitplan_abgleiche[heizkreis] = abgleich

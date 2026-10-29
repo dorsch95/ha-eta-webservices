@@ -281,7 +281,7 @@ def test_optionen_fragen_nicht_nach_der_adresse():
 
 
 async def _keiner_ohne_volumen(*_):
-    return [], {}, []
+    return [], {}, {}
 
 
 async def options_schritt(monkeypatch, bisher, eingabe):
@@ -454,7 +454,7 @@ async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
     flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
 
     async def nur_puffer2(*_):
-        return ["puffer2"], {}, []
+        return ["puffer2"], {}, {}
 
     monkeypatch.setattr(modul, "_anlage_pruefen", nur_puffer2)
     schritt = await flow.async_step_fub_names(
@@ -485,14 +485,14 @@ async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
     monkeypatch.setattr(modul, "async_discover_uris", menue)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
     komponenten = ["kessel", "puffer", "puffer2", "puffer3"]
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == (["puffer2"], {}, [])
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "puffer"], False) == ([], {}, [])
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == (["puffer2"], {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "puffer"], False) == ([], {}, {})
 
     async def kaputt(client, fub_names):
         raise modul.ETAApiError("kein Menübaum")
 
     monkeypatch.setattr(modul, "async_discover_uris", kaputt)
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) == ([], {}, [])
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) == ([], {}, {})
 
 
 async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
@@ -517,10 +517,10 @@ async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
     assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) == (
         [],
         {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}},
-        [],
+        {},
     )
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == ([], {}, [])
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "hk2"], True) == ([], {}, [])
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == ([], {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "hk2"], True) == ([], {}, {})
 
 
 async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
@@ -616,14 +616,29 @@ async def test_zeitplan_je_heizkreis_im_dialog(monkeypatch):
         monkeypatch, bisher, optionen(components=["hk1", "hk2"], enable_switches=True)
     )
 
+    from eta_heating_ws.api import ETAApiClient, ETAValue
+    from eta_heating_ws.const import WOCHENTAGE
+
+    fenster = {(tag, n): f"/{tag}/{n}" for tag in WOCHENTAGE for n in (1, 2, 3)}
+
     async def mit_zeitprogramm(*_):
-        return [], {}, ["hk1", "hk2"]
+        return [], {}, {"hk1": fenster, "hk2": fenster}
+
+    async def lesen(self, uri):
+        text = "05:30 - 22:30 20,0" if uri.endswith("/1") else "00:00 - 00:00 0,0"
+        return ETAValue(0.0, text, "°C", False, 1)
 
     monkeypatch.setattr(modul, "_anlage_pruefen", mit_zeitprogramm)
+    monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
+    monkeypatch.setattr(ETAApiClient, "async_get_value", lesen)
     schritt = await flow.async_step_fub_names(
         {"kessel": "Kessel", "sys": "Sys", "hk": "HK", "hk2": "HK 2"}
     )
     assert schritt["step_id"] == "zeitplaene"
+    assert schritt["description_placeholders"]["programm"] == (
+        "**Heizkreis 1**\n- Montag bis Sonntag: 05:30 - 22:30 20,0\n\n"
+        "**Heizkreis 2**\n- Montag bis Sonntag: 05:30 - 22:30 20,0"
+    )
     vorschlag = {
         str(k): (k.description or {}).get("suggested_value") for k in schritt["data_schema"].schema
     }
@@ -651,9 +666,11 @@ async def test_zeitprogramm_nur_mit_schreibzugriff_im_dialog(monkeypatch):
     monkeypatch.setattr(modul, "async_discover_uris", menue)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
     komponenten = ["kessel", "hk1", "hk2"]
-    assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2] == ["hk1"]
-    assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False))[2] == []
+    zeitprogramme = (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2]
+    assert list(zeitprogramme) == ["hk1"]
+    assert zeitprogramme["hk1"][("monday", 2)] == "/1/2"
+    assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False))[2] == {}
     gefunden.pop(zeitfenster_schluessel("heizkreis", "sunday", 3))
-    assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2] == [], (
+    assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2] == {}, (
         "nur mit allen Fenstern der Woche"
     )

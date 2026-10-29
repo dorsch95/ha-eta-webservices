@@ -10,6 +10,12 @@ Home Assistant führt: Ändert sich der Zeitplan, schreibt die Integration
 die Fenster, die davon abweichen, in die Anlage - ebenso beim Start. Was
 jemand am Display ändert, gilt bis dahin.
 
+Beim ersten Mal fragt sie: Weicht ein frisch gewählter Zeitplan von der
+Anlage ab, schreibt sie nichts, sondern legt einen Reparaturhinweis mit
+den Änderungen an. Erst wenn ihn jemand bestätigt, gilt der Zeitplan als
+freigegeben (gemerkt je Heizkreis und Helfer). Stimmt er schon mit der
+Anlage überein, gibt es nichts zu bestätigen.
+
 Eine Temperatur schreibt sie nur, wenn der Block eine mitbringt
 (temperatur: 21). Sonst behält jedes Fenster seine, ein neu belegtes
 übernimmt die des ersten belegten Fensters der Woche. So passt es auch
@@ -38,15 +44,22 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 
-from .api import ETAApiError, Zeitfenster
+from homeassistant.helpers.storage import Store
+
+from .api import ETAApiError, Zeitfenster, zeitfenster_aus_text
 from .const import (
+    DOMAIN,
     THERMOSTAT_SOLL_GRENZEN,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
     ZEITPLAN_TAKT,
     ZEITPLAN_TEMPERATUR,
 )
-from .repairs import async_zeitplan_pruefen
+from .repairs import (
+    async_zeitplan_bestaetigung_anfragen,
+    async_zeitplan_bestaetigung_erledigt,
+    async_zeitplan_pruefen,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -196,6 +209,58 @@ def als_text(fenster: Zeitfenster, skala: float) -> str:
     return text
 
 
+def aenderungen_als_text(
+    zu_schreiben: dict[tuple[str, int], Zeitfenster],
+    bestand: dict[tuple[str, int], Zeitfenster],
+    defs: dict[tuple[str, int], dict],
+) -> str:
+    """Die geplanten Änderungen, eine Zeile je Fenster - für die Rückfrage."""
+
+    def text(fenster: Zeitfenster, skala: float) -> str:
+        return "leer" if fenster.leer else als_text(fenster, skala)
+
+    return "\n".join(
+        f"- {WOCHENTAGE[tag]}, Fenster {nummer}: "
+        f"{text(bestand[(tag, nummer)], defs[(tag, nummer)]['skala'])} → "
+        f"{text(neu, defs[(tag, nummer)]['skala'])}"
+        for (tag, nummer), neu in zu_schreiben.items()
+    )
+
+
+def programm_zusammenfassen(texte: dict[tuple[str, int], str | None]) -> str:
+    """Das Zeitprogramm der Anlage in wenigen Zeilen, gleiche Tage zusammengefasst.
+
+    texte sind die Texte der Fenster, wie die Anlage sie meldet ("05:30 -
+    22:30 20,0"), None für ein nicht lesbares. Ergebnis etwa
+    "- Montag bis Freitag: 05:30 - 22:30 20,0" je Gruppe.
+    """
+    tage = []
+    for tag, name in WOCHENTAGE.items():
+        fenster = [texte.get((tag, nummer)) for nummer in range(1, ZEITFENSTER_JE_TAG + 1)]
+        if any(text is None for text in fenster):
+            beschreibung = "nicht lesbar"
+        else:
+            belegt = [
+                text
+                for text in fenster
+                if (gelesen := zeitfenster_aus_text(text, 1)) is not None and not gelesen.leer
+            ]
+            beschreibung = " und ".join(belegt) if belegt else "ganztägig Absenkung"
+        if tage and tage[-1][1] == beschreibung:
+            tage[-1][0].append(name)
+        else:
+            tage.append(([name], beschreibung))
+
+    def tage_text(namen: list[str]) -> str:
+        if len(namen) == 1:
+            return namen[0]
+        if len(namen) == 2:
+            return f"{namen[0]} und {namen[1]}"
+        return f"{namen[0]} bis {namen[-1]}"
+
+    return "\n".join(f"- {tage_text(namen)}: {beschreibung}" for namen, beschreibung in tage)
+
+
 class ZeitplanAbgleich:
     """Hält das Zeitprogramm eines Heizkreises auf dem Stand eines Zeitplan-Helfers."""
 
@@ -206,6 +271,9 @@ class ZeitplanAbgleich:
         self.entity_id = entity_id
         self._defs = coordinator.zeitprogramm_defs[heizkreis]
         self._uebertragen: Wochenplan | None = None
+        self._vorgelegt: Wochenplan | None = None
+        """Der Plan, zu dem gerade eine Rückfrage offen ist."""
+        self._bestaetigt: bool | None = None
         self._sperre = asyncio.Lock()
         self._abmelden: list = []
         self._gewarnt: str | None = None
@@ -272,6 +340,30 @@ class ZeitplanAbgleich:
             return None
         return {tag: bloecke(tage.get(tag) or []) for tag in WOCHENTAGE}
 
+    def _speicher(self) -> Store:
+        """Wo gemerkt wird, welcher Helfer je Heizkreis freigegeben ist."""
+        return Store(
+            self.hass, 1, f"{DOMAIN}.zeitplan_{self.coordinator.config_entry.entry_id}"
+        )
+
+    async def _ist_bestaetigt(self) -> bool:
+        if self._bestaetigt is None:
+            gespeichert = await self._speicher().async_load() or {}
+            self._bestaetigt = gespeichert.get(self.heizkreis) == self.entity_id
+        return self._bestaetigt
+
+    async def _bestaetigung_merken(self) -> None:
+        speicher = self._speicher()
+        gespeichert = await speicher.async_load() or {}
+        await speicher.async_save({**gespeichert, self.heizkreis: self.entity_id})
+        self._bestaetigt = True
+
+    async def bestaetigen(self) -> None:
+        """Gibt den Zeitplan frei und überträgt ihn - aufgerufen aus dem Reparaturhinweis."""
+        await self._bestaetigung_merken()
+        self._vorgelegt = None
+        self.hass.async_create_task(self.abgleichen())
+
     async def _bestand_lesen(self) -> dict[tuple[str, int], Zeitfenster]:
         fenster = list(self._defs)
         gelesen = await asyncio.gather(
@@ -285,6 +377,8 @@ class ZeitplanAbgleich:
             plan = await self.plan_lesen()
             if plan is None or plan == self._uebertragen:
                 return plan is not None
+            if plan == self._vorgelegt:
+                return False
             if not any(plan.values()):
                 self._warnen(
                     "ETA: Zeitplan %s hat keinen einzigen Block - das Zeitprogramm "
@@ -293,16 +387,39 @@ class ZeitplanAbgleich:
                     self.heizkreis,
                 )
                 return False
+            entry_id = self.coordinator.config_entry.entry_id
             try:
+                bestaetigt = await self._ist_bestaetigt()
                 self.bestand = await self._bestand_lesen()
                 zu_schreiben, zu_voll = aenderungen(plan, self.bestand, self._defs)
                 async_zeitplan_pruefen(
                     self.hass,
-                    self.coordinator.config_entry.entry_id,
+                    entry_id,
                     self.heizkreis,
                     self.entity_id,
                     [WOCHENTAGE[tag] for tag in zu_voll],
                 )
+                if zu_schreiben and not bestaetigt:
+                    self._vorgelegt = plan
+                    async_zeitplan_bestaetigung_anfragen(
+                        self.hass,
+                        entry_id,
+                        self.heizkreis,
+                        self.entity_id,
+                        aenderungen_als_text(zu_schreiben, self.bestand, self._defs),
+                    )
+                    _LOGGER.info(
+                        "ETA: Zeitplan %s weicht vom Zeitprogramm von %s ab - "
+                        "geschrieben wird erst nach Bestätigung",
+                        self.entity_id,
+                        self.heizkreis,
+                    )
+                    return False
+                if not bestaetigt:
+                    await self._bestaetigung_merken()
+                if self._vorgelegt is not None or not bestaetigt:
+                    async_zeitplan_bestaetigung_erledigt(self.hass, entry_id, self.heizkreis)
+                self._vorgelegt = None
                 for fenster, neu in zu_schreiben.items():
                     await self.coordinator.client.async_set_zeitfenster(
                         self._defs[fenster]["uri"], neu
