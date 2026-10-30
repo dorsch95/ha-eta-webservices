@@ -2,6 +2,7 @@
   "domain": "eta_heating_ws",
   "name": "ETA Web-Services",
   "after_dependencies": [
+    "frontend",
     "recorder",
     "weather"
   ],

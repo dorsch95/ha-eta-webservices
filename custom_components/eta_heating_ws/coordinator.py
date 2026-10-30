@@ -152,6 +152,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """Je Heizkreis mit beschreibbarem Zeitprogramm seine 21 Zeitfenster, siehe zeitplan.py."""
         self.zeitplan_abgleiche: dict[str, object] = {}
         """Je Heizkreis mit gewähltem Zeitplan sein Abgleich - für die Diagnose."""
+        self.zeitprogramm_sperre = asyncio.Lock()
+        """Damit zwei Dashboards nicht gleichzeitig ins Zeitprogramm schreiben."""
         self.betriebsart_auswahl: dict[str, object] = {}
         """Die Betriebsart-Auswahlen je Schlüssel - der Thermostat stellt über sie um."""
         self.components_without_data: list[str] = []

@@ -23,6 +23,17 @@ Dashboard-Karte aus state-label-Elementen - sonst bräuchte jede Sprache
 und jeder Heizkreis eine eigene Grafik.
 """
 
+URL_OBERFLAECHE = f"/{DOMAIN}/oberflaeche"
+"""Unter dieser Adresse liefert Home Assistant die eigenen Dashboard-Karten aus.
+
+Die Dateien liegen im Ordner oberflaeche/ der Integration. Home Assistant
+lädt sie in jedem Dashboard von selbst, niemand muss sie als Ressource
+eintragen.
+"""
+
+KARTE_ZEITPROGRAMM = "eta-zeitprogramm-karte.js"
+"""Die Karte "ETA Zeitprogramm", siehe zeitprogramm.py."""
+
 ALTE_DOMAIN = "eta_webservices"
 """So hieß die Integration intern bis Version 0.25.
 

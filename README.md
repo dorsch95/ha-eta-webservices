@@ -24,7 +24,8 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 - **Upgrading from 0.25 or older:** the internal name changed from `eta_webservices` to `eta_heating_ws`, because another ETA integration has used the old name since 2022. After updating and restarting, add the integration once more and choose *Take over the existing setup*: settings, entity IDs, history, device and dashboards are kept, and the old setup and folder are removed. Restart once more afterwards; until then “ETA Web-Services” shows up twice in some lists. If HACS stops the download with *No manifest.json file found 'custom_components/eta_webservices/manifest.json'*, restart Home Assistant once and run the update again.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
-- With switching enabled, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
+- With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Home Assistant loads the card by itself - add it via *Edit dashboard -> Add card*.
+- Alternatively, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
 - A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
 - The ready-made dashboard card: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
 - Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
@@ -509,6 +510,20 @@ Ist ein Heizkreis im ETA-Assistenten mit **„Raumfühler ext. Schnittstelle“*
 Das gewählte Thermometer schreibt die Integration alle 30 Sekunden (und bei jeder Änderung) als Raumtemperatur in die Anlage. Die übernimmt den Wert binnen Sekunden. Kommt innerhalb der **Zeitüberwachung** kein neuer Wert, verwirft sie ihn und meldet „Raumfühler: Keine Verbindung“ - fällt Home Assistant aus, regelt die Anlage also nicht mit einem alten Wert weiter. Ab Werk steht die Zeitüberwachung auf 1 Minute; dann meldet die Anlage das bei jedem Neustart von Home Assistant. **10 Minuten** überbrücken einen Neustart. Die Integration schreibt die Zeitüberwachung nur, wenn du sie im Formular änderst (1 bis 60 Minuten). Steht sie an der Anlage auf 0, schreibt sie gar keine Raumtemperatur - die Anlage würde einen alten Wert sonst womöglich nie verwerfen.
 
 Ist das Thermometer nicht verfügbar oder meldet keine Zahl, schreibt die Integration **nichts** - kein Ersatzwert. `sensor.eta_heizung_heizkreis_raumtemperatur` zeigt jederzeit, welchen Raumwert die Anlage gerade verwendet; ohne gültigen Wert steht der Sensor auf *Unbekannt*.
+
+### Zeitprogramm auf dem Dashboard
+
+Mit freigegebenem Schreibzugriff zeigt die Karte **ETA Zeitprogramm** die Heizzeiten jedes Heizkreises als Wochenbalken - und du änderst sie direkt dort, am PC wie in der Handy-App:
+
+1. **Dashboard bearbeiten -> Karte hinzufügen** und **ETA Zeitprogramm** wählen. Mehr ist nicht einzurichten: Home Assistant lädt die Karte von selbst, ohne Eintrag unter *Ressourcen*.
+2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und - falls die Heizung eine kennt - Temperatur. Mit **+ Zeitfenster** kommt eines dazu, mit **✕** fällt eines weg.
+3. Unter **Gilt für** weitere Tage wählen, etwa **Mo–Fr** - dann bekommen alle dieselben Zeiten.
+4. **Speichern.** Die Integration schreibt nur, was sich ändert, liest es zur Kontrolle von der Heizung nach und zeigt „Gespeichert“.
+
+* Es gelten dieselben **Grenzen der Heizung** wie unten: höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden, Temperaturen von 10 bis 30 °C. Überschneiden sich zwei Fenster oder endet eines vor seinem Beginn, sagt die Karte das, bevor etwas geschrieben wird.
+* Ein Tag ohne Zeitfenster heißt: den ganzen Tag Absenkung.
+* Folgt ein Heizkreis einem **Zeitplan** aus Home Assistant (nächster Abschnitt), zeigt die Karte sein Programm nur an und verweist auf den Zeitplan - sonst überschriebe der nächste Abgleich die Änderung wieder.
+* Mit **⟳** liest die Karte das Programm neu von der Heizung, etwa nach einer Änderung am Display.
 
 ### Zeitprogramm aus Home Assistant
 

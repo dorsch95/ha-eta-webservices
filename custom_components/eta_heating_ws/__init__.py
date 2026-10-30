@@ -41,6 +41,7 @@ from .const import (
     SENSORS,
     SWITCHES,
     URL_GRAFIKEN,
+    URL_OBERFLAECHE,
     ALTE_URL_GRAFIKEN,
     THERMOSTATE,
     components_from_config,
@@ -57,6 +58,7 @@ from .prognose_koordinator import ETAPrognoseKoordinator
 from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
 from .repairs import async_zeitplan_hinweise_entfernen
 from .zeitplan import ZeitplanAbgleich
+from .zeitprogramm import OBERFLAECHE, async_karte_anmelden
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,22 +68,26 @@ GRAFIKEN = Path(__file__).parent / "grafiken"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Stellt die Kachelgrafiken unter URL_GRAFIKEN bereit und meldet die Aktionen an.
+    """Stellt Kachelgrafiken und Dashboard-Karten bereit und meldet die Aktionen an.
 
-    Bis Version 0.20 wurden sie bei jedem Start in den www-Ordner des
-    Nutzers geschrieben. Jetzt liefert Home Assistant sie direkt aus dem
+    Bis Version 0.20 wurden die Grafiken bei jedem Start in den www-Ordner
+    des Nutzers geschrieben. Jetzt liefert Home Assistant sie direkt aus dem
     Ordner der Integration aus; ohne Zwischenspeicher im Browser, damit
     geänderte Grafiken nach einem Update sofort ankommen (siehe
     karte.bildadresse). Die alten Adressen bleiben für Karten von vor dem
-    Umbenennen.
+    Umbenennen. Ebenso die Karte "ETA Zeitprogramm", siehe zeitprogramm.py.
     """
     await hass.http.async_register_static_paths(
         [
-            StaticPathConfig(pfad, str(GRAFIKEN), cache_headers=False)
-            for pfad in (URL_GRAFIKEN, *ALTE_URL_GRAFIKEN)
+            *(
+                StaticPathConfig(pfad, str(GRAFIKEN), cache_headers=False)
+                for pfad in (URL_GRAFIKEN, *ALTE_URL_GRAFIKEN)
+            ),
+            StaticPathConfig(URL_OBERFLAECHE, str(OBERFLAECHE), cache_headers=False),
         ]
     )
     async_aktionen_registrieren(hass)
+    async_karte_anmelden(hass)
     return True
 
 

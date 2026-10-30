@@ -154,25 +154,44 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
         def async_register(self, domain, name, *args, **kwargs):
             self.angemeldet.append((domain, name))
 
+    from types import SimpleNamespace
+
+    from homeassistant.components.frontend import DATA_EXTRA_MODULE_URL
+
     class Hass:
         http = Http()
         services = Dienste()
+        config = SimpleNamespace(components={"frontend"})
+        data = {DATA_EXTRA_MODULE_URL: set()}
 
     assert await eta_heating_ws.async_setup(Hass(), {}) is True
     assert Hass.services.angemeldet == [("eta_heating_ws", "karte_erzeugen")]
 
     from eta_heating_ws.const import ALTE_URL_GRAFIKEN
-    from eta_heating_ws.karte import BILDPFAD
+    from eta_heating_ws.karte import BILDPFAD, VERSION
 
     assert BILDPFAD == URL_GRAFIKEN
     assert [p.url_path for p in Hass.http.pfade] == [
         "/eta_heating_ws/grafiken",
         "/eta_webservices/grafiken",
         "/eta_webservices/grafiken/0.25.0",
-    ] == [URL_GRAFIKEN, *ALTE_URL_GRAFIKEN], "die alten Adressen für Karten von vor dem Umbenennen"
-    for pfad in Hass.http.pfade:
+        "/eta_heating_ws/oberflaeche",
+    ] == [URL_GRAFIKEN, *ALTE_URL_GRAFIKEN, "/eta_heating_ws/oberflaeche"], (
+        "die alten Adressen für Karten von vor dem Umbenennen"
+    )
+    for pfad in Hass.http.pfade[:-1]:
         assert pfad.path == str(eta_heating_ws.GRAFIKEN)
         assert pfad.cache_headers is False
+    assert Hass.http.pfade[-1].path == str(eta_heating_ws.OBERFLAECHE)
+    assert Hass.http.pfade[-1].cache_headers is False
+
+    assert Hass.data[DATA_EXTRA_MODULE_URL] == {
+        f"/eta_heating_ws/oberflaeche/eta-zeitprogramm-karte.js?v={VERSION}"
+    }, "jedes Dashboard lädt die Karte von selbst"
+    assert set(Hass.data["websocket_api"]) == {
+        "eta_heating_ws/zeitprogramme",
+        "eta_heating_ws/zeitprogramm_setzen",
+    }
 
 
 async def test_setup_schreibt_nichts_nach_www(hass, entry):
