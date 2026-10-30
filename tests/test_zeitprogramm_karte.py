@@ -18,7 +18,7 @@ from eta_heating_ws.zeitprogramm import (
 )
 
 from .test_sensors import setup_integration
-from .test_zeitplan import anlage_mit_fenstern, fenster_uri, mit_zeitprogramm
+from .test_zeitplan import absenk_uri, anlage_mit_fenstern, fenster_uri, mit_zeitprogramm
 
 WERKTAGE = ["monday", "tuesday", "wednesday", "thursday", "friday"]
 
@@ -284,6 +284,10 @@ def test_karte_passt_zur_schnittstelle():
         "zeitplan",
         "tage",
         "fehler",
+        "mit_absenkung",
+        "absenkung",
+        "absenkung_min",
+        "absenkung_max",
         "beginn",
         "ende",
         "temperatur",
@@ -341,3 +345,97 @@ async def test_echtes_nein_wird_nicht_nachgeprueft(hass, entry, menu_xml, monkey
 
     assert hass.session.count == zaehler
     assert coordinator.zeitprogramm_defs == {}
+
+
+async def test_karte_liest_die_absenktemperatur(hass, entry, menu_xml):
+    await aufbauen(hass, entry, menu_xml)
+    hass.session.absenkwerte[absenk_uri("sunday")] = 175
+
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+
+    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    assert heizkreis["mit_absenkung"] is True
+    assert (heizkreis["absenkung_min"], heizkreis["absenkung_max"]) == (10.0, 30.0)
+    assert heizkreis["absenkung"]["monday"] == 16.0
+    assert heizkreis["absenkung"]["sunday"] == 17.5
+
+
+async def test_absenktemperatur_fuer_mehrere_tage(hass, entry, menu_xml):
+    await aufbauen(hass, entry, menu_xml)
+    wie_bisher = [{"beginn": 22, "ende": 90, "temperatur": 20.0}]
+
+    ergebnis = await zeitprogramm_setzen(
+        entry, "hk1", ["saturday", "sunday"], wie_bisher, absenkung=17.5
+    )
+
+    assert hass.session.gesetzte_zeitfenster == [], "die Fenster bleiben, wie sie sind"
+    assert sorted(hass.session.gesetzte_werte) == [
+        (absenk_uri("saturday"), "175"),
+        (absenk_uri("sunday"), "175"),
+    ]
+    assert ergebnis["absenkung"]["saturday"] == 17.5
+    assert ergebnis["absenkung"]["friday"] == 16.0
+
+    hass.session.gesetzte_werte.clear()
+    await zeitprogramm_setzen(entry, "hk1", ["saturday"], wie_bisher, absenkung=17.5)
+    assert hass.session.gesetzte_werte == [], "schon so"
+
+    await zeitprogramm_setzen(entry, "hk1", ["monday"], wie_bisher, absenkung=4.0)
+    assert hass.session.absenkwerte[absenk_uri("monday")] == 100, "nicht unter 10 °C"
+
+
+async def test_ohne_angabe_bleibt_die_absenktemperatur(hass, entry, menu_xml):
+    await aufbauen(hass, entry, menu_xml)
+
+    await zeitprogramm_setzen(
+        entry, "hk1", ["monday"], [{"beginn": 24, "ende": 88, "temperatur": 20.0}]
+    )
+
+    assert hass.session.gesetzte_werte == []
+    assert hass.session.absenkwerte[absenk_uri("monday")] == 160
+
+
+async def test_absenktemperatur_nicht_beschreibbar(hass, entry, menu_xml):
+    """Dann bleibt es beim Zeitprogramm ohne sie."""
+    hass.session.absenkwerte_schreibbar = False
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    assert "hk1" in coordinator.zeitprogramm_defs
+    assert coordinator.zeitprogramm_absenkung == {}
+
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    assert heizkreis["mit_absenkung"] is False
+    assert heizkreis["absenkung"] is None
+
+    with pytest.raises(ZeitprogrammFehler):
+        await zeitprogramm_setzen(
+            entry, "hk1", ["monday"], [{"beginn": 22, "ende": 90, "temperatur": 20.0}], 18.0
+        )
+
+
+async def test_websocket_mit_absenktemperatur(hass, entry, menu_xml):
+    await aufbauen(hass, entry, menu_xml)
+
+    verbindung = await befehl(
+        hass,
+        _ws_zeitprogramm_setzen,
+        type="eta_heating_ws/zeitprogramm_setzen",
+        eintrag="testeintrag",
+        heizkreis="hk1",
+        tage=["wednesday"],
+        fenster=[{"beginn": 22, "ende": 90, "temperatur": 20.0}],
+        absenkung=18.5,
+    )
+
+    assert verbindung.ergebnisse[0][1]["absenkung"]["wednesday"] == 18.5
+    assert _ws_zeitprogramm_setzen._ws_schema(
+        {
+            "id": 1,
+            "type": "eta_heating_ws/zeitprogramm_setzen",
+            "eintrag": "e",
+            "heizkreis": "hk1",
+            "tage": ["monday"],
+            "fenster": [],
+            "absenkung": "17",
+        }
+    )["absenkung"] == 17.0

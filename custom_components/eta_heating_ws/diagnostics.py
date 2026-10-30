@@ -25,6 +25,7 @@ from .api import ETAApiError
 from .const import CONF_COMPONENTS, CONF_FUB_NAMES, PUFFER_SPEICHER
 from .coordinator import ETAConfigEntry, puffer_fuehler_schluessel
 from .zeitplan import als_text
+from .zeitprogramm import absenkung_lesen
 from .uri_discovery import DISCOVERY_PATHS, _as_list
 
 TO_REDACT = {CONF_HOST}
@@ -259,8 +260,13 @@ async def _zeitprogramm(coordinator, heizkreis: str) -> dict[str, Any]:
         *(coordinator.client.async_get_zeitfenster(defs[f]["uri"]) for f in fenster),
         return_exceptions=True,
     )
+    try:
+        absenkung = await absenkung_lesen(coordinator, heizkreis)
+    except ETAApiError as err:
+        absenkung = f"nicht lesbar: {err}"
     return {
         "zeitplan": abgleich.entity_id if abgleich is not None else None,
+        "ausserhalb_der_zeitfenster": absenkung,
         "zeitfenster": {
             f"{tag} {nummer}": (
                 f"nicht lesbar: {wert}"

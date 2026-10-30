@@ -7,9 +7,11 @@ lädt sie in jedem Dashboard von selbst; im Kartenwähler steht sie unter
 Integration:
 
 - eta_heating_ws/zeitprogramme liest die Zeitfenster aller Heizkreise mit
-  beschreibbarem Zeitprogramm frisch von der Anlage,
-- eta_heating_ws/zeitprogramm_setzen schreibt die Fenster für einen oder
-  mehrere Tage, liest sie zur Kontrolle nach und gibt das Programm zurück.
+  beschreibbarem Zeitprogramm frisch von der Anlage, dazu je Tag den "Wert
+  außerhalb der Zeitfenster" - die Raumtemperatur in der Absenkzeit,
+- eta_heating_ws/zeitprogramm_setzen schreibt Fenster und Absenktemperatur
+  für einen oder mehrere Tage, liest zur Kontrolle nach und gibt das
+  Programm zurück.
 
 Geschrieben wird nur, was sich ändert, mit denselben Regeln wie beim
 Zeitplan-Abgleich (zeitplan.tagesfenster). Folgt ein Heizkreis einem
@@ -76,10 +78,24 @@ async def bestand_lesen(coordinator, heizkreis: str) -> dict[tuple[str, int], Ze
     return dict(zip(fenster, gelesen))
 
 
-def temperaturgrenzen(defs: dict[tuple[str, int], dict]) -> tuple[float, float]:
+async def absenkung_lesen(coordinator, heizkreis: str) -> dict[str, float | None] | None:
+    """Je Tag der Wert außerhalb der Zeitfenster in °C - None, wenn er sich nicht einstellen lässt."""
+    defs = coordinator.zeitprogramm_absenkung.get(heizkreis)
+    if defs is None:
+        return None
+    gelesen = await asyncio.gather(
+        *(coordinator.client.async_get_value(defs[tag]["uri"]) for tag in defs)
+    )
+    return {
+        tag: None if wert.value is None else round(wert.value, 1)
+        for tag, wert in zip(defs, gelesen)
+    }
+
+
+def temperaturgrenzen(defs: dict) -> tuple[float, float]:
     """In diesem Bereich nimmt die Karte eine Temperatur an.
 
-    Die Grenzen des Thermostats, enger, wenn die Anlage für ein Fenster
+    Die Grenzen des Thermostats, enger, wenn die Anlage für einen Wert
     engere meldet.
     """
     untere, obere = THERMOSTAT_SOLL_GRENZEN
@@ -95,8 +111,10 @@ def kopf(eintrag, heizkreis: str) -> dict[str, Any]:
     """Was die Karte über einen Heizkreis wissen muss, auch wenn er nicht lesbar ist."""
     coordinator = eintrag.runtime_data
     defs = coordinator.zeitprogramm_defs[heizkreis]
+    absenk_defs = coordinator.zeitprogramm_absenkung.get(heizkreis)
     abgleich = coordinator.zeitplan_abgleiche.get(heizkreis)
     untere, obere = temperaturgrenzen(defs)
+    absenk_untere, absenk_obere = temperaturgrenzen(absenk_defs or {})
     return {
         "eintrag": eintrag.entry_id,
         "anlage": eintrag.title,
@@ -105,15 +123,24 @@ def kopf(eintrag, heizkreis: str) -> dict[str, Any]:
         "mit_temperatur": all(info["mit_wert"] for info in defs.values()),
         "temperatur_min": untere,
         "temperatur_max": obere,
+        "mit_absenkung": absenk_defs is not None,
+        "absenkung_min": absenk_untere,
+        "absenkung_max": absenk_obere,
         "zeitplan": abgleich.entity_id if abgleich is not None else None,
     }
 
 
-def programm(eintrag, heizkreis: str, bestand: dict[tuple[str, int], Zeitfenster]) -> dict:
+def programm(
+    eintrag,
+    heizkreis: str,
+    bestand: dict[tuple[str, int], Zeitfenster],
+    absenkung: dict[str, float | None] | None,
+) -> dict:
     """Das Zeitprogramm für die Karte: je Tag die belegten Fenster, nach Beginn sortiert.
 
     Beginn und Ende in Viertelstunden ab Mitternacht, die Temperatur in °C
-    oder None.
+    oder None. Dazu je Tag der Wert außerhalb der Zeitfenster, falls er
+    sich einstellen lässt.
     """
     angaben = kopf(eintrag, heizkreis)
     defs = eintrag.runtime_data.zeitprogramm_defs[heizkreis]
@@ -131,7 +158,13 @@ def programm(eintrag, heizkreis: str, bestand: dict[tuple[str, int], Zeitfenster
                 {"beginn": fenster.beginn, "ende": fenster.ende, "temperatur": temperatur}
             )
         tage[tag] = sorted(belegt, key=lambda f: f["beginn"])
-    return {**angaben, "tage": tage, "fehler": None}
+    return {**angaben, "tage": tage, "absenkung": absenkung, "fehler": None}
+
+
+def _absenk_roh(grad: float, info: dict) -> int:
+    """Der Wert außerhalb der Zeitfenster als Rohwert, in den Grenzen der Karte."""
+    untere, obere = temperaturgrenzen({"wert": info})
+    return round(min(max(grad, untere), obere) * info["skala"])
 
 
 def bloecke_pruefen(fenster: list[dict]) -> list[Block]:
@@ -152,19 +185,29 @@ def bloecke_pruefen(fenster: list[dict]) -> list[Block]:
 
 
 async def zeitprogramm_setzen(
-    eintrag, heizkreis: str, tage: list[str], fenster: list[dict]
+    eintrag,
+    heizkreis: str,
+    tage: list[str],
+    fenster: list[dict],
+    absenkung: float | None = None,
 ) -> dict:
     """Schreibt dieselben Fenster an jeden der Tage und gibt das neue Programm zurück.
 
     Eine Temperatur von None heißt: wie beim Zeitplan-Abgleich - ein
     belegtes Fenster behält seine, ein neu belegtes übernimmt die des
-    ersten belegten Fensters der Woche.
+    ersten belegten Fensters der Woche. absenkung ist der Wert außerhalb
+    der Zeitfenster für diese Tage, None lässt ihn, wie er ist.
     """
     coordinator = eintrag.runtime_data
     defs = coordinator.zeitprogramm_defs.get(heizkreis)
     if defs is None:
         raise ZeitprogrammFehler(
             "Für diesen Heizkreis gibt es kein beschreibbares Zeitprogramm."
+        )
+    absenk_defs = coordinator.zeitprogramm_absenkung.get(heizkreis)
+    if absenkung is not None and absenk_defs is None:
+        raise ZeitprogrammFehler(
+            "Den Wert außerhalb der Zeitfenster meldet die Heizung nicht als einstellbar."
         )
     abgleich = coordinator.zeitplan_abgleiche.get(heizkreis)
     if abgleich is not None:
@@ -177,7 +220,17 @@ async def zeitprogramm_setzen(
 
     async with coordinator.zeitprogramm_sperre:
         bestand = await bestand_lesen(coordinator, heizkreis)
+        absenk_bestand = await absenkung_lesen(coordinator, heizkreis)
         ersatz = ersatztemperatur(bestand)
+        absenk_neu: dict[str, int] = {}
+        if absenkung is not None:
+            for tag in WOCHENTAGE:
+                if tag not in tage:
+                    continue
+                roh = _absenk_roh(absenkung, absenk_defs[tag])
+                alt = absenk_bestand[tag]
+                if alt is None or round(alt * absenk_defs[tag]["skala"]) != roh:
+                    absenk_neu[tag] = roh
         zu_schreiben: dict[tuple[str, int], Zeitfenster] = {}
         for tag in WOCHENTAGE:
             if tag not in tage:
@@ -202,22 +255,37 @@ async def zeitprogramm_setzen(
                 als_text(bestand[(tag, nummer)], defs[(tag, nummer)]["skala"]),
                 als_text(neues, defs[(tag, nummer)]["skala"]),
             )
-        if not zu_schreiben:
-            return programm(eintrag, heizkreis, bestand)
+        for tag, roh in absenk_neu.items():
+            await coordinator.client.async_set_value(absenk_defs[tag]["uri"], str(roh))
+            _LOGGER.info(
+                "ETA: %s %s Wert außerhalb der Zeitfenster: %s -> %s (Dashboard-Karte)",
+                heizkreis,
+                WOCHENTAGE[tag],
+                absenk_bestand[tag],
+                roh / absenk_defs[tag]["skala"],
+            )
+        if not zu_schreiben and not absenk_neu:
+            return programm(eintrag, heizkreis, bestand, absenk_bestand)
         bestand = await bestand_lesen(coordinator, heizkreis)
+        absenk_bestand = await absenkung_lesen(coordinator, heizkreis)
 
     await coordinator.async_request_refresh()
     abweichend = [
         f"{WOCHENTAGE[tag]} {nummer}"
         for (tag, nummer), neues in zu_schreiben.items()
         if not neues.gleich(bestand[(tag, nummer)])
+    ] + [
+        f"{WOCHENTAGE[tag]} außerhalb"
+        for tag, roh in absenk_neu.items()
+        if absenk_bestand[tag] is None
+        or round(absenk_bestand[tag] * absenk_defs[tag]["skala"]) != roh
     ]
     if abweichend:
         raise ZeitprogrammFehler(
-            "Die Heizung meldet nach dem Speichern andere Zeiten "
+            "Die Heizung meldet nach dem Speichern andere Werte "
             f"({', '.join(abweichend)}). Bitte am Display nachsehen."
         )
-    return programm(eintrag, heizkreis, bestand)
+    return programm(eintrag, heizkreis, bestand, absenk_bestand)
 
 
 def _eintrag(hass: HomeAssistant, entry_id: str):
@@ -243,10 +311,13 @@ async def _ws_zeitprogramme(
         for heizkreis in eintrag.runtime_data.zeitprogramm_defs:
             try:
                 bestand = await bestand_lesen(eintrag.runtime_data, heizkreis)
+                absenkung = await absenkung_lesen(eintrag.runtime_data, heizkreis)
             except ETAApiError as err:
-                heizkreise.append({**kopf(eintrag, heizkreis), "tage": None, "fehler": str(err)})
+                heizkreise.append(
+                    {**kopf(eintrag, heizkreis), "tage": None, "absenkung": None, "fehler": str(err)}
+                )
                 continue
-            heizkreise.append(programm(eintrag, heizkreis, bestand))
+            heizkreise.append(programm(eintrag, heizkreis, bestand, absenkung))
     connection.send_result(msg["id"], {"heizkreise": heizkreise})
 
 
@@ -266,6 +337,7 @@ async def _ws_zeitprogramme(
             ],
             vol.Length(max=ZEITFENSTER_JE_TAG),
         ),
+        vol.Optional("absenkung"): vol.Any(None, vol.Coerce(float)),
     }
 )
 @websocket_api.async_response
@@ -281,7 +353,7 @@ async def _ws_zeitprogramm_setzen(
         return
     try:
         ergebnis = await zeitprogramm_setzen(
-            eintrag, msg["heizkreis"], msg["tage"], msg["fenster"]
+            eintrag, msg["heizkreis"], msg["tage"], msg["fenster"], msg.get("absenkung")
         )
     except ZeitprogrammFehler as err:
         connection.send_error(msg["id"], "abgelehnt", str(err))

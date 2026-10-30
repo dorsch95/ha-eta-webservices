@@ -29,6 +29,7 @@ from .const import (
     ZEITFENSTER_JE_TAG,
     normalize_components,
     puffer_fuehler_info,
+    absenkwert_schluessel,
     zeitfenster_schluessel,
 )
 from .entitaets_ids import Namen
@@ -175,6 +176,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.zeitprogramm_pruefung: dict[str, dict] = {}
         """Je Heizkreis, dessen Zeitprogramm nicht beschreibbar erkannt wurde, der Grund - für die Diagnose."""
         self._zuletzt_nachgeprueft = float("-inf")
+        self.zeitprogramm_absenkung: dict[str, dict[str, dict]] = {}
+        """Je Heizkreis mit beschreibbarem Zeitprogramm je Tag der Wert außerhalb der Zeitfenster."""
         self.betriebsart_auswahl: dict[str, object] = {}
         """Die Betriebsart-Auswahlen je Schlüssel - der Thermostat stellt über sie um."""
         self.components_without_data: list[str] = []
@@ -492,13 +495,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                     "fehlend": fehlend,
                 }
                 continue
-            infos = await asyncio.gather(
-                *(self.client.async_get_varinfo(uri) for uri in uris.values())
-            )
-            infos = [
-                info if info is not None else await self.client.async_get_varinfo(uri)
-                for info, uri in zip(infos, uris.values())
-            ]
+            infos = await self._varinfos(list(uris.values()))
             abweichend = {
                 f"{WOCHENTAGE[t]} {n}": _zeitfenster_befund(info)
                 for (t, n), info in zip(uris, infos)
@@ -521,6 +518,50 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 for (fenster, uri), info in zip(uris.items(), infos)
             }
             _LOGGER.info("ETA: Zeitprogramm von %s beschreibbar", heizkreis)
+            await self._absenkwerte_pruefen(heizkreis, definition["praefix"])
+
+    async def _absenkwerte_pruefen(self, heizkreis: str, praefix: str) -> None:
+        """Ob sich je Tag der Wert außerhalb der Zeitfenster beschreiben lässt.
+
+        Das ist die Raumtemperatur in der Absenkzeit. Fehlt er an einem Tag
+        oder ist er nicht beschreibbar, bleibt es beim Zeitprogramm ohne ihn.
+        """
+        uris = {
+            tag: self.discovered_uris.get(absenkwert_schluessel(praefix, tag))
+            for tag in WOCHENTAGE
+        }
+        if not all(uris.values()):
+            return
+        infos = await self._varinfos(list(uris.values()))
+        if not all(
+            info and info.get("writable") and info.get("zeitfenster") is None for info in infos
+        ):
+            _LOGGER.info(
+                "ETA: Wert außerhalb der Zeitfenster von %s nicht beschreibbar (%s)",
+                heizkreis,
+                ", ".join(
+                    f"{WOCHENTAGE[tag]}: {_zeitfenster_befund(info)}"
+                    for tag, info in zip(uris, infos)
+                ),
+            )
+            return
+        self.zeitprogramm_absenkung[heizkreis] = {
+            tag: {
+                "uri": uri,
+                "skala": info["scale"],
+                "min_roh": info["min_roh"],
+                "max_roh": info["max_roh"],
+            }
+            for (tag, uri), info in zip(uris.items(), infos)
+        }
+
+    async def _varinfos(self, uris: list[str]) -> list[dict | None]:
+        """Die Beschreibungen mehrerer Variablen; bleibt eine Antwort aus, wird einmal nachgefragt."""
+        infos = await asyncio.gather(*(self.client.async_get_varinfo(uri) for uri in uris))
+        return [
+            info if info is not None else await self.client.async_get_varinfo(uri)
+            for info, uri in zip(infos, uris)
+        ]
 
     async def zeitprogramme_nachpruefen(self) -> None:
         """Prüft Heizkreise erneut, deren Zeitfenster beim Start nicht alle geantwortet haben.

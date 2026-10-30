@@ -149,6 +149,9 @@ class FakeSession:
         """Zeitfenster der Attrappe: URI -> (Beginn, Ende, Rohwert der Temperatur oder None)."""
         self.zeitfenster_schreibbar = True
         self.zeitfenster_typ = "TIMESLOT"
+        self.absenkwerte: dict[str, int] = {}
+        """Wert außerhalb der Zeitfenster je Tag: URI -> Rohwert (160 = 16,0 °C)."""
+        self.absenkwerte_schreibbar = True
         self.gesetzte_zeitfenster: list[tuple[str, dict]] = []
         self.traege = False
         """Wenn True, meldet die Anlage geschriebene Werte noch nicht zurück.
@@ -186,6 +189,10 @@ class FakeSession:
             return FakeResponse("", status=403)
         if uri in self.zeitfenster:
             return self._zeitfenster_setzen(uri, daten)
+        if uri in self.absenkwerte:
+            self.gesetzte_werte.append((uri, daten.get("value")))
+            self.absenkwerte[uri] = int(daten["value"])
+            return self._tracked(f'<eta version="1.0"><success uri="{uri}"/></eta>')
         wert = daten.get("value")
         self.gesetzte_werte.append((uri, wert))
         self._merken(uri, wert)
@@ -269,6 +276,10 @@ class FakeSession:
         if pfad in self.zeitfenster:
             einheit = "°C" if self.zeitfenster[pfad][2] is not None else ""
             return {"value": "0", "str_value": self.zeitfenster_text(pfad), "unit": einheit, "scale": "10"}
+        if pfad in self.absenkwerte:
+            roh = self.absenkwerte[pfad]
+            text = f"{roh / 10:.1f}".replace(".", ",")
+            return {"value": str(roh), "str_value": text, "unit": "°C", "scale": "10"}
         if "12013" in uri:
             return {"value": self.asche_roh, "str_value": "x", "unit": "kg", "scale": "100"}
         if uri.endswith("/12112"):
@@ -365,6 +376,16 @@ class FakeSession:
         pfad = url.split("/user/varinfo", 1)[-1]
         if pfad in self.zeitfenster:
             return self._tracked(self._zeitfenster_varinfo(pfad))
+        if pfad in self.absenkwerte:
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
+                'name="Wert außerhalb der Zeitfenster" unit="°C" decPlaces="1" '
+                'fullName="Heizkreis > Heizzeiten > Montag > Wert außerhalb der Zeitfenster" '
+                f'scaleFactor="10" advTextOffset="0" isWritable="{1 if self.absenkwerte_schreibbar else 0}">'
+                '<type>DEFAULT</type><validValues><min strValue="0,0" unit="°C">0.0</min>'
+                '<def strValue="16,0" unit="°C">160.0</def><max strValue="80,0" unit="°C">800.0</max>'
+                "</validValues></variable></varInfo></eta>"
+            )
         if url.endswith("/12000"):
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '

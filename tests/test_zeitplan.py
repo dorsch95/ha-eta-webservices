@@ -46,12 +46,18 @@ def mit_zeitprogramm(menu: str) -> str:
     return menu.replace(schaltzustand, schaltzustand + tage)
 
 
+def absenk_uri(tag: str) -> str:
+    """Wert außerhalb der Zeitfenster: Montag 1111, jeder Tag eins weiter."""
+    return f"{HK}/{1111 + TAGE.index(tag)}"
+
+
 def anlage_mit_fenstern(session, mit_wert=True) -> None:
-    """Täglich 5:30 bis 22:30 bei 20 °C, die anderen beiden Fenster leer."""
+    """Täglich 5:30 bis 22:30 bei 20 °C, die anderen beiden Fenster leer, außerhalb 16 °C."""
     for tag in TAGE:
         session.zeitfenster[fenster_uri(tag, 1)] = (22, 90, 200 if mit_wert else None)
         session.zeitfenster[fenster_uri(tag, 2)] = (0, 0, 0 if mit_wert else None)
         session.zeitfenster[fenster_uri(tag, 3)] = (0, 0, 0 if mit_wert else None)
+        session.absenkwerte[absenk_uri(tag)] = 160
 
 
 def plan(**tage) -> dict:

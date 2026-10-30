@@ -516,12 +516,13 @@ Ist das Thermometer nicht verfügbar oder meldet keine Zahl, schreibt die Integr
 Mit freigegebenem Schreibzugriff zeigt die Karte **ETA Zeitprogramm** die Heizzeiten jedes Heizkreises als Wochenbalken - und du änderst sie direkt dort, am PC wie in der Handy-App:
 
 1. **Dashboard bearbeiten -> Karte hinzufügen** und **ETA Zeitprogramm** wählen. Mehr ist nicht einzurichten: Home Assistant lädt die Karte von selbst, ohne Eintrag unter *Ressourcen*.
-2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und - falls die Heizung eine kennt - Temperatur. Mit **+ Zeitfenster** kommt eines dazu, mit **✕** fällt eines weg.
+2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und - falls die Heizung eine kennt - Temperatur. Mit **+ Zeitfenster** kommt eines dazu, mit **✕** fällt eines weg. Darunter steht die Temperatur **außerhalb der Zeitfenster** (die Absenkung), wie am Display je Tag einstellbar.
 3. Unter **Gilt für** weitere Tage wählen, etwa **Mo–Fr** - dann bekommen alle dieselben Zeiten.
 4. **Speichern.** Die Integration schreibt nur, was sich ändert, liest es zur Kontrolle von der Heizung nach und zeigt „Gespeichert“.
 
 * Es gelten dieselben **Grenzen der Heizung** wie unten: höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden, Temperaturen von 10 bis 30 °C. Überschneiden sich zwei Fenster oder endet eines vor seinem Beginn, sagt die Karte das, bevor etwas geschrieben wird.
 * Ein Tag ohne Zeitfenster heißt: den ganzen Tag Absenkung.
+* Die Übersicht zeigt je Tag die Zeitfenster und die Absenktemperatur, etwa „05:30–22:30 · 21,0 °C, sonst 16,0 °C“.
 * Folgt ein Heizkreis einem **Zeitplan** aus Home Assistant (nächster Abschnitt), zeigt die Karte sein Programm nur an und verweist auf den Zeitplan - sonst überschriebe der nächste Abgleich die Änderung wieder.
 * Mit **⟳** liest die Karte das Programm neu von der Heizung, etwa nach einer Änderung am Display.
 

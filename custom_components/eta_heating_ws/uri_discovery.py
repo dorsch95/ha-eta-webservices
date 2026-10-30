@@ -22,6 +22,7 @@ from .const import (
     THERMOSTATE,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
+    absenkwert_schluessel,
     zeitfenster_schluessel,
 )
 
@@ -308,8 +309,15 @@ der Zeitfenster". So an zwei echten Anlagen gesehen.
 """
 
 
+ABSENKWERT = "Wert außerhalb der Zeitfenster"
+"""Die Raumtemperatur eines Tages außerhalb seiner Zeitfenster."""
+
+
 def _zeitfenster(fub, praefix):
-    """Die Zeitfenster eines Heizkreises, nur über die Namen - sie werden beschrieben."""
+    """Die Zeitfenster eines Heizkreises und je Tag der Wert außerhalb, nur über die Namen.
+
+    Beides wird beschrieben, deshalb nie über Kennungen.
+    """
     heizzeiten = _find_path(fub, HEIZZEITEN) if fub is not None else None
     if heizzeiten is None:
         return {}
@@ -319,6 +327,9 @@ def _zeitfenster(fub, praefix):
             knoten = _find_path(heizzeiten, [name, f"Zeitfenster {nummer}"])
             if knoten is not None and knoten.get("@uri"):
                 gefunden[zeitfenster_schluessel(praefix, tag, nummer)] = knoten["@uri"]
+        knoten = _find_path(heizzeiten, [name, ABSENKWERT])
+        if knoten is not None and knoten.get("@uri"):
+            gefunden[absenkwert_schluessel(praefix, tag)] = knoten["@uri"]
     return gefunden
 
 
@@ -637,14 +648,15 @@ async def async_discover_uris(
 
     gesucht = set(DISCOVERY_PATHS) | set(PUMPEN) | {f"{k}_volumen" for k in PUFFER_SPEICHER}
     messwerte = (gesucht & set(discovered)) | alle_fuehler
-    zeitfenster = {key for key in discovered if "_zeitfenster_" in key}
+    zeitprogramm = {key for key in discovered if "_zeitfenster_" in key or "_absenkwert_" in key}
+    zeitfenster = {key for key in zeitprogramm if "_zeitfenster_" in key}
     _LOGGER.info(
         "ETA Webservices: %d von %d Messwerten im Menübaum gefunden "
         "(%d Pufferfühler), dazu %d Schalt- und Betriebsart-Objekte und %d Zeitfenster",
         len(messwerte),
         len(gesucht) + len(alle_fuehler),
         len(alle_fuehler),
-        len(discovered) - len(messwerte) - len(zeitfenster),
+        len(discovered) - len(messwerte) - len(zeitprogramm),
         len(zeitfenster),
     )
     missing = sorted(gesucht - set(discovered))

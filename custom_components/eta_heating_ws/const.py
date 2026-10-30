@@ -459,6 +459,11 @@ def zeitfenster_schluessel(praefix, tag, nummer):
     return f"{praefix}_zeitfenster_{tag}_{nummer}"
 
 
+def absenkwert_schluessel(praefix, tag):
+    """Unter welchem Schlüssel der "Wert außerhalb der Zeitfenster" eines Tages gefunden wird."""
+    return f"{praefix}_absenkwert_{tag}"
+
+
 def zeitplan_schluessel(heizkreis):
     """Unter welchem Schlüssel der gewählte Zeitplan eines Heizkreises steht."""
     return f"{heizkreis}_zeitplan"

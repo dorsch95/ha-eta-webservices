@@ -46,6 +46,9 @@ const TEXTE = {
     fehler_ueberlappung: "Zeitfenster dürfen sich nicht überschneiden.",
     fehler_temperatur: (min, max) => `Temperatur zwischen ${min} und ${max} °C.`,
     fehler_tage: "Mindestens einen Tag wählen.",
+    fehler_absenkung: (min, max) => `Außerhalb der Zeitfenster zwischen ${min} und ${max} °C.`,
+    sonst: (wert) => `sonst ${wert} °C`,
+    absenk_feld: "Außerhalb der Zeitfenster",
     kurz: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
     karte_beschreibung: "Heizzeiten der ETA-Heizung ansehen und ändern.",
     feld_titel: "Titel",
@@ -82,6 +85,9 @@ const TEXTE = {
     fehler_ueberlappung: "Time slots must not overlap.",
     fehler_temperatur: (min, max) => `Temperature between ${min} and ${max} °C.`,
     fehler_tage: "Choose at least one day.",
+    fehler_absenkung: (min, max) => `Outside the time slots between ${min} and ${max} °C.`,
+    sonst: (wert) => `otherwise ${wert} °C`,
+    absenk_feld: "Outside the time slots",
     kurz: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
     karte_beschreibung: "View and change the heating times of the ETA boiler.",
     feld_titel: "Title",
@@ -171,29 +177,49 @@ const STIL = `
     margin: 4px 0 8px 40px; padding: 12px; border-radius: 12px;
     border: 1px solid var(--divider-color);
   }
-  .zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .zeile { display: flex; flex-direction: column; gap: 2px; }
   .nr {
-    flex: 1 0 100%; display: flex; align-items: center; justify-content: space-between;
-    font-size: 13px; color: var(--secondary-text-color);
+    display: flex; align-items: center; justify-content: space-between; min-height: 28px;
+    font-size: 13px; font-weight: 500;
   }
-  .nr .symbol { padding: 4px; }
+  .nr .symbol { padding: 4px; margin-right: -4px; }
   .am-stueck { white-space: nowrap; }
-  .feld { display: inline-flex; align-items: center; gap: 6px; }
+  .felder {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 340px;
+  }
+  .felder.zwei { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 226px; }
+  .feld {
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+    font-size: 12px; color: var(--secondary-text-color);
+  }
   select, input {
-    box-sizing: border-box; font: inherit; height: 36px; padding: 4px 8px; border-radius: 8px;
-    border: 1px solid var(--divider-color);
+    box-sizing: border-box; width: 100%; height: 38px; padding: 4px 6px; border-radius: 8px;
+    font: inherit; font-size: 15px; border: 1px solid var(--divider-color);
     color: var(--primary-text-color); background: var(--card-background-color);
   }
-  input[type="number"] { width: 4.5em; }
+  .absenk {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    max-width: 340px; padding-top: 8px; border-top: 1px solid var(--divider-color);
+    font-size: 13px; font-weight: 500;
+  }
+  .absenk .eingabe {
+    display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+    font-weight: 400; color: var(--secondary-text-color);
+  }
+  .absenk input { width: 5.5em; }
   .text-knopf {
     align-self: flex-start; padding: 4px 0; border: none; background: none;
     color: var(--eta-akzent); font-weight: 500;
   }
   .tage-wahl { display: flex; flex-direction: column; gap: 6px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; max-width: 340px;
+  }
+  .chips.schnell { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .chip {
-    min-width: 40px; min-height: 32px; padding: 4px 10px; border-radius: 16px;
+    min-width: 0; min-height: 34px; padding: 4px 2px; border-radius: 17px;
     border: 1px solid var(--divider-color); background: none; color: var(--primary-text-color);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .chip.an {
     background: var(--eta-gelb); border-color: var(--eta-gelb);
@@ -363,15 +389,20 @@ class EtaZeitprogrammKarte extends HTMLElement {
     }).format(wert);
   }
 
-  _beschreibung(hk, fenster) {
-    if (!fenster.length) return sicher(this._t.absenkung);
-    return fenster
-      .map((f) => {
-        const zeit = `${uhrzeit(f.beginn)}–${uhrzeit(f.ende)}`;
-        const text = f.temperatur == null ? zeit : `${zeit} · ${this._zahl(f.temperatur)} °C`;
-        return `<span class="am-stueck">${sicher(text)}</span>`;
-      })
-      .join(", ");
+  _beschreibung(hk, tag) {
+    const fenster = hk.tage[tag];
+    const absenk = hk.absenkung?.[tag];
+    const stueck = (text) => `<span class="am-stueck">${sicher(text)}</span>`;
+    if (!fenster.length) {
+      const zusatz = absenk == null ? "" : ` · ${this._zahl(absenk)} °C`;
+      return stueck(`${this._t.absenkung}${zusatz}`);
+    }
+    const teile = fenster.map((f) => {
+      const zeit = `${uhrzeit(f.beginn)}–${uhrzeit(f.ende)}`;
+      return stueck(f.temperatur == null ? zeit : `${zeit} · ${this._zahl(f.temperatur)} °C`);
+    });
+    if (absenk != null) teile.push(stueck(this._t.sonst(this._zahl(absenk))));
+    return teile.join(", ");
   }
 
   _ersatztemperatur(hk) {
@@ -453,7 +484,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
           <div class="balken">${this._bloecke(fenster)}${
             tag === heute ? `<div class="jetzt" style="left:${jetztAnteil}%"></div>` : ""
           }</div>
-          <div class="text">${this._beschreibung(hk, hk.tage[tag])}</div>
+          <div class="text">${this._beschreibung(hk, tag)}</div>
         </div>`;
       if (offen) html += this._editor(hk);
       if (this._meldung?.schluessel === schluessel && this._meldung?.tag === tag && !offen) {
@@ -480,10 +511,10 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const zeilen = b.fenster
       .map((f, i) => {
         const temperatur = hk.mit_temperatur
-          ? `<label class="feld"><input type="number" inputmode="decimal" step="0.5"
-               min="${hk.temperatur_min}" max="${hk.temperatur_max}"
+          ? `<label class="feld"><span>°C</span><input type="number" inputmode="decimal"
+               step="0.5" min="${hk.temperatur_min}" max="${hk.temperatur_max}"
                value="${Number.isFinite(f.temperatur) ? f.temperatur : ""}"
-               data-feld="temperatur" data-index="${i}"><span>°C</span></label>`
+               data-feld="temperatur" data-index="${i}"></label>`
           : "";
         return `
           <div class="zeile">
@@ -494,13 +525,15 @@ class EtaZeitprogrammKarte extends HTMLElement {
                 <svg viewBox="0 0 24 24"><path d="${SYMBOL_ENTFERNEN}"></path></svg>
               </button>
             </div>
-            <label class="feld"><span>${t.von}</span>
-              <select data-feld="beginn" data-index="${i}">${uhrzeiten(0, 95, f.beginn)}</select>
-            </label>
-            <label class="feld"><span>${t.bis}</span>
-              <select data-feld="ende" data-index="${i}">${uhrzeiten(1, 96, f.ende)}</select>
-            </label>
-            ${temperatur}
+            <div class="felder ${hk.mit_temperatur ? "" : "zwei"}">
+              <label class="feld"><span>${t.von}</span>
+                <select data-feld="beginn" data-index="${i}">${uhrzeiten(0, 95, f.beginn)}</select>
+              </label>
+              <label class="feld"><span>${t.bis}</span>
+                <select data-feld="ende" data-index="${i}">${uhrzeiten(1, 96, f.ende)}</select>
+              </label>
+              ${temperatur}
+            </div>
           </div>`;
       })
       .join("");
@@ -524,10 +557,19 @@ class EtaZeitprogrammKarte extends HTMLElement {
             ? `<button class="text-knopf" data-aktion="hinzufuegen">${t.hinzufuegen}</button>`
             : ""
         }
+        ${
+          hk.mit_absenkung
+            ? `<label class="absenk"><span>${t.absenk_feld}</span><span class="eingabe">
+                 <input type="number" inputmode="decimal" step="0.5"
+                   min="${hk.absenkung_min}" max="${hk.absenkung_max}"
+                   value="${Number.isFinite(b.absenkung) ? b.absenkung : ""}"
+                   data-feld="absenkung">°C</span></label>`
+            : ""
+        }
         <div class="tage-wahl">
           <span class="klein">${t.gilt_fuer}</span>
           <div class="chips">${chips}</div>
-          <div class="chips">
+          <div class="chips schnell">
             <button class="chip" data-aktion="tage" data-tage="werktage">${t.werktage}</button>
             <button class="chip" data-aktion="tage" data-tage="wochenende">${t.wochenende}</button>
             <button class="chip" data-aktion="tage" data-tage="alle">${t.alle}</button>
@@ -563,6 +605,13 @@ class EtaZeitprogrammKarte extends HTMLElement {
     ) {
       return t.fehler_temperatur(this._zahl(hk.temperatur_min), this._zahl(hk.temperatur_max));
     }
+    if (
+      hk.mit_absenkung &&
+      b.absenkung != null &&
+      (b.absenkung < hk.absenkung_min || b.absenkung > hk.absenkung_max)
+    ) {
+      return t.fehler_absenkung(this._zahl(hk.absenkung_min), this._zahl(hk.absenkung_max));
+    }
     if (!b.tage.size) return t.fehler_tage;
     return null;
   }
@@ -582,6 +631,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
           ende: f.ende,
           temperatur: hk.mit_temperatur ? f.temperatur ?? ersatz : null,
         })),
+        absenkung: hk.mit_absenkung ? hk.absenkung?.[tag] ?? null : null,
         tage: new Set([tag]),
       };
     }
@@ -657,8 +707,13 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const feld = e.target.dataset?.feld;
     const b = this._bearbeitung;
     if (!feld || !b) return;
-    const fenster = b.fenster[Number(e.target.dataset.index)];
-    fenster[feld] = feld === "temperatur" ? e.target.valueAsNumber : Number(e.target.value);
+    if (feld === "absenkung") {
+      const wert = e.target.valueAsNumber;
+      b.absenkung = Number.isFinite(wert) ? wert : null;
+    } else {
+      const fenster = b.fenster[Number(e.target.dataset.index)];
+      fenster[feld] = feld === "temperatur" ? e.target.valueAsNumber : Number(e.target.value);
+    }
     const hk = this._finden(b.schluessel);
     const problem = this._problem(hk);
     const anzeige = this.shadowRoot.querySelector(".problem");
@@ -691,6 +746,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
             ende: f.ende,
             temperatur: hk.mit_temperatur ? f.temperatur : null,
           })),
+        absenkung: hk.mit_absenkung ? b.absenkung : null,
       });
       this._heizkreise = this._heizkreise.map((alt) =>
         this._schluessel(alt) === b.schluessel ? neu : alt
