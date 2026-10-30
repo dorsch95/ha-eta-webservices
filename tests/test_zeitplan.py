@@ -208,6 +208,55 @@ async def test_nicht_beschreibbar_bleibt_unangetastet(hass, entry, menu_xml):
     assert coordinator.zeitprogramm_defs == {}
 
 
+async def test_diagnose_sagt_warum_nicht_beschreibbar(hass, entry, menu_xml):
+    """Mit der Beschreibung des ersten Fensters, so wie die Anlage sie schickt."""
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
+
+    hass.session.zeitfenster_schreibbar = False
+    hass.session.menu = mit_zeitprogramm(menu_xml)
+    anlage_mit_fenstern(hass.session)
+    coordinator, _ = await setup_integration(hass, entry)
+
+    befund = coordinator.zeitprogramm_pruefung["hk1"]
+    assert befund["grund"] == "nicht als beschreibbares Zeitfenster gemeldet"
+    assert befund["fenster"]["Montag 1"] == "Typ TIMESLOT, beschreibbar nein, Grenzen erkannt"
+    assert len(befund["fenster"]) == 21
+
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+    diagnose = bericht["schreibzugriff"]["zeitprogramm_nicht_beschreibbar"]["hk1"]
+    assert "beispiel_uri" not in diagnose
+    assert diagnose["varinfo_montag_1"].startswith("<eta")
+    assert "<type>TIMESLOT</type>" in diagnose["varinfo_montag_1"]
+    assert bericht["schreibzugriff"]["zeitprogramme"] == {}
+    json.dumps(bericht)
+
+
+async def test_anderer_zeitfenster_typ(hass, entry, menu_xml):
+    """Die ETA-Dokumentation kennt neben TIMESLOT auch TIMESLOTPLUSTEMPERATURE."""
+    hass.session.zeitfenster_typ = "TIMESLOTPLUSTEMPERATURE"
+    coordinator, _ = await aufbauen(hass, entry, menu_xml)
+    assert len(coordinator.zeitprogramm_defs["hk1"]) == 21
+    assert coordinator.zeitprogramm_pruefung == {}
+
+
+async def test_ausbleibende_antwort_wird_einmal_wiederholt(hass, entry, menu_xml, monkeypatch):
+    from eta_heating_ws.api import ETAApiClient
+
+    original = ETAApiClient.async_get_varinfo
+    versuche: dict[str, int] = {}
+
+    async def wackelig(self, uri):
+        versuche[uri] = versuche.get(uri, 0) + 1
+        if uri == fenster_uri("wednesday", 2) and versuche[uri] == 1:
+            return None
+        return await original(self, uri)
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", wackelig)
+    coordinator, _ = await aufbauen(hass, entry, menu_xml)
+    assert len(coordinator.zeitprogramm_defs["hk1"]) == 21
+    assert versuche[fenster_uri("wednesday", 2)] == 2
+
+
 async def test_abgleich_schreibt_nur_die_abweichung(hass, entry, menu_xml):
     _, abgleich = await aufbauen(hass, entry, menu_xml)
     mit_plan(abgleich, plan(saturday=[(28, 92, None)]))

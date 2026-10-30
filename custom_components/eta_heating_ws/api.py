@@ -293,9 +293,15 @@ class ETAApiClient:
             "min_roh": grenzen["min"],
             "max_roh": grenzen["max"],
             "zeitfenster": (
-                _zeitfenster_grenzen(werte) if variable.get("type") == "TIMESLOT" else None
+                _zeitfenster_grenzen(werte)
+                if str(variable.get("type") or "").upper().startswith("TIMESLOT")
+                else None
             ),
         }
+
+    async def async_get_varinfo_text(self, uri: str) -> str:
+        """Die Beschreibung einer Variable, so wie die Anlage sie schickt - für die Diagnose."""
+        return await self._get_text(f"/user/varinfo{uri}", REQUEST_TIMEOUT)
 
     async def async_get_zeitfenster(self, uri: str) -> Zeitfenster:
         """Liest ein Zeitfenster.

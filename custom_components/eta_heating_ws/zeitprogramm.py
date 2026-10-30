@@ -232,9 +232,14 @@ def _eintrag(hass: HomeAssistant, entry_id: str):
 async def _ws_zeitprogramme(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
-    """Die Zeitprogramme aller geladenen Anlagen, je Heizkreis eines."""
+    """Die Zeitprogramme aller geladenen Anlagen, je Heizkreis eines.
+
+    Haben beim Start nicht alle Zeitfenster geantwortet, wird vorher
+    nachgeprüft - so erscheint das Programm ohne Neustart.
+    """
     heizkreise = []
     for eintrag in hass.config_entries.async_loaded_entries(DOMAIN):
+        await eintrag.runtime_data.zeitprogramme_nachpruefen()
         for heizkreis in eintrag.runtime_data.zeitprogramm_defs:
             try:
                 bestand = await bestand_lesen(eintrag.runtime_data, heizkreis)

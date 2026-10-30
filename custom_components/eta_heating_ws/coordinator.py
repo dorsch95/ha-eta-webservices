@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -112,6 +113,23 @@ def puffer_fuehler_schluessel(sensor_defs, komponente="puffer"):
     )
 
 
+KEINE_ANTWORT = "keine Antwort auf /user/varinfo"
+
+NACHPRUEFEN_ABSTAND = 60
+"""So viele Sekunden mindestens zwischen zwei Nachprüfungen der Zeitprogramme."""
+
+
+def _zeitfenster_befund(info: dict | None) -> str:
+    """Was die Anlage über ein Zeitfenster meldet, kurz - für Protokoll und Diagnose."""
+    if info is None:
+        return KEINE_ANTWORT
+    grenzen = "erkannt" if info.get("zeitfenster") else "nicht erkannt"
+    return (
+        f"Typ {info.get('type')}, beschreibbar {'ja' if info.get('writable') else 'nein'}, "
+        f"Grenzen {grenzen}"
+    )
+
+
 class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     """Liest alle bekannten Messwerte der Anlage in einem Rutsch aus."""
 
@@ -154,6 +172,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """Je Heizkreis mit gewähltem Zeitplan sein Abgleich - für die Diagnose."""
         self.zeitprogramm_sperre = asyncio.Lock()
         """Damit zwei Dashboards nicht gleichzeitig ins Zeitprogramm schreiben."""
+        self.zeitprogramm_pruefung: dict[str, dict] = {}
+        """Je Heizkreis, dessen Zeitprogramm nicht beschreibbar erkannt wurde, der Grund - für die Diagnose."""
+        self._zuletzt_nachgeprueft = float("-inf")
         self.betriebsart_auswahl: dict[str, object] = {}
         """Die Betriebsart-Auswahlen je Schlüssel - der Thermostat stellt über sie um."""
         self.components_without_data: list[str] = []
@@ -437,22 +458,24 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 "ETA: Thermostat für %s erkannt (%s)", heizkreis, ", ".join(sorted(objekte))
             )
 
-    async def _zeitprogramme_pruefen(self) -> None:
+    async def _zeitprogramme_pruefen(self, nur: set[str] | None = None) -> None:
         """Prüft je Heizkreis, ob sich sein Zeitprogramm beschreiben lässt.
 
         Nur mit freigegebenem Schreibzugriff, und nur, wenn alle Zeitfenster
         der Woche gefunden und als beschreibbar gemeldet sind - ein halb
         beschreibbares Programm bleibt besser unangetastet. Ob ein Fenster
         eine Temperatur trägt und in welchen Grenzen, sagt /user/varinfo.
-        Die Fenster werden nicht mit abgefragt; gelesen werden sie nur, wenn
-        ein Zeitplan übertragen wird.
+        Bleibt eine Antwort aus, wird einmal nachgefragt. Die Fenster werden
+        nicht mit abgefragt; gelesen werden sie erst, wenn jemand sie
+        braucht. nur: bloß diese Heizkreise prüfen.
         """
         if not self.enable_switches:
             return
 
         for heizkreis, definition in THERMOSTATE.items():
-            if heizkreis not in self.components:
+            if heizkreis not in self.components or (nur is not None and heizkreis not in nur):
                 continue
+            self.zeitprogramm_pruefung.pop(heizkreis, None)
             uris = {
                 (tag, nummer): self.discovered_uris.get(
                     zeitfenster_schluessel(definition["praefix"], tag, nummer)
@@ -460,16 +483,37 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 for tag in WOCHENTAGE
                 for nummer in range(1, ZEITFENSTER_JE_TAG + 1)
             }
-            if not all(uris.values()):
+            fehlend = [f"{WOCHENTAGE[t]} {n}" for (t, n), uri in uris.items() if not uri]
+            if len(fehlend) == len(uris):
+                continue
+            if fehlend:
+                self.zeitprogramm_pruefung[heizkreis] = {
+                    "grund": "nicht alle Zeitfenster im Menübaum",
+                    "fehlend": fehlend,
+                }
                 continue
             infos = await asyncio.gather(
                 *(self.client.async_get_varinfo(uri) for uri in uris.values())
             )
-            if not all(
-                info and info.get("writable") and info.get("zeitfenster") for info in infos
-            ):
+            infos = [
+                info if info is not None else await self.client.async_get_varinfo(uri)
+                for info, uri in zip(infos, uris.values())
+            ]
+            abweichend = {
+                f"{WOCHENTAGE[t]} {n}": _zeitfenster_befund(info)
+                for (t, n), info in zip(uris, infos)
+                if not (info and info.get("writable") and info.get("zeitfenster"))
+            }
+            if abweichend:
+                self.zeitprogramm_pruefung[heizkreis] = {
+                    "grund": "nicht als beschreibbares Zeitfenster gemeldet",
+                    "fenster": abweichend,
+                    "beispiel_uri": uris[next(iter(WOCHENTAGE)), 1],
+                }
                 _LOGGER.info(
-                    "ETA: Zeitprogramm von %s gefunden, aber nicht beschreibbar", heizkreis
+                    "ETA: Zeitprogramm von %s gefunden, aber nicht beschreibbar (%s)",
+                    heizkreis,
+                    ", ".join(f"{k}: {v}" for k, v in abweichend.items()),
                 )
                 continue
             self.zeitprogramm_defs[heizkreis] = {
@@ -477,6 +521,27 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 for (fenster, uri), info in zip(uris.items(), infos)
             }
             _LOGGER.info("ETA: Zeitprogramm von %s beschreibbar", heizkreis)
+
+    async def zeitprogramme_nachpruefen(self) -> None:
+        """Prüft Heizkreise erneut, deren Zeitfenster beim Start nicht alle geantwortet haben.
+
+        Beim Start ist die Anlage mit vielen Abfragen beschäftigt; bleibt
+        dann eine Antwort aus, wäre das Zeitprogramm bis zum nächsten
+        Neustart gesperrt. Die Dashboard-Karte ruft das beim Öffnen auf.
+        Höchstens einmal je NACHPRUEFEN_ABSTAND, und nur, wenn wirklich
+        bloß Antworten fehlten.
+        """
+        offen = {
+            heizkreis
+            for heizkreis, befund in self.zeitprogramm_pruefung.items()
+            if befund.get("fenster")
+            and all(text == KEINE_ANTWORT for text in befund["fenster"].values())
+        }
+        jetzt = time.monotonic()
+        if not offen or jetzt - self._zuletzt_nachgeprueft < NACHPRUEFEN_ABSTAND:
+            return
+        self._zuletzt_nachgeprueft = jetzt
+        await self._zeitprogramme_pruefen(offen)
 
     def betriebsart_gemeldet(self, key: str) -> str | None:
         """Die Betriebsart eines Heizkreises, wie die Anlage sie zuletzt gemeldet hat.

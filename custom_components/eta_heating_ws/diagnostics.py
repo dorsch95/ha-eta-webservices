@@ -152,6 +152,10 @@ async def async_get_config_entry_diagnostics(
         heizkreis: await _zeitprogramm(coordinator, heizkreis)
         for heizkreis in coordinator.zeitprogramm_defs
     }
+    zeitprogramm_pruefung = {
+        heizkreis: await _zeitprogramm_pruefung(coordinator, befund)
+        for heizkreis, befund in coordinator.zeitprogramm_pruefung.items()
+    }
 
     return {
         "konfiguration": async_redact_data(
@@ -199,6 +203,7 @@ async def async_get_config_entry_diagnostics(
             "betriebsarten": sorted(coordinator.select_defs),
             "thermostate": sorted(coordinator.thermostat_defs),
             "zeitprogramme": zeitprogramme,
+            "zeitprogramm_nicht_beschreibbar": zeitprogramm_pruefung,
             "entaschentaste": coordinator.entaschen_def is not None,
             "aschebox_plan": (
                 None
@@ -221,6 +226,24 @@ async def async_get_config_entry_diagnostics(
         "prognose": prognose_diagnose(coordinator),
         "menuebaum": menuebaum,
     }
+
+
+async def _zeitprogramm_pruefung(coordinator, befund: dict) -> dict[str, Any]:
+    """Warum ein gefundenes Zeitprogramm nicht beschreibbar erkannt wurde.
+
+    Dazu die Beschreibung des ersten Zeitfensters, frisch und so, wie die
+    Anlage sie schickt - daran lässt sich sehen, was sie anders meldet.
+    """
+    ergebnis = dict(befund)
+    uri = ergebnis.pop("beispiel_uri", None)
+    if uri:
+        try:
+            ergebnis["varinfo_montag_1"] = (await coordinator.client.async_get_varinfo_text(uri))[
+                :4000
+            ]
+        except ETAApiError as err:
+            ergebnis["varinfo_montag_1"] = f"nicht lesbar: {err}"
+    return ergebnis
 
 
 async def _zeitprogramm(coordinator, heizkreis: str) -> dict[str, Any]:

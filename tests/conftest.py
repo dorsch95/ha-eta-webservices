@@ -148,6 +148,7 @@ class FakeSession:
         self.zeitfenster: dict[str, tuple[int, int, int | None]] = {}
         """Zeitfenster der Attrappe: URI -> (Beginn, Ende, Rohwert der Temperatur oder None)."""
         self.zeitfenster_schreibbar = True
+        self.zeitfenster_typ = "TIMESLOT"
         self.gesetzte_zeitfenster: list[tuple[str, dict]] = []
         self.traege = False
         """Wenn True, meldet die Anlage geschriebene Werte noch nicht zurück.
@@ -444,7 +445,7 @@ class FakeSession:
             '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" name="Zeitfenster 1" '
             f'fullName="Heizkreis > Heizzeiten > Montag > Zeitfenster 1" unit="{einheit}" '
             'decPlaces="1" scaleFactor="10" advTextOffset="0" '
-            f'isWritable="{1 if self.zeitfenster_schreibbar else 0}"><type>TIMESLOT</type>'
+            f'isWritable="{1 if self.zeitfenster_schreibbar else 0}"><type>{self.zeitfenster_typ}</type>'
             f"<validValues>{grenze('min', 0, 0, 0)}{grenze('def', 0, 96, 210)}"
             f"{grenze('max', 96, 96, 800)}</validValues></variable></varInfo></eta>"
         )

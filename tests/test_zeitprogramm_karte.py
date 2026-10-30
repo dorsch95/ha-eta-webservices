@@ -297,3 +297,47 @@ def test_kein_hash_kommentar_im_modul():
     """Projektregel: Erklärungen stehen in Docstrings."""
     with open(sys.modules[zeitprogramm.__name__].__file__, encoding="utf-8") as datei:
         assert not any(zeile.lstrip().startswith("#") for zeile in datei)
+
+
+async def test_karte_prueft_nach_wenn_beim_start_antworten_fehlten(hass, entry, menu_xml, monkeypatch):
+    """Beim Start beschäftigt, beim Öffnen der Karte wieder da - ohne Neustart."""
+    from eta_heating_ws.api import ETAApiClient
+    from eta_heating_ws.coordinator import KEINE_ANTWORT
+
+    original = ETAApiClient.async_get_varinfo
+    stumm = {fenster_uri("wednesday", 2)}
+
+    async def beschaeftigt(self, uri):
+        if uri in stumm:
+            return None
+        return await original(self, uri)
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", beschaeftigt)
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    assert coordinator.zeitprogramm_defs == {}
+    assert coordinator.zeitprogramm_pruefung["hk1"]["fenster"] == {"Mittwoch 2": KEINE_ANTWORT}
+
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    assert verbindung.ergebnisse[0][1]["heizkreise"] == [], "noch immer keine Antwort"
+
+    stumm.clear()
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    assert verbindung.ergebnisse[0][1]["heizkreise"] == [], "höchstens einmal je Minute"
+
+    coordinator._zuletzt_nachgeprueft -= 61
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    assert heizkreis["tage"]["wednesday"] == [{"beginn": 22, "ende": 90, "temperatur": 20.0}]
+    assert coordinator.zeitprogramm_pruefung == {}
+
+
+async def test_echtes_nein_wird_nicht_nachgeprueft(hass, entry, menu_xml, monkeypatch):
+    """Meldet die Anlage ein Fenster als nicht beschreibbar, bleibt es dabei."""
+    hass.session.zeitfenster_schreibbar = False
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    zaehler = hass.session.count
+
+    await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+
+    assert hass.session.count == zaehler
+    assert coordinator.zeitprogramm_defs == {}
