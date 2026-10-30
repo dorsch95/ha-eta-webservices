@@ -98,7 +98,17 @@ const SYMBOL_ENTFERNEN =
   "19L19,17.59L13.41,12L19,6.41Z";
 
 const STIL = `
-  :host { display: block; }
+  :host {
+    display: block;
+    --eta-gelb: #ffa100;
+    --eta-grau: #474a50;
+    --eta-leer: rgba(71, 74, 80, 0.16);
+    --eta-akzent: var(--eta-grau);
+  }
+  :host([dunkel]) {
+    --eta-leer: var(--eta-grau);
+    --eta-akzent: var(--eta-gelb);
+  }
   ha-card { padding: 12px 16px 16px; container-type: inline-size; }
   button { font: inherit; cursor: pointer; }
   .kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -122,16 +132,16 @@ const STIL = `
   }
   .fehler { color: var(--error-color, #db4437); }
   .ok { color: var(--success-color, #43a047); }
-  .meldung { font-size: 13px; padding: 2px 0 6px 36px; }
+  .meldung { font-size: 13px; padding: 2px 0 6px 40px; }
   .skala {
-    position: relative; height: 16px; margin-left: 36px;
+    position: relative; height: 16px; margin-left: 40px;
     font-size: 11px; color: var(--secondary-text-color);
   }
   .skala span { position: absolute; transform: translateX(-50%); }
   .skala span:first-child { transform: none; }
   .skala span:last-child { transform: translateX(-100%); }
   .tag {
-    display: grid; grid-template-columns: 28px 1fr; column-gap: 8px; row-gap: 2px;
+    display: grid; grid-template-columns: 32px 1fr; column-gap: 8px; row-gap: 2px;
     align-items: center; margin: 0 -6px; padding: 6px; border-radius: 8px;
     cursor: pointer; outline: none;
   }
@@ -139,24 +149,26 @@ const STIL = `
   .tag.gesperrt { cursor: default; }
   .tag.gesperrt:hover { background: none; }
   .kurz { font-weight: 500; }
-  .kurz.heute { color: var(--primary-color); }
+  .kurz.heute {
+    justify-self: start; padding: 0 5px; border-radius: 6px;
+    background: var(--eta-gelb); color: var(--eta-grau);
+  }
   .balken {
     position: relative; height: 14px; border-radius: 7px; overflow: hidden;
     background:
       repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px),
         rgba(127, 127, 127, 0.35) calc(25% - 1px), rgba(127, 127, 127, 0.35) 25%),
-      var(--secondary-background-color);
+      var(--eta-leer);
   }
-  .tag.offen .balken { background-color: var(--card-background-color); }
   .block {
     position: absolute; top: 0; bottom: 0; border-radius: 7px;
-    background: var(--state-climate-heat-color, #ff8100);
+    background: var(--eta-gelb);
   }
   .jetzt { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--primary-text-color); }
   .text { grid-column: 2; font-size: 12px; color: var(--secondary-text-color); }
   .editor {
     display: flex; flex-direction: column; gap: 10px;
-    margin: 4px 0 8px 36px; padding: 12px; border-radius: 12px;
+    margin: 4px 0 8px 40px; padding: 12px; border-radius: 12px;
     border: 1px solid var(--divider-color);
   }
   .zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -175,7 +187,7 @@ const STIL = `
   input[type="number"] { width: 4.5em; }
   .text-knopf {
     align-self: flex-start; padding: 4px 0; border: none; background: none;
-    color: var(--primary-color); font-weight: 500;
+    color: var(--eta-akzent); font-weight: 500;
   }
   .tage-wahl { display: flex; flex-direction: column; gap: 6px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -184,17 +196,17 @@ const STIL = `
     border: 1px solid var(--divider-color); background: none; color: var(--primary-text-color);
   }
   .chip.an {
-    background: var(--primary-color); border-color: var(--primary-color);
-    color: var(--text-primary-color, #fff);
+    background: var(--eta-gelb); border-color: var(--eta-gelb);
+    color: var(--eta-grau); font-weight: 500;
   }
   .knoepfe { display: flex; justify-content: flex-end; gap: 8px; }
   .flach {
     padding: 8px 12px; border: none; border-radius: 18px; background: none;
-    color: var(--primary-color); font-weight: 500;
+    color: var(--eta-akzent); font-weight: 500;
   }
   .haupt {
     min-height: 36px; padding: 8px 18px; border: none; border-radius: 18px;
-    background: var(--primary-color); color: var(--text-primary-color, #fff); font-weight: 500;
+    background: var(--eta-gelb); color: var(--eta-grau); font-weight: 500;
   }
   .haupt:disabled { opacity: 0.5; cursor: default; }
   .fuss { margin-top: 6px; font-size: 12px; color: var(--secondary-text-color); }
@@ -281,6 +293,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
   set hass(hass) {
     const erstes = !this._hass;
     this._hass = hass;
+    this.toggleAttribute("dunkel", Boolean(hass?.themes?.darkMode));
     if (erstes) this._laden();
   }
 
