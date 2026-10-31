@@ -525,6 +525,7 @@ Mit freigegebenem Schreibzugriff zeigt die Karte **ETA Zeitprogramm** die Heizze
 * Die Übersicht zeigt je Tag die Zeitfenster und die Absenktemperatur, etwa „05:30–22:30 · 21,0 °C, sonst 16,0 °C“.
 * Folgt ein Heizkreis einem **Zeitplan** aus Home Assistant (nächster Abschnitt), zeigt die Karte sein Programm nur an und verweist auf den Zeitplan - sonst überschriebe der nächste Abgleich die Änderung wieder.
 * Mit **⟳** liest die Karte das Programm neu von der Heizung, etwa nach einer Änderung am Display.
+* **Farben:** Ab Werk in den ETA-Farben Melonengelb (RAL 1028) und Graphitgrau (RAL 7024). Unter **Karte bearbeiten** lassen sich **Farbe Heizzeit** und **Farbe Absenkzeit** aus der Farbpalette von Home Assistant wählen; ✕ setzt auf die ETA-Farbe zurück. Die Schrift auf farbigen Knöpfen passt sich an, damit sie lesbar bleibt.
 
 ### Zeitprogramm aus Home Assistant
 

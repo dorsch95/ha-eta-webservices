@@ -57,6 +57,8 @@ const TEXTE = {
     karte_beschreibung: "Heizzeiten der ETA-Heizung ansehen und ändern.",
     feld_titel: "Titel",
     feld_heizkreis: "Heizkreis (leer: alle)",
+    feld_farbe_heizzeit: "Farbe Heizzeit",
+    feld_farbe_absenkzeit: "Farbe Absenkzeit",
   },
   en: {
     titel: "Heating schedule",
@@ -99,6 +101,8 @@ const TEXTE = {
     karte_beschreibung: "View and change the heating times of the ETA boiler.",
     feld_titel: "Title",
     feld_heizkreis: "Heating circuit (empty: all)",
+    feld_farbe_heizzeit: "Heating time colour",
+    feld_farbe_absenkzeit: "Setback colour",
   },
 };
 
@@ -110,14 +114,24 @@ const SYMBOL_ENTFERNEN =
   "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59," +
   "19L19,17.59L13.41,12L19,6.41Z";
 
+const THEMENFARBEN = new Set([
+  "primary", "accent", "disabled", "red", "pink", "purple", "deep-purple", "indigo", "blue",
+  "light-blue", "cyan", "teal", "green", "light-green", "lime", "yellow", "amber", "orange",
+  "deep-orange", "brown", "light-grey", "grey", "dark-grey", "blue-grey", "black", "white",
+]);
+
 const STIL = `
   :host {
     display: block;
     --eta-gelb: #ffa100;
     --eta-grau: #474a50;
-    --eta-leer: rgba(71, 74, 80, 0.16);
+    --eta-leer: color-mix(in srgb, var(--eta-grau) 16%, transparent);
     --eta-akzent: var(--eta-grau);
+    --eta-auf-gelb: var(--eta-grau);
   }
+  .probe { display: none; }
+  .probe.gelb { color: var(--eta-gelb); }
+  .probe.grau { color: var(--eta-grau); }
   :host([dunkel]) {
     --eta-leer: var(--eta-grau);
     --eta-akzent: var(--eta-gelb);
@@ -164,7 +178,7 @@ const STIL = `
   .kurz { font-weight: 500; }
   .kurz.heute {
     justify-self: start; padding: 0 5px; border-radius: 6px;
-    background: var(--eta-gelb); color: var(--eta-grau);
+    background: var(--eta-gelb); color: var(--eta-auf-gelb);
   }
   .balken {
     position: relative; height: 14px; border-radius: 7px; overflow: hidden;
@@ -230,7 +244,7 @@ const STIL = `
   }
   .chip.an {
     background: var(--eta-gelb); border-color: var(--eta-gelb);
-    color: var(--eta-grau); font-weight: 500;
+    color: var(--eta-auf-gelb); font-weight: 500;
   }
   .knoepfe { display: flex; justify-content: flex-end; gap: 8px; }
   .flach {
@@ -239,7 +253,7 @@ const STIL = `
   }
   .haupt {
     min-height: 36px; padding: 8px 18px; border: none; border-radius: 18px;
-    background: var(--eta-gelb); color: var(--eta-grau); font-weight: 500;
+    background: var(--eta-gelb); color: var(--eta-auf-gelb); font-weight: 500;
   }
   .haupt:disabled { opacity: 0.5; cursor: default; }
   .fuss { margin-top: 6px; font-size: 12px; color: var(--secondary-text-color); }
@@ -260,6 +274,32 @@ function sicher(text) {
     /[&<>"']/g,
     (zeichen) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[zeichen]
   );
+}
+
+/** Eine Farbe aus den Einstellungen als CSS: Name der HA-Palette, eigener Wert oder [r, g, b]. */
+function cssFarbe(wert) {
+  if (Array.isArray(wert) && wert.length === 3) return `rgb(${wert.map(Number).join(", ")})`;
+  if (typeof wert !== "string" || !wert.trim()) return null;
+  return THEMENFARBEN.has(wert) ? `var(--${wert}-color)` : wert.trim();
+}
+
+function rgb(text) {
+  const zahlen = String(text).match(/[\d.]+/g);
+  return zahlen && zahlen.length >= 3 ? zahlen.slice(0, 3).map(Number) : null;
+}
+
+/** Relative Helligkeit nach WCAG, 0 (schwarz) bis 1 (weiß). */
+function helligkeit(farbe) {
+  const [r, g, b] = farbe.map((wert) => {
+    const anteil = wert / 255;
+    return anteil <= 0.03928 ? anteil / 12.92 : ((anteil + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function kontrast(a, b) {
+  const [hell, dunkel] = [helligkeit(a), helligkeit(b)].sort((x, y) => y - x);
+  return (hell + 0.05) / (dunkel + 0.05);
 }
 
 function uhrzeiten(von, bis, gewaehlt) {
@@ -313,21 +353,65 @@ class EtaZeitprogrammKarte extends HTMLElement {
             },
           },
         },
+        {
+          name: "",
+          type: "grid",
+          schema: [
+            { name: "farbe_heizzeit", selector: { ui_color: {} } },
+            { name: "farbe_absenkzeit", selector: { ui_color: {} } },
+          ],
+        },
       ],
-      computeLabel: (feld) => (feld.name === "titel" ? t.feld_titel : t.feld_heizkreis),
+      computeLabel: (feld) => t[`feld_${feld.name}`],
     };
   }
 
   setConfig(konfig) {
     this._konfig = konfig || {};
+    for (const [name, schluessel] of [["--eta-gelb", "farbe_heizzeit"], ["--eta-grau", "farbe_absenkzeit"]]) {
+      const farbe = cssFarbe(this._konfig[schluessel]);
+      if (farbe) this.style.setProperty(name, farbe);
+      else this.style.removeProperty(name);
+    }
     this._zeichnen();
   }
 
   set hass(hass) {
     const erstes = !this._hass;
+    const dunkel = Boolean(hass?.themes?.darkMode);
+    const gewechselt = dunkel !== this.hasAttribute("dunkel");
     this._hass = hass;
-    this.toggleAttribute("dunkel", Boolean(hass?.themes?.darkMode));
+    this.toggleAttribute("dunkel", dunkel);
+    if (gewechselt) this._lesbar();
     if (erstes) this._laden();
+  }
+
+  /**
+   * Schrift, die auf den gewählten Farben lesbar bleibt.
+   *
+   * Auf Heizzeit-Farbe (Speichern, gewählte Tage, heute) Graphitgrau wie
+   * bei ETA, sonst Schwarz oder Weiß. Textknöpfe im hellen Design in der
+   * Absenkzeit-Farbe, im dunklen in der Heizzeit-Farbe - ist die zu blass,
+   * in der normalen Schriftfarbe.
+   */
+  _lesbar() {
+    const proben = [".probe.gelb", ".probe.grau"].map((art) => this.shadowRoot.querySelector(art));
+    if (proben.some((probe) => !probe)) return;
+    const [gelb, grau] = proben.map((probe) => rgb(getComputedStyle(probe).color));
+    if (!gelb || !grau) return;
+    const weiss = [255, 255, 255];
+    const schwarz = [0, 0, 0];
+    let auf;
+    if (kontrast(gelb, grau) >= 3.5) auf = "var(--eta-grau)";
+    else auf = kontrast(gelb, weiss) > kontrast(gelb, schwarz) ? "#ffffff" : "#000000";
+    this.style.setProperty("--eta-auf-gelb", auf);
+    const dunkel = this.hasAttribute("dunkel");
+    const akzent = dunkel ? gelb : grau;
+    const grund = dunkel ? [28, 28, 28] : weiss;
+    this.style.setProperty(
+      "--eta-akzent",
+      kontrast(akzent, grund) >= 3 ? (dunkel ? "var(--eta-gelb)" : "var(--eta-grau)") : "var(--primary-text-color)"
+    );
   }
 
   connectedCallback() {
@@ -451,7 +535,9 @@ class EtaZeitprogrammKarte extends HTMLElement {
           </button>
         </div>
         ${inhalt}
-      </ha-card>`;
+      </ha-card>
+      <span class="probe gelb"></span><span class="probe grau"></span>`;
+    this._lesbar();
   }
 
   _heizkreis(hk, mehrere, anlagen) {

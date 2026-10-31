@@ -294,6 +294,8 @@ def test_karte_passt_zur_schnittstelle():
     ):
         assert f".{feld}" in quelle or f"{feld}:" in quelle, feld
     assert 'customElements.define(KARTE' in quelle
+    for einstellung in ("farbe_heizzeit", "farbe_absenkzeit"):
+        assert f'name: "{einstellung}", selector: {{ ui_color: {{}} }}' in quelle, einstellung
     assert 'const KARTE = "eta-zeitprogramm-karte"' in quelle
 
 
