@@ -26,6 +26,10 @@ const TEXTE = {
     gesteuert: (name) =>
       `Wird vom Zeitplan „${name}“ vorgegeben. Änderungen bitte dort vornehmen.`,
     zeitplan_oeffnen: "Zeitplan öffnen",
+    gesperrt: (name) =>
+      `Dieser Heizkreis folgt dem Zeitplan „${name}“. Zum Ändern direkt in der Karte ` +
+      "unter Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren " +
+      "die Auswahl des Zeitplans leeren.",
     absenkung: "ganztägig Absenkung",
     tippen: "Zum Ändern einen Tag antippen.",
     fenster: "Zeitfenster",
@@ -65,6 +69,9 @@ const TEXTE = {
     neu_lesen: "Read again",
     gesteuert: (name) => `Set by the schedule “${name}”. Please make changes there.`,
     zeitplan_oeffnen: "Open schedule",
+    gesperrt: (name) =>
+      `This heating circuit follows the schedule “${name}”. To edit it in this card, ` +
+      "clear the schedule under Settings → Devices & services → ETA Web-Services → Configure.",
     absenkung: "setback all day",
     tippen: "Tap a day to change it.",
     fenster: "Time slot",
@@ -152,8 +159,8 @@ const STIL = `
     cursor: pointer; outline: none;
   }
   .tag:hover, .tag:focus-visible, .tag.offen { background: var(--secondary-background-color); }
-  .tag.gesperrt { cursor: default; }
   .tag.gesperrt:hover { background: none; }
+  .meldung.hinweis { color: var(--secondary-text-color); }
   .kurz { font-weight: 500; }
   .kurz.heute {
     justify-self: start; padding: 0 5px; border-radius: 6px;
@@ -477,7 +484,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
         this._bearbeitung?.schluessel === schluessel && this._bearbeitung?.tag === tag;
       const fenster = offen ? this._bearbeitung.fenster : hk.tage[tag];
       const klassen = ["tag", offen ? "offen" : "", hk.zeitplan ? "gesperrt" : ""].join(" ");
-      const knopf = hk.zeitplan ? "" : 'role="button" tabindex="0" data-aktion="tag"';
+      const knopf = `role="button" tabindex="0" data-aktion="${hk.zeitplan ? "gesperrt" : "tag"}"`;
       html += `
         <div class="${klassen}" ${knopf} data-hk="${sicher(schluessel)}" data-tag="${tag}">
           <div class="kurz ${tag === heute ? "heute" : ""}">${t.kurz[i]}</div>
@@ -652,6 +659,9 @@ class EtaZeitprogrammKarte extends HTMLElement {
       case "tag":
         this._oeffnen(ziel.dataset.hk, ziel.dataset.tag);
         return;
+      case "gesperrt":
+        this._gesperrt(ziel.dataset.hk, ziel.dataset.tag);
+        return;
       case "zeitplan":
         this.dispatchEvent(
           new CustomEvent("hass-more-info", {
@@ -697,10 +707,24 @@ class EtaZeitprogrammKarte extends HTMLElement {
   }
 
   _taste(e) {
-    if ((e.key === "Enter" || e.key === " ") && e.target.dataset?.aktion === "tag") {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const aktion = e.target.dataset?.aktion;
+    if (aktion === "tag") {
       e.preventDefault();
       this._oeffnen(e.target.dataset.hk, e.target.dataset.tag);
+    } else if (aktion === "gesperrt") {
+      e.preventDefault();
+      this._gesperrt(e.target.dataset.hk, e.target.dataset.tag);
     }
+  }
+
+  _gesperrt(schluessel, tag) {
+    const hk = this._finden(schluessel);
+    if (!hk?.zeitplan) return;
+    const name = this._hass?.states?.[hk.zeitplan]?.attributes?.friendly_name || hk.zeitplan;
+    const offen = this._meldung?.schluessel === schluessel && this._meldung?.tag === tag;
+    this._meldung = offen ? null : { schluessel, tag, art: "hinweis", text: this._t.gesperrt(name) };
+    this._zeichnen();
   }
 
   _eingabe(e) {
