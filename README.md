@@ -21,7 +21,6 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 **ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with up to three buffer tanks, fresh water module, heating circuits, solar, PV heating module, pellet store, a second heat source and a transfer line to another building) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
 
 - Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
-- **Upgrading from 0.25 or older:** the internal name changed from `eta_webservices` to `eta_heating_ws`, because another ETA integration has used the old name since 2022. After updating and restarting, add the integration once more and choose *Take over the existing setup*: settings, entity IDs, history, device and dashboards are kept, and the old setup and folder are removed. Restart once more afterwards; until then “ETA Web-Services” shows up twice in some lists. If HACS stops the download with *No manifest.json file found 'custom_components/eta_webservices/manifest.json'*, restart Home Assistant once and run the update again.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
 - With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Home Assistant loads the card by itself - add it via *Edit dashboard -> Add card*.
@@ -54,17 +53,6 @@ Danach ist die Heizung im Heimnetz unter `http://<DEINE-ETA-IP>:8080/user/menu` 
 2. Home Assistant vollständig neu starten.
 
 Die Integration steht im Standard-Store von HACS; ein benutzerdefiniertes Repository ist nicht nötig.
-
-### Update von Version 0.25 oder älter
-
-Seit 0.26 heißt die Integration intern `eta_heating_ws` statt `eta_webservices`. Den alten Namen benutzt seit 2022 schon eine andere ETA-Integration; beide landeten im selben Ordner und überschrieben sich gegenseitig. Deine Einrichtung ziehst du einmal um, den Rest erledigt die Integration:
-
-1. In HACS auf 0.26 aktualisieren und Home Assistant neu starten. Bricht HACS das Herunterladen mit *No manifest.json file found 'custom_components/eta_webservices/manifest.json'* ab, Home Assistant einmal neu starten und das Update danach noch einmal ausführen: HACS merkt sich den alten Ordnernamen bis zum nächsten Neustart.
-2. **Einstellungen -> Geräte & Dienste -> Integration hinzufügen -> ETA Web-Services**. Steht der Eintrag doppelt da, ist es der, der **Bestehende Einrichtung übernehmen** anbietet.
-3. **Bestehende Einrichtung übernehmen** wählen und bestätigen.
-4. Home Assistant noch einmal neu starten. Bis dahin steht „ETA Web-Services“ an manchen Stellen doppelt, etwa beim Hinzufügen von Integrationen und bei den Aktionen - die alte Version steckt noch im Speicher, ihr Ordner ist aber schon gelöscht.
-
-Erhalten bleiben alle Einstellungen und die Entitäten mit ihren IDs (`sensor.eta_heizung_…`) - damit laufen Verlauf, Statistik, Energie-Dashboard, Dashboard-Karten und Automatisierungen einfach weiter -, dazu das Gerät mit Raum und Namen und der Aschebox-Plan. Danach entfernt die Integration die alte Einrichtung und den alten Ordner `custom_components/eta_webservices`. Bis du übernimmst, läuft die alte Einrichtung unverändert weiter.
 
 ---
 
@@ -478,7 +466,7 @@ Findet die Integration am Kessel zusätzlich die **Entaschentaste** (am Display 
   3. Ist die Entaschung durch, kommt eine Meldung: Die Aschebox kann geleert werden.
   4. Sobald die Box abgenommen und wieder eingesetzt ist (der Kessel meldet *Aschebox fehlt* und danach nicht mehr, oder der Zähler *Verbrauch seit Aschebox leeren* fällt), schaltet es den Kessel wieder ein. Wird die Box nicht innerhalb von 2 Stunden geleert, geht der Kessel trotzdem wieder an - im Winter soll das Haus nicht auskühlen.
 
-  `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab; hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst wieder ein, endet der Plan ebenfalls. Der Plan übersteht einen Neustart von Home Assistant. Jeder Schritt löst zusätzlich das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`) - damit lässt sich die Meldung etwa aufs Handy schicken. Das frühere `eta_webservices_aschebox` kommt weiterhin mit, damit Automatisierungen von vor 0.26 weiterlaufen.
+  `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab; hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst wieder ein, endet der Plan ebenfalls. Der Plan übersteht einen Neustart von Home Assistant. Jeder Schritt löst zusätzlich das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`) - damit lässt sich die Meldung etwa aufs Handy schicken.
 
 ### Betriebsart je Heizkreis
 
@@ -577,7 +565,7 @@ Im Ordner [`blueprints/automation/eta_webservices`](blueprints/automation/eta_we
 | **Pelletvorrat niedrig** | Erinnerung zum Bestellen, sobald der Vorrat die Warngrenze der Anlage erreicht - mit Vorrat und Füllstand | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fpelletvorrat_melden.yaml) |
 | **Heizkreis auf ECO bei offenem Fenster** | Setzt den Heizkreis auf ECO, solange ein Fenster offen steht, und stellt danach die Betriebsart von vorher wieder her. Ein Heizkreis auf *Aus* bleibt aus | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fheizkreis_absenken.yaml) |
 
-**Einbauen:** Auf **Importieren** klicken - Home Assistant öffnet sich und übernimmt den Blueprint. Danach unter **Einstellungen -> Automatisierungen & Szenen -> Blueprints** auswählen und die Benachrichtigung festlegen, etwa eine Push-Nachricht an dein Handy. Ohne Internetzugang zu GitHub geht es auch von Hand: die `.yaml` nach `config/blueprints/automation/eta_webservices/` kopieren und Home Assistant neu starten. Hast du einen Blueprint vor 0.26 importiert, laufen deine Automatisierungen weiter; damit er beim Anlegen einer neuen wieder Entitäten zur Auswahl anbietet, einmal **Erneut importieren**.
+**Einbauen:** Auf **Importieren** klicken - Home Assistant öffnet sich und übernimmt den Blueprint. Danach unter **Einstellungen -> Automatisierungen & Szenen -> Blueprints** auswählen und die Benachrichtigung festlegen, etwa eine Push-Nachricht an dein Handy. Ohne Internetzugang zu GitHub geht es auch von Hand: die `.yaml` nach `config/blueprints/automation/eta_webservices/` kopieren und Home Assistant neu starten.
 
 Der Heizkreis-Blueprint braucht die Betriebsart-Auswahl, also einen freigegebenen Schreibzugriff.
 
