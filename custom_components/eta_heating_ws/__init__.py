@@ -201,6 +201,8 @@ def _zeitplaene_starten(
     gemeldet hat - also mit freigegebenem Schreibzugriff.
     """
     for heizkreis in coordinator.zeitprogramm_defs:
+        if heizkreis not in THERMOSTATE:
+            continue
         entity_id = config.get(zeitplan_schluessel(heizkreis))
         if not entity_id:
             async_zeitplan_hinweise_entfernen(hass, entry.entry_id, heizkreis)

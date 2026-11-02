@@ -61,10 +61,10 @@ async def test_karte_liest_das_zeitprogramm(hass, entry, menu_xml):
     [(msg_id, ergebnis)] = verbindung.ergebnisse
     assert msg_id == 7
     json.dumps(ergebnis)
-    [heizkreis] = ergebnis["heizkreise"]
+    [heizkreis] = ergebnis["programme"]
     assert heizkreis["eintrag"] == "testeintrag"
     assert heizkreis["anlage"] == "ETA Heizung"
-    assert heizkreis["heizkreis"] == "hk1"
+    assert heizkreis["programm"] == "hk1"
     assert heizkreis["name"]
     assert heizkreis["mit_temperatur"] is True
     assert (heizkreis["temperatur_min"], heizkreis["temperatur_max"]) == (10.0, 30.0), (
@@ -82,7 +82,7 @@ async def test_ohne_schreibzugriff_nichts_zu_bearbeiten(hass, entry, menu_xml):
 
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
 
-    assert verbindung.ergebnisse == [(7, {"heizkreise": []})]
+    assert verbindung.ergebnisse == [(7, {"programme": []})]
 
 
 async def test_mehrere_tage_auf_einmal_und_nur_was_sich_aendert(hass, entry, menu_xml):
@@ -185,7 +185,7 @@ async def test_mit_zeitplan_helfer_nur_anzeigen(hass, entry, menu_xml):
     assert hass.session.gesetzte_zeitfenster == []
 
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
-    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
     assert heizkreis["zeitplan"] == "schedule.heizen"
     assert heizkreis["tage"]["monday"], "angezeigt wird es trotzdem"
 
@@ -210,7 +210,7 @@ async def test_websocket_schreiben(hass, entry, menu_xml):
     nachricht = {
         "type": "eta_heating_ws/zeitprogramm_setzen",
         "eintrag": "testeintrag",
-        "heizkreis": "hk1",
+        "programm": "hk1",
         "tage": ["saturday", "sunday"],
         "fenster": [{"beginn": 28, "ende": 92, "temperatur": 21.5}],
     }
@@ -241,7 +241,7 @@ async def test_nicht_lesbares_programm(hass, entry, menu_xml):
 
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
 
-    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
     assert heizkreis["tage"] is None
     assert heizkreis["fehler"]
 
@@ -252,7 +252,7 @@ def test_nachricht_wird_geprueft():
         "id": 1,
         "type": "eta_heating_ws/zeitprogramm_setzen",
         "eintrag": "e",
-        "heizkreis": "hk1",
+        "programm": "hk1",
         "tage": ["monday"],
         "fenster": [{"beginn": 0, "ende": 96, "temperatur": 21}],
     }
@@ -275,7 +275,9 @@ def test_karte_passt_zur_schnittstelle():
         assert f'"{befehl_typ}"' in quelle
     for feld in (
         "eintrag",
-        "heizkreis",
+        "programm",
+        "art",
+        "temperatur_aenderbar",
         "name",
         "anlage",
         "mit_temperatur",
@@ -294,6 +296,9 @@ def test_karte_passt_zur_schnittstelle():
     ):
         assert f".{feld}" in quelle or f"{feld}:" in quelle, feld
     assert 'customElements.define(KARTE' in quelle
+    assert 'return { anzeigen: ["heizzeiten"] };' in quelle, "neue Karten zeigen die Heizzeiten"
+    for art in ("heizzeiten", "puffer", "warmwasser"):
+        assert f'"{art}"' in quelle, art
     for einstellung in ("farbe_heizzeit", "farbe_absenkzeit"):
         assert f'name: "{einstellung}", selector: {{ ui_color: {{}} }}' in quelle, einstellung
     assert 'const KARTE = "eta-zeitprogramm-karte"' in quelle
@@ -324,15 +329,15 @@ async def test_karte_prueft_nach_wenn_beim_start_antworten_fehlten(hass, entry, 
     assert coordinator.zeitprogramm_pruefung["hk1"]["fenster"] == {"Mittwoch 2": KEINE_ANTWORT}
 
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
-    assert verbindung.ergebnisse[0][1]["heizkreise"] == [], "noch immer keine Antwort"
+    assert verbindung.ergebnisse[0][1]["programme"] == [], "noch immer keine Antwort"
 
     stumm.clear()
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
-    assert verbindung.ergebnisse[0][1]["heizkreise"] == [], "höchstens einmal je Minute"
+    assert verbindung.ergebnisse[0][1]["programme"] == [], "höchstens einmal je Minute"
 
     coordinator._zuletzt_nachgeprueft -= 61
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
-    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
     assert heizkreis["tage"]["wednesday"] == [{"beginn": 22, "ende": 90, "temperatur": 20.0}]
     assert coordinator.zeitprogramm_pruefung == {}
 
@@ -355,7 +360,7 @@ async def test_karte_liest_die_absenktemperatur(hass, entry, menu_xml):
 
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
 
-    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
     assert heizkreis["mit_absenkung"] is True
     assert (heizkreis["absenkung_min"], heizkreis["absenkung_max"]) == (10.0, 30.0)
     assert heizkreis["absenkung"]["monday"] == 16.0
@@ -405,7 +410,7 @@ async def test_absenktemperatur_nicht_beschreibbar(hass, entry, menu_xml):
     assert coordinator.zeitprogramm_absenkung == {}
 
     verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
-    [heizkreis] = verbindung.ergebnisse[0][1]["heizkreise"]
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
     assert heizkreis["mit_absenkung"] is False
     assert heizkreis["absenkung"] is None
 
@@ -423,7 +428,7 @@ async def test_websocket_mit_absenktemperatur(hass, entry, menu_xml):
         _ws_zeitprogramm_setzen,
         type="eta_heating_ws/zeitprogramm_setzen",
         eintrag="testeintrag",
-        heizkreis="hk1",
+        programm="hk1",
         tage=["wednesday"],
         fenster=[{"beginn": 22, "ende": 90, "temperatur": 20.0}],
         absenkung=18.5,
@@ -435,7 +440,7 @@ async def test_websocket_mit_absenktemperatur(hass, entry, menu_xml):
             "id": 1,
             "type": "eta_heating_ws/zeitprogramm_setzen",
             "eintrag": "e",
-            "heizkreis": "hk1",
+            "programm": "hk1",
             "tage": ["monday"],
             "fenster": [],
             "absenkung": "17",

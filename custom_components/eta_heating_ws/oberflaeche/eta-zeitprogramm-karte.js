@@ -1,9 +1,10 @@
 /**
  * ETA Zeitprogramm - Dashboard-Karte der Integration ETA Web-Services.
  *
- * Zeigt die Heizzeiten jedes Heizkreises als Wochenbalken. Ein Tipp auf
- * einen Tag öffnet ihn zum Bearbeiten; die Änderung lässt sich auf weitere
- * Tage übernehmen. Gelesen und geschrieben wird über die Websocket-Befehle
+ * Zeigt die Heizzeiten jedes Heizkreises als Wochenbalken, auf Wunsch
+ * auch die Ladezeiten des Puffers und die Zeiten fürs Warmwasser. Ein Tipp
+ * auf einen Tag öffnet ihn zum Bearbeiten; die Änderung lässt sich auf
+ * weitere Tage übernehmen. Gelesen und geschrieben wird über die Websocket-Befehle
  * der Integration, siehe zeitprogramm.py. Home Assistant lädt die Karte in
  * jedem Dashboard von selbst.
  */
@@ -38,6 +39,8 @@ const TEXTE = {
     hinzufuegen: "+ Zeitfenster",
     entfernen: "Zeitfenster entfernen",
     leer: "Ohne Zeitfenster gilt den ganzen Tag die Absenkung.",
+    leer_laden: "Ohne Zeitfenster gilt an diesem Tag den ganzen Tag der Wert außerhalb.",
+    keine_fenster: "keine Zeitfenster",
     gilt_fuer: "Gilt für",
     werktage: "Mo–Fr",
     wochenende: "Sa–So",
@@ -57,6 +60,10 @@ const TEXTE = {
     karte_beschreibung: "Heizzeiten der ETA-Heizung ansehen und ändern.",
     feld_titel: "Titel",
     feld_heizkreis: "Heizkreis (leer: alle)",
+    feld_anzeigen: "Anzeigen",
+    art_heizzeiten: "Heizzeiten",
+    art_puffer: "Ladezeiten Puffer",
+    art_warmwasser: "Warmwasser",
     feld_farbe_heizzeit: "Farbe Heizzeit",
     feld_farbe_absenkzeit: "Farbe Absenkzeit",
   },
@@ -82,6 +89,8 @@ const TEXTE = {
     hinzufuegen: "+ Time slot",
     entfernen: "Remove time slot",
     leer: "Without time slots the setback applies all day.",
+    leer_laden: "Without time slots the value outside the slots applies all day.",
+    keine_fenster: "no time slots",
     gilt_fuer: "Apply to",
     werktage: "Mon–Fri",
     wochenende: "Sat–Sun",
@@ -101,6 +110,10 @@ const TEXTE = {
     karte_beschreibung: "View and change the heating times of the ETA boiler.",
     feld_titel: "Title",
     feld_heizkreis: "Heating circuit (empty: all)",
+    feld_anzeigen: "Show",
+    art_heizzeiten: "Heating times",
+    art_puffer: "Buffer loading times",
+    art_warmwasser: "Hot water",
     feld_farbe_heizzeit: "Heating time colour",
     feld_farbe_absenkzeit: "Setback colour",
   },
@@ -228,6 +241,10 @@ const STIL = `
     font-weight: 400; color: var(--secondary-text-color);
   }
   .absenk input { width: 5.5em; }
+  .fest {
+    display: flex; align-items: center; height: 38px; padding: 0 6px;
+    font-size: 15px; color: var(--primary-text-color);
+  }
   .text-knopf {
     align-self: flex-start; padding: 4px 0; border: none; background: none;
     color: var(--eta-akzent); font-weight: 500;
@@ -316,7 +333,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._konfig = {};
-    this._heizkreise = null;
+    this._programme = null;
     this._fehler = null;
     this._laedt = false;
     this._gelesen = 0;
@@ -333,7 +350,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
   }
 
   static getStubConfig() {
-    return {};
+    return { anzeigen: ["heizzeiten"] };
   }
 
   static getConfigForm() {
@@ -349,6 +366,19 @@ class EtaZeitprogrammKarte extends HTMLElement {
               options: ["hk1", "hk2", "hk3", "hk4"].map((wert, i) => ({
                 value: wert,
                 label: `HK ${i + 1}`,
+              })),
+            },
+          },
+        },
+        {
+          name: "anzeigen",
+          selector: {
+            select: {
+              multiple: true,
+              mode: "list",
+              options: ["heizzeiten", "puffer", "warmwasser"].map((art) => ({
+                value: art,
+                label: t[`art_${art}`],
               })),
             },
           },
@@ -447,7 +477,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
     this._zeichnen();
     try {
       const antwort = await this._hass.callWS({ type: "eta_heating_ws/zeitprogramme" });
-      this._heizkreise = antwort.heizkreise;
+      this._programme = antwort.programme;
       this._fehler = null;
       this._gelesen = Date.now();
     } catch (err) {
@@ -457,20 +487,29 @@ class EtaZeitprogrammKarte extends HTMLElement {
     this._zeichnen();
   }
 
+  /**
+   * Was die Karte zeigt: ab Werk nur Heizzeiten. Unter "Anzeigen" lassen
+   * sich Ladezeiten des Puffers und Warmwasser dazunehmen; "heizkreis"
+   * wählt unter den Heizzeiten einen Heizkreis aus.
+   */
   _auswahl() {
     const gesucht = String(this._konfig.heizkreis || "").toLowerCase();
-    return (this._heizkreise || []).filter(
-      (hk) =>
-        !gesucht || hk.heizkreis.toLowerCase() === gesucht || hk.name.toLowerCase() === gesucht
-    );
+    const anzeigen = this._konfig.anzeigen;
+    const arten = Array.isArray(anzeigen) && anzeigen.length ? anzeigen : ["heizzeiten"];
+    return (this._programme || []).filter((hk) => {
+      const art = hk.art || "heizzeiten";
+      if (!arten.includes(art)) return false;
+      if (art !== "heizzeiten" || !gesucht) return true;
+      return hk.programm.toLowerCase() === gesucht || hk.name.toLowerCase() === gesucht;
+    });
   }
 
   _schluessel(hk) {
-    return `${hk.eintrag}|${hk.heizkreis}`;
+    return `${hk.eintrag}|${hk.programm}`;
   }
 
   _finden(schluessel) {
-    return (this._heizkreise || []).find((hk) => this._schluessel(hk) === schluessel);
+    return (this._programme || []).find((hk) => this._schluessel(hk) === schluessel);
   }
 
   _zahl(wert) {
@@ -486,7 +525,8 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const stueck = (text) => `<span class="am-stueck">${sicher(text)}</span>`;
     if (!fenster.length) {
       const zusatz = absenk == null ? "" : ` · ${this._zahl(absenk)} °C`;
-      return stueck(`${this._t.absenkung}${zusatz}`);
+      const text = hk.art && hk.art !== "heizzeiten" ? this._t.keine_fenster : this._t.absenkung;
+      return stueck(`${text}${zusatz}`);
     }
     const teile = fenster.map((f) => {
       const zeit = `${uhrzeit(f.beginn)}–${uhrzeit(f.ende)}`;
@@ -510,7 +550,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const titel =
       this._konfig.titel || (liste.length === 1 ? `${t.titel} · ${liste[0].name}` : t.titel);
     let inhalt;
-    if (!this._heizkreise) {
+    if (!this._programme) {
       inhalt = this._fehler
         ? `<div class="fehler">${t.nicht_lesbar} ${sicher(this._fehler)}</div>
            <button class="text-knopf" data-aktion="laden">${t.erneut}</button>`
@@ -519,7 +559,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
       inhalt = `<div class="hinweis">${t.keins}</div>`;
     } else {
       const anlagen = new Set(liste.map((hk) => hk.eintrag)).size;
-      inhalt = liste.map((hk) => this._heizkreis(hk, liste.length > 1, anlagen > 1)).join("");
+      inhalt = liste.map((hk) => this._abschnitt(hk, liste.length > 1, anlagen > 1)).join("");
       if (!this._bearbeitung && liste.some((hk) => !hk.zeitplan && hk.tage)) {
         inhalt += `<div class="fuss">${t.tippen}</div>`;
       }
@@ -540,7 +580,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
     this._lesbar();
   }
 
-  _heizkreis(hk, mehrere, anlagen) {
+  _abschnitt(hk, mehrere, anlagen) {
     const t = this._t;
     const schluessel = this._schluessel(hk);
     let html = "";
@@ -603,12 +643,16 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const b = this._bearbeitung;
     const zeilen = b.fenster
       .map((f, i) => {
-        const temperatur = hk.mit_temperatur
-          ? `<label class="feld"><span>°C</span><input type="number" inputmode="decimal"
+        let temperatur = "";
+        if (hk.mit_temperatur && hk.temperatur_aenderbar) {
+          temperatur = `<label class="feld"><span>°C</span><input type="number" inputmode="decimal"
                step="0.5" min="${hk.temperatur_min}" max="${hk.temperatur_max}"
                value="${Number.isFinite(f.temperatur) ? f.temperatur : ""}"
-               data-feld="temperatur" data-index="${i}"></label>`
-          : "";
+               data-feld="temperatur" data-index="${i}"></label>`;
+        } else if (hk.mit_temperatur) {
+          const wert = Number.isFinite(f.temperatur) ? this._zahl(f.temperatur) : "–";
+          temperatur = `<div class="feld"><span>°C</span><span class="fest">${wert}</span></div>`;
+        }
         return `
           <div class="zeile">
             <div class="nr">
@@ -644,7 +688,13 @@ class EtaZeitprogrammKarte extends HTMLElement {
     return `
       <div class="editor">
         ${zeilen}
-        ${b.fenster.length ? "" : `<div class="hinweis klein">${t.leer}</div>`}
+        ${
+          b.fenster.length
+            ? ""
+            : `<div class="hinweis klein">${
+                hk.art && hk.art !== "heizzeiten" ? t.leer_laden : t.leer
+              }</div>`
+        }
         ${
           b.fenster.length < FENSTER_JE_TAG
             ? `<button class="text-knopf" data-aktion="hinzufuegen">${t.hinzufuegen}</button>`
@@ -689,6 +739,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
     }
     if (
       hk.mit_temperatur &&
+      hk.temperatur_aenderbar &&
       b.fenster.some(
         (f) =>
           !Number.isFinite(f.temperatur) ||
@@ -722,7 +773,11 @@ class EtaZeitprogrammKarte extends HTMLElement {
         fenster: hk.tage[tag].map((f) => ({
           beginn: f.beginn,
           ende: f.ende,
-          temperatur: hk.mit_temperatur ? f.temperatur ?? ersatz : null,
+          temperatur: !hk.mit_temperatur
+            ? null
+            : hk.temperatur_aenderbar
+              ? f.temperatur ?? ersatz
+              : f.temperatur,
         })),
         absenkung: hk.mit_absenkung ? hk.absenkung?.[tag] ?? null : null,
         tage: new Set([tag]),
@@ -763,7 +818,10 @@ class EtaZeitprogrammKarte extends HTMLElement {
         b.fenster.push({
           beginn,
           ende: Math.min(beginn + 8, 96),
-          temperatur: hk.mit_temperatur ? letztes?.temperatur ?? this._ersatztemperatur(hk) : null,
+          temperatur:
+            hk.mit_temperatur && hk.temperatur_aenderbar
+              ? letztes?.temperatur ?? this._ersatztemperatur(hk)
+              : null,
         });
         break;
       }
@@ -847,18 +905,18 @@ class EtaZeitprogrammKarte extends HTMLElement {
       const neu = await this._hass.callWS({
         type: "eta_heating_ws/zeitprogramm_setzen",
         eintrag: hk.eintrag,
-        heizkreis: hk.heizkreis,
+        programm: hk.programm,
         tage: TAGE.filter((tag) => b.tage.has(tag)),
         fenster: [...b.fenster]
           .sort((x, y) => x.beginn - y.beginn)
           .map((f) => ({
             beginn: f.beginn,
             ende: f.ende,
-            temperatur: hk.mit_temperatur ? f.temperatur : null,
+            temperatur: hk.mit_temperatur && hk.temperatur_aenderbar ? f.temperatur : null,
           })),
         absenkung: hk.mit_absenkung ? b.absenkung : null,
       });
-      this._heizkreise = this._heizkreise.map((alt) =>
+      this._programme = this._programme.map((alt) =>
         this._schluessel(alt) === b.schluessel ? neu : alt
       );
       this._bearbeitung = null;

@@ -321,6 +321,12 @@ def _zeitfenster(fub, praefix):
     heizzeiten = _find_path(fub, HEIZZEITEN) if fub is not None else None
     if heizzeiten is None:
         return {}
+    return _zeitfenster_unter(heizzeiten, praefix)
+
+
+def _zeitfenster_unter(programm, praefix):
+    """Je Wochentag die drei Zeitfenster und den Wert außerhalb unter einem Zeitprogramm."""
+    heizzeiten = programm
     gefunden = {}
     for tag, name in WOCHENTAGE.items():
         for nummer in range(1, ZEITFENSTER_JE_TAG + 1):
@@ -330,6 +336,57 @@ def _zeitfenster(fub, praefix):
         knoten = _find_path(heizzeiten, [name, ABSENKWERT])
         if knoten is not None and knoten.get("@uri"):
             gefunden[absenkwert_schluessel(praefix, tag)] = knoten["@uri"]
+    return gefunden
+
+
+WEITERE_ZEITPROGRAMME = {
+    "pufferflex": "puffer",
+    "pufferflex2": "puffer2",
+    "pufferflex3": "puffer3",
+    "fwm": "fwm",
+}
+"""In diesen Funktionsblöcken stehen Lade- und Bereitschaftszeiten - Rolle -> Komponente.
+
+An einer echten Anlage gesehen: "Puffer > Erzeuger Kessel/Puffer >
+Ladezeiten", "Puffer > Warmwasserbereich > Ladezeiten" und beim
+Frischwassermodul "Warmwasser > Bereitschaftszeiten", an der Zweitanlage
+"Puffer > Puffer oben > Ladezeiten". Gesucht wird deshalb nicht über
+feste Pfade, sondern nach jedem Knoten, der je Wochentag Zeitfenster hat.
+"""
+
+
+def _ist_zeitprogramm(knoten) -> bool:
+    """Hat der Knoten je Wochentag ein "Zeitfenster 1"?"""
+    return all(
+        _find_path(knoten, [name, "Zeitfenster 1"]) is not None for name in WOCHENTAGE.values()
+    )
+
+
+def _weitere_zeitprogramme(fub, komponente, namen_aus):
+    """Die Zeitprogramme eines Funktionsblocks, außer den Heizzeiten eines Heizkreises.
+
+    Schlüssel wie bei den Heizzeiten, als Präfix Komponente und Kennung
+    des Programms, etwa puffer_12130_zeitfenster_monday_1. In namen_aus
+    landet je Präfix der Weg im Menübaum, damit die Karte das Programm
+    benennen kann.
+    """
+    gefunden = {}
+
+    def suchen(knoten, pfad):
+        for kind in _as_list(knoten.get("object")):
+            name = kind.get("@name", "")
+            if not _ist_zeitprogramm(kind):
+                suchen(kind, [*pfad, name])
+                continue
+            teile = (kind.get("@uri") or "").strip("/").split("/")
+            if len(teile) < 3:
+                continue
+            praefix = f"{komponente}_{teile[2]}"
+            gefunden.update(_zeitfenster_unter(kind, praefix))
+            namen_aus[praefix] = {"komponente": komponente, "pfad": [*pfad, name]}
+
+    if fub is not None:
+        suchen(fub, [])
     return gefunden
 
 
@@ -536,7 +593,7 @@ def _discover_puffer_fuehler(fub):
 
 
 async def async_discover_uris(
-    client, fub_name_overrides=None, ueber_kennung=None, fub_namen=None
+    client, fub_name_overrides=None, ueber_kennung=None, fub_namen=None, zeitprogramme=None
 ):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
@@ -552,7 +609,8 @@ async def async_discover_uris(
     In fub_namen, falls übergeben, landet je Rolle der Name des
     Funktionsblocks, wie er im Menübaum steht - etwa "Puffer" statt des
     vorbelegten "PufferFlex", wenn die Erkennung auf den älteren Block
-    ausgewichen ist.
+    ausgewichen ist. In zeitprogramme, falls übergeben, landen die Lade-
+    und Bereitschaftszeiten, siehe WEITERE_ZEITPROGRAMME.
     """
     discovered = {}
 
@@ -610,6 +668,9 @@ async def async_discover_uris(
         discovered.update(
             _zeitfenster(fubs_by_role.get(definition["role"]), definition["praefix"])
         )
+    namen = zeitprogramme if zeitprogramme is not None else {}
+    for rolle, komponente in WEITERE_ZEITPROGRAMME.items():
+        discovered.update(_weitere_zeitprogramme(fubs_by_role.get(rolle), komponente, namen))
 
     for key, role in SWITCH_ROLES.items():
         fub = fubs_by_role.get(role)

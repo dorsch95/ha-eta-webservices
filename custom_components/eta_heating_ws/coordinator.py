@@ -178,6 +178,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self._zuletzt_nachgeprueft = float("-inf")
         self.zeitprogramm_absenkung: dict[str, dict[str, dict]] = {}
         """Je Heizkreis mit beschreibbarem Zeitprogramm je Tag der Wert außerhalb der Zeitfenster."""
+        self.zeitprogramm_namen: dict[str, dict] = {}
+        """Lade- und Bereitschaftszeiten im Menübaum: Präfix -> Komponente und Weg dorthin."""
         self.betriebsart_auswahl: dict[str, object] = {}
         """Die Betriebsart-Auswahlen je Schlüssel - der Thermostat stellt über sie um."""
         self.components_without_data: list[str] = []
@@ -461,27 +463,53 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 "ETA: Thermostat für %s erkannt (%s)", heizkreis, ", ".join(sorted(objekte))
             )
 
-    async def _zeitprogramme_pruefen(self, nur: set[str] | None = None) -> None:
-        """Prüft je Heizkreis, ob sich sein Zeitprogramm beschreiben lässt.
+    def zeitprogramm_art(self, programm: str) -> str:
+        """heizzeiten, puffer oder warmwasser - danach wählt die Karte aus, was sie zeigt."""
+        info = self.zeitprogramm_namen.get(programm)
+        if info is None:
+            return "heizzeiten"
+        weg = " ".join(info["pfad"]).casefold()
+        return "warmwasser" if info["komponente"] == "fwm" or "warmwasser" in weg else "puffer"
 
-        Nur mit freigegebenem Schreibzugriff, und nur, wenn alle Zeitfenster
-        der Woche gefunden und als beschreibbar gemeldet sind - ein halb
+    def zeitprogramm_name(self, programm: str) -> str:
+        """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum."""
+        info = self.zeitprogramm_namen.get(programm)
+        if info is None:
+            return self.funktionsblock(programm)
+        return " › ".join(info["pfad"][-2:])
+
+    async def _zeitprogramme_pruefen(self, nur: set[str] | None = None) -> None:
+        """Prüft je Zeitprogramm, ob es sich beschreiben lässt.
+
+        Das sind die Heizzeiten jedes Heizkreises und die Lade- und
+        Bereitschaftszeiten von Puffer und Frischwassermodul. Nur mit
+        freigegebenem Schreibzugriff, und nur, wenn alle Zeitfenster der
+        Woche gefunden und als beschreibbar gemeldet sind - ein halb
         beschreibbares Programm bleibt besser unangetastet. Ob ein Fenster
         eine Temperatur trägt und in welchen Grenzen, sagt /user/varinfo.
         Bleibt eine Antwort aus, wird einmal nachgefragt. Die Fenster werden
         nicht mit abgefragt; gelesen werden sie erst, wenn jemand sie
-        braucht. nur: bloß diese Heizkreise prüfen.
+        braucht. nur: bloß diese Programme prüfen.
         """
         if not self.enable_switches:
             return
 
-        for heizkreis, definition in THERMOSTATE.items():
-            if heizkreis not in self.components or (nur is not None and heizkreis not in nur):
+        programme = [
+            (heizkreis, definition["praefix"])
+            for heizkreis, definition in THERMOSTATE.items()
+            if heizkreis in self.components
+        ] + [
+            (praefix, praefix)
+            for praefix, info in self.zeitprogramm_namen.items()
+            if info["komponente"] in self.components
+        ]
+        for heizkreis, praefix in programme:
+            if nur is not None and heizkreis not in nur:
                 continue
             self.zeitprogramm_pruefung.pop(heizkreis, None)
             uris = {
                 (tag, nummer): self.discovered_uris.get(
-                    zeitfenster_schluessel(definition["praefix"], tag, nummer)
+                    zeitfenster_schluessel(praefix, tag, nummer)
                 )
                 for tag in WOCHENTAGE
                 for nummer in range(1, ZEITFENSTER_JE_TAG + 1)
@@ -518,7 +546,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 for (fenster, uri), info in zip(uris.items(), infos)
             }
             _LOGGER.info("ETA: Zeitprogramm von %s beschreibbar", heizkreis)
-            await self._absenkwerte_pruefen(heizkreis, definition["praefix"])
+            if heizkreis in THERMOSTATE:
+                await self._absenkwerte_pruefen(heizkreis, praefix)
 
     async def _absenkwerte_pruefen(self, heizkreis: str, praefix: str) -> None:
         """Ob sich je Tag der Wert außerhalb der Zeitfenster beschreiben lässt.
@@ -648,7 +677,11 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """
         try:
             self.discovered_uris, indices = await async_discover_uris(
-                self.client, fub_name_overrides, self.ueber_kennung, self.fub_namen
+                self.client,
+                fub_name_overrides,
+                self.ueber_kennung,
+                self.fub_namen,
+                self.zeitprogramm_namen,
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
