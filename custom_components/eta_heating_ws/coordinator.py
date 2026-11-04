@@ -25,6 +25,7 @@ from .const import (
     PUFFER_SPEICHER,
     SENSORS,
     THERMOSTATE,
+    WARMWASSER_GRENZEN,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
     normalize_components,
@@ -471,6 +472,13 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         weg = " ".join(info["pfad"]).casefold()
         return "warmwasser" if info["komponente"] == "fwm" or "warmwasser" in weg else "puffer"
 
+    def zeitprogramm_fwm(self, programm: str) -> bool:
+        """Gehört das Programm zum Frischwassermodul? Dort gibt die Karte Hinweise zur Temperatur."""
+        info = self.zeitprogramm_namen.get(programm)
+        if info is None or info["komponente"] != "fwm":
+            return False
+        return self.funktionsblock("fwm").casefold().startswith("fwm")
+
     def zeitprogramm_name(self, programm: str) -> str:
         """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum."""
         info = self.zeitprogramm_namen.get(programm)
@@ -541,8 +549,13 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                     ", ".join(f"{k}: {v}" for k, v in abweichend.items()),
                 )
                 continue
+            grenzen = (
+                {"grenzen": WARMWASSER_GRENZEN}
+                if self.zeitprogramm_art(heizkreis) == "warmwasser"
+                else {}
+            )
             self.zeitprogramm_defs[heizkreis] = {
-                fenster: {"uri": uri, "skala": info["scale"], **info["zeitfenster"]}
+                fenster: {"uri": uri, "skala": info["scale"], **info["zeitfenster"], **grenzen}
                 for (fenster, uri), info in zip(uris.items(), infos)
             }
             _LOGGER.info("ETA: Zeitprogramm von %s beschreibbar", heizkreis)

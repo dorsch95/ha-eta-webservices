@@ -19,10 +19,10 @@ Geschrieben wird nur, was sich ändert, mit denselben Regeln wie beim
 Zeitplan-Abgleich (zeitplan.tagesfenster). Folgt ein Heizkreis einem
 Zeitplan-Helfer, führt der: Die Karte zeigt das Programm dann nur an, und
 Schreiben wird abgelehnt - sonst überschriebe der nächste Abgleich die
-Änderung wieder. Bei Lade- und Bereitschaftszeiten ändert die Karte nur
-die Zeiten: Eine falsche Warmwasser- oder Puffertemperatur kann verbrühen
-oder Legionellen begünstigen, die Temperaturen bleiben deshalb, wie sie
-an der Anlage stehen.
+Änderung wieder. Bei Warmwasser gelten für die Temperaturen
+WARMWASSER_GRENZEN statt der des Thermostats. Bei den Ladezeiten des
+Puffers steuern die Zeiten nur, ob geladen wird: Die Karte zeigt dort
+keine Temperatur, und geschrieben wird keine.
 """
 
 from __future__ import annotations
@@ -40,6 +40,8 @@ from homeassistant.core import HomeAssistant, callback
 from .api import ETAApiError, Zeitfenster
 from .const import (
     DOMAIN,
+    FWM_REGELUNG,
+    FWM_VERBRUEHSCHUTZ,
     KARTE_ZEITPROGRAMM,
     THERMOSTAT_SOLL_GRENZEN,
     URL_OBERFLAECHE,
@@ -100,10 +102,14 @@ async def absenkung_lesen(coordinator, programm: str) -> dict[str, float | None]
 def temperaturgrenzen(defs: dict) -> tuple[float, float]:
     """In diesem Bereich nimmt die Karte eine Temperatur an.
 
-    Die Grenzen des Thermostats, enger, wenn die Anlage für einen Wert
-    engere meldet.
+    Die Grenzen des Programms - bei Warmwasser WARMWASSER_GRENZEN, sonst
+    die des Thermostats -, enger, wenn die Anlage für einen Wert engere
+    meldet.
     """
-    untere, obere = THERMOSTAT_SOLL_GRENZEN
+    untere, obere = next(
+        (info["grenzen"] for info in defs.values() if info.get("grenzen")),
+        THERMOSTAT_SOLL_GRENZEN,
+    )
     for info in defs.values():
         if info.get("min_roh") is not None:
             untere = max(untere, info["min_roh"] / info["skala"])
@@ -127,8 +133,12 @@ def kopf(eintrag, programm: str) -> dict[str, Any]:
         "programm": programm,
         "name": coordinator.zeitprogramm_name(programm),
         "art": art,
-        "mit_temperatur": all(info["mit_wert"] for info in defs.values()),
-        "temperatur_aenderbar": art == "heizzeiten",
+        "mit_temperatur": art != "puffer" and all(info["mit_wert"] for info in defs.values()),
+        "hinweise_fwm": (
+            {"verbruehschutz": FWM_VERBRUEHSCHUTZ, "regelung": FWM_REGELUNG}
+            if coordinator.zeitprogramm_fwm(programm)
+            else None
+        ),
         "temperatur_min": untere,
         "temperatur_max": obere,
         "mit_absenkung": absenk_defs is not None,
@@ -221,7 +231,7 @@ async def zeitprogramm_setzen(
             f"Das Zeitprogramm folgt dem Zeitplan {abgleich.entity_id}. "
             "Änderungen bitte dort vornehmen."
         )
-    if coordinator.zeitprogramm_art(programm) != "heizzeiten":
+    if coordinator.zeitprogramm_art(programm) == "puffer":
         fenster = [{**f, "temperatur": None} for f in fenster]
     bloecke = bloecke_pruefen(fenster)
     nummern = range(1, ZEITFENSTER_JE_TAG + 1)

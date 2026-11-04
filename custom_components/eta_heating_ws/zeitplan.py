@@ -119,8 +119,12 @@ def bloecke(tagesplan: list[dict]) -> list[Block]:
 
 
 def _rohwert(grad: float, info: dict) -> int:
-    """Die Temperatur als Rohwert, in den Grenzen des Thermostats und des Fensters."""
-    untere, obere = THERMOSTAT_SOLL_GRENZEN
+    """Die Temperatur als Rohwert, in den Grenzen des Programms und des Fensters.
+
+    Ein Programm ohne eigene Grenzen ("grenzen") ist ein Heizkreis - dort
+    gelten die des Thermostats.
+    """
+    untere, obere = info.get("grenzen") or THERMOSTAT_SOLL_GRENZEN
     roh = round(min(max(grad, untere), obere) * info["skala"])
     if info.get("min_roh") is not None:
         roh = max(roh, round(info["min_roh"]))

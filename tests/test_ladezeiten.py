@@ -90,6 +90,8 @@ async def test_warmwasser_im_bereich_des_puffers(hass, entry, menu_xml):
     )
     coordinator, _ = await setup_integration(hass, entry)
     assert coordinator.zeitprogramm_art("puffer_12130") == "warmwasser"
+    assert coordinator.zeitprogramm_fwm("puffer_12130") is False, "Kombi-Puffer: kein Hinweis"
+    assert coordinator.zeitprogramm_fwm("fwm_12318") is True
 
 
 async def test_nur_mit_der_komponente(hass, entry, menu_xml):
@@ -106,27 +108,58 @@ async def test_karte_kennt_die_art(hass, entry, menu_xml):
 
     programme = {p["programm"]: p for p in verbindung.ergebnisse[0][1]["programme"]}
     assert programme["hk1"]["art"] == "heizzeiten"
-    assert programme["hk1"]["temperatur_aenderbar"] is True
+    assert programme["hk1"]["hinweise_fwm"] is None
     warmwasser = programme["fwm_12318"]
     assert warmwasser["art"] == "warmwasser"
-    assert warmwasser["temperatur_aenderbar"] is False
+    assert (warmwasser["temperatur_min"], warmwasser["temperatur_max"]) == (0.0, 80.0)
+    assert warmwasser["hinweise_fwm"] == {"verbruehschutz": 60.0, "regelung": 40.0}
     assert warmwasser["mit_absenkung"] is False
+    puffer = programme["puffer_12130"]
+    assert puffer["art"] == "puffer"
+    assert puffer["mit_temperatur"] is False, "die Zeiten steuern nur, ob geladen wird"
+    assert puffer["hinweise_fwm"] is None
     assert warmwasser["tage"]["monday"] == [{"beginn": 0, "ende": 96, "temperatur": 50.0}]
     assert programme["puffer_12130"]["tage"]["sunday"] == [
-        {"beginn": 24, "ende": 88, "temperatur": 60.0}
+        {"beginn": 24, "ende": 88, "temperatur": None}
     ]
 
 
-async def test_nur_die_zeiten_werden_geschrieben(hass, entry, menu_xml):
-    """Eine Warmwassertemperatur aus der Karte kommt nie bei der Anlage an."""
+async def test_bei_ladezeiten_nur_die_zeiten(hass, entry, menu_xml):
+    """Die Zeiten steuern nur, ob der Puffer geladen wird - eine Temperatur wird nie geschrieben."""
     await aufbauen(hass, entry, menu_xml)
 
     ergebnis = await zeitprogramm_setzen(
-        entry, "fwm_12318", ["monday"], [{"beginn": 22, "ende": 88, "temperatur": 75.0}]
+        entry, "puffer_12130", ["monday"], [{"beginn": 22, "ende": 88, "temperatur": 75.0}]
     )
 
-    assert hass.session.zeitfenster_text(fenster(WARMWASSER, "monday", 1)) == "05:30 - 22:00 50,0"
-    assert ergebnis["tage"]["monday"] == [{"beginn": 22, "ende": 88, "temperatur": 50.0}]
+    assert hass.session.zeitfenster_text(fenster(PUFFER, "monday", 1)) == "05:30 - 22:00 60,0"
+    assert ergebnis["tage"]["monday"] == [{"beginn": 22, "ende": 88, "temperatur": None}]
+
+
+async def test_warmwassertemperatur_bis_80_grad(hass, entry, menu_xml):
+    """Vom Nutzer so festgelegt: 0 bis 80 °C, die Hinweise gibt die Karte."""
+    await aufbauen(hass, entry, menu_xml)
+
+    await zeitprogramm_setzen(
+        entry, "fwm_12318", ["monday"], [{"beginn": 22, "ende": 88, "temperatur": 65.0}]
+    )
+    assert hass.session.zeitfenster_text(fenster(WARMWASSER, "monday", 1)) == "05:30 - 22:00 65,0"
+
+    await zeitprogramm_setzen(
+        entry, "fwm_12318", ["tuesday"], [{"beginn": 0, "ende": 96, "temperatur": 95.0}]
+    )
+    assert hass.session.zeitfenster_text(fenster(WARMWASSER, "tuesday", 1)) == "00:00 - 24:00 80,0"
+
+
+async def test_heizkreis_bleibt_bei_10_bis_30_grad(hass, entry, menu_xml):
+    """Die Warmwassergrenzen gelten nicht für Heizzeiten."""
+    from .test_zeitplan import fenster_uri
+
+    await aufbauen(hass, entry, menu_xml)
+    await zeitprogramm_setzen(
+        entry, "hk1", ["monday"], [{"beginn": 22, "ende": 90, "temperatur": 45.0}]
+    )
+    assert hass.session.zeitfenster_text(fenster_uri("monday", 1)) == "05:30 - 22:30 30,0"
 
 
 async def test_neues_fenster_nimmt_die_temperatur_des_programms(hass, entry, menu_xml):

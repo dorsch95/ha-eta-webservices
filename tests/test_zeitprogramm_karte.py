@@ -277,7 +277,7 @@ def test_karte_passt_zur_schnittstelle():
         "eintrag",
         "programm",
         "art",
-        "temperatur_aenderbar",
+        "hinweise_fwm",
         "name",
         "anlage",
         "mit_temperatur",

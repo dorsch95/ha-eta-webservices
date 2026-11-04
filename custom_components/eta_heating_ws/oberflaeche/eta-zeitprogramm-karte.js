@@ -53,6 +53,9 @@ const TEXTE = {
     fehler_ueberlappung: "Zeitfenster dürfen sich nicht überschneiden.",
     fehler_temperatur: (min, max) => `Temperatur zwischen ${min} und ${max} °C.`,
     fehler_tage: "Mindestens einen Tag wählen.",
+    hinweis_verbruehschutz: (grad) => `Über ${grad} °C muss zwingend ein Verbrühschutz verbaut sein.`,
+    hinweis_regelung: (grad) =>
+      `Unter ${grad} °C kann das Frischwassermodul die Temperatur nicht mehr gleichmäßig regeln.`,
     fehler_absenkung: (min, max) => `Außerhalb der Zeitfenster zwischen ${min} und ${max} °C.`,
     sonst: (wert) => `sonst ${wert} °C`,
     absenk_feld: "Außerhalb der Zeitfenster",
@@ -103,6 +106,9 @@ const TEXTE = {
     fehler_ueberlappung: "Time slots must not overlap.",
     fehler_temperatur: (min, max) => `Temperature between ${min} and ${max} °C.`,
     fehler_tage: "Choose at least one day.",
+    hinweis_verbruehschutz: (grad) => `Above ${grad} °C a scald protection must be installed.`,
+    hinweis_regelung: (grad) =>
+      `Below ${grad} °C the fresh water module can no longer keep the temperature steady.`,
     fehler_absenkung: (min, max) => `Outside the time slots between ${min} and ${max} °C.`,
     sonst: (wert) => `otherwise ${wert} °C`,
     absenk_feld: "Outside the time slots",
@@ -171,6 +177,8 @@ const STIL = `
     background: var(--secondary-background-color); font-size: 14px;
   }
   .fehler { color: var(--error-color, #db4437); }
+  .warnung { color: var(--warning-color, #ffa600); }
+  .warnung.verbruehschutz { color: var(--error-color, #db4437); }
   .ok { color: var(--success-color, #43a047); }
   .meldung { font-size: 13px; padding: 2px 0 6px 40px; }
   .skala {
@@ -241,10 +249,6 @@ const STIL = `
     font-weight: 400; color: var(--secondary-text-color);
   }
   .absenk input { width: 5.5em; }
-  .fest {
-    display: flex; align-items: center; height: 38px; padding: 0 6px;
-    font-size: 15px; color: var(--primary-text-color);
-  }
   .text-knopf {
     align-self: flex-start; padding: 4px 0; border: none; background: none;
     color: var(--eta-akzent); font-weight: 500;
@@ -643,16 +647,12 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const b = this._bearbeitung;
     const zeilen = b.fenster
       .map((f, i) => {
-        let temperatur = "";
-        if (hk.mit_temperatur && hk.temperatur_aenderbar) {
-          temperatur = `<label class="feld"><span>°C</span><input type="number" inputmode="decimal"
+        const temperatur = hk.mit_temperatur
+          ? `<label class="feld"><span>°C</span><input type="number" inputmode="decimal"
                step="0.5" min="${hk.temperatur_min}" max="${hk.temperatur_max}"
                value="${Number.isFinite(f.temperatur) ? f.temperatur : ""}"
-               data-feld="temperatur" data-index="${i}"></label>`;
-        } else if (hk.mit_temperatur) {
-          const wert = Number.isFinite(f.temperatur) ? this._zahl(f.temperatur) : "–";
-          temperatur = `<div class="feld"><span>°C</span><span class="fest">${wert}</span></div>`;
-        }
+               data-feld="temperatur" data-index="${i}"></label>`
+          : "";
         return `
           <div class="zeile">
             <div class="nr">
@@ -680,6 +680,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
           data-tag="${tag}" aria-pressed="${b.tage.has(tag)}">${t.kurz[i]}</button>`
     ).join("");
     const problem = this._problem(hk);
+    const [verbruehschutz, regelung] = this._warnungen(hk);
     const meldung =
       this._meldung?.schluessel === b.schluessel && this._meldung?.tag === b.tag
         ? `<div class="meldung ${this._meldung.art}" style="padding-left:0">
@@ -718,6 +719,9 @@ class EtaZeitprogrammKarte extends HTMLElement {
             <button class="chip" data-aktion="tage" data-tage="alle">${t.alle}</button>
           </div>
         </div>
+        <div class="warnung verbruehschutz klein" ${verbruehschutz ? "" : "hidden"}>
+          ${verbruehschutz || ""}</div>
+        <div class="warnung regelung klein" ${regelung ? "" : "hidden"}>${regelung || ""}</div>
         <div class="problem fehler klein" ${problem ? "" : "hidden"}>${problem || ""}</div>
         ${meldung}
         <div class="knoepfe">
@@ -727,6 +731,24 @@ class EtaZeitprogrammKarte extends HTMLElement {
             ${this._speichert ? t.speichert : t.speichern}</button>
         </div>
       </div>`;
+  }
+
+  /**
+   * Hinweise beim Frischwassermodul, bevor gespeichert wird - sie halten
+   * nicht auf. Der zum Verbrühschutz steht rot, der zur Regelung orange.
+   */
+  _warnungen(hk) {
+    const grenzen = hk.hinweise_fwm;
+    if (!grenzen) return [null, null];
+    const werte = this._bearbeitung.fenster.map((f) => f.temperatur).filter(Number.isFinite);
+    return [
+      werte.some((wert) => wert > grenzen.verbruehschutz)
+        ? this._t.hinweis_verbruehschutz(Math.round(grenzen.verbruehschutz))
+        : null,
+      werte.some((wert) => wert < grenzen.regelung)
+        ? this._t.hinweis_regelung(Math.round(grenzen.regelung))
+        : null,
+    ];
   }
 
   _problem(hk) {
@@ -739,7 +761,6 @@ class EtaZeitprogrammKarte extends HTMLElement {
     }
     if (
       hk.mit_temperatur &&
-      hk.temperatur_aenderbar &&
       b.fenster.some(
         (f) =>
           !Number.isFinite(f.temperatur) ||
@@ -773,11 +794,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
         fenster: hk.tage[tag].map((f) => ({
           beginn: f.beginn,
           ende: f.ende,
-          temperatur: !hk.mit_temperatur
-            ? null
-            : hk.temperatur_aenderbar
-              ? f.temperatur ?? ersatz
-              : f.temperatur,
+          temperatur: hk.mit_temperatur ? f.temperatur ?? ersatz : null,
         })),
         absenkung: hk.mit_absenkung ? hk.absenkung?.[tag] ?? null : null,
         tage: new Set([tag]),
@@ -818,10 +835,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
         b.fenster.push({
           beginn,
           ende: Math.min(beginn + 8, 96),
-          temperatur:
-            hk.mit_temperatur && hk.temperatur_aenderbar
-              ? letztes?.temperatur ?? this._ersatztemperatur(hk)
-              : null,
+          temperatur: hk.mit_temperatur ? letztes?.temperatur ?? this._ersatztemperatur(hk) : null,
         });
         break;
       }
@@ -887,6 +901,11 @@ class EtaZeitprogrammKarte extends HTMLElement {
     const anzeige = this.shadowRoot.querySelector(".problem");
     anzeige.textContent = problem || "";
     anzeige.hidden = !problem;
+    this._warnungen(hk).forEach((text, i) => {
+      const hinweis = this.shadowRoot.querySelector([".verbruehschutz", ".regelung"][i]);
+      hinweis.textContent = text || "";
+      hinweis.hidden = !text;
+    });
     this.shadowRoot.querySelector('[data-aktion="speichern"]').disabled =
       Boolean(problem) || this._speichert;
     const zeile = this.shadowRoot.querySelector(".tag.offen .balken");
@@ -912,7 +931,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
           .map((f) => ({
             beginn: f.beginn,
             ende: f.ende,
-            temperatur: hk.mit_temperatur && hk.temperatur_aenderbar ? f.temperatur : null,
+            temperatur: hk.mit_temperatur ? f.temperatur : null,
           })),
         absenkung: hk.mit_absenkung ? b.absenkung : null,
       });

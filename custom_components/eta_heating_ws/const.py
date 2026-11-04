@@ -399,6 +399,21 @@ Sinnvolles, und ein Tippfehler soll das Haus weder auskühlen noch
 überheizen.
 """
 
+WARMWASSER_GRENZEN = (0.0, 80.0)
+"""In diesem Bereich lässt die Karte die Temperatur von Warmwasser-Zeitfenstern stellen.
+
+So vom Nutzer festgelegt; enger, wenn die Anlage engere Grenzen meldet.
+Bei den Ladezeiten des Puffers gibt es keine Temperatur - die Zeiten
+steuern dort nur, ob geladen wird. Beim Frischwassermodul weist die Karte vor
+dem Speichern darauf hin, dass über FWM_VERBRUEHSCHUTZ zwingend ein
+Verbrühschutz verbaut sein muss und unter FWM_REGELUNG keine gleichmäßige
+Regelung mehr gewährleistet ist. Beim Kombi-Puffer ist immer ein
+Verbrühschutz verbaut, dort gibt es keinen Hinweis.
+"""
+
+FWM_VERBRUEHSCHUTZ = 60.0
+FWM_REGELUNG = 40.0
+
 RAUMFUEHLER_TAKT = 30
 """So oft (Sekunden) schreibt die Integration die Raumtemperatur in die Anlage.
 
