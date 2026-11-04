@@ -20,8 +20,10 @@ Zeitplan-Abgleich (zeitplan.tagesfenster). Folgt ein Heizkreis einem
 Zeitplan-Helfer, führt der: Die Karte zeigt das Programm dann nur an, und
 Schreiben wird abgelehnt - sonst überschriebe der nächste Abgleich die
 Änderung wieder. Bei Warmwasser gelten für die Temperaturen
-WARMWASSER_GRENZEN statt der des Thermostats. Bei den Ladezeiten des
-Puffers steuern die Zeiten nur, ob geladen wird: Die Karte zeigt dort
+WARMWASSER_GRENZEN bzw. beim Kombi-Puffer KOMBI_GRENZEN statt der des
+Thermostats, beim Warmwasserspeicher höchstens "Warmwasserspeicher max.".
+Bei den Ladezeiten des Puffers und den Zirkulationszeiten steuern die
+Zeiten nur, ob geladen wird bzw. die Pumpe läuft: Die Karte zeigt dort
 keine Temperatur, und geschrieben wird keine.
 """
 
@@ -50,6 +52,7 @@ from .const import (
     ZEITFENSTER_JE_TAG,
 )
 from .karte import VERSION
+from .uri_discovery import WARMWASSER_MAXIMUM
 from .zeitplan import Block, als_text, ersatztemperatur, tagesfenster
 
 _LOGGER = logging.getLogger(__name__)
@@ -137,14 +140,42 @@ def temperaturgrenzen(defs: dict) -> tuple[float, float]:
     return untere, obere
 
 
-def kopf(eintrag, programm: str) -> dict[str, Any]:
-    """Was die Karte über ein Zeitprogramm wissen muss, auch wenn es nicht lesbar ist."""
+OHNE_TEMPERATUR = ("puffer", "zirkulation")
+"""Bei diesen Zeitprogrammen steuern die Zeiten nur, ob geladen wird bzw. die Pumpe läuft."""
+
+
+async def obergrenze_lesen(coordinator, programm: str) -> float | None:
+    """Bei einem Warmwasserspeicher "Warmwasserspeicher max." in °C, frisch von der Anlage.
+
+    None, wenn es den Wert nicht gibt oder er gerade nicht lesbar ist - dann
+    gelten nur die übrigen Grenzen.
+    """
+    uri = coordinator.zeitprogramm_maximum_uri(programm)
+    if uri is None:
+        return None
+    try:
+        wert = await coordinator.client.async_get_value(uri)
+    except ETAApiError:
+        return None
+    return wert.value
+
+
+def kopf(eintrag, programm: str, obergrenze: float | None = None) -> dict[str, Any]:
+    """Was die Karte über ein Zeitprogramm wissen muss, auch wenn es nicht lesbar ist.
+
+    obergrenze: "Warmwasserspeicher max." - liegt sie unter den übrigen
+    Grenzen, gilt sie, und die Karte nennt sie beim Fehlerhinweis.
+    """
     coordinator = eintrag.runtime_data
     defs = coordinator.zeitprogramm_defs[programm]
     absenk_defs = coordinator.zeitprogramm_absenkung.get(programm)
     abgleich = coordinator.zeitplan_abgleiche.get(programm)
     art = coordinator.zeitprogramm_art(programm)
     untere, obere = temperaturgrenzen(defs)
+    grund = None
+    if obergrenze is not None and obergrenze < obere:
+        obere = round(obergrenze, 1)
+        grund = WARMWASSER_MAXIMUM
     absenk_untere, absenk_obere = temperaturgrenzen(absenk_defs or {})
     return {
         "eintrag": eintrag.entry_id,
@@ -152,7 +183,8 @@ def kopf(eintrag, programm: str) -> dict[str, Any]:
         "programm": programm,
         "name": coordinator.zeitprogramm_name(programm),
         "art": art,
-        "mit_temperatur": art != "puffer" and all(info["mit_wert"] for info in defs.values()),
+        "mit_temperatur": art not in OHNE_TEMPERATUR
+        and all(info["mit_wert"] for info in defs.values()),
         "hinweise": (
             {
                 "verbruehschutz": WARMWASSER_VERBRUEHSCHUTZ,
@@ -163,6 +195,7 @@ def kopf(eintrag, programm: str) -> dict[str, Any]:
         ),
         "temperatur_min": untere,
         "temperatur_max": obere,
+        "temperatur_max_grund": grund,
         "temperatur_vorgabe": _vorgabe(defs),
         "mit_absenkung": absenk_defs is not None,
         "absenkung_min": absenk_untere,
@@ -184,6 +217,7 @@ def programm_daten(
     programm: str,
     bestand: dict[tuple[str, int], Zeitfenster],
     absenkung: dict[str, float | None] | None,
+    obergrenze: float | None = None,
 ) -> dict:
     """Das Zeitprogramm für die Karte: je Tag die belegten Fenster, nach Beginn sortiert.
 
@@ -191,7 +225,7 @@ def programm_daten(
     oder None. Dazu je Tag der Wert außerhalb der Zeitfenster, falls er
     sich einstellen lässt.
     """
-    angaben = kopf(eintrag, programm)
+    angaben = kopf(eintrag, programm, obergrenze)
     defs = eintrag.runtime_data.zeitprogramm_defs[programm]
     tage = {}
     for tag in WOCHENTAGE:
@@ -269,7 +303,7 @@ async def zeitprogramm_setzen(
             f"Das Zeitprogramm folgt dem Zeitplan {abgleich.entity_id}. "
             "Änderungen bitte dort vornehmen."
         )
-    if coordinator.zeitprogramm_art(programm) == "puffer":
+    if coordinator.zeitprogramm_art(programm) in OHNE_TEMPERATUR:
         fenster = [{**f, "temperatur": None} for f in fenster]
     bloecke = bloecke_pruefen(fenster)
     nummern = range(1, ZEITFENSTER_JE_TAG + 1)
@@ -277,6 +311,12 @@ async def zeitprogramm_setzen(
     async with coordinator.zeitprogramm_sperre:
         bestand = await bestand_lesen(coordinator, programm)
         absenk_bestand = await absenkung_lesen(coordinator, programm)
+        obergrenze = await obergrenze_lesen(coordinator, programm)
+        if obergrenze is not None:
+            defs = {
+                fenster: {**info, "grenzen": (info["grenzen"][0], min(info["grenzen"][1], obergrenze))}
+                for fenster, info in defs.items()
+            }
         ersatz = ersatztemperatur(bestand)
         absenk_neu: dict[str, int] = {}
         if absenkung is not None:
@@ -321,7 +361,7 @@ async def zeitprogramm_setzen(
                 roh / absenk_defs[tag]["skala"],
             )
         if not zu_schreiben and not absenk_neu:
-            return programm_daten(eintrag, programm, bestand, absenk_bestand)
+            return programm_daten(eintrag, programm, bestand, absenk_bestand, obergrenze)
         try:
             bestand = await bestand_lesen(coordinator, programm)
         except ETAApiError as err:
@@ -348,7 +388,7 @@ async def zeitprogramm_setzen(
             "Die Heizung meldet nach dem Speichern andere Werte "
             f"({', '.join(abweichend)}). Bitte am Display nachsehen."
         )
-    return programm_daten(eintrag, programm, bestand, absenk_bestand)
+    return programm_daten(eintrag, programm, bestand, absenk_bestand, obergrenze)
 
 
 def _eintrag(hass: HomeAssistant, entry_id: str):
@@ -375,12 +415,13 @@ async def _ws_zeitprogramme(
             try:
                 bestand = await bestand_lesen(eintrag.runtime_data, programm)
                 absenkung = await absenkung_lesen(eintrag.runtime_data, programm)
+                obergrenze = await obergrenze_lesen(eintrag.runtime_data, programm)
             except ETAApiError as err:
                 programme.append(
                     {**kopf(eintrag, programm), "tage": None, "absenkung": None, "fehler": str(err)}
                 )
                 continue
-            programme.append(programm_daten(eintrag, programm, bestand, absenkung))
+            programme.append(programm_daten(eintrag, programm, bestand, absenkung, obergrenze))
     connection.send_result(msg["id"], {"programme": programme})
 
 

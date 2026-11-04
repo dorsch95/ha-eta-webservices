@@ -350,9 +350,26 @@ WEITERE_ZEITPROGRAMME = {
 An einer echten Anlage gesehen: "Puffer > Erzeuger Kessel/Puffer >
 Ladezeiten", "Puffer > Warmwasserbereich > Ladezeiten" und beim
 Frischwassermodul "Warmwasser > Bereitschaftszeiten", an der Zweitanlage
-"Puffer > Puffer oben > Ladezeiten". Gesucht wird deshalb nicht über
-feste Pfade, sondern nach jedem Knoten, der je Wochentag Zeitfenster hat.
+"Puffer > Puffer oben > Ladezeiten", an einer Testanlage mit
+Warmwasserspeicher (Block "WW") "Warmwasserspeicher > Ladezeiten" und,
+wo eine Zirkulation aktiviert ist, "Zirkulation > Zirkulationszeiten".
+Gesucht wird deshalb nicht über feste Pfade, sondern nach jedem Knoten,
+der je Wochentag Zeitfenster hat.
 """
+
+WARMWASSER_MAXIMUM = "Warmwasserspeicher max."
+"""Die höchste Temperatur eines Warmwasserspeichers, im selben Block wie seine Ladezeiten."""
+
+
+def _finde_namen(knoten, name: str):
+    """Die URI des ersten Objekts mit diesem Namen irgendwo unterhalb, oder None."""
+    for kind in _as_list(knoten.get("object")):
+        if kind.get("@name", "").casefold() == name.casefold() and kind.get("@uri"):
+            return kind["@uri"]
+        gefunden = _finde_namen(kind, name)
+        if gefunden:
+            return gefunden
+    return None
 
 
 def _ist_zeitprogramm(knoten) -> bool:
@@ -369,9 +386,11 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
     des Programms, etwa puffer_12130_zeitfenster_monday_1. Haben zwei
     Programme dieselbe Kennung, kommt beim zweiten der Rest seiner URI
     dazu, damit sich ihre Fenster nicht vermischen. In namen_aus landet je
-    Präfix der Weg im Menübaum, damit die Karte das Programm benennen kann.
+    Präfix der Weg im Menübaum, damit die Karte das Programm benennen kann,
+    und - falls der Block eine hat - die URI von WARMWASSER_MAXIMUM.
     """
     gefunden = {}
+    maximum = _finde_namen(fub, WARMWASSER_MAXIMUM) if fub is not None else None
 
     def suchen(knoten, pfad):
         for kind in _as_list(knoten.get("object")):
@@ -389,7 +408,11 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
                 _LOGGER.debug("ETA: Zeitprogramm %s doppelt im Menübaum, übersprungen", kind.get("@uri"))
                 continue
             gefunden.update(_zeitfenster_unter(kind, praefix))
-            namen_aus[praefix] = {"komponente": komponente, "pfad": [*pfad, name]}
+            namen_aus[praefix] = {
+                "komponente": komponente,
+                "pfad": [*pfad, name],
+                "maximum_uri": maximum,
+            }
 
     if fub is not None:
         suchen(fub, [])

@@ -410,6 +410,13 @@ ein Verbrühschutz verbaut sein muss, beim Frischwassermodul außerdem, dass
 unter FWM_REGELUNG keine gleichmäßige Regelung mehr gewährleistet ist.
 """
 
+KOMBI_GRENZEN = (0.0, 100.0)
+"""Warmwasser im Kombi-Puffer: was die Anlage als Minimum und Maximum meldet.
+
+So vom Nutzer festgelegt - beim Kombispeicher ist immer ein Verbrühschutz
+verbaut. Die 100 °C greifen nur, wenn die Anlage keine Grenze meldet.
+"""
+
 WARMWASSER_VERBRUEHSCHUTZ = 60.0
 FWM_REGELUNG = 40.0
 

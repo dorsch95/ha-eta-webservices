@@ -25,6 +25,7 @@ from .const import (
     PUFFER_SPEICHER,
     SENSORS,
     THERMOSTATE,
+    KOMBI_GRENZEN,
     WARMWASSER_GRENZEN,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
@@ -479,12 +480,21 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             )
 
     def zeitprogramm_art(self, programm: str) -> str:
-        """heizzeiten, puffer oder warmwasser - danach wählt die Karte aus, was sie zeigt."""
+        """heizzeiten, puffer, warmwasser oder zirkulation - danach wählt die Karte aus, was sie zeigt."""
         info = self.zeitprogramm_namen.get(programm)
         if info is None:
             return "heizzeiten"
         weg = " ".join(info["pfad"]).casefold()
+        if "zirkulation" in weg:
+            return "zirkulation"
         return "warmwasser" if info["komponente"] == "fwm" or "warmwasser" in weg else "puffer"
+
+    def zeitprogramm_maximum_uri(self, programm: str) -> str | None:
+        """Bei Warmwasser die URI von "Warmwasserspeicher max." - die Obergrenze seiner Temperaturen."""
+        info = self.zeitprogramm_namen.get(programm)
+        if info is None or self.zeitprogramm_art(programm) != "warmwasser":
+            return None
+        return info.get("maximum_uri")
 
     def zeitprogramm_fwm(self, programm: str) -> bool:
         """Gehört das Programm zum Frischwassermodul? Nur dort gibt es den Hinweis zur Regelung."""
@@ -494,11 +504,40 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return self.funktionsblock("fwm").casefold().startswith("fwm")
 
     def zeitprogramm_name(self, programm: str) -> str:
-        """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum."""
+        """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum.
+
+        Aus "Warmwasser-Zustand detailliert" (so heißt der Abschnitt im
+        älteren Puffer) wird "Warmwasser". Gibt es dieselbe Art Programm
+        auch in einem anderen Funktionsblock - etwa Warmwasser in Speicher
+        und Kombi-Puffer -, steht der Funktionsblock davor.
+        """
         info = self.zeitprogramm_namen.get(programm)
         if info is None:
             return self.funktionsblock(programm)
-        return " › ".join(info["pfad"][-2:])
+
+        def kurz(eintrag: dict) -> str:
+            return " › ".join(
+                teil.removesuffix("-Zustand detailliert") for teil in eintrag["pfad"][-2:]
+            )
+
+        name = kurz(info)
+        art = self.zeitprogramm_art(programm)
+        gleich = [
+            anderes
+            for schluessel, anderes in self.zeitprogramm_namen.items()
+            if schluessel != programm
+            and anderes["komponente"] in self.components
+            and (
+                kurz(anderes) == name
+                or (
+                    anderes["komponente"] != info["komponente"]
+                    and self.zeitprogramm_art(schluessel) == art
+                )
+            )
+        ]
+        if gleich:
+            return f"{self.funktionsblock(info['komponente'])} › {name}"
+        return name
 
     async def _zeitprogramme_pruefen(self, nur: set[str] | None = None) -> None:
         """Prüft je Zeitprogramm, ob es sich beschreiben lässt.
@@ -567,11 +606,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                     ", ".join(f"{k}: {v}" for k, v in abweichend.items()),
                 )
                 continue
-            grenzen = (
-                {"grenzen": WARMWASSER_GRENZEN}
-                if self.zeitprogramm_art(heizkreis) == "warmwasser"
-                else {}
-            )
+            grenzen = {}
+            if self.zeitprogramm_art(heizkreis) == "warmwasser":
+                kombi = self.zeitprogramm_namen[heizkreis]["komponente"].startswith("puffer")
+                grenzen = {"grenzen": KOMBI_GRENZEN if kombi else WARMWASSER_GRENZEN}
             self.zeitprogramm_defs[heizkreis] = {
                 fenster: {"uri": uri, "skala": info["scale"], **info["zeitfenster"], **grenzen}
                 for (fenster, uri), info in zip(uris.items(), infos)

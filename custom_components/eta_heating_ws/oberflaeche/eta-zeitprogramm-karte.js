@@ -51,7 +51,7 @@ const TEXTE = {
     gespeichert: "Gespeichert",
     fehler_reihenfolge: "„bis“ muss nach „von“ liegen.",
     fehler_ueberlappung: "Zeitfenster dürfen sich nicht überschneiden.",
-    fehler_temperatur: (min, max) => `Temperatur zwischen ${min} und ${max} °C.`,
+    fehler_temperatur: (min, max, grund = "") => `Temperatur zwischen ${min} und ${max} °C${grund}.`,
     fehler_temperatur_leer: "Bitte für jedes Zeitfenster eine Temperatur eingeben.",
     fehler_tage: "Mindestens einen Tag wählen.",
     hinweis_verbruehschutz: (grad) => `Über ${grad} °C muss zwingend ein Verbrühschutz verbaut sein.`,
@@ -68,6 +68,8 @@ const TEXTE = {
     art_heizzeiten: "Heizzeiten",
     art_puffer: "Ladezeiten Puffer",
     art_warmwasser: "Warmwasser",
+    art_zirkulation: "Zirkulation",
+    laut: (name) => ` (laut „${name}“)`,
     feld_farbe_heizzeit: "Farbe Heizzeit",
     feld_farbe_absenkzeit: "Farbe Absenkzeit",
   },
@@ -105,7 +107,7 @@ const TEXTE = {
     gespeichert: "Saved",
     fehler_reihenfolge: "“to” has to be after “from”.",
     fehler_ueberlappung: "Time slots must not overlap.",
-    fehler_temperatur: (min, max) => `Temperature between ${min} and ${max} °C.`,
+    fehler_temperatur: (min, max, grund = "") => `Temperature between ${min} and ${max} °C${grund}.`,
     fehler_temperatur_leer: "Please enter a temperature for every time slot.",
     fehler_tage: "Choose at least one day.",
     hinweis_verbruehschutz: (grad) => `Above ${grad} °C a scald protection must be installed.`,
@@ -122,6 +124,8 @@ const TEXTE = {
     art_heizzeiten: "Heating times",
     art_puffer: "Buffer loading times",
     art_warmwasser: "Hot water",
+    art_zirkulation: "Circulation",
+    laut: (name) => ` (according to “${name}”)`,
     feld_farbe_heizzeit: "Heating time colour",
     feld_farbe_absenkzeit: "Setback colour",
   },
@@ -382,7 +386,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
             select: {
               multiple: true,
               mode: "list",
-              options: ["heizzeiten", "puffer", "warmwasser"].map((art) => ({
+              options: ["heizzeiten", "puffer", "warmwasser", "zirkulation"].map((art) => ({
                 value: art,
                 label: t[`art_${art}`],
               })),
@@ -782,7 +786,8 @@ class EtaZeitprogrammKarte extends HTMLElement {
         ausserhalb(f.temperatur, f.vorher, hk.temperatur_min, hk.temperatur_max)
       )
     ) {
-      return t.fehler_temperatur(this._zahl(hk.temperatur_min), this._zahl(hk.temperatur_max));
+      const grund = hk.temperatur_max_grund ? t.laut(hk.temperatur_max_grund) : "";
+      return t.fehler_temperatur(this._zahl(hk.temperatur_min), this._zahl(hk.temperatur_max), grund);
     }
     if (
       hk.mit_absenkung &&
