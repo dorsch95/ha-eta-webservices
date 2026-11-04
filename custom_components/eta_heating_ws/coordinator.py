@@ -473,7 +473,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return "warmwasser" if info["komponente"] == "fwm" or "warmwasser" in weg else "puffer"
 
     def zeitprogramm_fwm(self, programm: str) -> bool:
-        """Gehört das Programm zum Frischwassermodul? Dort gibt die Karte Hinweise zur Temperatur."""
+        """Gehört das Programm zum Frischwassermodul? Nur dort gibt es den Hinweis zur Regelung."""
         info = self.zeitprogramm_namen.get(programm)
         if info is None or info["komponente"] != "fwm":
             return False

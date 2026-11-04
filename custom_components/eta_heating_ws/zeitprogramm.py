@@ -41,10 +41,10 @@ from .api import ETAApiError, Zeitfenster
 from .const import (
     DOMAIN,
     FWM_REGELUNG,
-    FWM_VERBRUEHSCHUTZ,
     KARTE_ZEITPROGRAMM,
     THERMOSTAT_SOLL_GRENZEN,
     URL_OBERFLAECHE,
+    WARMWASSER_VERBRUEHSCHUTZ,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
 )
@@ -134,9 +134,12 @@ def kopf(eintrag, programm: str) -> dict[str, Any]:
         "name": coordinator.zeitprogramm_name(programm),
         "art": art,
         "mit_temperatur": art != "puffer" and all(info["mit_wert"] for info in defs.values()),
-        "hinweise_fwm": (
-            {"verbruehschutz": FWM_VERBRUEHSCHUTZ, "regelung": FWM_REGELUNG}
-            if coordinator.zeitprogramm_fwm(programm)
+        "hinweise": (
+            {
+                "verbruehschutz": WARMWASSER_VERBRUEHSCHUTZ,
+                "regelung": FWM_REGELUNG if coordinator.zeitprogramm_fwm(programm) else None,
+            }
+            if art == "warmwasser"
             else None
         ),
         "temperatur_min": untere,

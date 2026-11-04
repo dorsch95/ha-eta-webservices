@@ -734,18 +734,19 @@ class EtaZeitprogrammKarte extends HTMLElement {
   }
 
   /**
-   * Hinweise beim Frischwassermodul, bevor gespeichert wird - sie halten
-   * nicht auf. Der zum Verbrühschutz steht rot, der zur Regelung orange.
+   * Hinweise beim Warmwasser, bevor gespeichert wird - sie halten nicht
+   * auf. Der zum Verbrühschutz steht rot, der zur Regelung (nur beim
+   * Frischwassermodul) orange.
    */
   _warnungen(hk) {
-    const grenzen = hk.hinweise_fwm;
+    const grenzen = hk.hinweise;
     if (!grenzen) return [null, null];
     const werte = this._bearbeitung.fenster.map((f) => f.temperatur).filter(Number.isFinite);
     return [
       werte.some((wert) => wert > grenzen.verbruehschutz)
         ? this._t.hinweis_verbruehschutz(Math.round(grenzen.verbruehschutz))
         : null,
-      werte.some((wert) => wert < grenzen.regelung)
+      grenzen.regelung != null && werte.some((wert) => wert < grenzen.regelung)
         ? this._t.hinweis_regelung(Math.round(grenzen.regelung))
         : null,
     ];

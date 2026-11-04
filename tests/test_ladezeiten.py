@@ -54,9 +54,14 @@ def fenster(stamm: str, tag: str, nummer: int) -> str:
     return f"{stamm}/{1081 + 4 * TAGE.index(tag) + nummer}"
 
 
-async def aufbauen(hass, entry, menu_xml):
-    """Heizzeiten wie gehabt, Puffer täglich 6 bis 22 Uhr bei 60 °C, Warmwasser rund um die Uhr bei 50 °C."""
+async def aufbauen(hass, entry, menu_xml, kombi=False):
+    """Heizzeiten wie gehabt, Puffer täglich 6 bis 22 Uhr bei 60 °C, Warmwasser rund um die Uhr bei 50 °C.
+
+    kombi: Das Programm im Puffer ist der Warmwasserbereich eines Kombispeichers.
+    """
     hass.session.menu = mit_ladezeiten(mit_zeitprogramm(menu_xml))
+    if kombi:
+        hass.session.menu = hass.session.menu.replace("Erzeuger Kessel/Puffer", "Warmwasserbereich")
     anlage_mit_fenstern(hass.session)
     for tag in TAGE:
         hass.session.zeitfenster[fenster(PUFFER, tag, 1)] = (24, 88, 600)
@@ -90,8 +95,18 @@ async def test_warmwasser_im_bereich_des_puffers(hass, entry, menu_xml):
     )
     coordinator, _ = await setup_integration(hass, entry)
     assert coordinator.zeitprogramm_art("puffer_12130") == "warmwasser"
-    assert coordinator.zeitprogramm_fwm("puffer_12130") is False, "Kombi-Puffer: kein Hinweis"
+    assert coordinator.zeitprogramm_fwm("puffer_12130") is False, "Kombi-Puffer: ohne Regelungs-Hinweis"
     assert coordinator.zeitprogramm_fwm("fwm_12318") is True
+
+
+async def test_kombispeicher_mit_verbruehschutz_hinweis(hass, entry, menu_xml):
+    """Über 60 °C bei jedem Warmwasser, der Hinweis zur Regelung nur beim FWM."""
+    await aufbauen(hass, entry, menu_xml, kombi=True)
+
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+
+    programme = {p["programm"]: p for p in verbindung.ergebnisse[0][1]["programme"]}
+    assert programme["puffer_12130"]["hinweise"] == {"verbruehschutz": 60.0, "regelung": None}
 
 
 async def test_nur_mit_der_komponente(hass, entry, menu_xml):
@@ -108,16 +123,16 @@ async def test_karte_kennt_die_art(hass, entry, menu_xml):
 
     programme = {p["programm"]: p for p in verbindung.ergebnisse[0][1]["programme"]}
     assert programme["hk1"]["art"] == "heizzeiten"
-    assert programme["hk1"]["hinweise_fwm"] is None
+    assert programme["hk1"]["hinweise"] is None
     warmwasser = programme["fwm_12318"]
     assert warmwasser["art"] == "warmwasser"
     assert (warmwasser["temperatur_min"], warmwasser["temperatur_max"]) == (0.0, 80.0)
-    assert warmwasser["hinweise_fwm"] == {"verbruehschutz": 60.0, "regelung": 40.0}
+    assert warmwasser["hinweise"] == {"verbruehschutz": 60.0, "regelung": 40.0}
     assert warmwasser["mit_absenkung"] is False
     puffer = programme["puffer_12130"]
     assert puffer["art"] == "puffer"
     assert puffer["mit_temperatur"] is False, "die Zeiten steuern nur, ob geladen wird"
-    assert puffer["hinweise_fwm"] is None
+    assert puffer["hinweise"] is None
     assert warmwasser["tage"]["monday"] == [{"beginn": 0, "ende": 96, "temperatur": 50.0}]
     assert programme["puffer_12130"]["tage"]["sunday"] == [
         {"beginn": 24, "ende": 88, "temperatur": None}
