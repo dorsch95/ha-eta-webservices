@@ -119,6 +119,17 @@ async def test_mehrere_werte_parallel_aber_begrenzt(hass):
     assert hass.session.peak_parallel > 1
 
 
+async def test_auch_einzelabfragen_sind_begrenzt(hass):
+    """Beim Zeitprogramm gehen 21 Beschreibungen auf einmal raus - auch die zählen zur Grenze."""
+    import asyncio
+
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    await asyncio.gather(*(client.async_get_varinfo(f"/1/2/{i}") for i in range(21)))
+    await asyncio.gather(*(client.async_get_value(f"/1/2/{i}") for i in range(21)))
+    assert hass.session.peak_parallel <= MAX_PARALLEL_REQUESTS
+    assert hass.session.peak_parallel > 1
+
+
 async def test_einzelner_fehler_kippt_den_zyklus_nicht(hass):
     hass.session.fail_uris = {"/1/2/7"}
     client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)

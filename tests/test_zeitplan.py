@@ -157,6 +157,23 @@ def test_neues_fenster_uebernimmt_die_temperatur_der_woche():
     }
 
 
+def test_leere_woche_nimmt_den_werkswert_der_anlage():
+    """Ohne irgendeine Temperatur in der Woche nicht 0 °C, sondern der Werkswert (21,0 °C)."""
+    leer = Zeitfenster(0, 0, 0)
+    bestand, defs = _woche(leer)
+    zu_schreiben, _ = aenderungen(plan(monday=[(22, 90, None)]), bestand, defs)
+    assert zu_schreiben[("monday", 1)] == Zeitfenster(22, 90, 210)
+
+
+def test_wert_vom_display_bleibt_auch_ausserhalb_der_grenzen():
+    """8 °C am Display: bleibt das Fenster dabei, wird nicht ungefragt auf 10 °C angehoben."""
+    bestand, defs = _woche(Zeitfenster(22, 90, 80))
+    zu_schreiben, _ = aenderungen(plan(monday=[(24, 90, 8.0)]), bestand, defs)
+    assert zu_schreiben[("monday", 1)] == Zeitfenster(24, 90, 80)
+    zu_schreiben, _ = aenderungen(plan(monday=[(22, 90, 5.0)]), bestand, defs)
+    assert zu_schreiben[("monday", 1)] == Zeitfenster(22, 90, 100), "neu eingegeben: 10 bis 30 °C"
+
+
 def test_weggefallener_block_leert_sein_fenster():
     bestand, defs = _woche(Zeitfenster(22, 90, 200), Zeitfenster(92, 96, 180))
     zu_schreiben, _ = aenderungen(plan(), bestand, defs)
@@ -231,8 +248,9 @@ async def test_diagnose_sagt_warum_nicht_beschreibbar(hass, entry, menu_xml):
     bericht = await async_get_config_entry_diagnostics(hass, entry)
     diagnose = bericht["schreibzugriff"]["zeitprogramm_nicht_beschreibbar"]["hk1"]
     assert "beispiel_uri" not in diagnose
-    assert diagnose["varinfo_montag_1"].startswith("<eta")
-    assert "<type>TIMESLOT</type>" in diagnose["varinfo_montag_1"]
+    assert diagnose["beispiel_fenster"] == "Montag 1"
+    assert diagnose["varinfo_beispiel"].startswith("<eta")
+    assert "<type>TIMESLOT</type>" in diagnose["varinfo_beispiel"]
     assert bericht["schreibzugriff"]["zeitprogramme"] == {}
     json.dumps(bericht)
 

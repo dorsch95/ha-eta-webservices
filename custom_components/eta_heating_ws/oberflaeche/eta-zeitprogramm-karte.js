@@ -52,6 +52,7 @@ const TEXTE = {
     fehler_reihenfolge: "„bis“ muss nach „von“ liegen.",
     fehler_ueberlappung: "Zeitfenster dürfen sich nicht überschneiden.",
     fehler_temperatur: (min, max) => `Temperatur zwischen ${min} und ${max} °C.`,
+    fehler_temperatur_leer: "Bitte für jedes Zeitfenster eine Temperatur eingeben.",
     fehler_tage: "Mindestens einen Tag wählen.",
     hinweis_verbruehschutz: (grad) => `Über ${grad} °C muss zwingend ein Verbrühschutz verbaut sein.`,
     hinweis_regelung: (grad) =>
@@ -105,6 +106,7 @@ const TEXTE = {
     fehler_reihenfolge: "“to” has to be after “from”.",
     fehler_ueberlappung: "Time slots must not overlap.",
     fehler_temperatur: (min, max) => `Temperature between ${min} and ${max} °C.`,
+    fehler_temperatur_leer: "Please enter a temperature for every time slot.",
     fehler_tage: "Choose at least one day.",
     hinweis_verbruehschutz: (grad) => `Above ${grad} °C a scald protection must be installed.`,
     hinweis_regelung: (grad) =>
@@ -540,12 +542,20 @@ class EtaZeitprogrammKarte extends HTMLElement {
     return teile.join(", ");
   }
 
+  /**
+   * Vorschlag für ein neues Fenster: die Temperatur des ersten belegten
+   * Fensters der Woche, sonst der Werkswert der Anlage. Beim Warmwasser
+   * ohne jede Temperatur bleibt das Feld leer - dort soll niemand aus
+   * Versehen einen Raumwert wie 20 °C übernehmen.
+   */
   _ersatztemperatur(hk) {
     for (const tag of TAGE) {
       const belegt = (hk.tage?.[tag] || []).find((f) => f.temperatur != null);
       if (belegt) return belegt.temperatur;
     }
-    return Math.min(Math.max(20, hk.temperatur_min), hk.temperatur_max);
+    if (hk.art === "warmwasser") return null;
+    const vorgabe = Number.isFinite(hk.temperatur_vorgabe) ? hk.temperatur_vorgabe : 20;
+    return Math.min(Math.max(vorgabe, hk.temperatur_min), hk.temperatur_max);
   }
 
   _zeichnen() {
@@ -760,13 +770,16 @@ class EtaZeitprogrammKarte extends HTMLElement {
     if (sortiert.some((f, i) => i > 0 && f.beginn < sortiert[i - 1].ende)) {
       return t.fehler_ueberlappung;
     }
+    if (hk.mit_temperatur && b.fenster.some((f) => !Number.isFinite(f.temperatur))) {
+      return t.fehler_temperatur_leer;
+    }
+    const nurDieserTag = b.tage.size === 1 && b.tage.has(b.tag);
+    const ausserhalb = (wert, vorher, min, max) =>
+      (wert < min || wert > max) && !(nurDieserTag && wert === vorher);
     if (
       hk.mit_temperatur &&
-      b.fenster.some(
-        (f) =>
-          !Number.isFinite(f.temperatur) ||
-          f.temperatur < hk.temperatur_min ||
-          f.temperatur > hk.temperatur_max
+      b.fenster.some((f) =>
+        ausserhalb(f.temperatur, f.vorher, hk.temperatur_min, hk.temperatur_max)
       )
     ) {
       return t.fehler_temperatur(this._zahl(hk.temperatur_min), this._zahl(hk.temperatur_max));
@@ -774,7 +787,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
     if (
       hk.mit_absenkung &&
       b.absenkung != null &&
-      (b.absenkung < hk.absenkung_min || b.absenkung > hk.absenkung_max)
+      ausserhalb(b.absenkung, b.absenkung_vorher, hk.absenkung_min, hk.absenkung_max)
     ) {
       return t.fehler_absenkung(this._zahl(hk.absenkung_min), this._zahl(hk.absenkung_max));
     }
@@ -796,8 +809,10 @@ class EtaZeitprogrammKarte extends HTMLElement {
           beginn: f.beginn,
           ende: f.ende,
           temperatur: hk.mit_temperatur ? f.temperatur ?? ersatz : null,
+          vorher: f.temperatur,
         })),
         absenkung: hk.mit_absenkung ? hk.absenkung?.[tag] ?? null : null,
+        absenkung_vorher: hk.absenkung?.[tag] ?? null,
         tage: new Set([tag]),
       };
     }

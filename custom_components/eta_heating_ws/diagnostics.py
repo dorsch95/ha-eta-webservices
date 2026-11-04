@@ -151,11 +151,11 @@ async def async_get_config_entry_diagnostics(
     }
     zeitprogramme = {
         heizkreis: await _zeitprogramm(coordinator, heizkreis)
-        for heizkreis in coordinator.zeitprogramm_defs
+        for heizkreis in list(coordinator.zeitprogramm_defs)
     }
     zeitprogramm_pruefung = {
         heizkreis: await _zeitprogramm_pruefung(coordinator, befund)
-        for heizkreis, befund in coordinator.zeitprogramm_pruefung.items()
+        for heizkreis, befund in list(coordinator.zeitprogramm_pruefung.items())
     }
 
     return {
@@ -205,6 +205,10 @@ async def async_get_config_entry_diagnostics(
             "thermostate": sorted(coordinator.thermostat_defs),
             "zeitprogramme": zeitprogramme,
             "zeitprogramm_nicht_beschreibbar": zeitprogramm_pruefung,
+            "ausserhalb_der_zeitfenster_nicht_beschreibbar": {
+                heizkreis: befund["tage"]
+                for heizkreis, befund in list(coordinator.absenkung_pruefung.items())
+            },
             "entaschentaste": coordinator.entaschen_def is not None,
             "aschebox_plan": (
                 None
@@ -232,18 +236,19 @@ async def async_get_config_entry_diagnostics(
 async def _zeitprogramm_pruefung(coordinator, befund: dict) -> dict[str, Any]:
     """Warum ein gefundenes Zeitprogramm nicht beschreibbar erkannt wurde.
 
-    Dazu die Beschreibung des ersten Zeitfensters, frisch und so, wie die
-    Anlage sie schickt - daran lässt sich sehen, was sie anders meldet.
+    Dazu die Beschreibung des ersten Fensters, das nicht passte, frisch und
+    so, wie die Anlage sie schickt - daran lässt sich sehen, was sie anders
+    meldet.
     """
     ergebnis = dict(befund)
     uri = ergebnis.pop("beispiel_uri", None)
     if uri:
         try:
-            ergebnis["varinfo_montag_1"] = (await coordinator.client.async_get_varinfo_text(uri))[
+            ergebnis["varinfo_beispiel"] = (await coordinator.client.async_get_varinfo_text(uri))[
                 :4000
             ]
         except ETAApiError as err:
-            ergebnis["varinfo_montag_1"] = f"nicht lesbar: {err}"
+            ergebnis["varinfo_beispiel"] = f"nicht lesbar: {err}"
     return ergebnis
 
 

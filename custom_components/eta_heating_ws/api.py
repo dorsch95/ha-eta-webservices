@@ -164,10 +164,15 @@ class ETAApiClient:
         timeout: float,
         daten: dict[str, str] | None = None,
     ) -> str:
-        """Führt eine HTTP-Anfrage aus und gibt den Rohtext zurück."""
+        """Führt eine HTTP-Anfrage aus und gibt den Rohtext zurück.
+
+        Höchstens MAX_PARALLEL_REQUESTS Anfragen laufen gleichzeitig, egal
+        woher sie kommen - die Steuerung beantwortet sonst nicht mehr jede.
+        Die Wartezeit davor zählt nicht zum Zeitlimit.
+        """
         url = f"{self.base_url}{path}"
         try:
-            async with self._session.request(
+            async with self._semaphore, self._session.request(
                 methode,
                 url,
                 data=daten,
@@ -413,8 +418,7 @@ class ETAApiClient:
     async def async_get_values(self, uris: dict[str, str]) -> dict[str, ETAValue]:
         """Liest mehrere Messwerte parallel.
 
-        Höchstens MAX_PARALLEL_REQUESTS auf einmal, um die Steuerung nicht
-        zu überlasten.
+        Höchstens MAX_PARALLEL_REQUESTS auf einmal, siehe _request.
         """
 
         async def fetch(key: str, uri: str) -> tuple[str, ETAValue | None]:
@@ -423,12 +427,11 @@ class ETAApiClient:
             Die Ausnahmebehandlung ist bewusst breit, damit ein einzelner
             Messwert den Abfragezyklus nicht scheitern lässt.
             """
-            async with self._semaphore:
-                try:
-                    return key, await self.async_get_value(uri)
-                except Exception as err:
-                    _LOGGER.debug("ETA: '%s' (%s) fehlgeschlagen: %s", key, uri, err)
-                    return key, None
+            try:
+                return key, await self.async_get_value(uri)
+            except Exception as err:
+                _LOGGER.debug("ETA: '%s' (%s) fehlgeschlagen: %s", key, uri, err)
+                return key, None
 
         results = await asyncio.gather(
             *(fetch(key, uri) for key, uri in uris.items())

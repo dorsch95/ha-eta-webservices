@@ -366,9 +366,10 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
     """Die Zeitprogramme eines Funktionsblocks, außer den Heizzeiten eines Heizkreises.
 
     Schlüssel wie bei den Heizzeiten, als Präfix Komponente und Kennung
-    des Programms, etwa puffer_12130_zeitfenster_monday_1. In namen_aus
-    landet je Präfix der Weg im Menübaum, damit die Karte das Programm
-    benennen kann.
+    des Programms, etwa puffer_12130_zeitfenster_monday_1. Haben zwei
+    Programme dieselbe Kennung, kommt beim zweiten der Rest seiner URI
+    dazu, damit sich ihre Fenster nicht vermischen. In namen_aus landet je
+    Präfix der Weg im Menübaum, damit die Karte das Programm benennen kann.
     """
     gefunden = {}
 
@@ -382,6 +383,11 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
             if len(teile) < 3:
                 continue
             praefix = f"{komponente}_{teile[2]}"
+            if praefix in namen_aus:
+                praefix = f"{komponente}_{'_'.join(teile[2:])}"
+            if praefix in namen_aus:
+                _LOGGER.debug("ETA: Zeitprogramm %s doppelt im Menübaum, übersprungen", kind.get("@uri"))
+                continue
             gefunden.update(_zeitfenster_unter(kind, praefix))
             namen_aus[praefix] = {"komponente": komponente, "pfad": [*pfad, name]}
 

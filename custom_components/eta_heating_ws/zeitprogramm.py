@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,17 @@ _LOGGER = logging.getLogger(__name__)
 
 OBERFLAECHE = Path(__file__).parent / "oberflaeche"
 """Der Ordner mit den Dashboard-Karten, ausgeliefert unter URL_OBERFLAECHE."""
+
+
+def _temperatur(wert: Any) -> float:
+    """Eine Temperatur aus der Karte: eine Zahl, aber kein "nan" und kein "inf"."""
+    zahl = float(wert)
+    if not math.isfinite(zahl):
+        raise vol.Invalid("Temperatur ist keine Zahl")
+    return zahl
+
+
+TEMPERATUR = vol.Any(None, vol.All(vol.Coerce(float), _temperatur))
 
 
 class ZeitprogrammFehler(Exception):
@@ -86,15 +98,22 @@ async def bestand_lesen(coordinator, programm: str) -> dict[tuple[str, int], Zei
 
 
 async def absenkung_lesen(coordinator, programm: str) -> dict[str, float | None] | None:
-    """Je Tag der Wert außerhalb der Zeitfenster in °C - None, wenn er sich nicht einstellen lässt."""
+    """Je Tag der Wert außerhalb der Zeitfenster in °C - None, wenn er sich nicht einstellen lässt.
+
+    Ein Tag, der gerade nicht antwortet, steht auf None; deshalb bleibt
+    das ganze Programm nicht unlesbar.
+    """
     defs = coordinator.zeitprogramm_absenkung.get(programm)
     if defs is None:
         return None
     gelesen = await asyncio.gather(
-        *(coordinator.client.async_get_value(defs[tag]["uri"]) for tag in defs)
+        *(coordinator.client.async_get_value(defs[tag]["uri"]) for tag in defs),
+        return_exceptions=True,
     )
     return {
-        tag: None if wert.value is None else round(wert.value, 1)
+        tag: None
+        if isinstance(wert, Exception) or wert.value is None
+        else round(wert.value, 1)
         for tag, wert in zip(defs, gelesen)
     }
 
@@ -144,11 +163,20 @@ def kopf(eintrag, programm: str) -> dict[str, Any]:
         ),
         "temperatur_min": untere,
         "temperatur_max": obere,
+        "temperatur_vorgabe": _vorgabe(defs),
         "mit_absenkung": absenk_defs is not None,
         "absenkung_min": absenk_untere,
         "absenkung_max": absenk_obere,
         "zeitplan": abgleich.entity_id if abgleich is not None else None,
     }
+
+
+def _vorgabe(defs: dict) -> float | None:
+    """Der Werkswert der Anlage für die Temperatur eines Fensters, in °C."""
+    info = next(iter(defs.values()))
+    if info.get("vorgabe_roh") is None or not info.get("mit_wert"):
+        return None
+    return round(info["vorgabe_roh"] / info["skala"], 1)
 
 
 def programm_daten(
@@ -182,8 +210,15 @@ def programm_daten(
     return {**angaben, "tage": tage, "absenkung": absenkung, "fehler": None}
 
 
-def _absenk_roh(grad: float, info: dict) -> int:
-    """Der Wert außerhalb der Zeitfenster als Rohwert, in den Grenzen der Karte."""
+def _absenk_roh(grad: float, info: dict, bisher: float | None) -> int:
+    """Der Wert außerhalb der Zeitfenster als Rohwert, in den Grenzen der Karte.
+
+    Wie bei den Fenstern: Ist es der Wert, der schon dasteht, bleibt er,
+    auch außerhalb der Grenzen.
+    """
+    gewuenscht = round(grad * info["skala"])
+    if bisher is not None and gewuenscht == round(bisher * info["skala"]):
+        return gewuenscht
     untere, obere = temperaturgrenzen({"wert": info})
     return round(min(max(grad, untere), obere) * info["skala"])
 
@@ -243,16 +278,13 @@ async def zeitprogramm_setzen(
         bestand = await bestand_lesen(coordinator, programm)
         absenk_bestand = await absenkung_lesen(coordinator, programm)
         ersatz = ersatztemperatur(bestand)
-        if ersatz is None:
-            vorgabe = next(iter(defs.values())).get("vorgabe_roh")
-            ersatz = round(vorgabe) if vorgabe is not None else None
         absenk_neu: dict[str, int] = {}
         if absenkung is not None:
             for tag in WOCHENTAGE:
                 if tag not in tage:
                     continue
-                roh = _absenk_roh(absenkung, absenk_defs[tag])
                 alt = absenk_bestand[tag]
+                roh = _absenk_roh(absenkung, absenk_defs[tag], alt)
                 if alt is None or round(alt * absenk_defs[tag]["skala"]) != roh:
                     absenk_neu[tag] = roh
         zu_schreiben: dict[tuple[str, int], Zeitfenster] = {}
@@ -290,7 +322,14 @@ async def zeitprogramm_setzen(
             )
         if not zu_schreiben and not absenk_neu:
             return programm_daten(eintrag, programm, bestand, absenk_bestand)
-        bestand = await bestand_lesen(coordinator, programm)
+        try:
+            bestand = await bestand_lesen(coordinator, programm)
+        except ETAApiError as err:
+            await coordinator.async_request_refresh()
+            raise ZeitprogrammFehler(
+                "Gespeichert, aber die Heizung hat zum Nachlesen nicht geantwortet "
+                f"({err}). Bitte neu lesen."
+            ) from err
         absenk_bestand = await absenkung_lesen(coordinator, programm)
 
     await coordinator.async_request_refresh()
@@ -301,8 +340,8 @@ async def zeitprogramm_setzen(
     ] + [
         f"{WOCHENTAGE[tag]} außerhalb"
         for tag, roh in absenk_neu.items()
-        if absenk_bestand[tag] is None
-        or round(absenk_bestand[tag] * absenk_defs[tag]["skala"]) != roh
+        if absenk_bestand[tag] is not None
+        and round(absenk_bestand[tag] * absenk_defs[tag]["skala"]) != roh
     ]
     if abweichend:
         raise ZeitprogrammFehler(
@@ -332,7 +371,7 @@ async def _ws_zeitprogramme(
     programme = []
     for eintrag in hass.config_entries.async_loaded_entries(DOMAIN):
         await eintrag.runtime_data.zeitprogramme_nachpruefen()
-        for programm in eintrag.runtime_data.zeitprogramm_defs:
+        for programm in list(eintrag.runtime_data.zeitprogramm_defs):
             try:
                 bestand = await bestand_lesen(eintrag.runtime_data, programm)
                 absenkung = await absenkung_lesen(eintrag.runtime_data, programm)
@@ -356,12 +395,12 @@ async def _ws_zeitprogramme(
                 {
                     vol.Required("beginn"): vol.All(int, vol.Range(min=0, max=96)),
                     vol.Required("ende"): vol.All(int, vol.Range(min=0, max=96)),
-                    vol.Optional("temperatur"): vol.Any(None, vol.Coerce(float)),
+                    vol.Optional("temperatur"): TEMPERATUR,
                 }
             ],
             vol.Length(max=ZEITFENSTER_JE_TAG),
         ),
-        vol.Optional("absenkung"): vol.Any(None, vol.Coerce(float)),
+        vol.Optional("absenkung"): TEMPERATUR,
     }
 )
 @websocket_api.async_response

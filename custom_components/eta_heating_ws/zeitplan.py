@@ -118,12 +118,16 @@ def bloecke(tagesplan: list[dict]) -> list[Block]:
     return ergebnis
 
 
-def _rohwert(grad: float, info: dict) -> int:
+def _rohwert(grad: float, info: dict, bisher: int | None = None) -> int:
     """Die Temperatur als Rohwert, in den Grenzen des Programms und des Fensters.
 
     Ein Programm ohne eigene Grenzen ("grenzen") ist ein Heizkreis - dort
-    gelten die des Thermostats.
+    gelten die des Thermostats. Bleibt ein Fenster bei dem Wert, den es
+    schon hat (bisher), bleibt es dabei, auch außerhalb der Grenzen: Was am
+    Display eingestellt wurde, ändert sich nicht ungefragt.
     """
+    if bisher is not None and round(grad * info["skala"]) == bisher:
+        return bisher
     untere, obere = info.get("grenzen") or THERMOSTAT_SOLL_GRENZEN
     roh = round(min(max(grad, untere), obere) * info["skala"])
     if info.get("min_roh") is not None:
@@ -142,8 +146,10 @@ def tagesfenster(
     """Die Fenster eines Tages für seine Blöcke, oder None, wenn es zu viele Blöcke sind.
 
     Ohne Temperatur im Block behält ein belegtes Fenster seine und ein bis
-    dahin leeres bekommt ersatz_roh. Leere Fenster behalten ihren Wert,
-    damit nur geschrieben wird, was sich wirklich ändert.
+    dahin leeres bekommt ersatz_roh - gibt es den nicht, weil kein Fenster
+    der Woche eine Temperatur hat, den Werkswert der Anlage. Leere Fenster
+    behalten ihren Wert, damit nur geschrieben wird, was sich wirklich
+    ändert.
     """
     if len(tag) > ZEITFENSTER_JE_TAG:
         return None
@@ -152,9 +158,9 @@ def tagesfenster(
         if not info["mit_wert"]:
             wert = None
         elif nummer < len(tag) and tag[nummer][2] is not None:
-            wert = _rohwert(tag[nummer][2], info)
+            wert = _rohwert(tag[nummer][2], info, None if alt.leer else alt.wert)
         elif nummer < len(tag) and alt.leer:
-            wert = ersatz_roh if ersatz_roh is not None else alt.wert
+            wert = ersatz_roh if ersatz_roh is not None else _vorgabe(info, alt.wert)
         else:
             wert = alt.wert
         if wert is None and info["mit_wert"]:
@@ -162,6 +168,13 @@ def tagesfenster(
         beginn, ende = tag[nummer][:2] if nummer < len(tag) else (0, 0)
         neu.append(Zeitfenster(beginn, ende, wert))
     return neu
+
+
+def _vorgabe(info: dict, sonst: int | None) -> int | None:
+    """Der Werkswert der Anlage für ein Fenster (laut /user/varinfo), sonst der übergebene."""
+    if info.get("vorgabe_roh") is not None:
+        return round(info["vorgabe_roh"])
+    return sonst
 
 
 def ersatztemperatur(bestand: dict[tuple[str, int], Zeitfenster]) -> int | None:

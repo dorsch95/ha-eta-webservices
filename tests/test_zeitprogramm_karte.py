@@ -10,6 +10,7 @@ import pytest
 import voluptuous as vol
 
 from eta_heating_ws import zeitprogramm
+from eta_heating_ws.coordinator import KEINE_ANTWORT
 from eta_heating_ws.zeitprogramm import (
     ZeitprogrammFehler,
     _ws_zeitprogramm_setzen,
@@ -262,9 +263,14 @@ def test_nachricht_wird_geprueft():
         {"tage": ["funday"]},
         {"fenster": [{"beginn": 0, "ende": 97}]},
         {"fenster": [{"beginn": 0, "ende": 4}] * 4},
+        {"fenster": [{"beginn": 0, "ende": 96, "temperatur": "nan"}]},
+        {"fenster": [{"beginn": 0, "ende": 96, "temperatur": "inf"}]},
+        {"absenkung": "nan"},
+        {"absenkung": "-inf"},
     ):
         with pytest.raises(vol.Invalid):
             schema({**gut, **falsch})
+    assert schema({**gut, "absenkung": None})["absenkung"] is None
 
 
 def test_karte_passt_zur_schnittstelle():
@@ -283,6 +289,7 @@ def test_karte_passt_zur_schnittstelle():
         "mit_temperatur",
         "temperatur_min",
         "temperatur_max",
+        "temperatur_vorgabe",
         "zeitplan",
         "tage",
         "fehler",
@@ -446,3 +453,165 @@ async def test_websocket_mit_absenktemperatur(hass, entry, menu_xml):
             "absenkung": "17",
         }
     )["absenkung"] == 17.0
+
+
+async def test_einzelner_unlesbarer_absenkwert(hass, entry, menu_xml):
+    """Antwortet ein Tag nicht, bleibt das Programm lesbar und Speichern möglich."""
+    await aufbauen(hass, entry, menu_xml)
+    hass.session.fail_uris = {absenk_uri("sunday")}
+
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
+    assert heizkreis["fehler"] is None
+    assert heizkreis["absenkung"]["sunday"] is None
+    assert heizkreis["absenkung"]["monday"] == 16.0
+
+    ergebnis = await zeitprogramm_setzen(
+        entry, "hk1", ["monday"], [{"beginn": 24, "ende": 88, "temperatur": 20.0}]
+    )
+    assert ergebnis["tage"]["monday"] == [{"beginn": 24, "ende": 88, "temperatur": 20.0}]
+
+
+async def test_gespeichert_aber_nicht_nachgelesen(hass, entry, menu_xml, monkeypatch):
+    """Antwortet die Heizung nach dem Schreiben nicht, sagt die Karte, dass gespeichert ist."""
+    from eta_heating_ws import zeitprogramm as modul
+    from eta_heating_ws.api import ETAApiError
+
+    await aufbauen(hass, entry, menu_xml)
+    original = modul.bestand_lesen
+    aufrufe = []
+
+    async def zweites_mal_stumm(coordinator, programm):
+        aufrufe.append(programm)
+        if len(aufrufe) > 1:
+            raise ETAApiError("Zeitüberschreitung")
+        return await original(coordinator, programm)
+
+    monkeypatch.setattr(modul, "bestand_lesen", zweites_mal_stumm)
+    with pytest.raises(ZeitprogrammFehler, match="Gespeichert"):
+        await zeitprogramm_setzen(
+            entry, "hk1", ["monday"], [{"beginn": 24, "ende": 88, "temperatur": 20.0}]
+        )
+    assert hass.session.zeitfenster_text(fenster_uri("monday", 1)) == "06:00 - 22:00 20,0"
+
+
+async def test_absenkung_vom_display_bleibt(hass, entry, menu_xml):
+    """8 °C außerhalb der Zeitfenster: unverändert bleibt sie, an andere Tage nur in den Grenzen."""
+    await aufbauen(hass, entry, menu_xml)
+    hass.session.absenkwerte[absenk_uri("monday")] = 80
+    wie_bisher = [{"beginn": 22, "ende": 90, "temperatur": 20.0}]
+
+    await zeitprogramm_setzen(entry, "hk1", ["monday"], wie_bisher, absenkung=8.0)
+    assert hass.session.gesetzte_werte == []
+
+    await zeitprogramm_setzen(entry, "hk1", ["monday", "tuesday"], wie_bisher, absenkung=8.0)
+    assert hass.session.absenkwerte[absenk_uri("monday")] == 80
+    assert hass.session.absenkwerte[absenk_uri("tuesday")] == 100
+
+
+async def test_programm_kommt_waehrend_des_lesens_dazu(hass, entry, menu_xml, monkeypatch):
+    """Trägt eine Nachprüfung gerade ein Programm nach, bricht das Lesen nicht ab."""
+    from eta_heating_ws import zeitprogramm as modul
+
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    original = modul.bestand_lesen
+
+    async def mit_nachtrag(coord, programm):
+        coordinator.zeitprogramm_defs.setdefault("dazu", coordinator.zeitprogramm_defs["hk1"])
+        return await original(coord, programm)
+
+    monkeypatch.setattr(modul, "bestand_lesen", mit_nachtrag)
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    assert verbindung.ergebnisse, verbindung.fehler
+
+
+async def test_diagnose_zeigt_das_fenster_das_nicht_passte(hass, entry, menu_xml, monkeypatch):
+    from eta_heating_ws.api import ETAApiClient
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
+
+    original = ETAApiClient.async_get_varinfo
+
+    async def mittwoch_gesperrt(self, uri):
+        info = await original(self, uri)
+        if uri == fenster_uri("wednesday", 2):
+            info = {**info, "writable": False}
+        return info
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", mittwoch_gesperrt)
+    await aufbauen(hass, entry, menu_xml)
+
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+    befund = bericht["schreibzugriff"]["zeitprogramm_nicht_beschreibbar"]["hk1"]
+    assert befund["fenster"] == {"Mittwoch 2": "Typ TIMESLOT, beschreibbar nein, Grenzen erkannt"}
+    assert befund["beispiel_fenster"] == "Mittwoch 2"
+    assert "<type>TIMESLOT</type>" in befund["varinfo_beispiel"]
+
+
+def _stumm_fuer(monkeypatch, stumm: set[str]) -> dict[str, int]:
+    """Lässt /user/varinfo für diese URIs nicht antworten und zählt die Anfragen je URI."""
+    from eta_heating_ws.api import ETAApiClient
+
+    original = ETAApiClient.async_get_varinfo
+    zaehler: dict[str, int] = {}
+
+    async def stumm_oder_nicht(self, uri):
+        zaehler[uri] = zaehler.get(uri, 0) + 1
+        if uri in stumm:
+            return None
+        return await original(self, uri)
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", stumm_oder_nicht)
+    return zaehler
+
+
+async def test_spaet_erkannter_heizkreis_startet_seinen_zeitplan(hass, entry, menu_xml, monkeypatch):
+    """Ist ein Zeitplan gewählt, läuft sein Abgleich an, sobald der Heizkreis erkannt ist."""
+    import eta_heating_ws
+
+    gestartet = []
+    monkeypatch.setattr(
+        eta_heating_ws.ZeitplanAbgleich, "starten", lambda self: gestartet.append(self.heizkreis)
+    )
+    stumm = {fenster_uri("wednesday", 2)}
+    _stumm_fuer(monkeypatch, stumm)
+    entry.data["hk1_zeitplan"] = "schedule.heizen"
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    assert coordinator.zeitplan_abgleiche == {}
+
+    stumm.clear()
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+
+    assert gestartet == ["hk1"]
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
+    assert heizkreis["zeitplan"] == "schedule.heizen", "die Karte zeigt ihn gleich als gesperrt"
+
+
+async def test_absenkung_wird_nachgeprueft(hass, entry, menu_xml, monkeypatch):
+    stumm = {absenk_uri("sunday")}
+    _stumm_fuer(monkeypatch, stumm)
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    assert coordinator.zeitprogramm_absenkung == {}
+    assert coordinator.absenkung_pruefung["hk1"]["tage"] == {"Sonntag": KEINE_ANTWORT}
+
+    stumm.clear()
+    verbindung = await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+
+    [heizkreis] = verbindung.ergebnisse[0][1]["programme"]
+    assert heizkreis["mit_absenkung"] is True
+    assert coordinator.absenkung_pruefung == {}
+
+
+async def test_nachpruefen_hoert_irgendwann_auf(hass, entry, menu_xml, monkeypatch):
+    """Kennt die Anlage /user/varinfo nicht, fragt die Karte nicht endlos weiter."""
+    from eta_heating_ws.coordinator import NACHPRUEFEN_HOECHSTENS
+
+    zaehler = _stumm_fuer(monkeypatch, {fenster_uri("wednesday", 2)})
+    coordinator = await aufbauen(hass, entry, menu_xml)
+    uri = fenster_uri("wednesday", 2)
+    nach_dem_start = zaehler[uri]
+
+    for _ in range(NACHPRUEFEN_HOECHSTENS + 3):
+        coordinator._zuletzt_nachgeprueft = float("-inf")
+        await coordinator.zeitprogramme_nachpruefen()
+
+    assert zaehler[uri] - nach_dem_start == 2 * NACHPRUEFEN_HOECHSTENS, "je Nachprüfung zwei Versuche"

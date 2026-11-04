@@ -201,3 +201,22 @@ async def test_absenkung_gibt_es_nur_bei_heizzeiten(hass, entry, menu_xml):
         await zeitprogramm_setzen(
             entry, "fwm_12318", ["monday"], [{"beginn": 0, "ende": 96}], absenkung=40.0
         )
+
+
+async def test_gleiche_kennung_vermischt_nichts(hass, entry, menu_xml):
+    """Zwei Programme mit derselben Kennung im selben Block bleiben getrennt."""
+    zweites = "/120/10601/12130/1"
+    hass.session.menu = mit_ladezeiten(menu_xml).replace(
+        '<fub uri="/120/10601" name="PufferFlex">',
+        '<fub uri="/120/10601" name="PufferFlex">'
+        + '<object uri="/120/10601/0/0/12529" name="Warmwasserbereich">'
+        + programm_xml(zweites, "Ladezeiten")
+        + "</object>",
+    )
+    coordinator, _ = await setup_integration(hass, entry)
+
+    namen = coordinator.zeitprogramm_namen
+    assert namen["puffer_12130"]["pfad"][-2:] == ["Warmwasserbereich", "Ladezeiten"]
+    assert namen["puffer_12130_0_0"]["pfad"][-2:] == ["Erzeuger Kessel/Puffer", "Ladezeiten"]
+    assert coordinator.discovered_uris["puffer_12130_zeitfenster_monday_1"] == f"{zweites}/1082"
+    assert coordinator.discovered_uris["puffer_12130_0_0_zeitfenster_monday_1"] == f"{PUFFER}/1082"

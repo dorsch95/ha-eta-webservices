@@ -198,20 +198,28 @@ def _zeitplaene_starten(
     """Startet je Heizkreis mit gewähltem Zeitplan den Abgleich.
 
     Nur für Heizkreise, deren Zeitprogramm die Anlage als beschreibbar
-    gemeldet hat - also mit freigegebenem Schreibzugriff.
+    gemeldet hat - also mit freigegebenem Schreibzugriff. Wird einer erst
+    später beschreibbar (siehe zeitprogramme_nachpruefen), startet sein
+    Abgleich dann.
     """
-    for heizkreis in coordinator.zeitprogramm_defs:
-        if heizkreis not in THERMOSTATE:
-            continue
+
+    def starten(heizkreis: str) -> None:
         entity_id = config.get(zeitplan_schluessel(heizkreis))
         if not entity_id:
             async_zeitplan_hinweise_entfernen(hass, entry.entry_id, heizkreis)
-            continue
+            return
+        if heizkreis in coordinator.zeitplan_abgleiche:
+            return
         abgleich = ZeitplanAbgleich(hass, coordinator, heizkreis, entity_id)
         coordinator.zeitplan_abgleiche[heizkreis] = abgleich
         abgleich.starten()
         entry.async_on_unload(abgleich.stoppen)
         _LOGGER.info("ETA: %s übernimmt den Zeitplan %s", heizkreis, entity_id)
+
+    for heizkreis in list(coordinator.zeitprogramm_defs):
+        if heizkreis in THERMOSTATE:
+            starten(heizkreis)
+    coordinator.bei_neuem_zeitprogramm = starten
 
 
 def _prognose_moeglich(hass: HomeAssistant, coordinator: ETADataUpdateCoordinator) -> bool:

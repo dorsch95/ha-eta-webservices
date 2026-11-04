@@ -115,10 +115,18 @@ def puffer_fuehler_schluessel(sensor_defs, komponente="puffer"):
     )
 
 
-KEINE_ANTWORT = "keine Antwort auf /user/varinfo"
+KEINE_ANTWORT = "keine verwertbare Antwort auf /user/varinfo"
+"""Die Anlage hat nicht geantwortet, nicht verständlich, oder kennt /user/varinfo nicht."""
 
 NACHPRUEFEN_ABSTAND = 60
 """So viele Sekunden mindestens zwischen zwei Nachprüfungen der Zeitprogramme."""
+
+NACHPRUEFEN_HOECHSTENS = 5
+"""So oft wird nach dem Start höchstens nachgeprüft.
+
+Kennt eine ältere Anlage /user/varinfo gar nicht, fehlt die Antwort jedes
+Mal - ohne Grenze fragte die Karte dann bei jedem Öffnen von Neuem.
+"""
 
 
 def _zeitfenster_befund(info: dict | None) -> str:
@@ -177,6 +185,12 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.zeitprogramm_pruefung: dict[str, dict] = {}
         """Je Heizkreis, dessen Zeitprogramm nicht beschreibbar erkannt wurde, der Grund - für die Diagnose."""
         self._zuletzt_nachgeprueft = float("-inf")
+        self._nachpruefungen = 0
+        self._nachpruef_sperre = asyncio.Lock()
+        self.absenkung_pruefung: dict[str, dict] = {}
+        """Je Heizkreis, dessen Wert außerhalb der Zeitfenster nicht beschreibbar erkannt wurde, der Grund."""
+        self.bei_neuem_zeitprogramm = None
+        """Wird ein Heizkreis erst nachträglich beschreibbar, startet das seinen Zeitplan-Abgleich."""
         self.zeitprogramm_absenkung: dict[str, dict[str, dict]] = {}
         """Je Heizkreis mit beschreibbarem Zeitprogramm je Tag der Wert außerhalb der Zeitfenster."""
         self.zeitprogramm_namen: dict[str, dict] = {}
@@ -538,10 +552,14 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 if not (info and info.get("writable") and info.get("zeitfenster"))
             }
             if abweichend:
+                beispiel = next(
+                    fenster for fenster in uris if f"{WOCHENTAGE[fenster[0]]} {fenster[1]}" in abweichend
+                )
                 self.zeitprogramm_pruefung[heizkreis] = {
                     "grund": "nicht als beschreibbares Zeitfenster gemeldet",
                     "fenster": abweichend,
-                    "beispiel_uri": uris[next(iter(WOCHENTAGE)), 1],
+                    "beispiel_fenster": f"{WOCHENTAGE[beispiel[0]]} {beispiel[1]}",
+                    "beispiel_uri": uris[beispiel],
                 }
                 _LOGGER.info(
                     "ETA: Zeitprogramm von %s gefunden, aber nicht beschreibbar (%s)",
@@ -568,6 +586,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Das ist die Raumtemperatur in der Absenkzeit. Fehlt er an einem Tag
         oder ist er nicht beschreibbar, bleibt es beim Zeitprogramm ohne ihn.
         """
+        self.absenkung_pruefung.pop(heizkreis, None)
         uris = {
             tag: self.discovered_uris.get(absenkwert_schluessel(praefix, tag))
             for tag in WOCHENTAGE
@@ -575,16 +594,17 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         if not all(uris.values()):
             return
         infos = await self._varinfos(list(uris.values()))
-        if not all(
-            info and info.get("writable") and info.get("zeitfenster") is None for info in infos
-        ):
+        abweichend = {
+            WOCHENTAGE[tag]: _zeitfenster_befund(info)
+            for tag, info in zip(uris, infos)
+            if not (info and info.get("writable") and info.get("zeitfenster") is None)
+        }
+        if abweichend:
+            self.absenkung_pruefung[heizkreis] = {"tage": abweichend, "praefix": praefix}
             _LOGGER.info(
                 "ETA: Wert außerhalb der Zeitfenster von %s nicht beschreibbar (%s)",
                 heizkreis,
-                ", ".join(
-                    f"{WOCHENTAGE[tag]}: {_zeitfenster_befund(info)}"
-                    for tag, info in zip(uris, infos)
-                ),
+                ", ".join(f"{tag}: {befund}" for tag, befund in abweichend.items()),
             )
             return
         self.zeitprogramm_absenkung[heizkreis] = {
@@ -598,33 +618,64 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         }
 
     async def _varinfos(self, uris: list[str]) -> list[dict | None]:
-        """Die Beschreibungen mehrerer Variablen; bleibt eine Antwort aus, wird einmal nachgefragt."""
-        infos = await asyncio.gather(*(self.client.async_get_varinfo(uri) for uri in uris))
-        return [
-            info if info is not None else await self.client.async_get_varinfo(uri)
-            for info, uri in zip(infos, uris)
-        ]
+        """Die Beschreibungen mehrerer Variablen; bleibt eine Antwort aus, wird einmal nachgefragt.
+
+        Auch das Nachfragen läuft gleichzeitig, damit sich die Wartezeiten
+        nicht aneinanderreihen.
+        """
+        infos = list(await asyncio.gather(*(self.client.async_get_varinfo(uri) for uri in uris)))
+        offen = [i for i, info in enumerate(infos) if info is None]
+        nachgefragt = await asyncio.gather(
+            *(self.client.async_get_varinfo(uris[i]) for i in offen)
+        )
+        for i, info in zip(offen, nachgefragt):
+            infos[i] = info
+        return infos
 
     async def zeitprogramme_nachpruefen(self) -> None:
-        """Prüft Heizkreise erneut, deren Zeitfenster beim Start nicht alle geantwortet haben.
+        """Prüft erneut, was beim Start nicht alle Antworten bekommen hat.
 
         Beim Start ist die Anlage mit vielen Abfragen beschäftigt; bleibt
-        dann eine Antwort aus, wäre das Zeitprogramm bis zum nächsten
-        Neustart gesperrt. Die Dashboard-Karte ruft das beim Öffnen auf.
-        Höchstens einmal je NACHPRUEFEN_ABSTAND, und nur, wenn wirklich
-        bloß Antworten fehlten.
+        dann eine Antwort aus, wäre ein Zeitprogramm oder sein Wert
+        außerhalb der Zeitfenster bis zum nächsten Neustart gesperrt. Die
+        Dashboard-Karte ruft das beim Öffnen auf. Nur, wenn wirklich bloß
+        Antworten fehlten, höchstens einmal je NACHPRUEFEN_ABSTAND und
+        insgesamt NACHPRUEFEN_HOECHSTENS-mal. Öffnen zwei Karten zugleich,
+        wartet die zweite auf die erste. Wird ein Heizkreis dabei
+        beschreibbar, startet bei_neuem_zeitprogramm seinen Zeitplan-Abgleich.
         """
-        offen = {
-            heizkreis
-            for heizkreis, befund in self.zeitprogramm_pruefung.items()
-            if befund.get("fenster")
-            and all(text == KEINE_ANTWORT for text in befund["fenster"].values())
-        }
-        jetzt = time.monotonic()
-        if not offen or jetzt - self._zuletzt_nachgeprueft < NACHPRUEFEN_ABSTAND:
-            return
-        self._zuletzt_nachgeprueft = jetzt
-        await self._zeitprogramme_pruefen(offen)
+        async with self._nachpruef_sperre:
+            offen = {
+                heizkreis
+                for heizkreis, befund in self.zeitprogramm_pruefung.items()
+                if befund.get("fenster")
+                and all(text == KEINE_ANTWORT for text in befund["fenster"].values())
+            }
+            absenkung_offen = {
+                heizkreis: befund["praefix"]
+                for heizkreis, befund in self.absenkung_pruefung.items()
+                if all(text == KEINE_ANTWORT for text in befund["tage"].values())
+            }
+            jetzt = time.monotonic()
+            if (
+                not (offen or absenkung_offen)
+                or jetzt - self._zuletzt_nachgeprueft < NACHPRUEFEN_ABSTAND
+                or self._nachpruefungen >= NACHPRUEFEN_HOECHSTENS
+            ):
+                return
+            self._zuletzt_nachgeprueft = jetzt
+            self._nachpruefungen += 1
+            if offen:
+                await self._zeitprogramme_pruefen(offen)
+            for heizkreis, praefix in absenkung_offen.items():
+                await self._absenkwerte_pruefen(heizkreis, praefix)
+            for heizkreis in offen:
+                if (
+                    heizkreis in THERMOSTATE
+                    and heizkreis in self.zeitprogramm_defs
+                    and self.bei_neuem_zeitprogramm is not None
+                ):
+                    self.bei_neuem_zeitprogramm(heizkreis)
 
     def betriebsart_gemeldet(self, key: str) -> str | None:
         """Die Betriebsart eines Heizkreises, wie die Anlage sie zuletzt gemeldet hat.
