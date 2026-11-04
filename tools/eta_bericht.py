@@ -10,9 +10,10 @@ Aufruf im eigenen Netz, ohne Zusatzpakete:
     python3 eta_bericht.py 10.0.0.173
 
 Heraus kommt die Datei eta_bericht.txt. Sie enthält den Menübaum deiner
-Anlage und die Beschreibung der schaltbaren Objekte - genau das, was
-fehlt, um die Integration an abweichende Anlagen anzupassen. Die
-IP-Adresse wird darin geschwärzt.
+Anlage, die Beschreibung der schaltbaren Objekte und die der Zeitprogramme,
+Warmwasser-Temperaturen und Zirkulation - genau das, was fehlt, um die
+Integration an abweichende Anlagen anzupassen. Die IP-Adresse wird darin
+geschwärzt.
 """
 
 from __future__ import annotations
@@ -87,6 +88,39 @@ def objekte(knoten):
         yield from objekte(kind)
 
 
+def mit_weg(knoten, weg=()):
+    """Wie objekte, dazu der Weg im Menübaum als Liste von Namen."""
+    for kind in knoten.findall(f"{NAMENSRAUM}object"):
+        eigener = (*weg, (kind.get("name") or "").strip())
+        yield eigener, kind
+        yield from mit_weg(kind, eigener)
+
+
+def kind_namens(knoten, name: str):
+    """Das direkte Unterobjekt mit diesem Namen, oder None."""
+    for kind in knoten.findall(f"{NAMENSRAUM}object"):
+        if (kind.get("name") or "").strip().casefold() == name.casefold():
+            return kind
+    return None
+
+
+WOCHENTAGE = ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+"""So heißen die Tage eines Zeitprogramms im Menübaum."""
+
+
+def ist_zeitprogramm(knoten) -> bool:
+    """Hat der Knoten je Wochentag ein "Zeitfenster 1"?"""
+    for tag in WOCHENTAGE:
+        tag_knoten = kind_namens(knoten, tag)
+        if tag_knoten is None or kind_namens(tag_knoten, "Zeitfenster 1") is None:
+            return False
+    return True
+
+
+TEMPERATUR_NAMEN = ("soll", "max", "min", "temperatur")
+"""Warmwasser-Objekte mit diesen Namensteilen kommen samt Beschreibung in den Bericht."""
+
+
 def hauptprogramm(host: str, port: int) -> None:
     """Sammelt den Bericht und schreibt ihn auch bei einem Abbruch."""
     zeilen: list[str] = []
@@ -147,10 +181,46 @@ def _sammeln(anlage: Anlage, zeilen: list[str]) -> None:
         sag(f"\n--- {fub_name} > {name} ({uri})")
         sag(lesbar(info))
 
-    sag("\n[5] Aktive Störungen")
+    sag("\n[5] Zeitprogramme, Warmwasser und Zirkulation (varinfo und Wert)")
+    gezeigt: set[str] = set()
+
+    def zeigen(titel: str, knoten) -> None:
+        uri = knoten.get("uri") if knoten is not None else None
+        if not uri or uri in gezeigt:
+            return
+        gezeigt.add(uri)
+        sag(f"\n--- {titel} ({uri})")
+        sag(lesbar(anlage.hole(f"/user/varinfo{uri}")))
+        sag(lesbar(anlage.hole(f"/user/var{uri}")))
+
+    for fub in fubs:
+        fub_name = (fub.get("name") or "").strip()
+        for weg, obj in mit_weg(fub):
+            text = " > ".join((fub_name, *weg))
+            klein = text.casefold()
+            if ist_zeitprogramm(obj):
+                montag = kind_namens(obj, "Montag")
+                zeigen(f"{text} > Montag > Zeitfenster 1", kind_namens(montag, "Zeitfenster 1"))
+                zeigen(
+                    f"{text} > Montag > Wert außerhalb der Zeitfenster",
+                    kind_namens(montag, "Wert außerhalb der Zeitfenster"),
+                )
+                zeigen(f"{text} > Temperatur", kind_namens(obj, "Temperatur"))
+            elif any(tag.casefold() in klein for tag in WOCHENTAGE):
+                continue
+            elif "zirkulation" in klein:
+                zeigen(text, obj)
+            elif ("warmwasser" in klein or fub_name.casefold() in ("ww", "fwm")) and any(
+                teil in weg[-1].casefold() for teil in TEMPERATUR_NAMEN
+            ):
+                zeigen(text, obj)
+    if not gezeigt:
+        sag("    keine gefunden")
+
+    sag("\n[6] Aktive Störungen")
     sag(lesbar(anlage.hole("/user/errors")))
 
-    sag("\n[6] Sammelabfrage über einen Variablensatz")
+    sag("\n[7] Sammelabfrage über einen Variablensatz")
     name = "etabericht"
     anlage.hole(f"/user/vars/{name}", "DELETE")
     erstellt = anlage.hole(f"/user/vars/{name}", "PUT")
@@ -168,7 +238,7 @@ def _sammeln(anlage: Anlage, zeilen: list[str]) -> None:
         anlage.hole(f"/user/vars/{name}", "DELETE")
         sag("    Variablensatz wieder entfernt")
 
-    sag("\n[7] Vollständiger Menübaum")
+    sag("\n[8] Vollständiger Menübaum")
     sag(lesbar(menu))
 
 

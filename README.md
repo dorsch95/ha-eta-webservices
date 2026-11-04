@@ -586,7 +586,7 @@ Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage,
 python3 eta_bericht.py 10.0.0.173
 ```
 
-Heraus kommt `eta_bericht.txt` mit Webservice-Version, allen Funktionsblöcken, den schaltbar aussehenden Objekten samt Beschreibung, den aktiven Störungen und dem vollständigen Menübaum - IP ebenfalls geschwärzt. Das Skript liest nur; einzige Ausnahme ist ein Variablensatz, den die Anlage ohnehin nur im Arbeitsspeicher hält und der am Ende wieder entfernt wird.
+Heraus kommt `eta_bericht.txt` mit Webservice-Version, allen Funktionsblöcken, den schaltbar aussehenden Objekten samt Beschreibung, den Zeitprogrammen, Warmwasser-Temperaturen und der Zirkulation samt Beschreibung und Wert, den aktiven Störungen und dem vollständigen Menübaum - IP ebenfalls geschwärzt. Das Skript liest nur; einzige Ausnahme ist ein Variablensatz, den die Anlage ohnehin nur im Arbeitsspeicher hält und der am Ende wieder entfernt wird.
 
 ---
 
