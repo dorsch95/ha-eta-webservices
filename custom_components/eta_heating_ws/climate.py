@@ -59,10 +59,16 @@ class ETAThermostat(CoordinatorEntity[ETADataUpdateCoordinator], ClimateEntity):
     kein Raumwert an, zeigt der Thermostat keinen Istwert. Die Betriebsart
     stellt er über die Auswahl desselben Heizkreises um; gibt es die nicht,
     lässt sich nur die Temperatur stellen.
+
+    Einheit, Ist- und Solltemperatur stehen unter zwei Namen: Home Assistant
+    liest ab 2026.11 die mit native_ und meldet im Protokoll, wenn eine
+    Klasse nur die alten liefert; ältere Versionen kennen nur die alten.
+    Liefert eine Klasse beide, nimmt 2026.11 die neuen und meldet nichts.
     """
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:thermostat"
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_step = 0.5
 
@@ -128,14 +134,18 @@ class ETAThermostat(CoordinatorEntity[ETADataUpdateCoordinator], ClimateEntity):
         return merkmale
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         return self.coordinator.zahl(f"{self._praefix}_raum")
 
+    current_temperature = native_current_temperature
+
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         if self._erwartet is not None:
             return self._erwartet
         return self.coordinator.zahl(f"{self._praefix}_raum_soll")
+
+    target_temperature = native_target_temperature
 
     @property
     def hvac_modes(self) -> list[HVACMode]:

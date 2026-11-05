@@ -34,7 +34,7 @@ jobs:
       matrix:
         include:
           - python: "3.14"
-            homeassistant: "2026.9.2"
+            homeassistant: "2026.11.0"
             xmltodict: "1.0.4"
             zusatz: ""
           - python: "3.13"

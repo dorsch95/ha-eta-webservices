@@ -183,7 +183,8 @@ async def test_uebernahme_behaelt_entitaeten_geraet_und_einstellungen(echtes_has
     assert umgezogen.unique_id == f"eta_static_{neu.entry_id}_kessel_temperatur"
 
     geraet = geraete.async_get(geraet.id)
-    assert geraet.config_entries == {neu.entry_id}
+    assert dr.async_entries_for_config_entry(geraete, neu.entry_id) == [geraet]
+    assert dr.async_entries_for_config_entry(geraete, alt.entry_id) == []
     assert geraet.identifiers == {("eta_heating_ws", neu.entry_id)}
     assert geraet.name_by_user == "Kessel im Keller"
     assert umgezogen.device_id == geraet.id

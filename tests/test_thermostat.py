@@ -187,3 +187,15 @@ def test_kachel_zeigt_raum_nur_mit_raumwert():
         {"condition": "state", "entity": entitaet, "state_not": "off"},
     ], "Soll in jedem Modus außer Aus"
     assert soll["elements"][0]["attribute"] == "temperature"
+
+
+def test_keine_warnung_wegen_alter_namen(caplog):
+    """Ab Home Assistant 2026.11 heißen Einheit, Ist- und Solltemperatur native_.
+
+    Liefert eine Klasse nur die alten Namen, warnt Home Assistant beim Laden
+    im Protokoll. Ein Ableger des Thermostats löst dieselbe Prüfung aus;
+    ältere Versionen prüfen nichts.
+    """
+    type("Probe", (climate_platform.ETAThermostat,), {"__module__": climate_platform.__name__})
+
+    assert "deprecated" not in caplog.text
