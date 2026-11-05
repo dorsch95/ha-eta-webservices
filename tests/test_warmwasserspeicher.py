@@ -86,6 +86,23 @@ def test_nur_der_speicher_hat_ein_maximum():
     assert namen["pufferflex_12235"]["maximum_uri"] is None
 
 
+def test_solltemperatur_des_warmwasserbereichs():
+    """Daran prüft die Integration, ob der Kombispeicher eingerichtet ist - im älteren Puffer heißt sie anders."""
+    from eta_heating_ws.uri_discovery import _weitere_zeitprogramme
+    import xmltodict
+
+    fubs = xmltodict.parse(MENU)["eta"]["menu"]["fub"]
+    namen: dict = {}
+    for fub in fubs:
+        _weitere_zeitprogramme(fub, fub["@name"].casefold(), namen)
+    assert namen["pufferflex_12235"]["soll_uri"] == "/120/10601/0/0/12293"
+    assert namen["pufferflex_12175"]["soll_uri"] == "/120/10601/0/0/12293"
+    assert namen["puffer_12235"]["soll_uri"] == "/120/10251/0/0/12132"
+    assert namen["puffer_12175"]["soll_uri"] == "/120/10251/0/0/12132"
+    assert namen["pufferflex_12130"]["soll_uri"] is None
+    assert namen["ww_12130"]["soll_uri"] is None, "nur Puffer werden geprüft"
+
+
 async def test_grenzen_je_warmwasser(hass, entry):
     coordinator = await aufbauen(hass, entry)
 

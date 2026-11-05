@@ -13,6 +13,8 @@ const KARTE = "eta-zeitprogramm-karte";
 const TAGE = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 const FENSTER_JE_TAG = 3;
 const NEU_LESEN_NACH = 60000;
+const HEIZKREISE = ["hk1", "hk2", "hk3", "hk4"];
+const ARTEN = ["heizzeiten", "puffer", "warmwasser", "zirkulation"];
 
 const TEXTE = {
   de: {
@@ -290,6 +292,25 @@ const STIL = `
   }
 `;
 
+/**
+ * Die Zeitprogramme der Anlage für die Einstellungen der Karte, oder null.
+ *
+ * Home Assistant gibt den Einstellungen keinen Zugang zur Integration
+ * mit; den hält die Oberfläche selbst (<home-assistant>). Ohne ihn, ohne
+ * Antwort oder ohne ein einziges Programm - etwa ohne Schreibzugriff -
+ * ist das Ergebnis null.
+ */
+async function vorhandeneProgramme() {
+  const hass = document.querySelector("home-assistant")?.hass;
+  if (!hass?.callWS) return null;
+  try {
+    const antwort = await hass.callWS({ type: "eta_heating_ws/zeitprogramme", ohne_zeiten: true });
+    return antwort?.programme?.length ? antwort.programme : null;
+  } catch (err) {
+    return null;
+  }
+}
+
 function uhrzeit(viertel) {
   const stunden = String(Math.floor(viertel / 4)).padStart(2, "0");
   const minuten = String((viertel % 4) * 15).padStart(2, "0");
@@ -363,30 +384,42 @@ class EtaZeitprogrammKarte extends HTMLElement {
     return { anzeigen: ["heizzeiten"] };
   }
 
-  static getConfigForm() {
+  /**
+   * Die Einstellungen der Karte. Zur Auswahl steht nur, was es an der
+   * Anlage gibt - etwa "Zirkulation" nur mit aktivierter Zirkulation.
+   * Antwortet die Integration nicht, steht alles zur Auswahl.
+   */
+  static async getConfigForm() {
     const t = TEXTE[sprache(document.documentElement.lang)];
+    const programme = await vorhandeneProgramme();
+    const gibt = (pruefen) => !programme || programme.some(pruefen);
+    const heizkreise = HEIZKREISE.filter((hk) =>
+      gibt((p) => (p.art || "heizzeiten") === "heizzeiten" && p.programm === hk)
+    );
+    const arten = ARTEN.filter((art) => gibt((p) => (p.art || "heizzeiten") === art));
+    const heizkreis = {
+      name: "heizkreis",
+      selector: {
+        select: {
+          mode: "dropdown",
+          options: heizkreise.map((wert) => ({
+            value: wert,
+            label: `HK ${HEIZKREISE.indexOf(wert) + 1}`,
+          })),
+        },
+      },
+    };
     return {
       schema: [
         { name: "titel", selector: { text: {} } },
-        {
-          name: "heizkreis",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: ["hk1", "hk2", "hk3", "hk4"].map((wert, i) => ({
-                value: wert,
-                label: `HK ${i + 1}`,
-              })),
-            },
-          },
-        },
+        ...(heizkreise.length ? [heizkreis] : []),
         {
           name: "anzeigen",
           selector: {
             select: {
               multiple: true,
               mode: "list",
-              options: ["heizzeiten", "puffer", "warmwasser", "zirkulation"].map((art) => ({
+              options: arten.map((art) => ({
                 value: art,
                 label: t[`art_${art}`],
               })),

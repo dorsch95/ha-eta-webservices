@@ -398,7 +398,12 @@ def _eintrag(hass: HomeAssistant, entry_id: str):
     return None
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/zeitprogramme"})
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/zeitprogramme",
+        vol.Optional("ohne_zeiten", default=False): bool,
+    }
+)
 @websocket_api.async_response
 async def _ws_zeitprogramme(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
@@ -406,12 +411,17 @@ async def _ws_zeitprogramme(
     """Die beschreibbaren Zeitprogramme aller geladenen Anlagen.
 
     Haben beim Start nicht alle Zeitfenster geantwortet, wird vorher
-    nachgeprüft - so erscheint das Programm ohne Neustart.
+    nachgeprüft - so erscheint das Programm ohne Neustart. ohne_zeiten:
+    nur, welche Programme es gibt, ohne die Heizung nach ihren Zeiten zu
+    fragen - für die Einstellungen der Karte.
     """
     programme = []
     for eintrag in hass.config_entries.async_loaded_entries(DOMAIN):
         await eintrag.runtime_data.zeitprogramme_nachpruefen()
         for programm in list(eintrag.runtime_data.zeitprogramm_defs):
+            if msg.get("ohne_zeiten"):
+                programme.append(kopf(eintrag, programm))
+                continue
             try:
                 bestand = await bestand_lesen(eintrag.runtime_data, programm)
                 absenkung = await absenkung_lesen(eintrag.runtime_data, programm)

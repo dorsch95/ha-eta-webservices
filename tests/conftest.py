@@ -139,6 +139,8 @@ class FakeSession:
         self.varset_unterstuetzt = True
         self.errors_xml = self.LEERE_FEHLER
         self.varinfo_unterstuetzt = True
+        self.ohne_einheit: set[str] = set()
+        """Diese URIs melden in /user/varinfo keine Einheit - wie Werte eines nicht eingerichteten Teils."""
         self.schreiben_erlaubt = True
         self.gesetzte_werte: list[tuple[str, str]] = []
         self.geschrieben: dict[str, str] = {}
@@ -434,9 +436,10 @@ class FakeSession:
                     "</validValues></variable></varInfo></eta>"
                 )
         if not any(t in url for t in ("12080", "12125", "12126", "12230")):
+            einheit = "" if pfad in self.ohne_einheit else "°C"
             return self._tracked(
                 '<eta version="1.0"><varInfo uri="/u"><variable uri="/u" '
-                'name="Messwert" fullName="x" unit="°C" decPlaces="1" '
+                f'name="Messwert" fullName="x" unit="{einheit}" decPlaces="1" '
                 'scaleFactor="10" advTextOffset="0" isWritable="0">'
                 "<type>DEFAULT</type></variable></varInfo></eta>"
             )

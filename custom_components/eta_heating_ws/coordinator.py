@@ -507,9 +507,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum.
 
         Aus "Warmwasser-Zustand detailliert" (so heißt der Abschnitt im
-        älteren Puffer) wird "Warmwasser". Gibt es dieselbe Art Programm
-        auch in einem anderen Funktionsblock - etwa Warmwasser in Speicher
-        und Kombi-Puffer -, steht der Funktionsblock davor.
+        älteren Puffer) wird "Warmwasser". Zeigt die Karte dieselbe Art
+        Programm auch aus einem anderen Funktionsblock - etwa Warmwasser aus
+        Speicher und Kombi-Puffer -, steht der Funktionsblock davor.
         """
         info = self.zeitprogramm_namen.get(programm)
         if info is None:
@@ -526,7 +526,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             anderes
             for schluessel, anderes in self.zeitprogramm_namen.items()
             if schluessel != programm
-            and anderes["komponente"] in self.components
+            and schluessel in self.zeitprogramm_defs
             and (
                 kurz(anderes) == name
                 or (
@@ -578,6 +578,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             fehlend = [f"{WOCHENTAGE[t]} {n}" for (t, n), uri in uris.items() if not uri]
             if len(fehlend) == len(uris):
                 continue
+            if not await self._warmwasserbereich_eingerichtet(heizkreis):
+                continue
             if fehlend:
                 self.zeitprogramm_pruefung[heizkreis] = {
                     "grund": "nicht alle Zeitfenster im Menübaum",
@@ -617,6 +619,30 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             _LOGGER.info("ETA: Zeitprogramm von %s beschreibbar", heizkreis)
             if heizkreis in THERMOSTATE:
                 await self._absenkwerte_pruefen(heizkreis, praefix)
+
+    async def _warmwasserbereich_eingerichtet(self, programm: str) -> bool:
+        """Ist der Warmwasserbereich eingerichtet, in dem ein Programm des Puffers liegt?
+
+        Ein PufferFlex führt ihn im Menübaum auch ohne Kombispeicher; dann
+        meldet seine Solltemperatur keine Einheit, siehe WARMWASSER_SOLL.
+        Solche Programme bleiben aus der Karte draußen, der Grund steht in
+        der Diagnose. Ohne Solltemperatur im Menübaum oder ohne Antwort der
+        Anlage zählt das Programm wie bisher.
+        """
+        uri = self.zeitprogramm_namen.get(programm, {}).get("soll_uri")
+        if not uri:
+            return True
+        [beschreibung] = await self._varinfos([uri])
+        if beschreibung is None or beschreibung.get("unit"):
+            return True
+        self.zeitprogramm_pruefung[programm] = {
+            "grund": "Warmwasserbereich nicht eingerichtet, seine Solltemperatur hat keine Einheit",
+            "beispiel_uri": uri,
+        }
+        _LOGGER.info(
+            "ETA: Zeitprogramm %s ausgeblendet, der Warmwasserbereich ist nicht eingerichtet", programm
+        )
+        return False
 
     async def _absenkwerte_pruefen(self, heizkreis: str, praefix: str) -> None:
         """Ob sich je Tag der Wert außerhalb der Zeitfenster beschreiben lässt.

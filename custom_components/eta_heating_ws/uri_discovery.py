@@ -360,6 +360,17 @@ der je Wochentag Zeitfenster hat.
 WARMWASSER_MAXIMUM = "Warmwasserspeicher max."
 """Die höchste Temperatur eines Warmwasserspeichers, im selben Block wie seine Ladezeiten."""
 
+WARMWASSER_SOLL = ("Soll Temperatur", "Warmwasserspeicher Soll")
+"""So heißt die Solltemperatur im Warmwasserbereich eines Puffers.
+
+Den Warmwasserbereich samt "Ladezeiten" führt ein PufferFlex im Menübaum
+auch dann, wenn er gar kein Kombispeicher ist - so an der Anlage des
+Nutzers. Ob er eingerichtet ist, verrät seine Solltemperatur: Dort meldet
+"Puffer > Warmwasserbereich > Soll Temperatur" keine Einheit, an einer
+Testanlage mit Kombispeicher "°C". Im älteren Puffer heißt sie
+"Warmwasserspeicher Soll".
+"""
+
 
 def _finde_namen(knoten, name: str):
     """Die URI des ersten Objekts mit diesem Namen irgendwo unterhalb, oder None."""
@@ -387,16 +398,27 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
     Programme dieselbe Kennung, kommt beim zweiten der Rest seiner URI
     dazu, damit sich ihre Fenster nicht vermischen. In namen_aus landet je
     Präfix der Weg im Menübaum, damit die Karte das Programm benennen kann,
-    und - falls der Block eine hat - die URI von WARMWASSER_MAXIMUM.
+    und - falls der Block eine hat - die URI von WARMWASSER_MAXIMUM. Liegt
+    ein Programm eines Puffers im Warmwasserbereich, kommt die URI von
+    dessen Solltemperatur dazu, siehe WARMWASSER_SOLL.
     """
     gefunden = {}
     maximum = _finde_namen(fub, WARMWASSER_MAXIMUM) if fub is not None else None
 
-    def suchen(knoten, pfad):
+    def soll_im_bereich(bereich):
+        if bereich is None or not komponente.startswith("puffer"):
+            return None
+        namen = {name.casefold() for name in WARMWASSER_SOLL}
+        for kind in _as_list(bereich.get("object")):
+            if kind.get("@name", "").casefold() in namen and kind.get("@uri"):
+                return kind["@uri"]
+        return None
+
+    def suchen(knoten, pfad, bereich=None):
         for kind in _as_list(knoten.get("object")):
             name = kind.get("@name", "")
             if not _ist_zeitprogramm(kind):
-                suchen(kind, [*pfad, name])
+                suchen(kind, [*pfad, name], kind if "warmwasser" in name.casefold() else bereich)
                 continue
             teile = (kind.get("@uri") or "").strip("/").split("/")
             if len(teile) < 3:
@@ -412,6 +434,7 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
                 "komponente": komponente,
                 "pfad": [*pfad, name],
                 "maximum_uri": maximum,
+                "soll_uri": soll_im_bereich(bereich),
             }
 
     if fub is not None:
