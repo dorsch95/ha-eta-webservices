@@ -6,6 +6,7 @@
     "recorder",
     "weather"
   ],
+  "categories": ["climate.thermostats_heating"],
   "codeowners": [
     "@dorsch95"
   ],
