@@ -15,6 +15,17 @@ Standardmäßig wird nur gelesen. Kessel und Heizkreise lassen sich auf Wunsch a
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
+## 👀 So sieht es aus
+
+![Die Dashboard-Karte am PC: Kessel, Puffer, Frischwassermodul, zwei Heizkreise, Pelletlager und Solar](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard.webp)
+
+<p>
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard_handy.webp" alt="Dieselbe Karte am Handy, zweispaltig" width="230">
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm_bearbeiten.webp" alt="Die Karte ETA Zeitprogramm, Montag zum Bearbeiten geöffnet" width="400">
+</p>
+
+Oben die [Dashboard-Karte](#-dashboard-vorlage-für-lovelace) am PC, darunter dieselbe Karte am Handy und die Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard) mit einem geöffneten Tag. Die Werte stammen von einer nachgebauten Testanlage.
+
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
 
@@ -502,6 +513,8 @@ Ist das Thermometer nicht verfügbar oder meldet keine Zahl, schreibt die Integr
 ### Zeitprogramm auf dem Dashboard
 
 Mit freigegebenem Schreibzugriff zeigt die Karte **ETA Zeitprogramm** die Heizzeiten jedes Heizkreises als Wochenbalken - und du änderst sie direkt dort, am PC wie in der Handy-App:
+
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm.webp" alt="Die Karte ETA Zeitprogramm mit den Heizzeiten einer Woche" width="400">
 
 1. **Dashboard bearbeiten -> Karte hinzufügen** und **ETA Zeitprogramm** wählen. Mehr ist nicht einzurichten: Home Assistant lädt die Karte von selbst, ohne Eintrag unter *Ressourcen*.
 2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und - falls die Heizung eine kennt - Temperatur. Mit **+ Zeitfenster** kommt eines dazu, mit **✕** fällt eines weg. Darunter steht die Temperatur **außerhalb der Zeitfenster** (die Absenkung), wie am Display je Tag einstellbar.
