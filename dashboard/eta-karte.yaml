@@ -31,7 +31,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: &id038
+            state: &id044
             - Heizen
             - Heizen Start
             - Anheizen
@@ -64,7 +64,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: &id039
+            state: &id045
             - Zünden
             - Heizversuch
           elements:
@@ -119,7 +119,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: &id040
+            state: &id046
             - Störung
             - Störung beim Entaschen
             - Wartung
@@ -148,7 +148,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: &id041
+            state: &id047
             - Glutabbrand
             - Glutabbrand wegen Entaschung
             - Glutabbrand da ausgeschaltet
@@ -2495,6 +2495,164 @@ cards:
               color: '#9aa5b1'
               font-size: 90%
             prefix: 'Zirk.: '
+        - type: conditional
+          conditions:
+          - &id027
+            condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          elements:
+          - &id028
+            type: state-label
+            entity: sensor.eta_heizung_komponente_fwm
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id027
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          elements:
+          - *id028
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_warmwasser_2
+        state: fwm2
+      card:
+        type: picture-elements
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.0b4
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_warmwasser_2_temperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+          prefix: 'WW: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            state_not: '-'
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            style:
+              top: 15%
+              left: 50%
+              color: '#9aa5b1'
+              font-size: 90%
+            prefix: 'Zirk.: '
+        - type: conditional
+          conditions:
+          - &id029
+            condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          elements:
+          - &id030
+            type: state-label
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id029
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          elements:
+          - *id030
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_warmwasser_3
+        state: fwm3
+      card:
+        type: picture-elements
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.0b4
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_warmwasser_3_temperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 95%
+          prefix: 'WW: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            state_not: '-'
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            style:
+              top: 15%
+              left: 50%
+              color: '#9aa5b1'
+              font-size: 90%
+            prefix: 'Zirk.: '
+        - type: conditional
+          conditions:
+          - &id031
+            condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          elements:
+          - &id032
+            type: state-label
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 95%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id031
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          elements:
+          - *id032
     - type: conditional
       conditions:
       - condition: state
@@ -2515,10 +2673,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id027
+          - &id033
             condition: state
             entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: &id028
+            state_not: &id034
             - Aus
             - '-'
             - unavailable
@@ -2545,7 +2703,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id027
+          - *id033
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
@@ -2597,7 +2755,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
-            state_not: &id030
+            state_not: &id036
             - heizen
             - absenken
             - aus
@@ -2876,10 +3034,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id029
+          - &id035
             condition: state
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
@@ -2903,7 +3061,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id029
+          - *id035
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
@@ -2955,7 +3113,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_2_zeitprogramm
@@ -3231,10 +3389,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id031
+          - &id037
             condition: state
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
@@ -3258,7 +3416,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id031
+          - *id037
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
@@ -3310,7 +3468,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_3_zeitprogramm
@@ -3586,10 +3744,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id032
+          - &id038
             condition: state
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
@@ -3613,7 +3771,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id032
+          - *id038
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
@@ -3665,7 +3823,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_4_zeitprogramm
@@ -4044,7 +4202,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id033
+          - &id039
             condition: state
             entity: sensor.eta_heizung_lager_austragung
             state: Fördern
@@ -4071,7 +4229,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id033
+          - *id039
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
@@ -4175,7 +4333,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id034
+          - &id040
             condition: numeric_state
             entity: sensor.eta_heizung_solar_leistung
             above: 0.05
@@ -4202,7 +4360,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id034
+          - *id040
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
@@ -4279,7 +4437,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id035
+          - &id041
             condition: numeric_state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             above: 0.05
@@ -4306,7 +4464,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id035
+          - *id041
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
@@ -4363,7 +4521,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id036
+          - &id042
             condition: state
             entity: sensor.eta_heizung_brenner_anforderung
             state: Ein
@@ -4390,7 +4548,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id036
+          - *id042
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
@@ -4439,7 +4597,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id037
+          - &id043
             condition: state
             entity: sensor.eta_heizung_fernleitung_pumpe
             state: Ein
@@ -4466,7 +4624,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id037
+          - *id043
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
@@ -4518,7 +4676,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id038
+            state: *id044
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -4544,7 +4702,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id039
+            state: *id045
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -4596,7 +4754,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id040
+            state: *id046
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -4622,7 +4780,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id041
+            state: *id047
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -4643,7 +4801,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aussentemperatur
-            style: &id042
+            style: &id048
               top: 4%
               left: 6%
               color: '#9aa5b1'
@@ -4659,7 +4817,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aussentemperatur
-            style: *id042
+            style: *id048
             prefix: 'Außen: '
             attribute: anzeige
         - type: conditional
@@ -4670,7 +4828,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseltemperatur
-            style: &id043
+            style: &id049
               top: 12%
               left: 6%
               color: '#e8615f'
@@ -4686,7 +4844,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseltemperatur
-            style: *id043
+            style: *id049
             prefix: 'Kessel: '
             attribute: anzeige
         - type: conditional
@@ -4697,7 +4855,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kessel_solltemperatur
-            style: &id044
+            style: &id050
               top: 19%
               left: 6%
               color: '#e2867f'
@@ -4713,7 +4871,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kessel_solltemperatur
-            style: *id044
+            style: *id050
             prefix: 'Soll: '
             attribute: anzeige
         - type: conditional
@@ -4724,7 +4882,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_rucklauftemperatur
-            style: &id045
+            style: &id051
               top: 26%
               left: 6%
               color: '#7b88e0'
@@ -4740,7 +4898,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_rucklauftemperatur
-            style: *id045
+            style: *id051
             prefix: 'Rücklauf: '
             attribute: anzeige
         - type: conditional
@@ -4751,7 +4909,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseldruck
-            style: &id046
+            style: &id052
               top: 33%
               left: 6%
               color: '#d3a15a'
@@ -4767,7 +4925,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseldruck
-            style: *id046
+            style: *id052
             prefix: 'Anlagendruck: '
             attribute: anzeige
         - type: conditional
@@ -4778,7 +4936,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style: &id047
+            style: &id053
               top: 40%
               left: 6%
               color: '#5fbfa8'
@@ -4794,7 +4952,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style: *id047
+            style: *id053
             prefix: 'Tagesbehälter: '
             attribute: anzeige
         - type: conditional
@@ -4805,7 +4963,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aschebox_status
-            style: &id048
+            style: &id054
               top: 47%
               left: 6%
               color: '#a98fd0'
@@ -4821,7 +4979,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aschebox_status
-            style: *id048
+            style: *id054
             prefix: 'Aschebox: '
             attribute: anzeige
         - type: conditional
@@ -4832,7 +4990,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_restsauerstoff
-            style: &id049
+            style: &id055
               top: 54%
               left: 6%
               color: '#d89a6a'
@@ -4848,7 +5006,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_restsauerstoff
-            style: *id049
+            style: *id055
             prefix: 'Restsauerstoff: '
             attribute: anzeige
         - type: conditional
@@ -4864,7 +5022,7 @@ cards:
             icon: mdi:delete-clock
             title: Aschebox leeren um
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: &id050
+            tap_action: &id056
               action: more-info
               entity: datetime.eta_heizung_aschebox_leeren_um
             style:
@@ -4886,7 +5044,7 @@ cards:
             icon: mdi:delete-clock
             title: Aschebox leeren um
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: *id050
+            tap_action: *id056
             style:
               top: 90%
               left: 30%
@@ -4905,7 +5063,7 @@ cards:
             icon: mdi:delete-sweep
             title: Entaschen
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: &id051
+            tap_action: &id057
               action: perform-action
               perform_action: button.press
               target:
@@ -4931,7 +5089,7 @@ cards:
             icon: mdi:delete-sweep
             title: Entaschen
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: *id051
+            tap_action: *id057
             style:
               top: 90%
               left: 50%
@@ -4945,7 +5103,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state: 'on'
-          - &id052
+          - &id058
             condition: state
             entity: sensor.eta_heizung_aschebox_plan
             state_not: unknown
@@ -4954,7 +5112,7 @@ cards:
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: &id053
+            tap_action: &id059
               action: toggle
             style:
               top: 90%
@@ -4970,13 +5128,13 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state_not: 'on'
-          - *id052
+          - *id058
           elements:
           - type: icon
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: *id053
+            tap_action: *id059
             style:
               top: 90%
               left: 70%
@@ -4990,7 +5148,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state: 'on'
-          - &id054
+          - &id060
             condition: state
             entity: sensor.eta_heizung_aschebox_plan
             state: unknown
@@ -4999,7 +5157,7 @@ cards:
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: &id055
+            tap_action: &id061
               action: toggle
             style:
               top: 90%
@@ -5015,13 +5173,13 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state_not: 'on'
-          - *id054
+          - *id060
           elements:
           - type: icon
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: *id055
+            tap_action: *id061
             style:
               top: 90%
               left: 50%
@@ -5113,7 +5271,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id056
+          - &id062
             condition: state
             entity: sensor.eta_heizung_puffer_zustand
             state: *id020
@@ -5140,7 +5298,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id056
+          - *id062
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
@@ -5172,7 +5330,7 @@ cards:
             prefix: 'Ladezustand: '
         - type: conditional
           conditions:
-          - &id057
+          - &id063
             condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state_not: unknown
@@ -5180,7 +5338,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state_not: unknown
           elements:
-          - &id058
+          - &id064
             type: state-label
             entity: sensor.eta_heizung_komponente_pufferspeicher
             style:
@@ -5191,7 +5349,7 @@ cards:
             attribute: funktionsblock
         - type: conditional
           conditions:
-          - *id057
+          - *id063
           - condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state: unknown
@@ -5199,7 +5357,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             state_not: unknown
           elements:
-          - *id058
+          - *id064
         - type: conditional
           conditions:
           - condition: state
@@ -5722,7 +5880,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id059
+          - &id065
             condition: state
             entity: sensor.eta_heizung_puffer_2_zustand
             state: *id020
@@ -5749,7 +5907,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id059
+          - *id065
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
@@ -5781,7 +5939,7 @@ cards:
             prefix: 'Ladezustand: '
         - type: conditional
           conditions:
-          - &id060
+          - &id066
             condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state_not: unknown
@@ -5789,7 +5947,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state_not: unknown
           elements:
-          - &id061
+          - &id067
             type: state-label
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             style:
@@ -5800,7 +5958,7 @@ cards:
             attribute: funktionsblock
         - type: conditional
           conditions:
-          - *id060
+          - *id066
           - condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state: unknown
@@ -5808,7 +5966,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             state_not: unknown
           elements:
-          - *id061
+          - *id067
         - type: conditional
           conditions:
           - condition: state
@@ -6331,7 +6489,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id062
+          - &id068
             condition: state
             entity: sensor.eta_heizung_puffer_3_zustand
             state: *id020
@@ -6358,7 +6516,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id062
+          - *id068
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
@@ -6390,7 +6548,7 @@ cards:
             prefix: 'Ladezustand: '
         - type: conditional
           conditions:
-          - &id063
+          - &id069
             condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             state_not: unknown
@@ -6398,7 +6556,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state_not: unknown
           elements:
-          - &id064
+          - &id070
             type: state-label
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             style:
@@ -6409,7 +6567,7 @@ cards:
             attribute: funktionsblock
         - type: conditional
           conditions:
-          - *id063
+          - *id069
           - condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state: unknown
@@ -6417,7 +6575,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state_not: unknown
           elements:
-          - *id064
+          - *id070
         - type: conditional
           conditions:
           - condition: state
@@ -6954,6 +7112,164 @@ cards:
               color: '#9aa5b1'
               font-size: 95%
             prefix: 'Zirkulationspumpe: '
+        - type: conditional
+          conditions:
+          - &id071
+            condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          elements:
+          - &id072
+            type: state-label
+            entity: sensor.eta_heizung_komponente_fwm
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id071
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          elements:
+          - *id072
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_warmwasser_2
+        state: fwm2
+      card:
+        type: picture-elements
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.0b4
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_warmwasser_2_temperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 100%
+          prefix: 'Warmwasser: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            state_not: '-'
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            style:
+              top: 15%
+              left: 50%
+              color: '#9aa5b1'
+              font-size: 95%
+            prefix: 'Zirkulationspumpe: '
+        - type: conditional
+          conditions:
+          - &id073
+            condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          elements:
+          - &id074
+            type: state-label
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id073
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          elements:
+          - *id074
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_warmwasser_3
+        state: fwm3
+      card:
+        type: picture-elements
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.0b4
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_warmwasser_3_temperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 100%
+          prefix: 'Warmwasser: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            state_not: '-'
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            style:
+              top: 15%
+              left: 50%
+              color: '#9aa5b1'
+              font-size: 95%
+            prefix: 'Zirkulationspumpe: '
+        - type: conditional
+          conditions:
+          - &id075
+            condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          elements:
+          - &id076
+            type: state-label
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 100%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id075
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          elements:
+          - *id076
     - type: conditional
       conditions:
       - condition: state
@@ -6974,10 +7290,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id065
+          - &id077
             condition: state
             entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
@@ -7001,7 +7317,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id065
+          - *id077
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
@@ -7053,7 +7369,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_zeitprogramm
@@ -7330,10 +7646,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id066
+          - &id078
             condition: state
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
@@ -7357,7 +7673,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id066
+          - *id078
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
@@ -7409,7 +7725,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_2_zeitprogramm
@@ -7686,10 +8002,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id067
+          - &id079
             condition: state
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
@@ -7713,7 +8029,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id067
+          - *id079
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
@@ -7765,7 +8081,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_3_zeitprogramm
@@ -8042,10 +8358,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id068
+          - &id080
             condition: state
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
@@ -8069,7 +8385,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id068
+          - *id080
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
@@ -8121,7 +8437,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_4_zeitprogramm
@@ -8501,7 +8817,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id069
+          - &id081
             condition: state
             entity: sensor.eta_heizung_lager_austragung
             state: Fördern
@@ -8528,7 +8844,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id069
+          - *id081
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
@@ -8632,7 +8948,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id070
+          - &id082
             condition: numeric_state
             entity: sensor.eta_heizung_solar_leistung
             above: 0.05
@@ -8659,7 +8975,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id070
+          - *id082
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
@@ -8736,7 +9052,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id071
+          - &id083
             condition: numeric_state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             above: 0.05
@@ -8763,7 +9079,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id071
+          - *id083
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
@@ -8820,7 +9136,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id072
+          - &id084
             condition: state
             entity: sensor.eta_heizung_brenner_anforderung
             state: Ein
@@ -8847,7 +9163,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id072
+          - *id084
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
@@ -8896,7 +9212,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id073
+          - &id085
             condition: state
             entity: sensor.eta_heizung_fernleitung_pumpe
             state: Ein
@@ -8923,7 +9239,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id073
+          - *id085
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
@@ -8975,7 +9291,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id038
+            state: *id044
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -9001,7 +9317,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id039
+            state: *id045
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -9053,7 +9369,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id040
+            state: *id046
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -9079,7 +9395,7 @@ cards:
             state: 'on'
           - condition: state
             entity: sensor.eta_heizung_kessel_zustand
-            state: *id041
+            state: *id047
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
@@ -9100,7 +9416,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aussentemperatur
-            style: &id074
+            style: &id086
               top: 4%
               left: 6%
               color: '#9aa5b1'
@@ -9116,7 +9432,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aussentemperatur
-            style: *id074
+            style: *id086
             prefix: 'Außen: '
             attribute: anzeige
         - type: conditional
@@ -9127,7 +9443,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseltemperatur
-            style: &id075
+            style: &id087
               top: 12%
               left: 6%
               color: '#e8615f'
@@ -9143,7 +9459,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseltemperatur
-            style: *id075
+            style: *id087
             prefix: 'Kessel: '
             attribute: anzeige
         - type: conditional
@@ -9154,7 +9470,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kessel_solltemperatur
-            style: &id076
+            style: &id088
               top: 19%
               left: 6%
               color: '#e2867f'
@@ -9170,7 +9486,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kessel_solltemperatur
-            style: *id076
+            style: *id088
             prefix: 'Soll: '
             attribute: anzeige
         - type: conditional
@@ -9181,7 +9497,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_rucklauftemperatur
-            style: &id077
+            style: &id089
               top: 26%
               left: 6%
               color: '#7b88e0'
@@ -9197,7 +9513,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_rucklauftemperatur
-            style: *id077
+            style: *id089
             prefix: 'Rücklauf: '
             attribute: anzeige
         - type: conditional
@@ -9208,7 +9524,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseldruck
-            style: &id078
+            style: &id090
               top: 33%
               left: 6%
               color: '#d3a15a'
@@ -9224,7 +9540,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_kesseldruck
-            style: *id078
+            style: *id090
             prefix: 'Anlagendruck: '
             attribute: anzeige
         - type: conditional
@@ -9235,7 +9551,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style: &id079
+            style: &id091
               top: 40%
               left: 6%
               color: '#5fbfa8'
@@ -9251,7 +9567,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_pellet_inhalt_tagesbehalter
-            style: *id079
+            style: *id091
             prefix: 'Tagesbehälter: '
             attribute: anzeige
         - type: conditional
@@ -9262,7 +9578,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aschebox_status
-            style: &id080
+            style: &id092
               top: 47%
               left: 6%
               color: '#a98fd0'
@@ -9278,7 +9594,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_aschebox_status
-            style: *id080
+            style: *id092
             prefix: 'Aschebox: '
             attribute: anzeige
         - type: conditional
@@ -9289,7 +9605,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_restsauerstoff
-            style: &id081
+            style: &id093
               top: 54%
               left: 6%
               color: '#d89a6a'
@@ -9305,7 +9621,7 @@ cards:
           elements:
           - type: state-label
             entity: sensor.eta_heizung_restsauerstoff
-            style: *id081
+            style: *id093
             prefix: 'Restsauerstoff: '
             attribute: anzeige
         - type: conditional
@@ -9321,7 +9637,7 @@ cards:
             icon: mdi:delete-clock
             title: Aschebox leeren um
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: &id082
+            tap_action: &id094
               action: more-info
               entity: datetime.eta_heizung_aschebox_leeren_um
             style:
@@ -9343,7 +9659,7 @@ cards:
             icon: mdi:delete-clock
             title: Aschebox leeren um
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: *id082
+            tap_action: *id094
             style:
               top: 90%
               left: 30%
@@ -9362,7 +9678,7 @@ cards:
             icon: mdi:delete-sweep
             title: Entaschen
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: &id083
+            tap_action: &id095
               action: perform-action
               perform_action: button.press
               target:
@@ -9388,7 +9704,7 @@ cards:
             icon: mdi:delete-sweep
             title: Entaschen
             entity: sensor.eta_heizung_aschebox_plan
-            tap_action: *id083
+            tap_action: *id095
             style:
               top: 90%
               left: 50%
@@ -9402,7 +9718,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state: 'on'
-          - &id084
+          - &id096
             condition: state
             entity: sensor.eta_heizung_aschebox_plan
             state_not: unknown
@@ -9411,7 +9727,7 @@ cards:
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: &id085
+            tap_action: &id097
               action: toggle
             style:
               top: 90%
@@ -9427,13 +9743,13 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state_not: 'on'
-          - *id084
+          - *id096
           elements:
           - type: icon
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: *id085
+            tap_action: *id097
             style:
               top: 90%
               left: 70%
@@ -9447,7 +9763,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state: 'on'
-          - &id086
+          - &id098
             condition: state
             entity: sensor.eta_heizung_aschebox_plan
             state: unknown
@@ -9456,7 +9772,7 @@ cards:
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: &id087
+            tap_action: &id099
               action: toggle
             style:
               top: 90%
@@ -9472,13 +9788,13 @@ cards:
           - condition: state
             entity: switch.eta_heizung_kessel
             state_not: 'on'
-          - *id086
+          - *id098
           elements:
           - type: icon
             icon: mdi:power
             title: Ein/Aus
             entity: switch.eta_heizung_kessel
-            tap_action: *id087
+            tap_action: *id099
             style:
               top: 90%
               left: 50%
@@ -9570,7 +9886,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id088
+          - &id100
             condition: state
             entity: sensor.eta_heizung_puffer_zustand
             state: *id020
@@ -9597,7 +9913,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id088
+          - *id100
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
@@ -9629,7 +9945,7 @@ cards:
             prefix: 'Ladezustand: '
         - type: conditional
           conditions:
-          - &id089
+          - &id101
             condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state_not: unknown
@@ -9637,7 +9953,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state_not: unknown
           elements:
-          - &id090
+          - &id102
             type: state-label
             entity: sensor.eta_heizung_komponente_pufferspeicher
             style:
@@ -9648,7 +9964,7 @@ cards:
             attribute: funktionsblock
         - type: conditional
           conditions:
-          - *id089
+          - *id101
           - condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state: unknown
@@ -9656,7 +9972,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             state_not: unknown
           elements:
-          - *id090
+          - *id102
         - type: conditional
           conditions:
           - condition: state
@@ -10179,7 +10495,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id091
+          - &id103
             condition: state
             entity: sensor.eta_heizung_puffer_2_zustand
             state: *id020
@@ -10206,7 +10522,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id091
+          - *id103
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
@@ -10238,7 +10554,7 @@ cards:
             prefix: 'Ladezustand: '
         - type: conditional
           conditions:
-          - &id092
+          - &id104
             condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state_not: unknown
@@ -10246,7 +10562,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state_not: unknown
           elements:
-          - &id093
+          - &id105
             type: state-label
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             style:
@@ -10257,7 +10573,7 @@ cards:
             attribute: funktionsblock
         - type: conditional
           conditions:
-          - *id092
+          - *id104
           - condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state: unknown
@@ -10265,7 +10581,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             state_not: unknown
           elements:
-          - *id093
+          - *id105
         - type: conditional
           conditions:
           - condition: state
@@ -10788,7 +11104,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id094
+          - &id106
             condition: state
             entity: sensor.eta_heizung_puffer_3_zustand
             state: *id020
@@ -10815,7 +11131,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id094
+          - *id106
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
@@ -10847,7 +11163,7 @@ cards:
             prefix: 'Ladezustand: '
         - type: conditional
           conditions:
-          - &id095
+          - &id107
             condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             state_not: unknown
@@ -10855,7 +11171,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state_not: unknown
           elements:
-          - &id096
+          - &id108
             type: state-label
             entity: sensor.eta_heizung_komponente_pufferspeicher_3
             style:
@@ -10866,7 +11182,7 @@ cards:
             attribute: funktionsblock
         - type: conditional
           conditions:
-          - *id095
+          - *id107
           - condition: state
             entity: sensor.eta_heizung_komponente_pufferspeicher
             state: unknown
@@ -10874,7 +11190,7 @@ cards:
             entity: sensor.eta_heizung_komponente_pufferspeicher_2
             state_not: unknown
           elements:
-          - *id096
+          - *id108
         - type: conditional
           conditions:
           - condition: state
@@ -11411,6 +11727,164 @@ cards:
               color: '#9aa5b1'
               font-size: 100%
             prefix: 'Zirkulationspumpe: '
+        - type: conditional
+          conditions:
+          - &id109
+            condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          elements:
+          - &id110
+            type: state-label
+            entity: sensor.eta_heizung_komponente_fwm
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 105%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id109
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          elements:
+          - *id110
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_warmwasser_2
+        state: fwm2
+      card:
+        type: picture-elements
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.0b4
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_warmwasser_2_temperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 105%
+          prefix: 'Warmwasser: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            state_not: '-'
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_warmwasser_2_zirkulationspumpe
+            style:
+              top: 15%
+              left: 50%
+              color: '#9aa5b1'
+              font-size: 100%
+            prefix: 'Zirkulationspumpe: '
+        - type: conditional
+          conditions:
+          - &id111
+            condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          elements:
+          - &id112
+            type: state-label
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 105%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id111
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          elements:
+          - *id112
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.eta_heizung_komponente_warmwasser_3
+        state: fwm3
+      card:
+        type: picture-elements
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.0b4
+        elements:
+        - type: state-label
+          entity: sensor.eta_heizung_warmwasser_3_temperatur
+          style:
+            top: 8%
+            left: 50%
+            color: '#d5d9de'
+            font-size: 105%
+          prefix: 'Warmwasser: '
+        - type: conditional
+          conditions:
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            state_not: '-'
+          elements:
+          - type: state-label
+            entity: sensor.eta_heizung_warmwasser_3_zirkulationspumpe
+            style:
+              top: 15%
+              left: 50%
+              color: '#9aa5b1'
+              font-size: 100%
+            prefix: 'Zirkulationspumpe: '
+        - type: conditional
+          conditions:
+          - &id113
+            condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            state_not: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state_not: unknown
+          elements:
+          - &id114
+            type: state-label
+            entity: sensor.eta_heizung_komponente_warmwasser_3
+            style:
+              top: 23%
+              left: 50%
+              color: '#ffffff'
+              font-size: 105%
+            attribute: funktionsblock
+        - type: conditional
+          conditions:
+          - *id113
+          - condition: state
+            entity: sensor.eta_heizung_komponente_fwm
+            state: unknown
+          - condition: state
+            entity: sensor.eta_heizung_komponente_warmwasser_2
+            state_not: unknown
+          elements:
+          - *id114
     - type: conditional
       conditions:
       - condition: state
@@ -11431,10 +11905,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id097
+          - &id115
             condition: state
             entity: sensor.eta_heizung_heizkreis_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
@@ -11458,7 +11932,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id097
+          - *id115
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
@@ -11510,7 +11984,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_1_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_zeitprogramm
@@ -11787,10 +12261,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id098
+          - &id116
             condition: state
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
@@ -11814,7 +12288,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id098
+          - *id116
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
@@ -11866,7 +12340,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_2_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_2_zeitprogramm
@@ -12143,10 +12617,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id099
+          - &id117
             condition: state
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
@@ -12170,7 +12644,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id099
+          - *id117
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
@@ -12222,7 +12696,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_3_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_3_zeitprogramm
@@ -12499,10 +12973,10 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id100
+          - &id118
             condition: state
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            state_not: *id028
+            state_not: *id034
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
@@ -12526,7 +13000,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id100
+          - *id118
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
@@ -12578,7 +13052,7 @@ cards:
             state_not: unknown
           - condition: state
             entity: select.eta_heizung_heizkreis_4_betriebsart
-            state_not: *id030
+            state_not: *id036
           elements:
           - type: state-label
             entity: sensor.eta_heizung_heizkreis_4_zeitprogramm
@@ -12958,7 +13432,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id101
+          - &id119
             condition: state
             entity: sensor.eta_heizung_lager_austragung
             state: Fördern
@@ -12985,7 +13459,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id101
+          - *id119
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
@@ -13089,7 +13563,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id102
+          - &id120
             condition: numeric_state
             entity: sensor.eta_heizung_solar_leistung
             above: 0.05
@@ -13116,7 +13590,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id102
+          - *id120
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
@@ -13193,7 +13667,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id103
+          - &id121
             condition: numeric_state
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
             above: 0.05
@@ -13220,7 +13694,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id103
+          - *id121
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
@@ -13277,7 +13751,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id104
+          - &id122
             condition: state
             entity: sensor.eta_heizung_brenner_anforderung
             state: Ein
@@ -13304,7 +13778,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id104
+          - *id122
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
@@ -13353,7 +13827,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'on'
-          - &id105
+          - &id123
             condition: state
             entity: sensor.eta_heizung_fernleitung_pumpe
             state: Ein
@@ -13380,7 +13854,7 @@ cards:
           - condition: state
             entity: switch.eta_heizung_animationen
             state: 'off'
-          - *id105
+          - *id123
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe

@@ -107,6 +107,24 @@ ERWARTETE_IDS = {
     "solar_kollektor": "sensor.eta_heizung_solar_kollektortemperatur",
     "solar_leistung": "sensor.eta_heizung_solar_leistung",
     "solar_waermemenge": "sensor.eta_heizung_solar_warmemenge",
+    **{
+        f"puffer{n}_{teil}": f"sensor.eta_heizung_puffer_{n}_{endung}"
+        for n in range(4, 9)
+        for teil, endung in (
+            ("zustand", "zustand"),
+            ("ladezustand", "ladezustand"),
+            ("volumen", "effektives_volumen"),
+            ("ladepumpe", "ladepumpe"),
+            ("fuehler_1", "fuhler_1"),
+        )
+    },
+    **{f"komponente_puffer{n}": f"sensor.eta_heizung_komponente_pufferspeicher_{n}" for n in range(4, 9)},
+    **{
+        f"fwm{n}_{teil}": f"sensor.eta_heizung_warmwasser_{n}_{endung}"
+        for n in range(2, 9)
+        for teil, endung in (("warmwasser", "temperatur"), ("zirkulationspumpe", "zirkulationspumpe"))
+    },
+    **{f"komponente_fwm{n}": f"sensor.eta_heizung_komponente_warmwasser_{n}" for n in range(2, 9)},
 }
 
 

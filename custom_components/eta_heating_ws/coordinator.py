@@ -487,7 +487,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         weg = " ".join(info["pfad"]).casefold()
         if "zirkulation" in weg:
             return "zirkulation"
-        return "warmwasser" if info["komponente"] == "fwm" or "warmwasser" in weg else "puffer"
+        return "warmwasser" if info["komponente"].startswith("fwm") or "warmwasser" in weg else "puffer"
 
     def zeitprogramm_maximum_uri(self, programm: str) -> str | None:
         """Bei Warmwasser die URI von "Warmwasserspeicher max." - die Obergrenze seiner Temperaturen."""
@@ -499,9 +499,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     def zeitprogramm_fwm(self, programm: str) -> bool:
         """Gehört das Programm zum Frischwassermodul? Nur dort gibt es den Hinweis zur Regelung."""
         info = self.zeitprogramm_namen.get(programm)
-        if info is None or info["komponente"] != "fwm":
+        if info is None or not info["komponente"].startswith("fwm"):
             return False
-        return self.funktionsblock("fwm").casefold().startswith("fwm")
+        return self.funktionsblock(info["komponente"]).casefold().startswith("fwm")
 
     def zeitprogramm_name(self, programm: str) -> str:
         """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum.

@@ -21,6 +21,9 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -29,7 +32,7 @@ from homeassistant.helpers.selector import (
 from . import uebernahme
 from .api import ETAApiClient, ETAApiError, ETAValue
 from .prognose_koordinator import einzige_wetter_entitaet
-from .uri_discovery import async_discover_uris
+from .uri_discovery import async_discover_uris, fub_namen_im_menue, fub_namen_vorschlagen
 from .zeitplan import programm_zusammenfassen
 from .const import (
     COMPONENTS,
@@ -62,10 +65,12 @@ from .const import (
     THERMOSTATE,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
+    GEZAEHLTE_KOMPONENTEN,
+    anzahl_komponenten,
     components_from_config,
     fub_role_default,
     fub_roles_for_components,
-    normalize_components,
+    komponenten_aus_formular,
     puffer_volumen_schluessel,
     raumfuehler_schluessel,
     zeitfenster_schluessel,
@@ -78,6 +83,24 @@ async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     """Prüft, ob die Anlage erreichbar ist und Webservices aktiv sind."""
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     return await client.async_test_connection()
+
+
+async def _fub_namen_der_anlage(hass: HomeAssistant, host: str | None, port: int) -> list[str]:
+    """Die Namen der Funktionsblöcke, wie die Anlage sie meldet - leer, wenn sie nicht antwortet."""
+    if not host:
+        return []
+    client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
+    try:
+        return fub_namen_im_menue(await client.async_get_menu())
+    except ETAApiError:
+        return []
+
+
+def _einstellungen(eingabe: dict[str, Any], bisher: list[str]) -> dict[str, Any]:
+    """Was vom Formular gespeichert wird: die Komponenten statt der Anzahlen."""
+    daten = {key: wert for key, wert in eingabe.items() if key not in GEZAEHLTE_KOMPONENTEN}
+    daten[CONF_COMPONENTS] = komponenten_aus_formular(eingabe, bisher)
+    return daten
 
 
 async def _anlage_pruefen(
@@ -235,8 +258,14 @@ def _puffer_schema(komponenten: list[str], current: dict[str, Any]) -> vol.Schem
 
 
 _WAEHLBARE_KOMPONENTEN = [
-    key for key, info in COMPONENTS.items() if not info.get("required")
+    key
+    for key, info in COMPONENTS.items()
+    if not info.get("required")
+    and not any(key in plaetze for plaetze in GEZAEHLTE_KOMPONENTEN.values())
 ]
+"""Die Komponenten zum Ankreuzen - Puffer, Warmwasser und Heizkreise fragt das Formular als Anzahl."""
+
+_HOECHSTENS = {feld: len(plaetze) for feld, plaetze in GEZAEHLTE_KOMPONENTEN.items()}
 
 
 def _verbindung_felder(current: dict[str, Any]) -> dict:
@@ -265,15 +294,20 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
     Verbrauch je Zeitraum und Prognose sind abwählbar - wer nur die
     Messwerte will, bekommt dann auch nur die.
 
-    Statt einer Liste fertiger Anlagenschemata wird hier angekreuzt, was an
-    der Anlage vorhanden ist. Der Kessel steht nicht zur Wahl, den hat jede
-    Anlage.
+    Statt einer Liste fertiger Anlagenschemata wird hier angegeben, was an
+    der Anlage vorhanden ist: wie viele Pufferspeicher, Warmwasser und
+    Heizkreise, dazu angekreuzt der Rest. Der Kessel steht nicht zur Wahl,
+    den hat jede Anlage.
     """
-    vorauswahl = [
-        key for key in normalize_components(components_from_config(current))
-        if key in _WAEHLBARE_KOMPONENTEN
-    ]
+    komponenten = components_from_config(current)
+    vorauswahl = [key for key in komponenten if key in _WAEHLBARE_KOMPONENTEN]
     return {
+        **{
+            vol.Required(feld, default=anzahl_komponenten(komponenten, feld)): NumberSelector(
+                NumberSelectorConfig(min=0, max=hoechstens, step=1, mode=NumberSelectorMode.BOX)
+            )
+            for feld, hoechstens in _HOECHSTENS.items()
+        },
         vol.Required(CONF_COMPONENTS, default=vorauswahl): SelectSelector(
             SelectSelectorConfig(
                 options=_WAEHLBARE_KOMPONENTEN,
@@ -608,12 +642,7 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             if await _test_connection(self.hass, host, port):
-                self._data = {
-                    **user_input,
-                    CONF_COMPONENTS: normalize_components(
-                        user_input.get(CONF_COMPONENTS)
-                    ),
-                }
+                self._data = _einstellungen(user_input, [])
                 if self._data.get(CONF_ENABLE_SWITCHES):
                     return await self.async_step_switch_warning()
                 return await self.async_step_fub_names()
@@ -648,9 +677,13 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
             return await self._nach_fub_namen()
 
+        host, port = self._adresse()
+        vorschlag = fub_namen_vorschlagen(
+            roles, await _fub_namen_der_anlage(self.hass, host, port)
+        )
         return self.async_show_form(
             step_id="fub_names",
-            data_schema=_fub_names_schema(roles, {}),
+            data_schema=_fub_names_schema(roles, vorschlag),
         )
 
     @staticmethod
@@ -687,10 +720,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     ) -> ConfigFlowResult:
         if user_input is not None:
             self._data = {
-                **user_input,
-                CONF_COMPONENTS: normalize_components(
-                    user_input.get(CONF_COMPONENTS)
-                ),
+                **_einstellungen(user_input, components_from_config(self._current)),
                 CONF_WETTER: user_input.get(CONF_WETTER, ""),
             }
             if self._data.get(CONF_ENABLE_SWITCHES) and not self._current.get(
@@ -723,9 +753,13 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
             return await self._nach_fub_namen()
 
+        host, port = self._adresse()
+        vorschlag = fub_namen_vorschlagen(
+            roles,
+            await _fub_namen_der_anlage(self.hass, host, port),
+            self._current.get(CONF_FUB_NAMES, {}),
+        )
         return self.async_show_form(
             step_id="fub_names",
-            data_schema=_fub_names_schema(
-                roles, self._current.get(CONF_FUB_NAMES, {})
-            ),
+            data_schema=_fub_names_schema(roles, vorschlag),
         )

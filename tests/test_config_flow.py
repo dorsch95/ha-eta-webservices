@@ -22,7 +22,7 @@ def gueltige_eingabe(**overrides):
     daten = {
         "host": "192.0.2.10",
         "port": 8080,
-        "components": ["puffer"],
+        "components": [],
         "scan_interval": DEFAULT_SCAN_INTERVAL,
     }
     daten.update(overrides)
@@ -84,10 +84,10 @@ def test_jede_komponente_hat_fub_rollen(komponente):
 
 
 def test_twin_steht_in_der_auswahl_am_ende():
-    """Nur wenige Anlagen sind ein SH TWIN - die Auswahl beginnt beim Puffer."""
+    """Nur wenige Anlagen sind ein SH TWIN - Puffer, Warmwasser und Heizkreise stehen als Anzahl davor."""
     from eta_heating_ws.config_flow import _WAEHLBARE_KOMPONENTEN
 
-    assert _WAEHLBARE_KOMPONENTEN[0] == "puffer"
+    assert _WAEHLBARE_KOMPONENTEN[0] == "lager"
     assert _WAEHLBARE_KOMPONENTEN[-1] == "twin"
 
 
@@ -284,6 +284,10 @@ async def _keiner_ohne_volumen(*_):
     return [], {}, {}
 
 
+async def _keine_namen(*_):
+    return []
+
+
 async def options_schritt(monkeypatch, bisher, eingabe):
     """Führt den ersten Schritt von Konfigurieren aus."""
     from eta_heating_ws import config_flow as modul
@@ -291,6 +295,7 @@ async def options_schritt(monkeypatch, bisher, eingabe):
     flow = modul.ETAOptionsFlow()
     monkeypatch.setattr(modul.ETAOptionsFlow, "_current", property(lambda self: bisher))
     monkeypatch.setattr(modul, "_anlage_pruefen", _keiner_ohne_volumen)
+    monkeypatch.setattr(modul, "_fub_namen_der_anlage", _keine_namen)
     monkeypatch.setattr(
         modul.ETAOptionsFlow,
         "async_show_form",

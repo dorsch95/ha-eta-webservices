@@ -124,6 +124,67 @@ REQUEST_TIMEOUT = 8
 MENU_TIMEOUT = 20
 MAX_PARALLEL_REQUESTS = 5
 
+PUFFER_ANZAHL = 8
+"""So viele Pufferspeicher lassen sich einrichten, PufferFlex und ältere Puffer zusammen."""
+
+WARMWASSER_ANZAHL = 8
+"""So viele Frischwassermodule und Warmwasserspeicher lassen sich einrichten, zusammen."""
+
+PUFFER_SPEICHER = {
+    "puffer": "",
+    **{f"puffer{nummer}": f" {nummer}" for nummer in range(2, PUFFER_ANZAHL + 1)},
+}
+"""Die Pufferspeicher-Komponenten und der Zusatz in ihren Namen.
+
+Der Komponentenname ist zugleich das Präfix ihrer Schlüssel: Der erste
+Puffer behält die von früher (puffer_fuehler_1, puffer_ladezustand), die
+weiteren heißen puffer2_… bis puffer8_…. Die Entitäten heißen
+"Puffer 2 Fühler 1" usw. Jeder Platz nimmt einen PufferFlex oder einen
+älteren Puffer.
+
+Je Puffer gibt es bewusst nur wenig: die Fühler, den Zustand, den
+Ladezustand (nur PufferFlex, der ältere Funktionsblock "Puffer" kennt
+keinen), das effektive Volumen und - bei dezentraler Ladung - die
+Ladepumpe. Den Energieinhalt hat nur der erste Puffer, weil es ihn schon
+vorher gab.
+"""
+
+WARMWASSER_SPEICHER = {
+    "fwm": "",
+    **{f"fwm{nummer}": f" {nummer}" for nummer in range(2, WARMWASSER_ANZAHL + 1)},
+}
+"""Die Warmwasser-Komponenten und der Zusatz in ihren Namen.
+
+Jeder Platz nimmt ein Frischwassermodul oder einen Warmwasserspeicher.
+Der erste heißt aus der Zeit, als es nur das Frischwassermodul gab,
+"fwm" (Schlüssel fwm_warmwasser), die weiteren fwm2 bis fwm8 mit
+Entitäten wie "Warmwasser 2 Temperatur".
+"""
+
+HEIZKREISE = ["hk1", "hk2", "hk3", "hk4"]
+"""Die Heizkreis-Komponenten, in der Reihenfolge der Anlage."""
+
+
+def _puffer_komponente(komponente, zusatz):
+    """Ein Pufferspeicher als Komponente - die Rolle seines Funktionsblocks heißt pufferflex…."""
+    return {
+        "name": f"Pufferspeicher{zusatz}",
+        "image": "puffer",
+        "roles": [f"pufferflex{zusatz.strip()}"],
+        "discovery_prefixes": [f"{komponente}_"],
+    }
+
+
+def _warmwasser_komponente(komponente, zusatz):
+    """Ein Frischwassermodul oder Warmwasserspeicher als Komponente."""
+    return {
+        "name": f"Warmwasser{zusatz}" if zusatz else "FWM",
+        "image": "fwm",
+        "roles": [f"fwm{zusatz.strip()}"],
+        "discovery_prefixes": [f"{komponente}_warmwasser"],
+    }
+
+
 COMPONENTS = {
     "kessel": {
         "name": "Kessel",
@@ -132,30 +193,8 @@ COMPONENTS = {
         "discovery_prefixes": ["kessel_", "aussentemperatur"],
         "required": True,
     },
-    "puffer": {
-        "name": "Pufferspeicher",
-        "image": "puffer",
-        "roles": ["pufferflex"],
-        "discovery_prefixes": ["puffer_"],
-    },
-    "puffer2": {
-        "name": "Pufferspeicher 2",
-        "image": "puffer",
-        "roles": ["pufferflex2"],
-        "discovery_prefixes": ["puffer2_"],
-    },
-    "puffer3": {
-        "name": "Pufferspeicher 3",
-        "image": "puffer",
-        "roles": ["pufferflex3"],
-        "discovery_prefixes": ["puffer3_"],
-    },
-    "fwm": {
-        "name": "FWM",
-        "image": "fwm",
-        "roles": ["fwm"],
-        "discovery_prefixes": ["fwm_warmwasser"],
-    },
+    **{k: _puffer_komponente(k, zusatz) for k, zusatz in PUFFER_SPEICHER.items()},
+    **{k: _warmwasser_komponente(k, zusatz) for k, zusatz in WARMWASSER_SPEICHER.items()},
     "hk1": {
         "name": "Heizkreis 1",
         "image": "heizkreis",
@@ -236,21 +275,6 @@ brennt, erfährt die Regelung nicht - deshalb zählt seine Anforderung,
 kein Zustand. "fernleitung" ist die Leitung zu einem Nebengebäude; von
 ihr kommt nur, ob die Fernpumpe läuft, weil ihre Temperaturen an den
 meisten Anlagen nur errechnet sind. Beide nur lesend.
-"""
-
-PUFFER_SPEICHER = {"puffer": "", "puffer2": " 2", "puffer3": " 3"}
-"""Die Pufferspeicher-Komponenten und der Zusatz in ihren Namen.
-
-Der Komponentenname ist zugleich das Präfix ihrer Schlüssel: Der erste
-Puffer behält die von früher (puffer_fuehler_1, puffer_ladezustand), die
-weiteren heißen puffer2_… und puffer3_…. Die Entitäten heißen
-"Puffer 2 Fühler 1" usw.
-
-Je Puffer gibt es bewusst nur wenig: die Fühler, den Zustand, den
-Ladezustand (nur PufferFlex, der ältere Funktionsblock "Puffer" kennt
-keinen), das effektive Volumen und - bei dezentraler Ladung - die
-Ladepumpe. Den
-Energieinhalt hat nur der erste Puffer, weil es ihn schon vorher gab.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -500,6 +524,87 @@ LEGACY_SCHEMA_COMPONENTS = {
 }
 """Übersetzt die festen Anlagenschemata bis Version 0.14 in Komponenten."""
 
+def _weitere_puffer_sensoren():
+    """Zustand, Ladezustand, Volumen und Ladepumpe des zweiten bis achten Puffers.
+
+    Der erste hat eigene Einträge, weil es ihn schon vorher gab.
+    """
+    sensoren = {}
+    for komponente, zusatz in list(PUFFER_SPEICHER.items())[1:]:
+        sensoren.update(
+            {
+                f"{komponente}_zustand": {
+                    "component": komponente,
+                    "name": f"Puffer{zusatz} Zustand",
+                    "translation_key": f"{komponente}_zustand",
+                    "icon": "mdi:storage-tank",
+                    "is_string": True,
+                },
+                f"{komponente}_ladezustand": {
+                    "component": komponente,
+                    "name": f"Puffer{zusatz} Ladezustand",
+                    "translation_key": f"{komponente}_ladezustand",
+                    "nur_wenn_vorhanden": True,
+                    "icon": "mdi:battery-charging-60",
+                    "device_class": None,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "default_unit": "%",
+                },
+                f"{komponente}_volumen": {
+                    "component": komponente,
+                    "name": f"Puffer{zusatz} effektives Volumen",
+                    "translation_key": f"{komponente}_volumen",
+                    "nur_wenn_vorhanden": True,
+                    "icon": "mdi:storage-tank-outline",
+                    "device_class": SensorDeviceClass.VOLUME_STORAGE,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "default_unit": "L",
+                },
+                f"{komponente}_ladepumpe": {
+                    "component": komponente,
+                    "name": f"Puffer{zusatz} Ladepumpe",
+                    "translation_key": f"{komponente}_ladepumpe",
+                    "nur_wenn_vorhanden": True,
+                    "icon": "mdi:pump",
+                    "is_string": True,
+                },
+            }
+        )
+    return sensoren
+
+
+def _weitere_warmwasser_sensoren():
+    """Temperatur und Zirkulationspumpe des zweiten bis achten Warmwassers.
+
+    Die Zirkulationspumpe nur, wenn es sie gibt - ein Speicher ohne
+    Zirkulation hat keine.
+    """
+    sensoren = {}
+    for komponente, zusatz in list(WARMWASSER_SPEICHER.items())[1:]:
+        sensoren.update(
+            {
+                f"{komponente}_warmwasser": {
+                    "component": komponente,
+                    "name": f"Warmwasser{zusatz} Temperatur",
+                    "translation_key": f"{komponente}_warmwasser",
+                    "icon": "mdi:water-thermometer",
+                    "device_class": SensorDeviceClass.TEMPERATURE,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "default_unit": "°C",
+                },
+                f"{komponente}_zirkulationspumpe": {
+                    "component": komponente,
+                    "name": f"Warmwasser{zusatz} Zirkulationspumpe",
+                    "translation_key": f"{komponente}_zirkulationspumpe",
+                    "nur_wenn_vorhanden": True,
+                    "icon": "mdi:pump",
+                    "is_string": True,
+                },
+            }
+        )
+    return sensoren
+
+
 SENSORS = {
     "kessel_temperatur": {
         "component": "kessel",
@@ -616,40 +721,6 @@ SENSORS = {
         "icon": "mdi:storage-tank",
         "is_string": True,
     },
-    "puffer2_zustand": {
-        "component": "puffer2",
-        "name": "Puffer 2 Zustand",
-        "translation_key": "puffer2_zustand",
-        "icon": "mdi:storage-tank",
-        "is_string": True,
-    },
-    "puffer3_zustand": {
-        "component": "puffer3",
-        "name": "Puffer 3 Zustand",
-        "translation_key": "puffer3_zustand",
-        "icon": "mdi:storage-tank",
-        "is_string": True,
-    },
-    "puffer2_ladezustand": {
-        "component": "puffer2",
-        "name": "Puffer 2 Ladezustand",
-        "translation_key": "puffer2_ladezustand",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:battery-charging-60",
-        "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "%",
-    },
-    "puffer3_ladezustand": {
-        "component": "puffer3",
-        "name": "Puffer 3 Ladezustand",
-        "translation_key": "puffer3_ladezustand",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:battery-charging-60",
-        "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "%",
-    },
     "puffer_volumen": {
         "component": "puffer",
         "name": "Puffer effektives Volumen",
@@ -668,42 +739,7 @@ SENSORS = {
         "icon": "mdi:pump",
         "is_string": True,
     },
-    "puffer2_volumen": {
-        "component": "puffer2",
-        "name": "Puffer 2 effektives Volumen",
-        "translation_key": "puffer2_volumen",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:storage-tank-outline",
-        "device_class": SensorDeviceClass.VOLUME_STORAGE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "L",
-    },
-    "puffer2_ladepumpe": {
-        "component": "puffer2",
-        "name": "Puffer 2 Ladepumpe",
-        "translation_key": "puffer2_ladepumpe",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:pump",
-        "is_string": True,
-    },
-    "puffer3_volumen": {
-        "component": "puffer3",
-        "name": "Puffer 3 effektives Volumen",
-        "translation_key": "puffer3_volumen",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:storage-tank-outline",
-        "device_class": SensorDeviceClass.VOLUME_STORAGE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "L",
-    },
-    "puffer3_ladepumpe": {
-        "component": "puffer3",
-        "name": "Puffer 3 Ladepumpe",
-        "translation_key": "puffer3_ladepumpe",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:pump",
-        "is_string": True,
-    },
+    **_weitere_puffer_sensoren(),
     "heizkreis_vorlauf": {
         "component": "hk1",
         "name": "Heizkreis Vorlauftemperatur",
@@ -809,6 +845,7 @@ SENSORS = {
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "°C",
     },
+    **_weitere_warmwasser_sensoren(),
     "kessel_zustand": {
         "component": "kessel",
         "name": "Kessel Zustand",
@@ -1109,9 +1146,17 @@ FUB_ROLE_DEFAULT_NAMES = {
     "twin": ["Twin"],
     "sys": ["Sys"],
     "pufferflex": ["PufferFlex", "Puffer"],
-    "pufferflex2": ["PufferFlex 2", "PufferFlex2", "Puffer 2", "Puffer2"],
-    "pufferflex3": ["PufferFlex 3", "PufferFlex3", "Puffer 3", "Puffer3"],
+    **{
+        f"pufferflex{nummer}": [
+            f"PufferFlex {nummer}", f"PufferFlex{nummer}", f"Puffer {nummer}", f"Puffer{nummer}"
+        ]
+        for nummer in range(2, PUFFER_ANZAHL + 1)
+    },
     "fwm": ["FWM", "WW"],
+    **{
+        f"fwm{nummer}": [f"FWM {nummer}", f"FWM{nummer}", f"WW {nummer}", f"WW{nummer}"]
+        for nummer in range(2, WARMWASSER_ANZAHL + 1)
+    },
     "hk": ["HK", "HK1", "HK 1"],
     "hk2": ["HK2", "HK 2"],
     "hk3": ["HK3", "HK 3"],
@@ -1134,6 +1179,49 @@ def normalize_components(components):
     gewaehlt = set(components or [])
     gewaehlt |= {key for key, info in COMPONENTS.items() if info.get("required")}
     return [key for key in COMPONENTS if key in gewaehlt]
+
+
+CONF_ANZAHL_PUFFER = "anzahl_puffer"
+CONF_ANZAHL_WARMWASSER = "anzahl_warmwasser"
+CONF_ANZAHL_HEIZKREISE = "anzahl_heizkreise"
+
+GEZAEHLTE_KOMPONENTEN = {
+    CONF_ANZAHL_PUFFER: list(PUFFER_SPEICHER),
+    CONF_ANZAHL_WARMWASSER: list(WARMWASSER_SPEICHER),
+    CONF_ANZAHL_HEIZKREISE: HEIZKREISE,
+}
+"""Komponenten, von denen der Einrichtungsdialog nur die Anzahl fragt.
+
+Gespeichert werden weiter die einzelnen Komponenten - die Anzahl ist nur
+die bequemere Eingabe.
+"""
+
+
+def anzahl_komponenten(komponenten, feld):
+    """Wie viele Komponenten eines gezählten Feldes in der Auswahl stehen."""
+    return sum(key in GEZAEHLTE_KOMPONENTEN[feld] for key in komponenten)
+
+
+def komponenten_aus_formular(eingabe, bisher=()):
+    """Die Komponenten aus Auswahl und Anzahlen des Formulars.
+
+    Bleibt eine Anzahl gleich, bleiben auch die bisherigen Plätze - wer
+    etwa Heizkreis 1 und 3 hatte, behält beide. Sonst gelten die ersten.
+    Fehlt ein Anzahl-Feld, zählen die Komponenten dieser Art aus der
+    Auswahl selbst, so wie vor den Anzahl-Feldern.
+    """
+    auswahl = list(eingabe.get(CONF_COMPONENTS) or [])
+    gewaehlt = set()
+    for feld, plaetze in GEZAEHLTE_KOMPONENTEN.items():
+        if eingabe.get(feld) is None:
+            gewaehlt |= {key for key in auswahl if key in plaetze}
+            continue
+        anzahl = int(eingabe[feld])
+        vorher = [key for key in plaetze if key in bisher]
+        gewaehlt |= set(vorher if len(vorher) == anzahl else plaetze[:anzahl])
+    gezaehlt = {key for plaetze in GEZAEHLTE_KOMPONENTEN.values() for key in plaetze}
+    gewaehlt |= {key for key in auswahl if key not in gezaehlt}
+    return normalize_components(gewaehlt)
 
 
 def components_from_config(config):

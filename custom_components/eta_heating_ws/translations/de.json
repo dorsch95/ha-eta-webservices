@@ -18,7 +18,10 @@
         "data": {
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
-          "components": "An deiner Anlage vorhandene Komponenten",
+          "anzahl_puffer": "Anzahl Pufferspeicher",
+          "anzahl_warmwasser": "Anzahl Frischwassermodule und Warmwasserspeicher",
+          "anzahl_heizkreise": "Anzahl Heizkreise",
+          "components": "Weitere Komponenten an deiner Anlage",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
@@ -29,6 +32,9 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
+          "anzahl_puffer": "PufferFlex und ältere Puffer zusammen, höchstens 8.",
+          "anzahl_warmwasser": "Frischwassermodule (FWM) und Warmwasserspeicher (WW) zusammen, höchstens 8.",
+          "anzahl_heizkreise": "Höchstens 4.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
@@ -36,13 +42,20 @@
       },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
-        "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind bereits mit den ETA-Standardnamen vorausgefüllt.",
+        "description": "Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, sonst mit den ETA-Standardnamen. Falls du einen Funktionsblock (FUB) an der Steuerung umbenannt hast, trage hier den tatsächlichen Namen ein.",
         "data": {
           "kessel": "FUB-Name: Kessel",
           "twin": "FUB-Name: Pelletteil des SH TWIN (Twin)",
           "sys": "FUB-Name: Sys (für Außentemperatur)",
           "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
+          "fwm2": "FUB-Name: Warmwasser 2 (FWM 2 oder WW 2)",
+          "fwm3": "FUB-Name: Warmwasser 3 (FWM 3 oder WW 3)",
+          "fwm4": "FUB-Name: Warmwasser 4 (FWM 4 oder WW 4)",
+          "fwm5": "FUB-Name: Warmwasser 5 (FWM 5 oder WW 5)",
+          "fwm6": "FUB-Name: Warmwasser 6 (FWM 6 oder WW 6)",
+          "fwm7": "FUB-Name: Warmwasser 7 (FWM 7 oder WW 7)",
+          "fwm8": "FUB-Name: Warmwasser 8 (FWM 8 oder WW 8)",
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
@@ -52,6 +65,11 @@
           "lager": "FUB-Name: Pelletlager (Lager)",
           "pufferflex2": "FUB-Name: Pufferspeicher 2 (PufferFlex 2)",
           "pufferflex3": "FUB-Name: Pufferspeicher 3 (PufferFlex 3)",
+          "pufferflex4": "FUB-Name: Pufferspeicher 4 (PufferFlex 4 oder Puffer 4)",
+          "pufferflex5": "FUB-Name: Pufferspeicher 5 (PufferFlex 5 oder Puffer 5)",
+          "pufferflex6": "FUB-Name: Pufferspeicher 6 (PufferFlex 6 oder Puffer 6)",
+          "pufferflex7": "FUB-Name: Pufferspeicher 7 (PufferFlex 7 oder Puffer 7)",
+          "pufferflex8": "FUB-Name: Pufferspeicher 8 (PufferFlex 8 oder Puffer 8)",
           "brenner": "FUB-Name: Brenner (Brenner)",
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
@@ -62,7 +80,12 @@
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
-          "puffer3_volumen": "Pufferspeicher 3 (Liter)"
+          "puffer3_volumen": "Pufferspeicher 3 (Liter)",
+          "puffer4_volumen": "Pufferspeicher 4 (Liter)",
+          "puffer5_volumen": "Pufferspeicher 5 (Liter)",
+          "puffer6_volumen": "Pufferspeicher 6 (Liter)",
+          "puffer7_volumen": "Pufferspeicher 7 (Liter)",
+          "puffer8_volumen": "Pufferspeicher 8 (Liter)"
         }
       },
       "raumfuehler": {
@@ -117,7 +140,10 @@
       "init": {
         "title": "ETA Heizung bearbeiten",
         "data": {
-          "components": "An deiner Anlage vorhandene Komponenten",
+          "anzahl_puffer": "Anzahl Pufferspeicher",
+          "anzahl_warmwasser": "Anzahl Frischwassermodule und Warmwasserspeicher",
+          "anzahl_heizkreise": "Anzahl Heizkreise",
+          "components": "Weitere Komponenten an deiner Anlage",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
@@ -128,6 +154,9 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
+          "anzahl_puffer": "PufferFlex und ältere Puffer zusammen, höchstens 8.",
+          "anzahl_warmwasser": "Frischwassermodule (FWM) und Warmwasserspeicher (WW) zusammen, höchstens 8.",
+          "anzahl_heizkreise": "Höchstens 4.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
@@ -135,13 +164,20 @@
       },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
-        "description": "Falls du einen Funktionsblock (FUB) an der Steuerung deiner Heizung umbenannt hast, trage hier den tatsächlichen Namen ein. Die Felder sind mit den ETA-Standardnamen bzw. deinen bisherigen Angaben vorausgefüllt.",
+        "description": "Die Felder sind mit deinen bisherigen Angaben vorausgefüllt, neue mit den Namen, die deine Anlage meldet. Falls du einen Funktionsblock (FUB) an der Steuerung umbenannt hast, trage hier den tatsächlichen Namen ein.",
         "data": {
           "kessel": "FUB-Name: Kessel",
           "twin": "FUB-Name: Pelletteil des SH TWIN (Twin)",
           "sys": "FUB-Name: Sys (für Außentemperatur)",
           "pufferflex": "FUB-Name: Pufferspeicher (Standard PufferFlex, ältere Anlagen: Puffer)",
           "fwm": "FUB-Name: Frischwassermodul/Warmwasser (FWM oder WW)",
+          "fwm2": "FUB-Name: Warmwasser 2 (FWM 2 oder WW 2)",
+          "fwm3": "FUB-Name: Warmwasser 3 (FWM 3 oder WW 3)",
+          "fwm4": "FUB-Name: Warmwasser 4 (FWM 4 oder WW 4)",
+          "fwm5": "FUB-Name: Warmwasser 5 (FWM 5 oder WW 5)",
+          "fwm6": "FUB-Name: Warmwasser 6 (FWM 6 oder WW 6)",
+          "fwm7": "FUB-Name: Warmwasser 7 (FWM 7 oder WW 7)",
+          "fwm8": "FUB-Name: Warmwasser 8 (FWM 8 oder WW 8)",
           "hk": "FUB-Name: Heizkreis 1 (HK oder HK1)",
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
@@ -151,6 +187,11 @@
           "lager": "FUB-Name: Pelletlager (Lager)",
           "pufferflex2": "FUB-Name: Pufferspeicher 2 (PufferFlex 2)",
           "pufferflex3": "FUB-Name: Pufferspeicher 3 (PufferFlex 3)",
+          "pufferflex4": "FUB-Name: Pufferspeicher 4 (PufferFlex 4 oder Puffer 4)",
+          "pufferflex5": "FUB-Name: Pufferspeicher 5 (PufferFlex 5 oder Puffer 5)",
+          "pufferflex6": "FUB-Name: Pufferspeicher 6 (PufferFlex 6 oder Puffer 6)",
+          "pufferflex7": "FUB-Name: Pufferspeicher 7 (PufferFlex 7 oder Puffer 7)",
+          "pufferflex8": "FUB-Name: Pufferspeicher 8 (PufferFlex 8 oder Puffer 8)",
           "brenner": "FUB-Name: Brenner (Brenner)",
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
@@ -161,7 +202,12 @@
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
-          "puffer3_volumen": "Pufferspeicher 3 (Liter)"
+          "puffer3_volumen": "Pufferspeicher 3 (Liter)",
+          "puffer4_volumen": "Pufferspeicher 4 (Liter)",
+          "puffer5_volumen": "Pufferspeicher 5 (Liter)",
+          "puffer6_volumen": "Pufferspeicher 6 (Liter)",
+          "puffer7_volumen": "Pufferspeicher 7 (Liter)",
+          "puffer8_volumen": "Pufferspeicher 8 (Liter)"
         }
       },
       "raumfuehler": {
@@ -201,17 +247,9 @@
     "components": {
       "options": {
         "twin": "TWIN (Pelletteil am Stückholzkessel)",
-        "puffer": "Pufferspeicher",
-        "fwm": "Frischwassermodul / Warmwasser",
-        "hk1": "Heizkreis 1",
-        "hk2": "Heizkreis 2",
         "solar": "Solaranlage",
         "pvm": "PV-Heizmodul (PVM)",
-        "hk3": "Heizkreis 3",
-        "hk4": "Heizkreis 4",
         "lager": "Pelletlager",
-        "puffer2": "Pufferspeicher 2",
-        "puffer3": "Pufferspeicher 3",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
         "fernleitung": "Fernleitung (zu einem Nebengebäude)"
       }
@@ -368,6 +406,48 @@
       "fwm_zirkulationspumpe": {
         "name": "FWM Zirkulationspumpe"
       },
+      "fwm2_warmwasser": {
+        "name": "Warmwasser 2 Temperatur"
+      },
+      "fwm2_zirkulationspumpe": {
+        "name": "Warmwasser 2 Zirkulationspumpe"
+      },
+      "fwm3_warmwasser": {
+        "name": "Warmwasser 3 Temperatur"
+      },
+      "fwm3_zirkulationspumpe": {
+        "name": "Warmwasser 3 Zirkulationspumpe"
+      },
+      "fwm4_warmwasser": {
+        "name": "Warmwasser 4 Temperatur"
+      },
+      "fwm4_zirkulationspumpe": {
+        "name": "Warmwasser 4 Zirkulationspumpe"
+      },
+      "fwm5_warmwasser": {
+        "name": "Warmwasser 5 Temperatur"
+      },
+      "fwm5_zirkulationspumpe": {
+        "name": "Warmwasser 5 Zirkulationspumpe"
+      },
+      "fwm6_warmwasser": {
+        "name": "Warmwasser 6 Temperatur"
+      },
+      "fwm6_zirkulationspumpe": {
+        "name": "Warmwasser 6 Zirkulationspumpe"
+      },
+      "fwm7_warmwasser": {
+        "name": "Warmwasser 7 Temperatur"
+      },
+      "fwm7_zirkulationspumpe": {
+        "name": "Warmwasser 7 Zirkulationspumpe"
+      },
+      "fwm8_warmwasser": {
+        "name": "Warmwasser 8 Temperatur"
+      },
+      "fwm8_zirkulationspumpe": {
+        "name": "Warmwasser 8 Zirkulationspumpe"
+      },
       "heizkreis2_anforderung": {
         "name": "Heizkreis 2 Anforderung"
       },
@@ -453,6 +533,27 @@
       "komponente_fwm": {
         "name": "Komponente FWM"
       },
+      "komponente_fwm2": {
+        "name": "Komponente Warmwasser 2"
+      },
+      "komponente_fwm3": {
+        "name": "Komponente Warmwasser 3"
+      },
+      "komponente_fwm4": {
+        "name": "Komponente Warmwasser 4"
+      },
+      "komponente_fwm5": {
+        "name": "Komponente Warmwasser 5"
+      },
+      "komponente_fwm6": {
+        "name": "Komponente Warmwasser 6"
+      },
+      "komponente_fwm7": {
+        "name": "Komponente Warmwasser 7"
+      },
+      "komponente_fwm8": {
+        "name": "Komponente Warmwasser 8"
+      },
       "komponente_hk1": {
         "name": "Komponente Heizkreis 1"
       },
@@ -479,6 +580,21 @@
       },
       "komponente_puffer3": {
         "name": "Komponente Pufferspeicher 3"
+      },
+      "komponente_puffer4": {
+        "name": "Komponente Pufferspeicher 4"
+      },
+      "komponente_puffer5": {
+        "name": "Komponente Pufferspeicher 5"
+      },
+      "komponente_puffer6": {
+        "name": "Komponente Pufferspeicher 6"
+      },
+      "komponente_puffer7": {
+        "name": "Komponente Pufferspeicher 7"
+      },
+      "komponente_puffer8": {
+        "name": "Komponente Pufferspeicher 8"
       },
       "komponente_pvm": {
         "name": "Komponente PV-Heizmodul"
@@ -626,6 +742,201 @@
       },
       "puffer3_zustand": {
         "name": "Puffer 3 Zustand"
+      },
+      "puffer4_zustand": {
+        "name": "Puffer 4 Zustand"
+      },
+      "puffer4_ladezustand": {
+        "name": "Puffer 4 Ladezustand"
+      },
+      "puffer4_volumen": {
+        "name": "Puffer 4 effektives Volumen"
+      },
+      "puffer4_ladepumpe": {
+        "name": "Puffer 4 Ladepumpe"
+      },
+      "puffer4_fuehler_1": {
+        "name": "Puffer 4 Fühler 1"
+      },
+      "puffer4_fuehler_2": {
+        "name": "Puffer 4 Fühler 2"
+      },
+      "puffer4_fuehler_3": {
+        "name": "Puffer 4 Fühler 3"
+      },
+      "puffer4_fuehler_4": {
+        "name": "Puffer 4 Fühler 4"
+      },
+      "puffer4_fuehler_5": {
+        "name": "Puffer 4 Fühler 5"
+      },
+      "puffer4_fuehler_6": {
+        "name": "Puffer 4 Fühler 6"
+      },
+      "puffer4_fuehler_7": {
+        "name": "Puffer 4 Fühler 7"
+      },
+      "puffer4_fuehler_8": {
+        "name": "Puffer 4 Fühler 8"
+      },
+      "puffer4_fuehler_9": {
+        "name": "Puffer 4 Fühler 9"
+      },
+      "puffer5_zustand": {
+        "name": "Puffer 5 Zustand"
+      },
+      "puffer5_ladezustand": {
+        "name": "Puffer 5 Ladezustand"
+      },
+      "puffer5_volumen": {
+        "name": "Puffer 5 effektives Volumen"
+      },
+      "puffer5_ladepumpe": {
+        "name": "Puffer 5 Ladepumpe"
+      },
+      "puffer5_fuehler_1": {
+        "name": "Puffer 5 Fühler 1"
+      },
+      "puffer5_fuehler_2": {
+        "name": "Puffer 5 Fühler 2"
+      },
+      "puffer5_fuehler_3": {
+        "name": "Puffer 5 Fühler 3"
+      },
+      "puffer5_fuehler_4": {
+        "name": "Puffer 5 Fühler 4"
+      },
+      "puffer5_fuehler_5": {
+        "name": "Puffer 5 Fühler 5"
+      },
+      "puffer5_fuehler_6": {
+        "name": "Puffer 5 Fühler 6"
+      },
+      "puffer5_fuehler_7": {
+        "name": "Puffer 5 Fühler 7"
+      },
+      "puffer5_fuehler_8": {
+        "name": "Puffer 5 Fühler 8"
+      },
+      "puffer5_fuehler_9": {
+        "name": "Puffer 5 Fühler 9"
+      },
+      "puffer6_zustand": {
+        "name": "Puffer 6 Zustand"
+      },
+      "puffer6_ladezustand": {
+        "name": "Puffer 6 Ladezustand"
+      },
+      "puffer6_volumen": {
+        "name": "Puffer 6 effektives Volumen"
+      },
+      "puffer6_ladepumpe": {
+        "name": "Puffer 6 Ladepumpe"
+      },
+      "puffer6_fuehler_1": {
+        "name": "Puffer 6 Fühler 1"
+      },
+      "puffer6_fuehler_2": {
+        "name": "Puffer 6 Fühler 2"
+      },
+      "puffer6_fuehler_3": {
+        "name": "Puffer 6 Fühler 3"
+      },
+      "puffer6_fuehler_4": {
+        "name": "Puffer 6 Fühler 4"
+      },
+      "puffer6_fuehler_5": {
+        "name": "Puffer 6 Fühler 5"
+      },
+      "puffer6_fuehler_6": {
+        "name": "Puffer 6 Fühler 6"
+      },
+      "puffer6_fuehler_7": {
+        "name": "Puffer 6 Fühler 7"
+      },
+      "puffer6_fuehler_8": {
+        "name": "Puffer 6 Fühler 8"
+      },
+      "puffer6_fuehler_9": {
+        "name": "Puffer 6 Fühler 9"
+      },
+      "puffer7_zustand": {
+        "name": "Puffer 7 Zustand"
+      },
+      "puffer7_ladezustand": {
+        "name": "Puffer 7 Ladezustand"
+      },
+      "puffer7_volumen": {
+        "name": "Puffer 7 effektives Volumen"
+      },
+      "puffer7_ladepumpe": {
+        "name": "Puffer 7 Ladepumpe"
+      },
+      "puffer7_fuehler_1": {
+        "name": "Puffer 7 Fühler 1"
+      },
+      "puffer7_fuehler_2": {
+        "name": "Puffer 7 Fühler 2"
+      },
+      "puffer7_fuehler_3": {
+        "name": "Puffer 7 Fühler 3"
+      },
+      "puffer7_fuehler_4": {
+        "name": "Puffer 7 Fühler 4"
+      },
+      "puffer7_fuehler_5": {
+        "name": "Puffer 7 Fühler 5"
+      },
+      "puffer7_fuehler_6": {
+        "name": "Puffer 7 Fühler 6"
+      },
+      "puffer7_fuehler_7": {
+        "name": "Puffer 7 Fühler 7"
+      },
+      "puffer7_fuehler_8": {
+        "name": "Puffer 7 Fühler 8"
+      },
+      "puffer7_fuehler_9": {
+        "name": "Puffer 7 Fühler 9"
+      },
+      "puffer8_zustand": {
+        "name": "Puffer 8 Zustand"
+      },
+      "puffer8_ladezustand": {
+        "name": "Puffer 8 Ladezustand"
+      },
+      "puffer8_volumen": {
+        "name": "Puffer 8 effektives Volumen"
+      },
+      "puffer8_ladepumpe": {
+        "name": "Puffer 8 Ladepumpe"
+      },
+      "puffer8_fuehler_1": {
+        "name": "Puffer 8 Fühler 1"
+      },
+      "puffer8_fuehler_2": {
+        "name": "Puffer 8 Fühler 2"
+      },
+      "puffer8_fuehler_3": {
+        "name": "Puffer 8 Fühler 3"
+      },
+      "puffer8_fuehler_4": {
+        "name": "Puffer 8 Fühler 4"
+      },
+      "puffer8_fuehler_5": {
+        "name": "Puffer 8 Fühler 5"
+      },
+      "puffer8_fuehler_6": {
+        "name": "Puffer 8 Fühler 6"
+      },
+      "puffer8_fuehler_7": {
+        "name": "Puffer 8 Fühler 7"
+      },
+      "puffer8_fuehler_8": {
+        "name": "Puffer 8 Fühler 8"
+      },
+      "puffer8_fuehler_9": {
+        "name": "Puffer 8 Fühler 9"
       },
       "puffer_energieinhalt": {
         "name": "Puffer Energieinhalt"

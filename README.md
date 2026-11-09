@@ -29,9 +29,9 @@ Oben die [Dashboard-Karte](#-dashboard-vorlage-für-lovelace) am PC, darunter di
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
 
-**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with up to three buffer tanks, fresh water module, heating circuits, solar, PV heating module, pellet store, a second heat source and a transfer line to another building) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
+**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with up to eight buffer tanks, up to eight fresh water modules or hot water tanks, heating circuits, solar, PV heating module, pellet store, a second heat source and a transfer line to another building) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
 
-- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and tick the components your system has. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
+- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080), the number of buffer tanks, hot water units and heating circuits, and tick the other components your system has. The function block names are then pre-filled with what your system reports. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card below works everywhere. Display names are translated.
 - With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Buffer loading times and hot water times can be shown too (*Show* in the card editor); hot water temperatures are editable from 0 to 80 °C, buffer loading times only switch loading on and off. Home Assistant loads the card by itself - add it via *Edit dashboard -> Add card*.
@@ -74,12 +74,12 @@ Nach dem Neustart kannst du die Integration direkt über die Benutzeroberfläche
 1. Gehe zu **Einstellungen** -> **Geräte & Dienste** -> **Integration hinzufügen**.
 2. Suche nach **ETA Web-Services**.
 3. Gib die **IP-Adresse** deiner ETA-Heizung ein (Port ist standardmäßig `8080`).
-4. **Kreuze an, welche Komponenten deine Anlage hat** (Pufferspeicher 1 bis 3, Frischwassermodul/Warmwasser, Heizkreis 1 bis 4, Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fernleitung, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **Brenner** ist ein zweiter Wärmeerzeuger wie eine Gastherme, ein Ölkessel oder eine Wärmepumpe, den die ETA-Regelung freigibt oder sperrt; **Fernleitung** die Leitung zu einem Nebengebäude. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
+4. **Gib an, was deine Anlage hat:** die **Anzahl** der Pufferspeicher (PufferFlex und ältere Puffer zusammen, bis 8), der Frischwassermodule und Warmwasserspeicher (zusammen bis 8) und der Heizkreise (bis 4), dazu angekreuzt die übrigen Komponenten (Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fernleitung, TWIN). Der Kessel steht nicht zur Wahl - den hat jede Anlage. **Brenner** ist ein zweiter Wärmeerzeuger wie eine Gastherme, ein Ölkessel oder eine Wärmepumpe, den die ETA-Regelung freigibt oder sperrt; **Fernleitung** die Leitung zu einem Nebengebäude. **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat: Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel mit auf der Kessel-Kachel.
 5. Entscheide, ob **Störungsmeldungen** ausgelesen werden sollen (standardmäßig an) und ob Home Assistant **Kessel und Heizkreise schalten** darf (standardmäßig **aus**). Schaltest du das ein, erscheint danach ein Hinweis, was das bedeutet. Außerdem wählst du, ob du den **Pelletverbrauch je Zeitraum** (heute, Woche, Jahr) und die **Pelletprognose mit Reichweite des Lagers** haben möchtest. Beides ist vorausgewählt; wer nur die Messwerte der Anlage braucht, wählt es ab und bekommt entsprechend weniger Entitäten.
 6. Der **Heizwert deiner Pellets** steht auf 4,8 kWh/kg. Das ist der übliche Richtwert für ENplus A1; steht auf deinem Lieferschein ein anderer Wert, trage ihn hier ein. Trägst du den **Pelletpreis** in Euro je Tonne ein, rechnet die Integration auch die Kosten aus - bei 0 bleibt es beim Verbrauch in kg.
 7. Wähle optional eine **Wettervorhersage** für die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers). Gibt es in deinem Home Assistant genau eine Wetter-Entität, ist sie schon vorausgewählt.
 8. Klicke auf **Weiter**. Die Integration prüft die Verbindung.
-9. Danach siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - je nach angekreuzten Komponenten mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Diese sind bereits mit den ETA-Standardnamen vorausgefüllt. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
+9. Danach siehst du ein Formular **"Funktionsblock-Namen bestätigen"** - mit Feldern für die an deiner Anlage relevanten Funktionsblöcke (FUB), z. B. "Kessel", "PufferFlex", "HK", "HK2", "FWM". Sie sind mit den Namen vorausgefüllt, die deine Anlage meldet: Pufferspeicher bekommen der Reihe nach erst die PufferFlex, dann die älteren Puffer, Warmwasser erst die FWM, dann die WW. Antwortet die Anlage nicht, stehen dort die ETA-Standardnamen. **Falls du einen FUB an deiner Steuerung umbenannt hast** (z. B. "Kessel" in "Holzvergaser"), trage hier den tatsächlichen Namen ein - sonst kann die Integration die zugehörigen Werte nicht finden.
 10. Hast du einen Pufferspeicher mit dem älteren Funktionsblock **Puffer**, fragt der nächste Schritt nach seinen **Litern**. Er zeigt sein effektives Volumen zwar am Display, gibt es aber nicht an die Webservices weiter; trag den Wert vom Display, vom Typenschild oder aus den Unterlagen ein. Bei **PufferFlex** liest die Integration das Volumen selbst, dann erscheint der Schritt nicht. Ob ein Puffer sein Volumen meldet, erkennt sie am Menübaum.
 11. Klicke auf **Absenden**.
 
@@ -97,7 +97,8 @@ Alle Entitäten hängen an einem gemeinsamen Gerät ("ETA Heizung"). Die vollst�
 * **Effektives Puffervolumen:** rechnet die Regelung aus dem Gesamtvolumen und der Lage der Fühler. Bei PufferFlex liest die Integration es aus der Anlage - eintragen musst du nichts. Der ältere Funktionsblock "Puffer" gibt es nicht an die Webservices weiter; dort trägst du die Liter beim Einrichten ein (Schritt 10). Damit rechnen der Energieinhalt und die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers).
 * **Ladepumpe:** nur bei einem Puffer, der im ETA-Assistenten als **dezentral** geladen eingerichtet ist - sonst hat er keinen Pumpenausgang.
 * **Ladezustand:** bei jedem PufferFlex. Der ältere Funktionsblock "Puffer" kennt keinen.
-* **Weitere Puffer** (Pufferspeicher 2 und 3) bringen bewusst nur Fühler, Zustand, Ladezustand, effektives Volumen und gegebenenfalls die Ladepumpe mit, damit die Entitätsliste nicht überquillt. Den Energieinhalt gibt es für den ersten.
+* **Weitere Puffer** (Pufferspeicher 2 bis 8) bringen bewusst nur Fühler, Zustand, Ladezustand, effektives Volumen und gegebenenfalls die Ladepumpe mit, damit die Entitätsliste nicht überquillt. Den Energieinhalt gibt es für den ersten.
+* **Weiteres Warmwasser** (Warmwasser 2 bis 8, je ein Frischwassermodul oder Warmwasserspeicher) bringt die Warmwassertemperatur und, wenn es eine gibt, die Zirkulationspumpe mit.
 * **Pumpen** (Zirkulation, Ladepumpe, Fernleitung) zeigen, was die Anlage an ihren Ausgang meldet: `Ein` oder `Aus`.
 * **Zirkulationspumpe:** ob sie gerade läuft - nicht, wie warm das Zirkulationswasser ist.
 * **`sensor.eta_heizung_aschebox_status`:** Verbrauch und Schwelle in einem Text ("459/1000kg"), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
@@ -159,9 +160,45 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_puffer_2_ladepumpe` | Puffer 2 Ladepumpe | Text |
 | `sensor.eta_heizung_puffer_3_effektives_volumen` | Puffer 3 effektives Volumen | L |
 | `sensor.eta_heizung_puffer_3_ladepumpe` | Puffer 3 Ladepumpe | Text |
+| **Pufferspeicher 4 bis 8** | | |
+| `sensor.eta_heizung_puffer_4_zustand` | Puffer 4 Zustand | Text |
+| `sensor.eta_heizung_puffer_4_ladezustand` | Puffer 4 Ladezustand | % |
+| `sensor.eta_heizung_puffer_4_effektives_volumen` | Puffer 4 effektives Volumen | L |
+| `sensor.eta_heizung_puffer_4_ladepumpe` | Puffer 4 Ladepumpe | Text |
+| `sensor.eta_heizung_puffer_5_zustand` | Puffer 5 Zustand | Text |
+| `sensor.eta_heizung_puffer_5_ladezustand` | Puffer 5 Ladezustand | % |
+| `sensor.eta_heizung_puffer_5_effektives_volumen` | Puffer 5 effektives Volumen | L |
+| `sensor.eta_heizung_puffer_5_ladepumpe` | Puffer 5 Ladepumpe | Text |
+| `sensor.eta_heizung_puffer_6_zustand` | Puffer 6 Zustand | Text |
+| `sensor.eta_heizung_puffer_6_ladezustand` | Puffer 6 Ladezustand | % |
+| `sensor.eta_heizung_puffer_6_effektives_volumen` | Puffer 6 effektives Volumen | L |
+| `sensor.eta_heizung_puffer_6_ladepumpe` | Puffer 6 Ladepumpe | Text |
+| `sensor.eta_heizung_puffer_7_zustand` | Puffer 7 Zustand | Text |
+| `sensor.eta_heizung_puffer_7_ladezustand` | Puffer 7 Ladezustand | % |
+| `sensor.eta_heizung_puffer_7_effektives_volumen` | Puffer 7 effektives Volumen | L |
+| `sensor.eta_heizung_puffer_7_ladepumpe` | Puffer 7 Ladepumpe | Text |
+| `sensor.eta_heizung_puffer_8_zustand` | Puffer 8 Zustand | Text |
+| `sensor.eta_heizung_puffer_8_ladezustand` | Puffer 8 Ladezustand | % |
+| `sensor.eta_heizung_puffer_8_effektives_volumen` | Puffer 8 effektives Volumen | L |
+| `sensor.eta_heizung_puffer_8_ladepumpe` | Puffer 8 Ladepumpe | Text |
 | **FWM** | | |
 | `sensor.eta_heizung_fwm_warmwassertemperatur` | FWM Warmwassertemperatur | °C |
 | `sensor.eta_heizung_fwm_zirkulationspumpe` | FWM Zirkulationspumpe | Text |
+| **Warmwasser 2 bis 8** (weitere Frischwassermodule und Warmwasserspeicher) | | |
+| `sensor.eta_heizung_warmwasser_2_temperatur` | Warmwasser 2 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_2_zirkulationspumpe` | Warmwasser 2 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_3_temperatur` | Warmwasser 3 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_3_zirkulationspumpe` | Warmwasser 3 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_4_temperatur` | Warmwasser 4 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_4_zirkulationspumpe` | Warmwasser 4 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_5_temperatur` | Warmwasser 5 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_5_zirkulationspumpe` | Warmwasser 5 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_6_temperatur` | Warmwasser 6 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_6_zirkulationspumpe` | Warmwasser 6 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_7_temperatur` | Warmwasser 7 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_7_zirkulationspumpe` | Warmwasser 7 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_8_temperatur` | Warmwasser 8 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_8_zirkulationspumpe` | Warmwasser 8 Zirkulationspumpe | Text |
 | **Heizkreis 1** | | |
 | `select.eta_heizung_heizkreis_1_betriebsart` | Heizkreis 1 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_anforderung` | Heizkreis Anforderung | Text |
@@ -225,7 +262,7 @@ Es entstehen nur die Entitäten der Komponenten, die du angekreuzt hast. Schalte
 | `sensor.eta_heizung_aschebox_status` | "459/1000kg" für die Dashboard-Anzeige | |
 | `sensor.eta_heizung_pellet_energieverbrauch_gesamt` | Gesamtverbrauch in kWh fürs Energie-Dashboard | |
 | `sensor.eta_heizung_aktive_fehler` | Anzahl der anstehenden Störungen | |
-| `sensor.eta_heizung_puffer_fuhler_1` … `_9` | je gefundenem Pufferfühler einer, bei weiteren Puffern `puffer_2_fuhler_…` und `puffer_3_fuhler_…` | |
+| `sensor.eta_heizung_puffer_fuhler_1` … `_9` | je gefundenem Pufferfühler einer, bei weiteren Puffern `puffer_2_fuhler_…` bis `puffer_8_fuhler_…` | |
 | `sensor.eta_heizung_komponente_*` | Marker je Komponente für die Dashboard-Karte | |
 | `binary_sensor.eta_heizung_storung` | an, sobald eine Störung ansteht | |
 | `binary_sensor.eta_heizung_aschebox_leeren` | an, sobald die Schwelle erreicht ist | |
@@ -262,8 +299,21 @@ Alle Funktionsblöcke (FUB) können am Gerät selbst umbenannt werden - dann hei
 | Kessel | `Kessel` |
 | Pelletteil des SH TWIN | `Twin` |
 | Pufferspeicher | `PufferFlex` (ältere Anlagen ohne Flex-Funktion: `Puffer`) |
-| Pufferspeicher 2 und 3 | `PufferFlex 2`, `PufferFlex 3` |
+| Pufferspeicher 2 | `PufferFlex 2` oder `Puffer 2` |
+| Pufferspeicher 3 | `PufferFlex 3` oder `Puffer 3` |
+| Pufferspeicher 4 | `PufferFlex 4` oder `Puffer 4` |
+| Pufferspeicher 5 | `PufferFlex 5` oder `Puffer 5` |
+| Pufferspeicher 6 | `PufferFlex 6` oder `Puffer 6` |
+| Pufferspeicher 7 | `PufferFlex 7` oder `Puffer 7` |
+| Pufferspeicher 8 | `PufferFlex 8` oder `Puffer 8` |
 | Frischwasser-/Warmwassermodul | `FWM`, oder `WW` bei einem reinen Warmwasserspeicher |
+| Warmwasser 2 | `FWM 2` oder `WW 2` |
+| Warmwasser 3 | `FWM 3` oder `WW 3` |
+| Warmwasser 4 | `FWM 4` oder `WW 4` |
+| Warmwasser 5 | `FWM 5` oder `WW 5` |
+| Warmwasser 6 | `FWM 6` oder `WW 6` |
+| Warmwasser 7 | `FWM 7` oder `WW 7` |
+| Warmwasser 8 | `FWM 8` oder `WW 8` |
 | Heizkreis 1 | `HK` (auch `HK1` oder `HK 1` wird gefunden) |
 | Heizkreis 2 | `HK2` oder `HK 2` |
 | Heizkreis 3 | `HK3` oder `HK 3` |
@@ -283,7 +333,7 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 
 Es gibt **eine** Karte für alle Anlagen. Sie zeigt genau die Komponenten, die du im Setup ausgewählt hast, und passt sich an die Bildschirmbreite an.
 
-Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck. Hat die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) genug gelernt, steht im Dach des Lagers, bis wann der Vorrat reicht. Fordert die Regelung den Brenner an, brennen blaue Flammen im Sichtfenster der Therme; läuft die Fernpumpe, wandern helle Pulse durch Vor- und Rücklauf der Fernleitung. Jeder Pufferspeicher bekommt eine eigene Kachel mit seinem Ladezustand oben, eine Ladepumpe steht darunter, wenn es sie gibt. Fordert der Puffer Wärme an oder nimmt sie auf (Zustand „Anfordern“, „Laden“, „Restwärme“ oder „Abschöpfen“), pulsiert der Rand des Speichers warm. Hast du mehrere, steht über jedem Speicher der Name seines Funktionsblocks, so wie er an der Regelung heißt (etwa „PufferFlex“, „PufferFlex 2“, „Puffer“); bei einem einzigen bleibt die Stelle frei. Werte, die die Anlage nicht führt - etwa die Zirkulationspumpe ohne Zirkulation -, lässt die Karte weg, statt `-` zu zeigen.
+Der Kessel lebt mit: Beim Zünden springen Funken, heizt er, lodert die Flamme im Sichtfenster, im Glutabbrand glimmt nur noch Glut, beim Entaschen dreht sich der Rost, bei Störung und Wartung blinkt ein Warndreieck, sonst bleibt der Brennraum dunkel. Grundlage ist `sensor.eta_heizung_kessel_zustand`. Bei den Heizkreisen leuchtet das Symbol der geltenden Betriebsart, und solange ein Heizkreis angefordert ist, fließt sichtbar Wasser durch Heizkörper und Fußbodenschlange. Bringt die Solaranlage Leistung, dreht sich die Sonne und strahlt, zieht der Heizstab des PV-Heizmoduls Strom, leuchtet der Blitz - sonst sind beide blass. Das Pelletlager zeigt seinen Füllstand in fünf Stufen (voll, 75 %, 50 %, 25 %, leer) nach Vorrat und maximalem Vorrat aus der Anlage; fördert die Austragung, dreht sich die Schnecke, und unter der Warngrenze erscheint ein Warndreieck. Hat die [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) genug gelernt, steht im Dach des Lagers, bis wann der Vorrat reicht. Fordert die Regelung den Brenner an, brennen blaue Flammen im Sichtfenster der Therme; läuft die Fernpumpe, wandern helle Pulse durch Vor- und Rücklauf der Fernleitung. Jeder Pufferspeicher bekommt eine eigene Kachel mit seinem Ladezustand oben, eine Ladepumpe steht darunter, wenn es sie gibt. Fordert der Puffer Wärme an oder nimmt sie auf (Zustand „Anfordern“, „Laden“, „Restwärme“ oder „Abschöpfen“), pulsiert der Rand des Speichers warm. Hast du mehrere, steht über jedem Speicher der Name seines Funktionsblocks, so wie er an der Regelung heißt (etwa „PufferFlex“, „PufferFlex 2“, „Puffer“); bei einem einzigen bleibt die Stelle frei. Genauso bekommt jedes Frischwassermodul und jeder Warmwasserspeicher eine Kachel, bei mehreren mit Namen (etwa „WW“, „WW 2“). Werte, die die Anlage nicht führt - etwa die Zirkulationspumpe ohne Zirkulation -, lässt die Karte weg, statt `-` zu zeigen.
 
 Wer keine Bewegung möchte - etwa auf einem Wandtablet, das sparsam laufen soll -, schaltet `switch.eta_heizung_animationen` aus (Gerät *ETA Heizung*, Bereich *Konfiguration*). Die Karte zeigt dann Standbilder mit derselben Aussage: Flamme, Funken, Glut und Warndreieck stehen still, Sonne und Blitz leuchten, Heizkreis, Förderschnecke und der Rand eines ladenden Puffers bleiben hervorgehoben. Das Umschalten wirkt sofort und gilt für alle Dashboards. Der Schalter gehört nur zu Home Assistant, schreibt nichts in die Heizung und ist auch ohne Schreibzugriff da.
 
@@ -296,7 +346,7 @@ Wer keine Bewegung möchte - etwa auf einem Wandtablet, das sparsam laufen soll 
 
 Es ist nichts zu löschen und nichts anzupassen. Die Grafiken liefert die Integration selbst aus. Baust du deine Anlage später um, führ die Aktion einfach noch einmal aus.
 
-Alternativ gibt es die **universelle Karte**, die ohne Anpassung zu jeder Anlage passt: **➡️ [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml)**. Sie ist deutlich länger, weil sie alle Komponenten und Fühlerzahlen enthält und das Passende per Bedingung einblendet.
+Alternativ gibt es die **universelle Karte**, die ohne Anpassung zu fast jeder Anlage passt: **➡️ [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml)**. Sie ist deutlich länger, weil sie alle Komponenten und Fühlerzahlen enthält und das Passende per Bedingung einblendet. Sie zeigt bis zu drei Pufferspeicher und drei Frischwassermodule oder Warmwasserspeicher - hast du mehr, nimm die Aktion oben, ihre Karte kennt alle.
 
 > ℹ️ **Update von Version 0.20 oder älter:** Füge die Karte einmal neu ein. Die Grafiken kommen jetzt direkt aus der Integration statt aus deinem `www`-Ordner, außerdem hat die Heizkreis-Kachel neue Tasten für die Betriebsart. Die alte Karte funktioniert bis dahin weiter. Danach kannst du den Ordner `www/community/ha-eta-webservices` löschen - er wird nicht mehr gebraucht.
 

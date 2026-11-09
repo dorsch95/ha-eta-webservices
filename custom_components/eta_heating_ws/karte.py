@@ -251,12 +251,26 @@ PUFFER_MIN = 2
 """Der ältere Funktionsblock "Puffer" kommt mit zwei Fühlern aus, oben und unten."""
 PUFFER_MAX = 9
 
+PUFFER_ANZAHL = 8
+"""So viele Pufferspeicher wie in const.py - das Modul kommt ohne Home Assistant aus."""
+
+WARMWASSER_ANZAHL = 8
+"""So viele Frischwassermodule und Warmwasserspeicher wie in const.py."""
+
 PUFFER_KACHELN = {
     "puffer": ("puffer", "pufferspeicher"),
-    "puffer2": ("puffer_2", "pufferspeicher_2"),
-    "puffer3": ("puffer_3", "pufferspeicher_3"),
+    **{f"puffer{n}": (f"puffer_{n}", f"pufferspeicher_{n}") for n in range(2, PUFFER_ANZAHL + 1)},
 }
 """Je Puffer: womit seine Entitäts-IDs beginnen und welcher Marker ihn zeigt."""
+
+WARMWASSER_KACHELN = {
+    "fwm": ("fwm_warmwassertemperatur", "fwm_zirkulationspumpe", "fwm"),
+    **{
+        f"fwm{n}": (f"warmwasser_{n}_temperatur", f"warmwasser_{n}_zirkulationspumpe", f"warmwasser_{n}")
+        for n in range(2, WARMWASSER_ANZAHL + 1)
+    },
+}
+"""Je Frischwassermodul oder Warmwasserspeicher: Temperatur, Zirkulationspumpe und Marker."""
 
 
 def puffer_fuehler(anzahl, schrift, praefix="puffer"):
@@ -329,51 +343,53 @@ PUFFER_NAME_OBEN = 23
 """Höhe des Namens: zwischen Ladepumpe und Deckel des Speichers."""
 
 
+def _marker(komponente_):
+    """Der Marker einer Komponente, ohne "komponente_" davor."""
+    if komponente_ in PUFFER_KACHELN:
+        return PUFFER_KACHELN[komponente_][1]
+    return WARMWASSER_KACHELN[komponente_][2]
+
+
 def _marker_entitaet(komponente_):
-    return f"sensor.eta_heizung_komponente_{PUFFER_KACHELN[komponente_][1]}"
+    return f"sensor.eta_heizung_komponente_{_marker(komponente_)}"
 
 
-def puffer_name(komponente_, schrift):
-    """Der Name des Funktionsblocks über dem Speicher, wenn es weitere Puffer gibt.
+def speicher_name(komponente_, gruppe, schrift):
+    """Der Name des Funktionsblocks über dem Speicher, wenn es weitere seiner Art gibt.
 
-    Bei einem einzigen Puffer wäre er überflüssig. Der Name kommt aus dem
-    Attribut "funktionsblock" des Komponenten-Markers - so, wie der Block
-    an der Regelung heißt, etwa "PufferFlex 2" oder "Puffer".
+    Bei einem einzigen Puffer oder Warmwasser wäre er überflüssig. Der Name
+    kommt aus dem Attribut "funktionsblock" des Komponenten-Markers - so,
+    wie der Block an der Regelung heißt, etwa "PufferFlex 2" oder "WW 2".
 
     Ob es weitere gibt, zeigen deren Marker. Bedingungen gelten nur alle
-    zugleich, deshalb zwei Elemente: eines, wenn der erste der anderen
-    Puffer da ist, eines, wenn nur der zweite da ist. Die zugeschnittene
-    Karte ersetzt beide durch das Etikett allein oder lässt sie weg, siehe
-    _puffernamen_zuschneiden.
+    zugleich, deshalb je weiterem Speicher ein Element: es greift, wenn
+    dieser da ist und alle vor ihm fehlen - so zeigt höchstens eines den
+    Namen. Die zugeschnittene Karte ersetzt sie durch das Etikett allein
+    oder lässt sie weg, siehe _namen_zuschneiden.
     """
-    erster, zweiter = (k for k in PUFFER_KACHELN if k != komponente_)
-    eigener = _marker_entitaet(komponente_)
-    etikett = label(f"komponente_{PUFFER_KACHELN[komponente_][1]}", None,
+    andere = [k for k in gruppe if k != komponente_]
+    etikett = label(f"komponente_{_marker(komponente_)}", None,
                     "weiss", PUFFER_NAME_OBEN, 50, schrift + 5)
     etikett["attribute"] = "funktionsblock"
-    vorhanden = {"condition": "state", "entity": eigener, "state_not": "unknown"}
+    vorhanden = {"condition": "state", "entity": _marker_entitaet(komponente_), "state_not": "unknown"}
     return [
         {
             "type": "conditional",
             "conditions": [
                 vorhanden,
-                {"condition": "state", "entity": _marker_entitaet(erster), "state_not": "unknown"},
+                *(
+                    {"condition": "state", "entity": _marker_entitaet(frueher), "state": "unknown"}
+                    for frueher in andere[:i]
+                ),
+                {"condition": "state", "entity": _marker_entitaet(anderer), "state_not": "unknown"},
             ],
             "elements": [etikett],
-        },
-        {
-            "type": "conditional",
-            "conditions": [
-                vorhanden,
-                {"condition": "state", "entity": _marker_entitaet(erster), "state": "unknown"},
-                {"condition": "state", "entity": _marker_entitaet(zweiter), "state_not": "unknown"},
-            ],
-            "elements": [etikett],
-        },
+        }
+        for i, anderer in enumerate(andere)
     ]
 
 
-def puffer_kachel(komponente_, schrift, kurz):
+def puffer_kachel(komponente_, schrift, kurz, gruppe=PUFFER_KACHELN):
     """Die Kachel eines Pufferspeichers.
 
     Der Rahmen des Speichers pulsiert, solange der Puffer Wärme anfordert
@@ -381,7 +397,7 @@ def puffer_kachel(komponente_, schrift, kurz):
     Funktionsblock "Puffer" kennt keinen,
     dann bleibt die Zeile leer. Darunter die Ladepumpe, falls der Puffer
     dezentral geladen wird. Gibt es mehrere Puffer, steht über dem
-    Speicher sein Name, siehe puffer_name.
+    Speicher sein Name, siehe speicher_name.
     """
     praefix, marker = PUFFER_KACHELN[komponente_]
     zustand = f"sensor.eta_heizung_{praefix}_zustand"
@@ -399,7 +415,7 @@ def puffer_kachel(komponente_, schrift, kurz):
                 label(f"{praefix}_ladezustand", "Ladung: " if kurz else "Ladezustand: ",
                       "hell", 8, 50, schrift + 5)
             ),
-            *puffer_name(komponente_, schrift),
+            *speicher_name(komponente_, gruppe, schrift),
             nur_mit_wert(
                 label(f"{praefix}_ladepumpe", "Pumpe: " if kurz else "Ladepumpe: ",
                       "gedaempft", 15, 50, schrift)
@@ -408,6 +424,28 @@ def puffer_kachel(komponente_, schrift, kurz):
                 puffer_fuehler(anzahl, puffer_schrift(anzahl, schrift), praefix)
                 for anzahl in range(PUFFER_MIN, PUFFER_MAX + 1)
             ),
+        ],
+    )
+
+
+def warmwasser_kachel(komponente_, schrift, kurz, gruppe=WARMWASSER_KACHELN):
+    """Die Kachel eines Frischwassermoduls oder Warmwasserspeichers.
+
+    Oben die Warmwassertemperatur, darunter die Zirkulationspumpe, wenn es
+    eine gibt. Gibt es mehrere, steht darüber der Name, siehe speicher_name.
+    """
+    temperatur, zirkulation, marker = WARMWASSER_KACHELN[komponente_]
+    return komponente(
+        marker,
+        komponente_,
+        "fwm",
+        [
+            label(temperatur, "WW: " if kurz else "Warmwasser: ", "hell", 8, 50, schrift + 5),
+            nur_mit_wert(
+                label(zirkulation, "Zirk.: " if kurz else "Zirkulationspumpe: ",
+                      "gedaempft", 15, 50, schrift)
+            ),
+            *speicher_name(komponente_, gruppe, schrift),
         ],
     )
 
@@ -921,8 +959,11 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     }
 
 
-def grid(spalten, schrift, kurz):
-    """Alle Kacheln nebeneinander, für eine der drei Bildschirmbreiten."""
+def grid(spalten, schrift, kurz, puffer=PUFFER_KACHELN, warmwasser=WARMWASSER_KACHELN):
+    """Alle Kacheln nebeneinander, für eine der drei Bildschirmbreiten.
+
+    puffer und warmwasser: welche Speicher eine Kachel bekommen.
+    """
     kessel = kessel_bewegung() + [
         teil
         for entity, lang_text, kurz_text, farbe, top in KESSEL_ZEILEN
@@ -947,21 +988,8 @@ def grid(spalten, schrift, kurz):
         "cards": [
             komponente("kessel", "kessel", "kessel", kessel,
                        ("kessel_zustand", kessel_zustandsbilder())),
-            *(puffer_kachel(k, schrift, kurz) for k in PUFFER_KACHELN),
-            komponente(
-                "fwm",
-                "fwm",
-                "fwm",
-                [
-                    label("fwm_warmwassertemperatur", "WW: " if kurz else "Warmwasser: ",
-                          "hell", 8, 50, schrift + 5),
-                    nur_mit_wert(
-                        label("fwm_zirkulationspumpe",
-                              "Zirk.: " if kurz else "Zirkulationspumpe: ",
-                              "gedaempft", 15, 50, schrift)
-                    ),
-                ],
-            ),
+            *(puffer_kachel(k, schrift, kurz, list(puffer)) for k in puffer),
+            *(warmwasser_kachel(k, schrift, kurz, list(warmwasser)) for k in warmwasser),
             komponente(
                 "heizkreis_1",
                 "hk1",
@@ -1133,10 +1161,7 @@ sind zusätzlich die Beschriftungen gekürzt.
 
 MARKER = {
     "kessel": "komponente_kessel",
-    "puffer": "komponente_pufferspeicher",
-    "puffer2": "komponente_pufferspeicher_2",
-    "puffer3": "komponente_pufferspeicher_3",
-    "fwm": "komponente_fwm",
+    **{k: f"komponente_{_marker(k)}" for k in [*PUFFER_KACHELN, *WARMWASSER_KACHELN]},
     "hk1": "komponente_heizkreis_1",
     "hk2": "komponente_heizkreis_2",
     "hk3": "komponente_heizkreis_3",
@@ -1197,15 +1222,15 @@ def _fuehler_ausduennen(kachel, anzahl):
     kachel["card"]["elements"] = behalten
 
 
-def _ist_puffername(element):
-    """Erkennt die Elemente, die den Namen eines Puffers zeigen."""
+def _ist_speichername(element):
+    """Erkennt die Elemente, die den Namen eines Speichers zeigen."""
     return element.get("type") == "conditional" and any(
         kind.get("attribute") == "funktionsblock" for kind in element.get("elements", [])
     )
 
 
-def _puffernamen_zuschneiden(kachel, mehrere):
-    """Zeigt den Namen fest, wenn es mehrere Puffer gibt, sonst gar nicht.
+def _namen_zuschneiden(kachel, mehrere):
+    """Zeigt den Namen fest, wenn es mehrere Speicher der Art gibt, sonst gar nicht.
 
     Die Bedingungen der universellen Karte fragen Marker ab, die es auf
     dieser Anlage womöglich nicht gibt - die zugeschnittene Karte soll
@@ -1213,7 +1238,7 @@ def _puffernamen_zuschneiden(kachel, mehrere):
     """
     behalten, gesetzt = [], False
     for element in kachel["card"]["elements"]:
-        if not _ist_puffername(element):
+        if not _ist_speichername(element):
             behalten.append(element)
         elif mehrere and not gesetzt:
             behalten.extend(element["elements"])
@@ -1221,11 +1246,21 @@ def _puffernamen_zuschneiden(kachel, mehrere):
     kachel["card"]["elements"] = behalten
 
 
+UNIVERSELL_JE_ART = 3
+"""So viele Puffer und Warmwasser hat die universelle Karte.
+
+Jeder weitere Puffer machte sie um rund 60 KB größer, mit allen acht wäre
+sie fast 1 MB schwer. Wer mehr hat, nimmt die zugeschnittene Karte der
+Aktion "Dashboard-Karte erzeugen" - die kennt alle.
+"""
+
+
 def responsive_karte(komponenten=None, fuehler=None):
     """Die fertige Karte: alle drei Breiten übereinander, eine sichtbar.
 
-    Ohne Angaben entsteht die universelle Karte, die jede Anlage abdeckt -
-    die gehört ins Repo, weil sie ohne Nachfragen zu jedem passt.
+    Ohne Angaben entsteht die universelle Karte, die ohne Nachfragen zu
+    fast jeder Anlage passt - die gehört ins Repo. Sie zeigt bis zu
+    UNIVERSELL_JE_ART Puffer und Warmwasser.
 
     Wer seine Anlage kennt, kann sie zuschneiden: "komponenten" nimmt die
     Schlüssel aus MARKER, "fuehler" die tatsächliche Zahl der
@@ -1234,13 +1269,18 @@ def responsive_karte(komponenten=None, fuehler=None):
     Werkzeuge wie Spook verstummen, die Entitäten bemängeln, die es auf
     dieser Anlage nicht gibt.
     """
+    puffer, warmwasser = list(PUFFER_KACHELN), list(WARMWASSER_KACHELN)
+    if komponenten is None:
+        puffer, warmwasser = puffer[:UNIVERSELL_JE_ART], warmwasser[:UNIVERSELL_JE_ART]
     karte = {
         "type": "vertical-stack",
         "cards": [
             {
                 "type": "conditional",
                 "conditions": [{"condition": "screen", "media_query": abfrage}],
-                "card": grid(spalten=spalten, schrift=schrift, kurz=kurz),
+                "card": grid(
+                    spalten=spalten, schrift=schrift, kurz=kurz, puffer=puffer, warmwasser=warmwasser
+                ),
             }
             for abfrage, spalten, schrift, kurz in VARIANTEN
         ],
@@ -1259,13 +1299,16 @@ def responsive_karte(komponenten=None, fuehler=None):
         f"sensor.eta_heizung_komponente_{marker}": fuehler.get(k)
         for k, (_, marker) in PUFFER_KACHELN.items()
     }
-    puffer_marker = {_marker_entitaet(k) for k in PUFFER_KACHELN}
-    mehrere = komponenten is not None and sum(k in PUFFER_KACHELN for k in komponenten) > 1
+    mehrere = {}
+    for gruppe in (PUFFER_KACHELN, WARMWASSER_KACHELN):
+        anzahl = sum(k in gruppe for k in komponenten or [])
+        mehrere.update({_marker_entitaet(k): anzahl > 1 for k in gruppe})
     for variante in karte["cards"]:
         gitter = variante["card"]
         gitter["cards"] = [k for k in gitter["cards"] if _passt_zur_anlage(k, behalten)]
         for kachel in gitter["cards"]:
-            _fuehler_ausduennen(kachel, je_marker.get(kachel["conditions"][0]["entity"]))
-            if komponenten is not None and kachel["conditions"][0]["entity"] in puffer_marker:
-                _puffernamen_zuschneiden(kachel, mehrere)
+            marker = kachel["conditions"][0]["entity"]
+            _fuehler_ausduennen(kachel, je_marker.get(marker))
+            if komponenten is not None and marker in mehrere:
+                _namen_zuschneiden(kachel, mehrere[marker])
     return karte

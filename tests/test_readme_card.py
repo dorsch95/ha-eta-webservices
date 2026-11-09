@@ -14,7 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from eta_heating_ws.const import COMPONENTS
+from eta_heating_ws.const import COMPONENTS, PUFFER_SPEICHER, WARMWASSER_SPEICHER
+from eta_heating_ws.karte import UNIVERSELL_JE_ART
 
 from .conftest import ohne_version
 
@@ -111,8 +112,50 @@ def test_varianten_decken_jede_breite_genau_einmal_ab(karte):
         assert ab == bis + 1, f"Lücke oder Überlappung bei {bis}/{ab}"
 
 
-MIT_KACHEL = [key for key, info in COMPONENTS.items() if info["image"]]
+ALLE_KACHELN = [key for key, info in COMPONENTS.items() if info["image"]]
 """Komponenten mit eigener Kachel - "twin" steht auf der Kessel-Kachel."""
+
+NUR_ZUGESCHNITTEN = {
+    *list(PUFFER_SPEICHER)[UNIVERSELL_JE_ART:],
+    *list(WARMWASSER_SPEICHER)[UNIVERSELL_JE_ART:],
+}
+"""Puffer und Warmwasser, die nur die zugeschnittene Karte kennt - die universelle bliebe sonst fast 1 MB schwer."""
+
+MIT_KACHEL = [key for key in ALLE_KACHELN if key not in NUR_ZUGESCHNITTEN]
+"""Die Kacheln der universellen Karte."""
+
+
+def test_zugeschnittene_karte_kennt_alle_speicher():
+    """Mit acht Puffern und acht Warmwasser hat die Karte der Aktion je eine Kachel, mit Namen darüber."""
+    from eta_heating_ws.karte import responsive_karte
+
+    karte_ = responsive_karte(komponenten=ALLE_KACHELN)
+    for gitter in raster(karte_):
+        assert [u["conditions"][0]["state"] for u in gitter["cards"]] == ALLE_KACHELN
+        for unterkarte in gitter["cards"]:
+            if unterkarte["conditions"][0]["state"] in [*PUFFER_SPEICHER, *WARMWASSER_SPEICHER]:
+                namen = [
+                    e for e in unterkarte["card"]["elements"] if e.get("attribute") == "funktionsblock"
+                ]
+                assert len(namen) == 1, unterkarte["conditions"][0]["state"]
+
+
+def test_ein_warmwasser_ohne_namen():
+    """Bei einem einzigen Warmwasser bleibt die Stelle über dem Speicher frei."""
+    from eta_heating_ws.karte import responsive_karte
+
+    karte_ = responsive_karte(komponenten=["kessel", "puffer", "fwm"])
+    for element in alle_elemente(karte_):
+        assert element.get("attribute") != "funktionsblock"
+
+
+def test_karte_kennt_dieselbe_anzahl_wie_die_integration():
+    """karte.py kommt ohne Home Assistant aus und führt die Anzahlen deshalb selbst."""
+    from eta_heating_ws import karte as modul
+    from eta_heating_ws.const import PUFFER_ANZAHL, WARMWASSER_ANZAHL
+
+    assert modul.PUFFER_ANZAHL == PUFFER_ANZAHL
+    assert modul.WARMWASSER_ANZAHL == WARMWASSER_ANZAHL
 
 
 def test_je_variante_und_komponente_genau_eine_karte(karte):

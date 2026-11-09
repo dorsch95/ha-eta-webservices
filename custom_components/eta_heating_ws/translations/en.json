@@ -18,7 +18,10 @@
         "data": {
           "host": "IP address of the heating system",
           "port": "Port (default: 8080)",
-          "components": "Components present on your system",
+          "anzahl_puffer": "Number of buffer tanks",
+          "anzahl_warmwasser": "Number of fresh water modules and hot water tanks",
+          "anzahl_heizkreise": "Number of heating circuits",
+          "components": "Other components on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
@@ -29,6 +32,9 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
+          "anzahl_puffer": "PufferFlex and older Puffer together, at most 8.",
+          "anzahl_warmwasser": "Fresh water modules (FWM) and hot water tanks (WW) together, at most 8.",
+          "anzahl_heizkreise": "At most 4.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
@@ -36,13 +42,20 @@
       },
       "fub_names": {
         "title": "Confirm function block names",
-        "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names.",
+        "description": "The fields are pre-filled with the names your system reports, otherwise with the ETA default names. If you renamed a function block (FUB) on the controller, enter the actual name here.",
         "data": {
           "kessel": "FUB name: boiler",
           "twin": "FUB name: pellet unit of the SH TWIN (Twin)",
           "sys": "FUB name: Sys (outside temperature)",
           "pufferflex": "FUB name: buffer tank (default PufferFlex, older systems: Puffer)",
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
+          "fwm2": "FUB name: hot water 2 (FWM 2 or WW 2)",
+          "fwm3": "FUB name: hot water 3 (FWM 3 or WW 3)",
+          "fwm4": "FUB name: hot water 4 (FWM 4 or WW 4)",
+          "fwm5": "FUB name: hot water 5 (FWM 5 or WW 5)",
+          "fwm6": "FUB name: hot water 6 (FWM 6 or WW 6)",
+          "fwm7": "FUB name: hot water 7 (FWM 7 or WW 7)",
+          "fwm8": "FUB name: hot water 8 (FWM 8 or WW 8)",
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
@@ -52,6 +65,11 @@
           "lager": "FUB name: pellet store (Lager)",
           "pufferflex2": "FUB name: buffer tank 2 (PufferFlex 2)",
           "pufferflex3": "FUB name: buffer tank 3 (PufferFlex 3)",
+          "pufferflex4": "FUB name: buffer tank 4 (PufferFlex 4 or Puffer 4)",
+          "pufferflex5": "FUB name: buffer tank 5 (PufferFlex 5 or Puffer 5)",
+          "pufferflex6": "FUB name: buffer tank 6 (PufferFlex 6 or Puffer 6)",
+          "pufferflex7": "FUB name: buffer tank 7 (PufferFlex 7 or Puffer 7)",
+          "pufferflex8": "FUB name: buffer tank 8 (PufferFlex 8 or Puffer 8)",
           "brenner": "FUB name: burner (Brenner)",
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
@@ -62,7 +80,12 @@
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
-          "puffer3_volumen": "Buffer tank 3 (litres)"
+          "puffer3_volumen": "Buffer tank 3 (litres)",
+          "puffer4_volumen": "Buffer tank 4 (litres)",
+          "puffer5_volumen": "Buffer tank 5 (litres)",
+          "puffer6_volumen": "Buffer tank 6 (litres)",
+          "puffer7_volumen": "Buffer tank 7 (litres)",
+          "puffer8_volumen": "Buffer tank 8 (litres)"
         }
       },
       "raumfuehler": {
@@ -117,7 +140,10 @@
       "init": {
         "title": "Edit ETA heating system",
         "data": {
-          "components": "Components present on your system",
+          "anzahl_puffer": "Number of buffer tanks",
+          "anzahl_warmwasser": "Number of fresh water modules and hot water tanks",
+          "anzahl_heizkreise": "Number of heating circuits",
+          "components": "Other components on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
@@ -128,6 +154,9 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
+          "anzahl_puffer": "PufferFlex and older Puffer together, at most 8.",
+          "anzahl_warmwasser": "Fresh water modules (FWM) and hot water tanks (WW) together, at most 8.",
+          "anzahl_heizkreise": "At most 4.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
@@ -135,13 +164,20 @@
       },
       "fub_names": {
         "title": "Confirm function block names",
-        "description": "If you renamed a function block (FUB) on your heating system's controller, enter the actual name here. The fields are pre-filled with the ETA default names or your previous entries.",
+        "description": "The fields are pre-filled with your previous entries, new ones with the names your system reports. If you renamed a function block (FUB) on the controller, enter the actual name here.",
         "data": {
           "kessel": "FUB name: boiler",
           "twin": "FUB name: pellet unit of the SH TWIN (Twin)",
           "sys": "FUB name: Sys (outside temperature)",
           "pufferflex": "FUB name: buffer tank (default PufferFlex, older systems: Puffer)",
           "fwm": "FUB name: fresh water / hot water module (FWM or WW)",
+          "fwm2": "FUB name: hot water 2 (FWM 2 or WW 2)",
+          "fwm3": "FUB name: hot water 3 (FWM 3 or WW 3)",
+          "fwm4": "FUB name: hot water 4 (FWM 4 or WW 4)",
+          "fwm5": "FUB name: hot water 5 (FWM 5 or WW 5)",
+          "fwm6": "FUB name: hot water 6 (FWM 6 or WW 6)",
+          "fwm7": "FUB name: hot water 7 (FWM 7 or WW 7)",
+          "fwm8": "FUB name: hot water 8 (FWM 8 or WW 8)",
           "hk": "FUB name: heating circuit 1 (HK or HK1)",
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
@@ -151,6 +187,11 @@
           "lager": "FUB name: pellet store (Lager)",
           "pufferflex2": "FUB name: buffer tank 2 (PufferFlex 2)",
           "pufferflex3": "FUB name: buffer tank 3 (PufferFlex 3)",
+          "pufferflex4": "FUB name: buffer tank 4 (PufferFlex 4 or Puffer 4)",
+          "pufferflex5": "FUB name: buffer tank 5 (PufferFlex 5 or Puffer 5)",
+          "pufferflex6": "FUB name: buffer tank 6 (PufferFlex 6 or Puffer 6)",
+          "pufferflex7": "FUB name: buffer tank 7 (PufferFlex 7 or Puffer 7)",
+          "pufferflex8": "FUB name: buffer tank 8 (PufferFlex 8 or Puffer 8)",
           "brenner": "FUB name: burner (Brenner)",
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
@@ -161,7 +202,12 @@
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
-          "puffer3_volumen": "Buffer tank 3 (litres)"
+          "puffer3_volumen": "Buffer tank 3 (litres)",
+          "puffer4_volumen": "Buffer tank 4 (litres)",
+          "puffer5_volumen": "Buffer tank 5 (litres)",
+          "puffer6_volumen": "Buffer tank 6 (litres)",
+          "puffer7_volumen": "Buffer tank 7 (litres)",
+          "puffer8_volumen": "Buffer tank 8 (litres)"
         }
       },
       "raumfuehler": {
@@ -201,17 +247,9 @@
     "components": {
       "options": {
         "twin": "TWIN (pellet unit on the log wood boiler)",
-        "puffer": "Buffer tank",
-        "fwm": "Fresh water / hot water module",
-        "hk1": "Heating circuit 1",
-        "hk2": "Heating circuit 2",
         "solar": "Solar thermal system",
         "pvm": "PV heating module (PVM)",
-        "hk3": "Heating circuit 3",
-        "hk4": "Heating circuit 4",
         "lager": "Pellet store",
-        "puffer2": "Buffer tank 2",
-        "puffer3": "Buffer tank 3",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
         "fernleitung": "Transfer line (to another building)"
       }
@@ -368,6 +406,48 @@
       "fwm_zirkulationspumpe": {
         "name": "Hot water circulation pump"
       },
+      "fwm2_warmwasser": {
+        "name": "Hot water 2 temperature"
+      },
+      "fwm2_zirkulationspumpe": {
+        "name": "Hot water 2 circulation pump"
+      },
+      "fwm3_warmwasser": {
+        "name": "Hot water 3 temperature"
+      },
+      "fwm3_zirkulationspumpe": {
+        "name": "Hot water 3 circulation pump"
+      },
+      "fwm4_warmwasser": {
+        "name": "Hot water 4 temperature"
+      },
+      "fwm4_zirkulationspumpe": {
+        "name": "Hot water 4 circulation pump"
+      },
+      "fwm5_warmwasser": {
+        "name": "Hot water 5 temperature"
+      },
+      "fwm5_zirkulationspumpe": {
+        "name": "Hot water 5 circulation pump"
+      },
+      "fwm6_warmwasser": {
+        "name": "Hot water 6 temperature"
+      },
+      "fwm6_zirkulationspumpe": {
+        "name": "Hot water 6 circulation pump"
+      },
+      "fwm7_warmwasser": {
+        "name": "Hot water 7 temperature"
+      },
+      "fwm7_zirkulationspumpe": {
+        "name": "Hot water 7 circulation pump"
+      },
+      "fwm8_warmwasser": {
+        "name": "Hot water 8 temperature"
+      },
+      "fwm8_zirkulationspumpe": {
+        "name": "Hot water 8 circulation pump"
+      },
       "heizkreis2_anforderung": {
         "name": "Heating circuit 2 demand"
       },
@@ -453,6 +533,27 @@
       "komponente_fwm": {
         "name": "Hot water module component"
       },
+      "komponente_fwm2": {
+        "name": "Hot water 2 component"
+      },
+      "komponente_fwm3": {
+        "name": "Hot water 3 component"
+      },
+      "komponente_fwm4": {
+        "name": "Hot water 4 component"
+      },
+      "komponente_fwm5": {
+        "name": "Hot water 5 component"
+      },
+      "komponente_fwm6": {
+        "name": "Hot water 6 component"
+      },
+      "komponente_fwm7": {
+        "name": "Hot water 7 component"
+      },
+      "komponente_fwm8": {
+        "name": "Hot water 8 component"
+      },
       "komponente_hk1": {
         "name": "Heating circuit 1 component"
       },
@@ -479,6 +580,21 @@
       },
       "komponente_puffer3": {
         "name": "Buffer tank 3 component"
+      },
+      "komponente_puffer4": {
+        "name": "Buffer tank 4 component"
+      },
+      "komponente_puffer5": {
+        "name": "Buffer tank 5 component"
+      },
+      "komponente_puffer6": {
+        "name": "Buffer tank 6 component"
+      },
+      "komponente_puffer7": {
+        "name": "Buffer tank 7 component"
+      },
+      "komponente_puffer8": {
+        "name": "Buffer tank 8 component"
       },
       "komponente_pvm": {
         "name": "PV heating module component"
@@ -626,6 +742,201 @@
       },
       "puffer3_zustand": {
         "name": "Buffer 3 state"
+      },
+      "puffer4_zustand": {
+        "name": "Buffer 4 state"
+      },
+      "puffer4_ladezustand": {
+        "name": "Buffer 4 charge level"
+      },
+      "puffer4_volumen": {
+        "name": "Buffer 4 effective volume"
+      },
+      "puffer4_ladepumpe": {
+        "name": "Buffer 4 charging pump"
+      },
+      "puffer4_fuehler_1": {
+        "name": "Buffer 4 sensor 1"
+      },
+      "puffer4_fuehler_2": {
+        "name": "Buffer 4 sensor 2"
+      },
+      "puffer4_fuehler_3": {
+        "name": "Buffer 4 sensor 3"
+      },
+      "puffer4_fuehler_4": {
+        "name": "Buffer 4 sensor 4"
+      },
+      "puffer4_fuehler_5": {
+        "name": "Buffer 4 sensor 5"
+      },
+      "puffer4_fuehler_6": {
+        "name": "Buffer 4 sensor 6"
+      },
+      "puffer4_fuehler_7": {
+        "name": "Buffer 4 sensor 7"
+      },
+      "puffer4_fuehler_8": {
+        "name": "Buffer 4 sensor 8"
+      },
+      "puffer4_fuehler_9": {
+        "name": "Buffer 4 sensor 9"
+      },
+      "puffer5_zustand": {
+        "name": "Buffer 5 state"
+      },
+      "puffer5_ladezustand": {
+        "name": "Buffer 5 charge level"
+      },
+      "puffer5_volumen": {
+        "name": "Buffer 5 effective volume"
+      },
+      "puffer5_ladepumpe": {
+        "name": "Buffer 5 charging pump"
+      },
+      "puffer5_fuehler_1": {
+        "name": "Buffer 5 sensor 1"
+      },
+      "puffer5_fuehler_2": {
+        "name": "Buffer 5 sensor 2"
+      },
+      "puffer5_fuehler_3": {
+        "name": "Buffer 5 sensor 3"
+      },
+      "puffer5_fuehler_4": {
+        "name": "Buffer 5 sensor 4"
+      },
+      "puffer5_fuehler_5": {
+        "name": "Buffer 5 sensor 5"
+      },
+      "puffer5_fuehler_6": {
+        "name": "Buffer 5 sensor 6"
+      },
+      "puffer5_fuehler_7": {
+        "name": "Buffer 5 sensor 7"
+      },
+      "puffer5_fuehler_8": {
+        "name": "Buffer 5 sensor 8"
+      },
+      "puffer5_fuehler_9": {
+        "name": "Buffer 5 sensor 9"
+      },
+      "puffer6_zustand": {
+        "name": "Buffer 6 state"
+      },
+      "puffer6_ladezustand": {
+        "name": "Buffer 6 charge level"
+      },
+      "puffer6_volumen": {
+        "name": "Buffer 6 effective volume"
+      },
+      "puffer6_ladepumpe": {
+        "name": "Buffer 6 charging pump"
+      },
+      "puffer6_fuehler_1": {
+        "name": "Buffer 6 sensor 1"
+      },
+      "puffer6_fuehler_2": {
+        "name": "Buffer 6 sensor 2"
+      },
+      "puffer6_fuehler_3": {
+        "name": "Buffer 6 sensor 3"
+      },
+      "puffer6_fuehler_4": {
+        "name": "Buffer 6 sensor 4"
+      },
+      "puffer6_fuehler_5": {
+        "name": "Buffer 6 sensor 5"
+      },
+      "puffer6_fuehler_6": {
+        "name": "Buffer 6 sensor 6"
+      },
+      "puffer6_fuehler_7": {
+        "name": "Buffer 6 sensor 7"
+      },
+      "puffer6_fuehler_8": {
+        "name": "Buffer 6 sensor 8"
+      },
+      "puffer6_fuehler_9": {
+        "name": "Buffer 6 sensor 9"
+      },
+      "puffer7_zustand": {
+        "name": "Buffer 7 state"
+      },
+      "puffer7_ladezustand": {
+        "name": "Buffer 7 charge level"
+      },
+      "puffer7_volumen": {
+        "name": "Buffer 7 effective volume"
+      },
+      "puffer7_ladepumpe": {
+        "name": "Buffer 7 charging pump"
+      },
+      "puffer7_fuehler_1": {
+        "name": "Buffer 7 sensor 1"
+      },
+      "puffer7_fuehler_2": {
+        "name": "Buffer 7 sensor 2"
+      },
+      "puffer7_fuehler_3": {
+        "name": "Buffer 7 sensor 3"
+      },
+      "puffer7_fuehler_4": {
+        "name": "Buffer 7 sensor 4"
+      },
+      "puffer7_fuehler_5": {
+        "name": "Buffer 7 sensor 5"
+      },
+      "puffer7_fuehler_6": {
+        "name": "Buffer 7 sensor 6"
+      },
+      "puffer7_fuehler_7": {
+        "name": "Buffer 7 sensor 7"
+      },
+      "puffer7_fuehler_8": {
+        "name": "Buffer 7 sensor 8"
+      },
+      "puffer7_fuehler_9": {
+        "name": "Buffer 7 sensor 9"
+      },
+      "puffer8_zustand": {
+        "name": "Buffer 8 state"
+      },
+      "puffer8_ladezustand": {
+        "name": "Buffer 8 charge level"
+      },
+      "puffer8_volumen": {
+        "name": "Buffer 8 effective volume"
+      },
+      "puffer8_ladepumpe": {
+        "name": "Buffer 8 charging pump"
+      },
+      "puffer8_fuehler_1": {
+        "name": "Buffer 8 sensor 1"
+      },
+      "puffer8_fuehler_2": {
+        "name": "Buffer 8 sensor 2"
+      },
+      "puffer8_fuehler_3": {
+        "name": "Buffer 8 sensor 3"
+      },
+      "puffer8_fuehler_4": {
+        "name": "Buffer 8 sensor 4"
+      },
+      "puffer8_fuehler_5": {
+        "name": "Buffer 8 sensor 5"
+      },
+      "puffer8_fuehler_6": {
+        "name": "Buffer 8 sensor 6"
+      },
+      "puffer8_fuehler_7": {
+        "name": "Buffer 8 sensor 7"
+      },
+      "puffer8_fuehler_8": {
+        "name": "Buffer 8 sensor 8"
+      },
+      "puffer8_fuehler_9": {
+        "name": "Buffer 8 sensor 9"
       },
       "puffer_energieinhalt": {
         "name": "Buffer energy content"

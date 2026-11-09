@@ -20,6 +20,7 @@ from .const import (
     PUFFER_FUEHLER_MAX,
     PUFFER_SPEICHER,
     THERMOSTATE,
+    WARMWASSER_SPEICHER,
     WOCHENTAGE,
     ZEITFENSTER_JE_TAG,
     absenkwert_schluessel,
@@ -27,6 +28,18 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+WEITERE_PUFFER = list(PUFFER_SPEICHER)[1:]
+"""Der zweite bis achte Puffer - ihre Pfade gleichen denen des ersten."""
+
+WEITERES_WARMWASSER = list(WARMWASSER_SPEICHER)[1:]
+"""Das zweite bis achte Warmwasser - ihre Pfade gleichen denen des ersten."""
+
+
+def _rolle(komponente):
+    """Die Rolle, über die der Funktionsblock einer Komponente gefunden wird."""
+    return COMPONENTS[komponente]["roles"][0]
+
 
 DISCOVERY_PATHS = {
     "kessel_temperatur": ("kessel", ["Eingänge", "Kessel"]),
@@ -52,10 +65,11 @@ DISCOVERY_PATHS = {
     "aussentemperatur": ("sys", ["Außentemperatur", "Außentemperaturfühler"]),
     "puffer_ladezustand": ("pufferflex", ["Puffer", "Ladezustand"]),
     "puffer_zustand": ("pufferflex", ["Puffer", "Puffer-Zustand detailliert"]),
-    "puffer2_zustand": ("pufferflex2", ["Puffer", "Puffer-Zustand detailliert"]),
-    "puffer3_zustand": ("pufferflex3", ["Puffer", "Puffer-Zustand detailliert"]),
-    "puffer2_ladezustand": ("pufferflex2", ["Puffer", "Ladezustand"]),
-    "puffer3_ladezustand": ("pufferflex3", ["Puffer", "Ladezustand"]),
+    **{
+        f"{k}_zustand": (_rolle(k), ["Puffer", "Puffer-Zustand detailliert"])
+        for k in WEITERE_PUFFER
+    },
+    **{f"{k}_ladezustand": (_rolle(k), ["Puffer", "Ladezustand"]) for k in WEITERE_PUFFER},
     "heizkreis_vorlauf": ("hk", ["Eingänge", "Vorlauf"]),
     "heizkreis_anforderung": ("hk", ["Ausgänge", "Heizkreispumpe", "Anforderung"]),
     "heizkreis2_vorlauf": ("hk2", ["Eingänge", "Vorlauf"]),
@@ -73,6 +87,7 @@ DISCOVERY_PATHS = {
     "heizkreis3_zeitprogramm": ("hk3", ["Heizkreis", "Heizzeiten", "Schaltzustand"]),
     "heizkreis4_zeitprogramm": ("hk4", ["Heizkreis", "Heizzeiten", "Schaltzustand"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
+    **{f"{k}_warmwasser": (_rolle(k), ["Eingänge", "Warmwasser"]) for k in WEITERES_WARMWASSER},
     "lager_vorrat": ("lager", ["Vorrat"]),
     "lager_warngrenze": ("lager", ["Vorrat", "Vorrat Warngrenze"]),
     "lager_maximum": ("lager", ["Vorrat", "Maximaler Vorrat"]),
@@ -98,10 +113,10 @@ DISCOVERY_PATHS = {
 
 PUMPEN = {
     "fwm_zirkulationspumpe": ("fwm", "zirkulation"),
+    **{f"{k}_zirkulationspumpe": (_rolle(k), "zirkulation") for k in WEITERES_WARMWASSER},
     "fernleitung_pumpe": ("fernleitung", "fernpumpe"),
     "puffer_ladepumpe": ("pufferflex", "pufferlade"),
-    "puffer2_ladepumpe": ("pufferflex2", "pufferlade"),
-    "puffer3_ladepumpe": ("pufferflex3", "pufferlade"),
+    **{f"{k}_ladepumpe": (_rolle(k), "pufferlade") for k in WEITERE_PUFFER},
 }
 """Pumpen, die über ein Stichwort in ihrem Namen gesucht werden.
 
@@ -145,7 +160,7 @@ Formular gespeichert wurde.
 """
 
 AUSWEICHPFADE = {
-    "fwm_warmwasser": [["Eingänge", "Warmwasserspeicher"]],
+    f"{k}_warmwasser": [["Eingänge", "Warmwasserspeicher"]] for k in WARMWASSER_SPEICHER
 }
 """Weitere Namenspfade, falls der Hauptpfad im Funktionsblock fehlt.
 
@@ -168,10 +183,8 @@ KENNUNGEN = {
     "aussentemperatur": "0/11127/0",
     "puffer_ladezustand": "0/0/12528",
     "puffer_zustand": "0/0/12208",
-    "puffer2_zustand": "0/0/12208",
-    "puffer3_zustand": "0/0/12208",
-    "puffer2_ladezustand": "0/0/12528",
-    "puffer3_ladezustand": "0/0/12528",
+    **{f"{k}_zustand": "0/0/12208" for k in WEITERE_PUFFER},
+    **{f"{k}_ladezustand": "0/0/12528" for k in WEITERE_PUFFER},
     "heizkreis_vorlauf": "0/11060/0",
     "heizkreis_anforderung": "0/11124/2001",
     "heizkreis2_vorlauf": "0/11060/0",
@@ -184,7 +197,7 @@ KENNUNGEN = {
     "heizkreis2_zeitprogramm": "12113/0/1109",
     "heizkreis3_zeitprogramm": "12113/0/1109",
     "heizkreis4_zeitprogramm": "12113/0/1109",
-    "fwm_warmwasser": "0/11148/0",
+    **{f"{k}_warmwasser": "0/11148/0" for k in WARMWASSER_SPEICHER},
     "lager_vorrat": "0/0/12015",
     "lager_warngrenze": "0/0/12042",
     "lager_maximum": "0/0/12790",
@@ -340,10 +353,7 @@ def _zeitfenster_unter(programm, praefix):
 
 
 WEITERE_ZEITPROGRAMME = {
-    "pufferflex": "puffer",
-    "pufferflex2": "puffer2",
-    "pufferflex3": "puffer3",
-    "fwm": "fwm",
+    _rolle(k): k for k in [*PUFFER_SPEICHER, *WARMWASSER_SPEICHER]
 }
 """In diesen Funktionsblöcken stehen Lade- und Bereitschaftszeiten - Rolle -> Komponente.
 
@@ -507,26 +517,103 @@ def _resolve_fubs_by_role(fubs, fub_name_overrides):
     danach die übrigen Standardnamen probiert - sonst bliebe etwa "HK 2"
     unentdeckt, nur weil das Formular "HK2" vorbelegt hat. Ein wirklich
     eigener Name gilt dagegen allein.
+
+    Jeder Funktionsblock gehört zu höchstens einer Rolle. Zuerst bekommt
+    jede Rolle den Block, dessen Namen sie gespeichert hat; erst danach
+    greifen die übrigen Standardnamen, und zwar nur auf Blöcke, die noch
+    frei sind. Sonst nähme etwa Puffer 1 mit seinem Standardnamen "Puffer"
+    den Block, den Puffer 3 ausdrücklich so genannt hat.
     """
     overrides = fub_name_overrides or {}
     resolved = {}
+    vergeben = set()
+
+    for role in FUB_ROLE_DEFAULT_NAMES:
+        fub = _find_fub(fubs, overrides[role]) if overrides.get(role) else None
+        if fub is not None and id(fub) not in vergeben:
+            resolved[role] = fub
+            vergeben.add(id(fub))
 
     for role, default_names in FUB_ROLE_DEFAULT_NAMES.items():
         override = overrides.get(role)
-        standard = {name.casefold() for name in default_names}
-        if not override:
-            candidates = default_names
-        elif override.casefold() in standard:
-            candidates = [override, *default_names]
-        else:
-            candidates = [override]
-        for name in candidates:
+        if role in resolved or (
+            override and override.casefold() not in {name.casefold() for name in default_names}
+        ):
+            continue
+        for name in default_names:
             fub = _find_fub(fubs, name)
-            if fub is not None:
+            if fub is not None and id(fub) not in vergeben:
                 resolved[role] = fub
+                vergeben.add(id(fub))
                 break
 
     return resolved
+
+
+FUB_GRUPPEN = (
+    ([_rolle(k) for k in PUFFER_SPEICHER], ("pufferflex", "puffer")),
+    ([_rolle(k) for k in WARMWASSER_SPEICHER], ("fwm", "ww")),
+)
+"""Rollen, die ihre Blöcke der Reihe nach bekommen, je mit den Namensanfängen in dieser Folge."""
+
+
+def _nummer(name: str) -> float:
+    """Die Nummer im Namen eines Funktionsblocks, ohne Nummer 0 - "Puffer" vor "Puffer 2"."""
+    treffer = re.search(r"\d+(?:\.\d+)?", name)
+    return float(treffer.group()) if treffer else 0.0
+
+
+def fub_namen_vorschlagen(rollen, namen_der_anlage, gespeichert=None):
+    """Womit das Formular der Funktionsblock-Namen vorbelegt wird.
+
+    Gespeicherte Namen bleiben. Pufferspeicher und Warmwasser bekommen der
+    Reihe nach die noch freien passenden Blöcke der Anlage: zuerst
+    PufferFlex, dann die älteren Puffer, beim Warmwasser zuerst FWM, dann
+    WW - an einer Testanlage mit PufferFlex, PufferFlex 2, Puffer,
+    Puffer 2, WW und WW 2 also genau diese Folge. Jede übrige Rolle bekommt
+    den ersten ihrer Standardnamen, den die Anlage kennt, sonst den ersten
+    Standardnamen.
+    """
+    gespeichert = gespeichert or {}
+    vorschlag = {rolle: gespeichert[rolle] for rolle in rollen if gespeichert.get(rolle)}
+    vergeben = {name.casefold() for name in vorschlag.values()}
+    vorhanden = {name.casefold(): name for name in namen_der_anlage}
+
+    for gruppe, anfaenge in FUB_GRUPPEN:
+        offen = [rolle for rolle in rollen if rolle in gruppe and rolle not in vorschlag]
+        frei = []
+        for anfang in anfaenge:
+            passend = [
+                name
+                for name in namen_der_anlage
+                if next((a for a in anfaenge if name.casefold().startswith(a)), None) == anfang
+                and name.casefold() not in vergeben
+            ]
+            frei.extend(sorted(passend, key=_nummer))
+        for rolle, name in zip(offen, frei):
+            vorschlag[rolle] = name
+            vergeben.add(name.casefold())
+
+    for rolle in rollen:
+        if rolle in vorschlag:
+            continue
+        standard = FUB_ROLE_DEFAULT_NAMES[rolle]
+        vorschlag[rolle] = next(
+            (
+                vorhanden[name.casefold()]
+                for name in standard
+                if name.casefold() in vorhanden and name.casefold() not in vergeben
+            ),
+            standard[0],
+        )
+        vergeben.add(vorschlag[rolle].casefold())
+    return vorschlag
+
+
+def fub_namen_im_menue(parsed) -> list[str]:
+    """Die Namen aller Funktionsblöcke eines gelesenen Menübaums."""
+    fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
+    return [fub["@name"] for fub in fubs if isinstance(fub, dict) and fub.get("@name")]
 
 
 def _finde_schalter(fub):
