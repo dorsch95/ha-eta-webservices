@@ -12,6 +12,11 @@ schreibt nie einen Ersatzwert: Ist das Thermometer nicht verfügbar, bleibt
 die Anlage sich selbst überlassen und merkt es nach der Zeitüberwachung.
 Steht die Zeitüberwachung auf 0, würde die Anlage einen alten Wert
 womöglich nie verwerfen - dann schreibt er gar nicht.
+
+Ein Thermometer mit leerer Batterie bleibt in Home Assistant oft auf
+seinem letzten Wert stehen. Den schreibt der Sender weiter, aber nach
+RAUMFUEHLER_STUMM_NACH ohne Lebenszeichen erscheint ein Hinweis unter
+Reparaturen.
 """
 
 from __future__ import annotations
@@ -27,8 +32,11 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 
+from homeassistant.util import dt as dt_util
+
 from .api import ETAApiError
-from .const import RAUMFUEHLER_TAKT
+from .const import RAUMFUEHLER_STUMM_NACH, RAUMFUEHLER_TAKT
+from .repairs import async_raumfuehler_pruefen
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,6 +87,38 @@ class RaumfuehlerSender:
         self._zuletzt = 0.0
         self._abmelden: list = []
         self._gewarnt: str | None = None
+        self._stumm: bool | None = None
+        """Ob der Hinweis zum stummen Thermometer gerade ansteht; None bis zur ersten Prüfung."""
+
+    def _lebenszeichen_pruefen(self, state) -> None:
+        """Legt den Hinweis an oder nimmt ihn zurück, wenn sich etwas geändert hat.
+
+        Stumm heißt: Das Thermometer zeigt einen Wert, hat sich aber seit
+        RAUMFUEHLER_STUMM_NACH nicht gemeldet - auch nicht mit demselben
+        Wert. Ein Raum mit gleichbleibender Temperatur löst also nichts
+        aus, solange das Thermometer weiter sendet. Ist es nicht verfügbar,
+        merkt die Anlage das selbst über ihre Zeitüberwachung.
+        """
+        gemeldet = getattr(state, "last_reported", None)
+        stumm = (
+            gemeldet is not None
+            and state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+            and (dt_util.utcnow() - gemeldet).total_seconds() > RAUMFUEHLER_STUMM_NACH
+        )
+        if stumm == self._stumm:
+            return
+        self._stumm = stumm
+        async_raumfuehler_pruefen(
+            self.hass, self.coordinator.config_entry.entry_id, self.heizkreis, self.entity_id, stumm
+        )
+        if stumm:
+            _LOGGER.warning(
+                "ETA: %s hat sich seit %d Stunden nicht gemeldet - für %s wird weiter "
+                "der letzte Wert geschrieben",
+                self.entity_id,
+                RAUMFUEHLER_STUMM_NACH // 3600,
+                self.heizkreis,
+            )
 
     @property
     def _zeitueberwachung(self) -> float | None:
@@ -117,6 +157,8 @@ class RaumfuehlerSender:
 
     async def schreiben(self) -> bool:
         """Schreibt den aktuellen Wert, falls es einen gültigen gibt."""
+        state = self.hass.states.get(self.entity_id)
+        self._lebenszeichen_pruefen(state)
         if self._zeitueberwachung == 0:
             self._warnen(
                 "ETA: Zeitüberwachung von %s steht auf 0 - die Raumtemperatur "
@@ -125,7 +167,7 @@ class RaumfuehlerSender:
                 self.heizkreis,
             )
             return False
-        roh = raumwert_roh(self.hass.states.get(self.entity_id), self._definition["raum_extern"])
+        roh = raumwert_roh(state, self._definition["raum_extern"])
         if roh is None:
             self._warnen(
                 "ETA: %s liefert keine Temperatur - für %s wird nichts geschrieben",

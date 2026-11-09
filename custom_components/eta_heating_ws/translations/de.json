@@ -254,6 +254,10 @@
       "title": "Komponente \"{component}\" nicht gefunden",
       "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** und trage den tatsächlichen Namen ein - oder hake die Komponente ab, falls deine Anlage sie nicht hat."
     },
+    "raumfuehler_stumm": {
+      "title": "Thermometer {raumfuehler} meldet sich seit {stunden} Stunden nicht",
+      "description": "Das Thermometer {raumfuehler} ist der Raumfühler von {heizkreis}, hat aber seit {stunden} Stunden nichts mehr gesendet - auch nicht denselben Wert noch einmal. Ist die Batterie leer?\n\nDie Integration schreibt weiter den letzten Wert in die Heizung, der Heizkreis regelt also mit einer alten Raumtemperatur. Sobald sich das Thermometer wieder meldet, verschwindet dieser Hinweis von selbst. Fällt es dauerhaft aus, wähle unter **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ein anderes."
+    },
     "zeitplan_zu_voll": {
       "title": "Zeitplan {zeitplan} passt nicht an allen Tagen",
       "description": "Die Heizung hat je Tag höchstens 3 Zeitfenster. Der Zeitplan {zeitplan} für {heizkreis} hat an diesen Tagen mehr Blöcke: {tage}.\n\nDiese Tage überträgt die Integration nicht, dort bleibt das Zeitprogramm der Heizung, wie es ist. Fasse die Blöcke im Zeitplan zusammen, dann verschwindet dieser Hinweis von selbst."

@@ -57,7 +57,7 @@ from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehle
 from .entitaets_ids import deutsche_namen
 from .prognose_koordinator import ETAPrognoseKoordinator
 from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
-from .repairs import async_zeitplan_hinweise_entfernen
+from .repairs import async_raumfuehler_pruefen, async_zeitplan_hinweise_entfernen
 from .zeitplan import ZeitplanAbgleich
 from .zeitplan import speicher as zeitplan_speicher
 from .zeitprogramm import OBERFLAECHE, async_karte_anmelden
@@ -184,8 +184,14 @@ def _raumfuehler_starten(
     """Startet je Heizkreis mit gewähltem Thermometer den Sender.
 
     Nur für Heizkreise, deren Thermostat die Anlage bestätigt hat - also
-    mit freigegebenem Schreibzugriff und externer Schnittstelle.
+    mit freigegebenem Schreibzugriff und externer Schnittstelle. Für alle
+    anderen verschwindet ein Hinweis zu einem stummen Thermometer.
     """
+    for heizkreis in THERMOSTATE:
+        if heizkreis not in coordinator.thermostat_defs or not config.get(
+            raumfuehler_schluessel(heizkreis)
+        ):
+            async_raumfuehler_pruefen(hass, entry.entry_id, heizkreis, None, False)
     for heizkreis in coordinator.thermostat_defs:
         entity_id = config.get(raumfuehler_schluessel(heizkreis))
         if not entity_id:

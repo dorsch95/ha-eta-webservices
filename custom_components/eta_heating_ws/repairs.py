@@ -17,7 +17,7 @@ from homeassistant.components.repairs import RepairsFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry
 
-from .const import COMPONENTS, DOMAIN
+from .const import COMPONENTS, DOMAIN, RAUMFUEHLER_STUMM_NACH
 
 
 def _issue_id(entry_id: str, component: str) -> str:
@@ -62,6 +62,33 @@ def async_check_components(
             issue_registry.async_delete_issue(hass, DOMAIN, issue_id)
 
     return ohne_treffer
+
+
+def async_raumfuehler_pruefen(
+    hass: HomeAssistant, entry_id: str, heizkreis: str, entity_id: str | None, stumm: bool
+) -> None:
+    """Meldet ein Thermometer, das sich lange nicht gemeldet hat - oder nimmt den Hinweis zurück.
+
+    Siehe RAUMFUEHLER_STUMM_NACH. Der Hinweis verschwindet, sobald das
+    Thermometer wieder einen Wert liefert oder abgewählt ist.
+    """
+    issue_id = f"{entry_id}_{heizkreis}_raumfuehler_stumm"
+    if not stumm:
+        issue_registry.async_delete_issue(hass, DOMAIN, issue_id)
+        return
+    issue_registry.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        severity=issue_registry.IssueSeverity.WARNING,
+        translation_key="raumfuehler_stumm",
+        translation_placeholders={
+            "raumfuehler": entity_id or "",
+            "heizkreis": COMPONENTS[heizkreis]["name"],
+            "stunden": str(RAUMFUEHLER_STUMM_NACH // 3600),
+        },
+    )
 
 
 def async_zeitplan_pruefen(

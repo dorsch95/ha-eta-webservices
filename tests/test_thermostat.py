@@ -199,3 +199,47 @@ def test_keine_warnung_wegen_alter_namen(caplog):
     type("Probe", (climate_platform.ETAThermostat,), {"__module__": climate_platform.__name__})
 
     assert "deprecated" not in caplog.text
+
+
+async def test_stummes_thermometer_wird_gemeldet_und_weiter_geschrieben(
+    hass, entry, menu_xml, reparaturen
+):
+    """Leere Batterie: Der letzte Wert bleibt in Home Assistant stehen, die Anlage merkt nichts."""
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+
+    coordinator, _, _ = await aufbauen(hass, entry, menu_xml)
+    hinweis = "testeintrag_hk1_raumfuehler_stumm"
+
+    def zustand(stunden: float, wert: str = "21.5") -> SimpleNamespace:
+        return SimpleNamespace(
+            state=wert, attributes={}, last_reported=dt_util.utcnow() - timedelta(hours=stunden)
+        )
+
+    zustaende = {"sensor.wohnzimmer": zustand(11)}
+    ha = SimpleNamespace(states=SimpleNamespace(get=zustaende.get))
+    sender = RaumfuehlerSender(ha, coordinator, "hk1", "sensor.wohnzimmer")
+    reparaturen["angelegt"].clear()
+
+    assert await sender.schreiben() is True
+    assert reparaturen["angelegt"] == [], "elf Stunden Ruhe sind noch kein Grund"
+
+    zustaende["sensor.wohnzimmer"] = zustand(13)
+    hass.session.gesetzte_werte.clear()
+    assert await sender.schreiben() is True
+    assert await sender.schreiben() is True
+    assert hass.session.gesetzte_werte == [(RAUM_EXTERN, "215")] * 2, "geschrieben wird weiter"
+    [(issue_id, angaben)] = reparaturen["angelegt"]
+    assert issue_id == hinweis, "und nur einmal gemeldet"
+    assert angaben == {"raumfuehler": "sensor.wohnzimmer", "heizkreis": "Heizkreis 1", "stunden": "12"}
+
+    reparaturen["entfernt"].clear()
+    zustaende["sensor.wohnzimmer"] = zustand(0)
+    await sender.schreiben()
+    assert reparaturen["entfernt"] == [hinweis], "meldet es sich wieder, verschwindet der Hinweis"
+
+
+async def test_hinweis_zum_thermometer_verschwindet_ohne_raumfuehler(hass, entry, menu_xml, reparaturen):
+    await aufbauen(hass, entry, menu_xml)
+    assert "testeintrag_hk1_raumfuehler_stumm" in reparaturen["entfernt"]

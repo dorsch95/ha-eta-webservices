@@ -451,6 +451,16 @@ Höchstens halb so lang wie die Zeitüberwachung der Anlage, siehe
 raumfuehler.py.
 """
 
+RAUMFUEHLER_STUMM_NACH = 12 * 3600
+"""Nach so vielen Sekunden ohne Lebenszeichen des Thermometers gibt es einen Hinweis.
+
+Ein Thermometer mit leerer Batterie bleibt in Home Assistant oft auf
+seinem letzten Wert stehen, statt als nicht verfügbar zu gelten. Die
+Integration schreibt diesen Wert weiter, die Zeitüberwachung der Anlage
+greift also nicht. So vom Nutzer festgelegt: weiterschreiben, aber nach
+12 Stunden unter Reparaturen darauf hinweisen.
+"""
+
 
 ZEITPROGRAMM_ZUSTAENDE = {"ein": "heizzeit", "aus": "absenkzeit"}
 """Was der Schaltzustand der Heizzeiten eines Heizkreises bedeutet.
