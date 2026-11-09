@@ -21,9 +21,6 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
-    NumberSelector,
-    NumberSelectorConfig,
-    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -303,8 +300,11 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
     vorauswahl = [key for key in komponenten if key in _WAEHLBARE_KOMPONENTEN]
     return {
         **{
-            vol.Required(feld, default=anzahl_komponenten(komponenten, feld)): NumberSelector(
-                NumberSelectorConfig(min=0, max=hoechstens, step=1, mode=NumberSelectorMode.BOX)
+            vol.Required(feld, default=str(anzahl_komponenten(komponenten, feld))): SelectSelector(
+                SelectSelectorConfig(
+                    options=[str(anzahl) for anzahl in range(hoechstens + 1)],
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
             )
             for feld, hoechstens in _HOECHSTENS.items()
         },

@@ -137,9 +137,9 @@ async def test_zeitprogramme_aller_speicher(hass, entry):
 
 def test_anzahl_wird_zu_komponenten():
     eingabe = {
-        CONF_ANZAHL_PUFFER: 4,
-        CONF_ANZAHL_WARMWASSER: 2,
-        CONF_ANZAHL_HEIZKREISE: 1,
+        CONF_ANZAHL_PUFFER: "4",
+        CONF_ANZAHL_WARMWASSER: "2",
+        CONF_ANZAHL_HEIZKREISE: "1",
         "components": ["lager"],
     }
     assert komponenten_aus_formular(eingabe) == [
@@ -168,13 +168,13 @@ def test_formular_begrenzt_die_anzahl():
 
     gueltig = {"host": "192.0.2.10", "port": 8080, "components": []}
     schema = _connection_schema({})
-    ergebnis = schema({**gueltig, CONF_ANZAHL_PUFFER: 8, CONF_ANZAHL_WARMWASSER: 8})
-    assert (ergebnis[CONF_ANZAHL_PUFFER], ergebnis[CONF_ANZAHL_HEIZKREISE]) == (8, 0)
+    ergebnis = schema({**gueltig, CONF_ANZAHL_PUFFER: "8", CONF_ANZAHL_WARMWASSER: "8"})
+    assert (ergebnis[CONF_ANZAHL_PUFFER], ergebnis[CONF_ANZAHL_HEIZKREISE]) == ("8", "0")
     for falsch in (
-        {CONF_ANZAHL_PUFFER: 9},
-        {CONF_ANZAHL_WARMWASSER: 9},
-        {CONF_ANZAHL_HEIZKREISE: 5},
-        {CONF_ANZAHL_PUFFER: -1},
+        {CONF_ANZAHL_PUFFER: "9"},
+        {CONF_ANZAHL_WARMWASSER: "9"},
+        {CONF_ANZAHL_HEIZKREISE: "5"},
+        {CONF_ANZAHL_PUFFER: "-1"},
         {"components": ["puffer"]},
     ):
         with pytest.raises(vol.Invalid):
@@ -186,9 +186,9 @@ def test_formular_zeigt_die_bisherige_anzahl():
 
     schema = _options_schema({"components": ["kessel", "puffer", "puffer2", "fwm", "hk1", "hk3", "solar"]})
     vorgaben = {str(k): k.default() for k in schema.schema if callable(k.default)}
-    assert vorgaben[CONF_ANZAHL_PUFFER] == 2
-    assert vorgaben[CONF_ANZAHL_WARMWASSER] == 1
-    assert vorgaben[CONF_ANZAHL_HEIZKREISE] == 2
+    assert vorgaben[CONF_ANZAHL_PUFFER] == "2"
+    assert vorgaben[CONF_ANZAHL_WARMWASSER] == "1"
+    assert vorgaben[CONF_ANZAHL_HEIZKREISE] == "2"
     assert vorgaben["components"] == ["solar"]
 
 

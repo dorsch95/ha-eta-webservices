@@ -18,9 +18,9 @@
         "data": {
           "host": "IP-Adresse der Heizung",
           "port": "Port (Standard: 8080)",
-          "anzahl_puffer": "Anzahl Pufferspeicher",
-          "anzahl_warmwasser": "Anzahl Frischwassermodule und Warmwasserspeicher",
-          "anzahl_heizkreise": "Anzahl Heizkreise",
+          "anzahl_puffer": "Pufferspeicher",
+          "anzahl_warmwasser": "Frischwassermodule und Warmwasserspeicher",
+          "anzahl_heizkreise": "Heizkreise",
           "components": "Weitere Komponenten an deiner Anlage",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
@@ -32,9 +32,6 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
-          "anzahl_puffer": "PufferFlex und ältere Puffer zusammen, höchstens 8.",
-          "anzahl_warmwasser": "Frischwassermodule (FWM) und Warmwasserspeicher (WW) zusammen, höchstens 8.",
-          "anzahl_heizkreise": "Höchstens 4.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
@@ -140,9 +137,9 @@
       "init": {
         "title": "ETA Heizung bearbeiten",
         "data": {
-          "anzahl_puffer": "Anzahl Pufferspeicher",
-          "anzahl_warmwasser": "Anzahl Frischwassermodule und Warmwasserspeicher",
-          "anzahl_heizkreise": "Anzahl Heizkreise",
+          "anzahl_puffer": "Pufferspeicher",
+          "anzahl_warmwasser": "Frischwassermodule und Warmwasserspeicher",
+          "anzahl_heizkreise": "Heizkreise",
           "components": "Weitere Komponenten an deiner Anlage",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
@@ -154,9 +151,6 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
-          "anzahl_puffer": "PufferFlex und ältere Puffer zusammen, höchstens 8.",
-          "anzahl_warmwasser": "Frischwassermodule (FWM) und Warmwasserspeicher (WW) zusammen, höchstens 8.",
-          "anzahl_heizkreise": "Höchstens 4.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."

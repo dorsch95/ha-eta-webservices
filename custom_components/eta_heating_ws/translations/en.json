@@ -18,9 +18,9 @@
         "data": {
           "host": "IP address of the heating system",
           "port": "Port (default: 8080)",
-          "anzahl_puffer": "Number of buffer tanks",
-          "anzahl_warmwasser": "Number of fresh water modules and hot water tanks",
-          "anzahl_heizkreise": "Number of heating circuits",
+          "anzahl_puffer": "Buffer tanks",
+          "anzahl_warmwasser": "Fresh water modules and hot water tanks",
+          "anzahl_heizkreise": "Heating circuits",
           "components": "Other components on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
@@ -32,9 +32,6 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
-          "anzahl_puffer": "PufferFlex and older Puffer together, at most 8.",
-          "anzahl_warmwasser": "Fresh water modules (FWM) and hot water tanks (WW) together, at most 8.",
-          "anzahl_heizkreise": "At most 4.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
@@ -140,9 +137,9 @@
       "init": {
         "title": "Edit ETA heating system",
         "data": {
-          "anzahl_puffer": "Number of buffer tanks",
-          "anzahl_warmwasser": "Number of fresh water modules and hot water tanks",
-          "anzahl_heizkreise": "Number of heating circuits",
+          "anzahl_puffer": "Buffer tanks",
+          "anzahl_warmwasser": "Fresh water modules and hot water tanks",
+          "anzahl_heizkreise": "Heating circuits",
           "components": "Other components on your system",
           "scan_interval": "Polling interval (seconds)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
@@ -154,9 +151,6 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
-          "anzahl_puffer": "PufferFlex and older Puffer together, at most 8.",
-          "anzahl_warmwasser": "Fresh water modules (FWM) and hot water tanks (WW) together, at most 8.",
-          "anzahl_heizkreise": "At most 4.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
