@@ -371,6 +371,15 @@ Testanlage mit Kombispeicher "°C". Im älteren Puffer heißt sie
 "Warmwasserspeicher Soll".
 """
 
+ZIRKULATION = "Zirkulation"
+"""Der Knoten, unter dem die Zirkulationszeiten stehen - zugleich der Zustand der Zirkulation.
+
+Ein Warmwasserspeicher führt ihn auch ohne Zirkulation, samt
+Zirkulationszeiten. An einer Testanlage meldete er dann "xxx" (Block
+"WW 2" ohne Zirkulation), mit Zirkulation "Aus" (Block "WW"). Nur dann
+gehören die Zirkulationszeiten in die Karte.
+"""
+
 
 def _finde_namen(knoten, name: str):
     """Die URI des ersten Objekts mit diesem Namen irgendwo unterhalb, oder None."""
@@ -400,7 +409,8 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
     Präfix der Weg im Menübaum, damit die Karte das Programm benennen kann,
     und - falls der Block eine hat - die URI von WARMWASSER_MAXIMUM. Liegt
     ein Programm eines Puffers im Warmwasserbereich, kommt die URI von
-    dessen Solltemperatur dazu, siehe WARMWASSER_SOLL.
+    dessen Solltemperatur dazu, siehe WARMWASSER_SOLL; liegt es unter
+    einem Knoten "Zirkulation", dessen URI, siehe ZIRKULATION.
     """
     gefunden = {}
     maximum = _finde_namen(fub, WARMWASSER_MAXIMUM) if fub is not None else None
@@ -414,11 +424,16 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
                 return kind["@uri"]
         return None
 
-    def suchen(knoten, pfad, bereich=None):
+    def suchen(knoten, pfad, bereich=None, zirkulation=None):
         for kind in _as_list(knoten.get("object")):
             name = kind.get("@name", "")
             if not _ist_zeitprogramm(kind):
-                suchen(kind, [*pfad, name], kind if "warmwasser" in name.casefold() else bereich)
+                suchen(
+                    kind,
+                    [*pfad, name],
+                    kind if "warmwasser" in name.casefold() else bereich,
+                    kind.get("@uri") if name.casefold() == ZIRKULATION.casefold() else zirkulation,
+                )
                 continue
             teile = (kind.get("@uri") or "").strip("/").split("/")
             if len(teile) < 3:
@@ -435,6 +450,7 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
                 "pfad": [*pfad, name],
                 "maximum_uri": maximum,
                 "soll_uri": soll_im_bereich(bereich),
+                "zirkulation_uri": zirkulation,
             }
 
     if fub is not None:

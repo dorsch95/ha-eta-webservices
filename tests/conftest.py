@@ -141,6 +141,8 @@ class FakeSession:
         self.varinfo_unterstuetzt = True
         self.ohne_einheit: set[str] = set()
         """Diese URIs melden in /user/varinfo keine Einheit - wie Werte eines nicht eingerichteten Teils."""
+        self.texte: dict[str, str] = {}
+        """Diese URIs melden in /user/var genau diesen Text, etwa "xxx" für etwas nicht Eingerichtetes."""
         self.schreiben_erlaubt = True
         self.gesetzte_werte: list[tuple[str, str]] = []
         self.geschrieben: dict[str, str] = {}
@@ -275,6 +277,8 @@ class FakeSession:
         Wege dieselben Werte liefern. Geschriebene Werte gehen vor.
         """
         pfad = uri.split("/user/var", 1)[-1]
+        if pfad in self.texte:
+            return {"value": "1044", "str_value": self.texte[pfad], "text_offset": "1040"}
         if pfad in self.zeitfenster:
             einheit = "°C" if self.zeitfenster[pfad][2] is not None else ""
             return {"value": "0", "str_value": self.zeitfenster_text(pfad), "unit": einheit, "scale": "10"}

@@ -578,7 +578,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             fehlend = [f"{WOCHENTAGE[t]} {n}" for (t, n), uri in uris.items() if not uri]
             if len(fehlend) == len(uris):
                 continue
-            if not await self._warmwasserbereich_eingerichtet(heizkreis):
+            if not await self._programm_eingerichtet(heizkreis):
                 continue
             if fehlend:
                 self.zeitprogramm_pruefung[heizkreis] = {
@@ -620,28 +620,42 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             if heizkreis in THERMOSTATE:
                 await self._absenkwerte_pruefen(heizkreis, praefix)
 
-    async def _warmwasserbereich_eingerichtet(self, programm: str) -> bool:
-        """Ist der Warmwasserbereich eingerichtet, in dem ein Programm des Puffers liegt?
+    async def _programm_eingerichtet(self, programm: str) -> bool:
+        """Ist eingerichtet, wozu ein Lade- oder Zirkulationsprogramm gehört?
 
-        Ein PufferFlex führt ihn im Menübaum auch ohne Kombispeicher; dann
-        meldet seine Solltemperatur keine Einheit, siehe WARMWASSER_SOLL.
-        Solche Programme bleiben aus der Karte draußen, der Grund steht in
-        der Diagnose. Ohne Solltemperatur im Menübaum oder ohne Antwort der
-        Anlage zählt das Programm wie bisher.
+        Zwei Fälle führt der Menübaum auch ohne Einrichtung: den
+        Warmwasserbereich eines PufferFlex ohne Kombispeicher - dann meldet
+        seine Solltemperatur keine Einheit, siehe WARMWASSER_SOLL - und die
+        Zirkulation eines Warmwasserspeichers ohne Zirkulation - dann meldet
+        ihr Zustand "xxx", siehe ZIRKULATION. Solche Programme bleiben aus
+        der Karte draußen, der Grund steht in der Diagnose. Ohne diese
+        Objekte im Menübaum oder ohne Antwort der Anlage zählt das Programm
+        wie bisher.
         """
-        uri = self.zeitprogramm_namen.get(programm, {}).get("soll_uri")
-        if not uri:
-            return True
-        [beschreibung] = await self._varinfos([uri])
-        if beschreibung is None or beschreibung.get("unit"):
-            return True
-        self.zeitprogramm_pruefung[programm] = {
-            "grund": "Warmwasserbereich nicht eingerichtet, seine Solltemperatur hat keine Einheit",
-            "beispiel_uri": uri,
-        }
-        _LOGGER.info(
-            "ETA: Zeitprogramm %s ausgeblendet, der Warmwasserbereich ist nicht eingerichtet", programm
-        )
+        info = self.zeitprogramm_namen.get(programm, {})
+        if uri := info.get("soll_uri"):
+            [beschreibung] = await self._varinfos([uri])
+            if beschreibung is not None and not beschreibung.get("unit"):
+                return self._ausblenden(
+                    programm,
+                    uri,
+                    "Warmwasserbereich nicht eingerichtet, seine Solltemperatur hat keine Einheit",
+                )
+        if uri := info.get("zirkulation_uri"):
+            try:
+                zustand = await self.client.async_get_value(uri)
+            except ETAApiError:
+                return True
+            if zustand.text.strip().casefold() == "xxx":
+                return self._ausblenden(
+                    programm, uri, "Zirkulation nicht aktiviert, ihr Zustand ist xxx"
+                )
+        return True
+
+    def _ausblenden(self, programm: str, uri: str, grund: str) -> bool:
+        """Merkt sich, warum ein Programm nicht in die Karte kommt - für die Diagnose."""
+        self.zeitprogramm_pruefung[programm] = {"grund": grund, "beispiel_uri": uri}
+        _LOGGER.info("ETA: Zeitprogramm %s ausgeblendet: %s", programm, grund)
         return False
 
     async def _absenkwerte_pruefen(self, heizkreis: str, praefix: str) -> None:

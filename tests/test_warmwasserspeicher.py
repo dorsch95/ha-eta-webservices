@@ -101,6 +101,21 @@ def test_solltemperatur_des_warmwasserbereichs():
     assert namen["puffer_12175"]["soll_uri"] == "/120/10251/0/0/12132"
     assert namen["pufferflex_12130"]["soll_uri"] is None
     assert namen["ww_12130"]["soll_uri"] is None, "nur Puffer werden geprüft"
+    assert namen["ww_12175"]["zirkulation_uri"] == "/120/10111/0/0/12273"
+    assert namen["pufferflex_12175"]["zirkulation_uri"] == "/120/10601/0/0/12273"
+    assert namen["ww_12130"]["zirkulation_uri"] is None
+
+
+async def test_zirkulation_ohne_aktivierung_bleibt_draussen(hass, entry):
+    """Ein Speicher ohne Zirkulation führt die Zirkulationszeiten trotzdem; ihr Zustand meldet dann "xxx"."""
+    hass.session.texte["/120/10111/0/0/12273"] = "xxx"
+
+    coordinator = await aufbauen(hass, entry)
+
+    assert "fwm_12175" not in coordinator.zeitprogramm_defs
+    assert "nicht aktiviert" in coordinator.zeitprogramm_pruefung["fwm_12175"]["grund"]
+    assert "puffer_12175" in coordinator.zeitprogramm_defs, "die anderen Zirkulationen bleiben"
+    assert "fwm_12130" in coordinator.zeitprogramm_defs
 
 
 async def test_grenzen_je_warmwasser(hass, entry):
