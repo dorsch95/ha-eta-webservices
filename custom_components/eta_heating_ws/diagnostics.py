@@ -116,8 +116,13 @@ def prognose_diagnose(coordinator) -> dict[str, Any]:
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ETAConfigEntry
 ) -> dict[str, Any]:
-    """Stellt den Zustand einer eingerichteten Anlage zusammen."""
+    """Stellt den Zustand einer eingerichteten Anlage zusammen.
+
+    Läuft kurz nach dem Start noch die Prüfung der Zeitprogramme, wartet
+    die Diagnose auf sie - sonst fehlten die Zeitprogramme darin.
+    """
     coordinator = entry.runtime_data
+    await coordinator.zeitprogramme_bereit()
     daten = coordinator.data or {}
 
     messwerte = {}

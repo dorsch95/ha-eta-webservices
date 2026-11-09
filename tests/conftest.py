@@ -517,6 +517,11 @@ class FakeConfigEntry:
     def async_on_unload(self, callback):
         self._unload_callbacks.append(callback)
 
+    def async_create_background_task(self, hass, ziel, name, eager_start=True):
+        aufgabe = hass.async_create_background_task(ziel, name)
+        self._unload_callbacks.append(aufgabe.cancel)
+        return aufgabe
+
 
 class FakeEntityRegistry:
     """Das Entity-Register, soweit das Aufräumen verwaister Entitäten es nutzt."""

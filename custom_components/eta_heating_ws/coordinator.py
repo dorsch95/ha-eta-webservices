@@ -192,6 +192,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """Je Heizkreis, dessen Wert außerhalb der Zeitfenster nicht beschreibbar erkannt wurde, der Grund."""
         self.bei_neuem_zeitprogramm = None
         """Wird ein Heizkreis erst nachträglich beschreibbar, startet das seinen Zeitplan-Abgleich."""
+        self._erstpruefung: asyncio.Task | None = None
+        """Die erste Prüfung der Zeitprogramme, die nach dem Laden im Hintergrund läuft."""
         self.zeitprogramm_absenkung: dict[str, dict[str, dict]] = {}
         """Je Heizkreis mit beschreibbarem Zeitprogramm je Tag der Wert außerhalb der Zeitfenster."""
         self.zeitprogramm_namen: dict[str, dict] = {}
@@ -201,7 +203,6 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.components_without_data: list[str] = []
         self.api_version: str | None = None
         self.errors: list[ETAError] = []
-        self.varinfo: dict[str, dict] = {}
         self.switch_defs: dict[str, dict] = {}
         self.select_defs: dict[str, dict] = {}
         self.entaschen_def: dict | None = None
@@ -260,10 +261,18 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """Legt den Variablensatz für die Sammelabfrage an.
 
         Die Anlage hält Variablensätze nur im Arbeitsspeicher. Nach einem
-        Neustart sind sie weg, deshalb wird das hier bei Bedarf wiederholt.
+        Neustart der Anlage sind sie weg, deshalb wird das hier bei Bedarf
+        wiederholt. Startet nur Home Assistant neu, steht der Satz noch auf
+        der Anlage: Enthält er genau die gesuchten Werte, wird er weiter
+        benutzt - neu anlegen kostet eine Anfrage je Wert.
         """
         uris = list(self.abfragbare_uris.values())
         if not uris:
+            return
+        if await self._varset_vorhanden(uris):
+            self._varset_bereit = True
+            self._varset_bewaehrt = True
+            _LOGGER.debug("ETA: Variablensatz %s weiter benutzt", self._varset_name)
             return
         try:
             await self.client.async_delete_varset(self._varset_name)
@@ -281,6 +290,14 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             _LOGGER.info(
                 "ETA: Sammelabfrage nicht möglich, lese einzeln weiter: %s", err
             )
+
+    async def _varset_vorhanden(self, uris: list[str]) -> bool:
+        """Steht der Variablensatz mit genau diesen Werten schon auf der Anlage?"""
+        try:
+            vorhanden = await self.client.async_get_varset(self._varset_name)
+        except ETAApiError:
+            return False
+        return set(vorhanden) == set(uris)
 
     async def async_varset_aufraeumen(self) -> None:
         """Gibt den Variablensatz auf der Anlage wieder frei."""
@@ -620,6 +637,38 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             if heizkreis in THERMOSTATE:
                 await self._absenkwerte_pruefen(heizkreis, praefix)
 
+    def zeitprogramme_im_hintergrund_pruefen(self) -> None:
+        """Prüft die Zeitprogramme nach dem Laden, ohne den Start aufzuhalten.
+
+        Danach startet bei_neuem_zeitprogramm den Zeitplan-Abgleich jedes
+        Heizkreises, dessen Programm sich beschreiben lässt. Karte und
+        Diagnose warten auf diese Prüfung, siehe zeitprogramme_bereit.
+        """
+        self._erstpruefung = self.config_entry.async_create_background_task(
+            self.hass, self._zeitprogramme_erstpruefung(), "eta_heating_ws Zeitprogramme prüfen"
+        )
+
+    async def _zeitprogramme_erstpruefung(self) -> None:
+        """Ein unerwarteter Fehler darf hier nur die Zeitprogramme kosten, nicht die Integration."""
+        try:
+            await self._zeitprogramme_pruefen()
+        except Exception:
+            _LOGGER.exception("ETA: Prüfung der Zeitprogramme fehlgeschlagen")
+            return
+        if self.bei_neuem_zeitprogramm is None:
+            return
+        for heizkreis in list(self.zeitprogramm_defs):
+            if heizkreis in THERMOSTATE:
+                self.bei_neuem_zeitprogramm(heizkreis)
+
+    async def zeitprogramme_bereit(self) -> None:
+        """Wartet, bis die erste Prüfung der Zeitprogramme durch ist.
+
+        Bricht der Wartende ab, läuft die Prüfung trotzdem weiter.
+        """
+        if self._erstpruefung is not None and not self._erstpruefung.done():
+            await asyncio.wait({self._erstpruefung})
+
     async def _programm_eingerichtet(self, programm: str) -> bool:
         """Ist eingerichtet, wozu ein Lade- oder Zirkulationsprogramm gehört?
 
@@ -721,7 +770,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         insgesamt NACHPRUEFEN_HOECHSTENS-mal. Öffnen zwei Karten zugleich,
         wartet die zweite auf die erste. Wird ein Heizkreis dabei
         beschreibbar, startet bei_neuem_zeitprogramm seinen Zeitplan-Abgleich.
+        Läuft die erste Prüfung nach dem Start noch, wird zuerst sie abgewartet.
         """
+        await self.zeitprogramme_bereit()
         async with self._nachpruef_sperre:
             offen = {
                 heizkreis
@@ -798,24 +849,14 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return zustaende.get(wert.text.strip().casefold())
 
-    async def _varinfo_laden(self) -> None:
-        """Holt zu den Textwerten ihre gültigen Zustände.
-
-        Erst ab Webservice-Version 1.2 verfügbar; ältere Anlagen liefern
-        nichts, dann bleibt die Zusatzinfo einfach leer.
-        """
-        for key, info in self.sensor_defs.items():
-            if not info.get("is_string") or not info.get("uri"):
-                continue
-            beschreibung = await self.client.async_get_varinfo(info["uri"])
-            if beschreibung:
-                self.varinfo[key] = beschreibung
-
     async def async_discover(self, fub_name_overrides: dict[str, str]) -> None:
         """Ermittelt einmalig die URIs aller Messwerte dieser Anlage.
 
         Ohne Menübaum gibt es nichts abzufragen; Home Assistant bekommt
-        dann ConfigEntryNotReady und versucht es später erneut.
+        dann ConfigEntryNotReady und versucht es später erneut. Die
+        Zeitprogramme prüft erst zeitprogramme_im_hintergrund_pruefen, nach
+        dem Laden - das allein sind rund 90 Anfragen, die den Start sonst um
+        über zehn Sekunden verzögern.
         """
         try:
             self.discovered_uris, indices = await async_discover_uris(
@@ -840,12 +881,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             set(self.discovered_uris),
         )
         self.api_version = await self.client.async_get_api_version()
-        await self._varinfo_laden()
         await self._schalter_pruefen()
         await self._entaschen_pruefen()
         await self._betriebsarten_pruefen()
         await self._thermostate_pruefen()
-        await self._zeitprogramme_pruefen()
         await self._varset_anlegen()
 
     def funktionsblock(self, komponente: str) -> str:

@@ -465,6 +465,7 @@ async def _ws_zeitprogramm_setzen(
             msg["id"], "nicht_geladen", "Diese ETA-Heizung ist gerade nicht geladen."
         )
         return
+    await eintrag.runtime_data.zeitprogramme_bereit()
     try:
         ergebnis = await zeitprogramm_setzen(
             eintrag, msg["programm"], msg["tage"], msg["fenster"], msg.get("absenkung")

@@ -152,6 +152,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         entry.async_on_unload(async_at_started(hass, _prognose_starten(coordinator)))
     _raumfuehler_starten(hass, entry, coordinator, config)
     _zeitplaene_starten(hass, entry, coordinator, config)
+    coordinator.zeitprogramme_im_hintergrund_pruefen()
     return True
 
 

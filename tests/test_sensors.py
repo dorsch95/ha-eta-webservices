@@ -11,8 +11,10 @@ from .conftest import entity_name, ohne_objekt
 
 
 async def setup_integration(hass, entry):
+    """Richtet ein und wartet auch die Prüfung der Zeitprogramme im Hintergrund ab."""
     assert await eta_heating_ws.async_setup_entry(hass, entry) is True
     coordinator = entry.runtime_data
+    await coordinator.zeitprogramme_bereit()
     entities: list = []
     await sensor_platform.async_setup_entry(hass, entry, entities.extend)
     return coordinator, {entity_name(entity): entity for entity in entities}
@@ -613,13 +615,6 @@ async def test_api_version_steht_am_geraet(hass, entry):
     coordinator, _ = await setup_integration(hass, entry)
     assert coordinator.api_version == "1.2"
     assert coordinator.device_info["sw_version"] == "Webservices 1.2"
-
-
-async def test_gueltige_zustaende_werden_erfasst(hass, entry):
-    """Zu Textwerten hält die Integration fest, was die Anlage dazu sagt."""
-    coordinator, _ = await setup_integration(hass, entry)
-    assert "heizkreis_anforderung" in coordinator.varinfo
-    assert coordinator.varinfo["heizkreis_anforderung"]["writable"] is False
 
 
 async def test_stoerungsmeldungen_lassen_sich_abschalten(hass, entry):
