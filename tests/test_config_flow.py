@@ -497,7 +497,7 @@ async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
         raise modul.ETAApiError("kein Menübaum")
 
     monkeypatch.setattr(modul, "async_discover_uris", kaputt)
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) == ([], {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) is None
 
 
 async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
@@ -668,14 +668,64 @@ async def test_zeitprogramm_nur_mit_schreibzugriff_im_dialog(monkeypatch):
     async def menue(client, fub_names):
         return gefunden, []
 
+    beschreibung = {"writable": True, "zeitfenster": {"mit_wert": True}}
+
+    async def varinfo(self, uri):
+        return beschreibung
+
     monkeypatch.setattr(modul, "async_discover_uris", menue)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
+    monkeypatch.setattr(modul.ETAApiClient, "async_get_varinfo", varinfo)
     komponenten = ["kessel", "hk1", "hk2"]
     zeitprogramme = (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2]
     assert list(zeitprogramme) == ["hk1"]
     assert zeitprogramme["hk1"][("monday", 2)] == "/1/2"
     assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False))[2] == {}
+
+    beschreibung = None
+    assert list((await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2]) == [
+        "hk1"
+    ], "ohne Antwort wird der Zeitplan trotzdem angeboten"
+    beschreibung = {"writable": False, "zeitfenster": None}
+    assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2] == {}, (
+        "nicht beschreibbar: ein Zeitplan bliebe wirkungslos"
+    )
+
+    beschreibung = {"writable": True, "zeitfenster": {"mit_wert": True}}
     gefunden.pop(zeitfenster_schluessel("heizkreis", "sunday", 3))
     assert (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True))[2] == {}, (
         "nur mit allen Fenstern der Woche"
     )
+
+
+async def test_ohne_menuebaum_bleiben_die_bisherigen_angaben(monkeypatch):
+    """Antwortet die Anlage beim Speichern nicht, gehen Zeitplan, Raumfühler und Volumen nicht verloren."""
+    from eta_heating_ws import config_flow as modul
+    from eta_heating_ws.const import puffer_volumen_schluessel
+
+    bisher = {
+        "host": "192.0.2.10",
+        "port": 8080,
+        "enable_switches": True,
+        "hk1_zeitplan": "schedule.heizen",
+        "hk1_raumfuehler": "sensor.wohnzimmer",
+        "hk2_zeitplan": "schedule.weg",
+        puffer_volumen_schluessel("puffer"): 800,
+    }
+    flow, _ = await options_schritt(
+        monkeypatch, bisher, optionen(components=["puffer", "hk1"], enable_switches=True)
+    )
+
+    async def nicht_lesbar(*_):
+        return None
+
+    monkeypatch.setattr(modul, "_anlage_pruefen", nicht_lesbar)
+    fertig = await flow.async_step_fub_names(
+        {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "hk": "HK"}
+    )
+
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["hk1_zeitplan"] == "schedule.heizen"
+    assert fertig["data"]["hk1_raumfuehler"] == "sensor.wohnzimmer"
+    assert fertig["data"][puffer_volumen_schluessel("puffer")] == 800
+    assert "hk2_zeitplan" not in fertig["data"], "Heizkreis 2 ist nicht mehr gewählt"

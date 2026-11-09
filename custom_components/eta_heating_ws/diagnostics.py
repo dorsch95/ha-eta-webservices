@@ -270,10 +270,7 @@ async def _zeitprogramm(coordinator, heizkreis: str) -> dict[str, Any]:
         *(coordinator.client.async_get_zeitfenster(defs[f]["uri"]) for f in fenster),
         return_exceptions=True,
     )
-    try:
-        absenkung = await absenkung_lesen(coordinator, heizkreis)
-    except ETAApiError as err:
-        absenkung = f"nicht lesbar: {err}"
+    absenkung = await absenkung_lesen(coordinator, heizkreis)
     return {
         "zeitplan": abgleich.entity_id if abgleich is not None else None,
         "ausserhalb_der_zeitfenster": absenkung,

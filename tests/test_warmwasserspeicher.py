@@ -165,3 +165,21 @@ async def test_zirkulation_nur_zeiten(hass, entry):
     assert uri == "/120/10111/12175/0/1082"
     assert daten == {"begin": "24", "end": "40"}
 
+
+
+async def test_maximum_null_wird_uebergangen(hass, entry, monkeypatch):
+    """Meldet ein Speicher sein Maximum mit 0, würde sonst jede Temperatur auf 0 °C gesetzt."""
+    from eta_heating_ws import zeitprogramm
+
+    async def null(coordinator, programm):
+        return 0.0
+
+    monkeypatch.setattr(zeitprogramm, "obergrenze_lesen", null)
+    await aufbauen(hass, entry)
+
+    ergebnis = await zeitprogramm_setzen(
+        entry, "fwm_12130", ["monday"], [{"beginn": 20, "ende": 88, "temperatur": 50.0}]
+    )
+
+    assert hass.session.zeitfenster_text("/120/10111/12130/0/1082") == "05:00 - 22:00 50,0"
+    assert (ergebnis["temperatur_max"], ergebnis["temperatur_max_grund"]) == (80.0, None)

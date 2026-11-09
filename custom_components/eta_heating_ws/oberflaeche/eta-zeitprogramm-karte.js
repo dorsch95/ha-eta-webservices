@@ -446,6 +446,10 @@ class EtaZeitprogrammKarte extends HTMLElement {
       if (farbe) this.style.setProperty(name, farbe);
       else this.style.removeProperty(name);
     }
+    if (this._gelesenFuer !== undefined && !this._laedt && this._gelesenFuer !== this._anfrageText()) {
+      this._bearbeitung = null;
+      this._laden();
+    }
     this._zeichnen();
   }
 
@@ -514,12 +518,19 @@ class EtaZeitprogrammKarte extends HTMLElement {
     }
   }
 
+  /**
+   * Gelesen wird nur, was die Karte zeigt - jedes weitere Programm
+   * kostet rund 30 Anfragen an die Heizung. Ändern sich die Einstellungen,
+   * wird neu gelesen.
+   */
   async _laden() {
     if (!this._hass || this._laedt) return;
     this._laedt = true;
     this._zeichnen();
+    const anfrage = this._anfrageText();
+    this._gelesenFuer = anfrage;
     try {
-      const antwort = await this._hass.callWS({ type: "eta_heating_ws/zeitprogramme" });
+      const antwort = await this._hass.callWS(JSON.parse(anfrage));
       this._programme = antwort.programme;
       this._fehler = null;
       this._gelesen = Date.now();
@@ -527,7 +538,22 @@ class EtaZeitprogrammKarte extends HTMLElement {
       this._fehler = err?.message || String(err);
     }
     this._laedt = false;
+    if (this._gelesenFuer !== this._anfrageText()) {
+      this._laden();
+      return;
+    }
     this._zeichnen();
+  }
+
+  _arten() {
+    const anzeigen = this._konfig.anzeigen;
+    return Array.isArray(anzeigen) && anzeigen.length ? anzeigen : ["heizzeiten"];
+  }
+
+  _anfrageText() {
+    const anfrage = { type: "eta_heating_ws/zeitprogramme", arten: this._arten() };
+    if (this._konfig.heizkreis) anfrage.heizkreis = String(this._konfig.heizkreis);
+    return JSON.stringify(anfrage);
   }
 
   /**
@@ -537,8 +563,7 @@ class EtaZeitprogrammKarte extends HTMLElement {
    */
   _auswahl() {
     const gesucht = String(this._konfig.heizkreis || "").toLowerCase();
-    const anzeigen = this._konfig.anzeigen;
-    const arten = Array.isArray(anzeigen) && anzeigen.length ? anzeigen : ["heizzeiten"];
+    const arten = this._arten();
     return (this._programme || []).filter((hk) => {
       const art = hk.art || "heizzeiten";
       if (!arten.includes(art)) return false;

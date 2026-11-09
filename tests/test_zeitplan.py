@@ -488,6 +488,7 @@ async def test_knopf_im_reparaturhinweis(hass, entry, menu_xml, reparaturen):
 
     coordinator.zeitplan_abgleiche.clear()
     assert (await flow.async_step_confirm({}))["type"] == "abort"
+    assert reparaturen["entfernt"][-1] == issue_id, "ohne Abgleich verschwindet der Hinweis"
 
 
 @pytest.fixture
@@ -538,9 +539,20 @@ async def test_plan_aus_dem_echten_zeitplan_helfer(echtes_hass):
     json.dumps(wochenplan)
 
 
+class Eintrag:
+    """Gerade so viel Config Entry, wie der Abgleich braucht."""
+
+    entry_id = "eintrag"
+
+    def async_create_background_task(self, hass, ziel, name, eager_start=True):
+        return hass.async_create_background_task(ziel, name)
+
+
 async def test_geaenderter_zeitplan_wird_sofort_bemerkt(echtes_hass):
     """Auch wenn der Zustand des Helfers gleich bleibt - Home Assistant meldet es als "reported"."""
-    coordinator = type("Koordinator", (), {"zeitprogramm_defs": {"hk1": {}}})()
+    coordinator = type(
+        "Koordinator", (), {"zeitprogramm_defs": {"hk1": {}}, "config_entry": Eintrag()}
+    )()
     abgleich = ZeitplanAbgleich(echtes_hass, coordinator, "hk1", "schedule.heizen")
     aufrufe = []
 
@@ -549,12 +561,12 @@ async def test_geaenderter_zeitplan_wird_sofort_bemerkt(echtes_hass):
 
     abgleich.abgleichen = zaehlen
     abgleich.starten()
-    await echtes_hass.async_block_till_done()
+    await echtes_hass.async_block_till_done(wait_background_tasks=True)
     assert len(aufrufe) == 1, "beim Start"
 
     zustand = echtes_hass.states.get("schedule.heizen")
     echtes_hass.states.async_set(zustand.entity_id, zustand.state, zustand.attributes)
-    await echtes_hass.async_block_till_done()
+    await echtes_hass.async_block_till_done(wait_background_tasks=True)
     assert len(aufrufe) == 2
     abgleich.stoppen()
 

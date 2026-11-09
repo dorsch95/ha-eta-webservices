@@ -615,3 +615,17 @@ async def test_nachpruefen_hoert_irgendwann_auf(hass, entry, menu_xml, monkeypat
         await coordinator.zeitprogramme_nachpruefen()
 
     assert zaehler[uri] - nach_dem_start == 2 * NACHPRUEFEN_HOECHSTENS, "je Nachprüfung zwei Versuche"
+
+
+async def test_karte_fragt_nur_ihren_heizkreis(hass, entry, menu_xml):
+    await aufbauen(hass, entry, menu_xml)
+
+    for heizkreis, erwartet in (("hk1", ["hk1"]), ("hk2", []), (None, ["hk1"])):
+        verbindung = await befehl(
+            hass,
+            _ws_zeitprogramme,
+            type="eta_heating_ws/zeitprogramme",
+            arten=["heizzeiten"],
+            heizkreis=heizkreis,
+        )
+        assert [p["programm"] for p in verbindung.ergebnisse[0][1]["programme"]] == erwartet

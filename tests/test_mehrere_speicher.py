@@ -209,3 +209,36 @@ async def test_namensformular_ist_aus_der_anlage_vorbelegt(monkeypatch):
     vorgaben = {str(k): k.default() for k in formular["data_schema"].schema}
     assert vorgaben["pufferflex3"] == "Puffer"
     assert vorgaben["fwm2"] == "WW 2"
+
+
+def test_andere_anzahl_behaelt_die_bisherigen_plaetze():
+    """Sonst verschwänden Entitäten samt Verlauf, nur weil ein Platz dazukommt."""
+    bisher = ["kessel", "hk3", "hk4"]
+    anzahl = {CONF_ANZAHL_PUFFER: 0, CONF_ANZAHL_WARMWASSER: 0}
+    assert komponenten_aus_formular({**anzahl, CONF_ANZAHL_HEIZKREISE: 3}, bisher) == [
+        "kessel", "hk1", "hk3", "hk4",
+    ]
+    assert komponenten_aus_formular({**anzahl, CONF_ANZAHL_HEIZKREISE: 1}, bisher) == ["kessel", "hk3"]
+    assert komponenten_aus_formular({**anzahl, CONF_ANZAHL_HEIZKREISE: 0}, bisher) == ["kessel"]
+
+
+async def test_karte_liest_nur_was_sie_zeigt(hass, entry):
+    """Jedes Programm kostet rund 30 Anfragen - die Karte fragt nur nach ihren."""
+    from eta_heating_ws.zeitprogramm import _ws_zeitprogramme
+
+    from .test_zeitprogramm_karte import befehl
+
+    coordinator = await aufbauen(hass, entry)
+    zirkulation = [p for p in coordinator.zeitprogramm_defs if coordinator.zeitprogramm_art(p) == "zirkulation"]
+    vorher = hass.session.count
+
+    verbindung = await befehl(
+        hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme", arten=["zirkulation"]
+    )
+    gelesen = hass.session.count - vorher
+
+    assert "fwm_12175" in zirkulation
+    assert [p["programm"] for p in verbindung.ergebnisse[0][1]["programme"]] == zirkulation
+    vorher = hass.session.count
+    await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
+    assert gelesen < (hass.session.count - vorher) / 2

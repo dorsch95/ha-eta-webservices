@@ -50,6 +50,7 @@ from .const import (
     zeitplan_schluessel,
 )
 from .aschebox import AscheboxPlan
+from .aschebox import speicher as aschebox_speicher
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
@@ -58,6 +59,7 @@ from .prognose_koordinator import ETAPrognoseKoordinator
 from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
 from .repairs import async_zeitplan_hinweise_entfernen
 from .zeitplan import ZeitplanAbgleich
+from .zeitplan import speicher as zeitplan_speicher
 from .zeitprogramm import OBERFLAECHE, async_karte_anmelden
 
 _LOGGER = logging.getLogger(__name__)
@@ -201,8 +203,12 @@ def _zeitplaene_starten(
     Nur für Heizkreise, deren Zeitprogramm die Anlage als beschreibbar
     gemeldet hat - also mit freigegebenem Schreibzugriff. Wird einer erst
     später beschreibbar (siehe zeitprogramme_nachpruefen), startet sein
-    Abgleich dann.
+    Abgleich dann. Hinweise zu Heizkreisen ohne Zeitplan oder ohne
+    Schreibzugriff verschwinden gleich - zu ihnen läuft kein Abgleich mehr.
     """
+    for heizkreis in THERMOSTATE:
+        if not config.get(CONF_ENABLE_SWITCHES) or not config.get(zeitplan_schluessel(heizkreis)):
+            async_zeitplan_hinweise_entfernen(hass, entry.entry_id, heizkreis)
 
     def starten(heizkreis: str) -> None:
         entity_id = config.get(zeitplan_schluessel(heizkreis))
@@ -429,6 +435,16 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> boo
         entry, data=daten, options=optionen, unique_id=unique_id, minor_version=2
     )
     return True
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> None:
+    """Löscht, was die Integration zu dieser Anlage gespeichert hat.
+
+    Den gelernten Aschebox-Plan und welche Zeitpläne freigegeben sind - sonst
+    blieben ihre Dateien nach dem Entfernen für immer liegen.
+    """
+    await aschebox_speicher(hass, entry.entry_id).async_remove()
+    await zeitplan_speicher(hass, entry.entry_id).async_remove()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:

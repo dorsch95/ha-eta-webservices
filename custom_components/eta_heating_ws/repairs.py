@@ -158,6 +158,9 @@ class ZeitplanBestaetigen(RepairsFlow):
         koordinator = getattr(eintrag, "runtime_data", None) if eintrag else None
         abgleich = getattr(koordinator, "zeitplan_abgleiche", {}).get(self._daten.get("komponente"))
         if abgleich is None:
+            async_zeitplan_bestaetigung_erledigt(
+                self.hass, self._daten.get("entry_id", ""), self._daten.get("komponente", "")
+            )
             return self.async_abort(reason="zeitplan_nicht_aktiv")
         await abgleich.bestaetigen()
         return self.async_create_entry(data={})

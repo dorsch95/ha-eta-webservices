@@ -107,7 +107,7 @@ async def _anlage_pruefen(
     fub_names: dict[str, str],
     komponenten: list[str],
     schreiben: bool,
-) -> tuple[list[str], dict[str, dict], dict[str, dict[tuple[str, int], str]]]:
+) -> tuple[list[str], dict[str, dict], dict[str, dict[tuple[str, int], str]]] | None:
     """Liest einmal den Menübaum und sagt, welche Schritte noch folgen.
 
     Erstens die angekreuzten Puffer, die ihr effektives Volumen nicht
@@ -121,18 +121,19 @@ async def _anlage_pruefen(
 
     Drittens - ebenfalls nur mit Schreibzugriff - die Heizkreise, deren
     Zeitprogramm mit allen Zeitfenstern im Menübaum steht, je mit den URIs
-    der Fenster. Ob die Anlage sie auch beschreiben lässt, prüft erst das
-    Einrichten selbst.
+    der Fenster. Meldet die Anlage schon das erste Fenster als nicht
+    beschreibbar, fehlt der Heizkreis - ein Zeitplan bliebe dort wirkungslos.
+    Alle Fenster prüft erst das Einrichten selbst.
 
-    Ist der Menübaum nicht lesbar, folgt keiner der Schritte.
+    Ist der Menübaum nicht lesbar, folgt keiner der Schritte - dann None.
     """
     if not host:
-        return [], {}, {}
+        return None
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     try:
         gefunden, _ = await async_discover_uris(client, fub_names)
     except ETAApiError:
-        return [], {}, {}
+        return None
     ohne_volumen = [
         komponente
         for komponente in PUFFER_SPEICHER
@@ -150,7 +151,7 @@ async def _anlage_pruefen(
             for tag in WOCHENTAGE
             for nummer in range(1, ZEITFENSTER_JE_TAG + 1)
         }
-        if heizkreis in komponenten and all(uris.values()):
+        if heizkreis in komponenten and all(uris.values()) and await _beschreibbar(client, uris):
             zeitprogramme[heizkreis] = uris
     for heizkreis, definition in THERMOSTATE.items():
         praefix = definition["praefix"]
@@ -165,6 +166,12 @@ async def _anlage_pruefen(
                 sekunden = None
         thermostate[heizkreis] = {"uri": uri, "sekunden": sekunden}
     return ohne_volumen, thermostate, zeitprogramme
+
+
+async def _beschreibbar(client: ETAApiClient, uris: dict[tuple[str, int], str]) -> bool:
+    """Lässt die Anlage das erste Fenster als Zeitfenster beschreiben? Ohne Antwort: ja."""
+    info = await client.async_get_varinfo(next(iter(uris.values())))
+    return info is None or bool(info.get("writable") and info.get("zeitfenster"))
 
 
 async def _zeitueberwachung_schreiben(
@@ -226,6 +233,26 @@ async def _programm_der_anlage(
         }
         absaetze.append(f"**{COMPONENTS[heizkreis]['name']}**\n{programm_zusammenfassen(texte)}")
     return "\n\n".join(absaetze)
+
+
+def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[str, Any]:
+    """Die Einstellungen, wenn der Menübaum gerade nicht lesbar ist.
+
+    Dann entfallen die Schritte für Puffervolumen, Raumfühler und Zeitpläne.
+    Was dort bisher eingetragen war, bleibt für die weiter gewählten
+    Komponenten stehen - sonst ginge es verloren, nur weil die Anlage beim
+    Speichern gerade nicht geantwortet hat.
+    """
+    komponenten = daten.get(CONF_COMPONENTS, [])
+    schluessel = [puffer_volumen_schluessel(k) for k in PUFFER_SPEICHER if k in komponenten]
+    if daten.get(CONF_ENABLE_SWITCHES):
+        schluessel += [
+            feld(heizkreis)
+            for heizkreis in THERMOSTATE
+            if heizkreis in komponenten
+            for feld in (raumfuehler_schluessel, zeitplan_schluessel)
+        ]
+    return {**{k: bisher[k] for k in schluessel if bisher.get(k)}, **daten}
 
 
 def _zeitplaene_schema(zeitprogramme, current: dict[str, Any]) -> vol.Schema:
@@ -397,7 +424,7 @@ class _Anlagenschritte:
 
     async def _nach_fub_namen(self) -> ConfigFlowResult:
         host, port = self._adresse()
-        self._ohne_volumen, self._thermostate, self._zeitprogramme = await _anlage_pruefen(
+        geprueft = await _anlage_pruefen(
             self.hass,
             host,
             port,
@@ -405,6 +432,9 @@ class _Anlagenschritte:
             self._data[CONF_COMPONENTS],
             bool(self._data.get(CONF_ENABLE_SWITCHES)),
         )
+        if geprueft is None:
+            return self._fertig(_bisherige_angaben(self._data, self._bisher))
+        self._ohne_volumen, self._thermostate, self._zeitprogramme = geprueft
         if self._ohne_volumen:
             return await self.async_step_puffer()
         return await self._nach_puffer()

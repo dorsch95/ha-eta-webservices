@@ -94,3 +94,37 @@ async def test_fehler_bei_der_pruefung_kostet_nur_die_zeitprogramme(hass, entry,
     assert coordinator.zeitprogramm_defs == {}
     assert by_name, "die Messwerte sind trotzdem da"
     assert "Prüfung der Zeitprogramme fehlgeschlagen" in caplog.text
+
+
+async def test_hinweise_ohne_zeitplan_verschwinden_beim_start(hass, entry, reparaturen):
+    """Ohne Zeitplan oder ohne Schreibzugriff läuft kein Abgleich, der sie entfernen könnte."""
+    entry.data["enable_switches"] = False
+    entry.data["hk1_zeitplan"] = "schedule.heizen"
+
+    await setup_integration(hass, entry)
+
+    assert "testeintrag_hk1_zeitplan_bestaetigen" in reparaturen["entfernt"]
+    assert "testeintrag_hk1_zeitplan_zu_voll" in reparaturen["entfernt"]
+
+
+async def test_entfernen_loescht_die_gespeicherten_daten(hass, entry, monkeypatch):
+    from eta_heating_ws import aschebox, zeitplan
+
+    geloescht: list[str] = []
+
+    class Speicher:
+        def __init__(self, hass, version, schluessel):
+            self.schluessel = schluessel
+
+        async def async_remove(self):
+            geloescht.append(self.schluessel)
+
+    monkeypatch.setattr(aschebox, "Store", Speicher)
+    monkeypatch.setattr(zeitplan, "Store", Speicher)
+
+    await eta_heating_ws.async_remove_entry(hass, entry)
+
+    assert geloescht == [
+        "eta_heating_ws.aschebox_testeintrag",
+        "eta_heating_ws.zeitplan_testeintrag",
+    ]

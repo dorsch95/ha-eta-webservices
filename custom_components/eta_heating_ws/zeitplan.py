@@ -278,6 +278,11 @@ def programm_zusammenfassen(texte: dict[tuple[str, int], str | None]) -> str:
     return "\n".join(f"- {tage_text(namen)}: {beschreibung}" for namen, beschreibung in tage)
 
 
+def speicher(hass: HomeAssistant, entry_id: str) -> Store:
+    """Wo gemerkt wird, welcher Helfer je Heizkreis freigegeben ist."""
+    return Store(hass, 1, f"{DOMAIN}.zeitplan_{entry_id}")
+
+
 class ZeitplanAbgleich:
     """Hält das Zeitprogramm eines Heizkreises auf dem Stand eines Zeitplan-Helfers."""
 
@@ -316,7 +321,7 @@ class ZeitplanAbgleich:
                 self.hass, self._im_takt, timedelta(seconds=ZEITPLAN_TAKT)
             )
         )
-        self.hass.async_create_task(self.abgleichen())
+        self._anstossen()
 
     def stoppen(self) -> None:
         for abmelden in self._abmelden:
@@ -325,7 +330,17 @@ class ZeitplanAbgleich:
 
     @callback
     def _geaendert(self, _event: Event) -> None:
-        self.hass.async_create_task(self.abgleichen())
+        self._anstossen()
+
+    def _anstossen(self) -> None:
+        """Gleicht im Hintergrund ab - beim Entladen der Integration bricht das ab.
+
+        Sonst schriebe nach dem Neuladen der alte Abgleich noch, während
+        der neue schon liest.
+        """
+        self.coordinator.config_entry.async_create_background_task(
+            self.hass, self.abgleichen(), f"eta_heating_ws Zeitplan {self.heizkreis}"
+        )
 
     async def _im_takt(self, _jetzt) -> None:
         await self.abgleichen()
@@ -358,10 +373,7 @@ class ZeitplanAbgleich:
         return {tag: bloecke(tage.get(tag) or []) for tag in WOCHENTAGE}
 
     def _speicher(self) -> Store:
-        """Wo gemerkt wird, welcher Helfer je Heizkreis freigegeben ist."""
-        return Store(
-            self.hass, 1, f"{DOMAIN}.zeitplan_{self.coordinator.config_entry.entry_id}"
-        )
+        return speicher(self.hass, self.coordinator.config_entry.entry_id)
 
     async def _ist_bestaetigt(self) -> bool:
         if self._bestaetigt is None:
@@ -379,7 +391,7 @@ class ZeitplanAbgleich:
         """Gibt den Zeitplan frei und überträgt ihn - aufgerufen aus dem Reparaturhinweis."""
         await self._bestaetigung_merken()
         self._vorgelegt = None
-        self.hass.async_create_task(self.abgleichen())
+        self._anstossen()
 
     async def _bestand_lesen(self) -> dict[tuple[str, int], Zeitfenster]:
         fenster = list(self._defs)

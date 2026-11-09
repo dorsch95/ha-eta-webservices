@@ -1205,10 +1205,11 @@ def anzahl_komponenten(komponenten, feld):
 def komponenten_aus_formular(eingabe, bisher=()):
     """Die Komponenten aus Auswahl und Anzahlen des Formulars.
 
-    Bleibt eine Anzahl gleich, bleiben auch die bisherigen Plätze - wer
-    etwa Heizkreis 1 und 3 hatte, behält beide. Sonst gelten die ersten.
-    Fehlt ein Anzahl-Feld, zählen die Komponenten dieser Art aus der
-    Auswahl selbst, so wie vor den Anzahl-Feldern.
+    Die bisherigen Plätze bleiben: Wer etwa Heizkreis 3 und 4 hatte und
+    auf drei erhöht, bekommt Heizkreis 1 dazu; senkt er auf einen, bleibt
+    Heizkreis 3. Sonst gingen Entitäten samt Verlauf verloren. Fehlt ein
+    Anzahl-Feld, zählen die Komponenten dieser Art aus der Auswahl selbst,
+    so wie vor den Anzahl-Feldern.
     """
     auswahl = list(eingabe.get(CONF_COMPONENTS) or [])
     gewaehlt = set()
@@ -1218,7 +1219,8 @@ def komponenten_aus_formular(eingabe, bisher=()):
             continue
         anzahl = int(eingabe[feld])
         vorher = [key for key in plaetze if key in bisher]
-        gewaehlt |= set(vorher if len(vorher) == anzahl else plaetze[:anzahl])
+        frei = [key for key in plaetze if key not in vorher]
+        gewaehlt |= {*vorher[:anzahl], *frei[: max(anzahl - len(vorher), 0)]}
     gezaehlt = {key for plaetze in GEZAEHLTE_KOMPONENTEN.values() for key in plaetze}
     gewaehlt |= {key for key in auswahl if key not in gezaehlt}
     return normalize_components(gewaehlt)

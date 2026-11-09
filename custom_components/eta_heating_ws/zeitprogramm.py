@@ -148,7 +148,9 @@ async def obergrenze_lesen(coordinator, programm: str) -> float | None:
     """Bei einem Warmwasserspeicher "Warmwasserspeicher max." in °C, frisch von der Anlage.
 
     None, wenn es den Wert nicht gibt oder er gerade nicht lesbar ist - dann
-    gelten nur die übrigen Grenzen.
+    gelten nur die übrigen Grenzen. Liegt er nicht über der unteren Grenze,
+    etwa 0 bei einem nicht eingestellten Speicher, wird er ebenso übergangen;
+    sonst würde jede Temperatur auf ihn gesetzt.
     """
     uri = coordinator.zeitprogramm_maximum_uri(programm)
     if uri is None:
@@ -173,7 +175,7 @@ def kopf(eintrag, programm: str, obergrenze: float | None = None) -> dict[str, A
     art = coordinator.zeitprogramm_art(programm)
     untere, obere = temperaturgrenzen(defs)
     grund = None
-    if obergrenze is not None and obergrenze < obere:
+    if obergrenze is not None and untere < obergrenze < obere:
         obere = round(obergrenze, 1)
         grund = WARMWASSER_MAXIMUM
     absenk_untere, absenk_obere = temperaturgrenzen(absenk_defs or {})
@@ -312,7 +314,7 @@ async def zeitprogramm_setzen(
         bestand = await bestand_lesen(coordinator, programm)
         absenk_bestand = await absenkung_lesen(coordinator, programm)
         obergrenze = await obergrenze_lesen(coordinator, programm)
-        if obergrenze is not None:
+        if obergrenze is not None and obergrenze > temperaturgrenzen(defs)[0]:
             defs = {
                 fenster: {**info, "grenzen": (info["grenzen"][0], min(info["grenzen"][1], obergrenze))}
                 for fenster, info in defs.items()
@@ -398,10 +400,40 @@ def _eintrag(hass: HomeAssistant, entry_id: str):
     return None
 
 
+def gewuenscht(coordinator, programm: str, arten: list[str] | None, heizkreis: str | None) -> bool:
+    """Zeigt die Karte dieses Programm? Wie ihre Auswahl: Arten, bei Heizzeiten ein Heizkreis.
+
+    Ohne Angaben alle - so fragen die Einstellungen der Karte.
+    """
+    art = coordinator.zeitprogramm_art(programm)
+    if arten and art not in arten:
+        return False
+    gesucht = (heizkreis or "").casefold()
+    if art != "heizzeiten" or not gesucht:
+        return True
+    return gesucht in (programm.casefold(), coordinator.zeitprogramm_name(programm).casefold())
+
+
+async def _programm_lesen(eintrag, programm: str) -> dict:
+    """Ein Programm für die Karte, frisch von der Anlage - oder mit dem Fehler, warum nicht."""
+    coordinator = eintrag.runtime_data
+    try:
+        bestand, absenkung, obergrenze = await asyncio.gather(
+            bestand_lesen(coordinator, programm),
+            absenkung_lesen(coordinator, programm),
+            obergrenze_lesen(coordinator, programm),
+        )
+    except ETAApiError as err:
+        return {**kopf(eintrag, programm), "tage": None, "absenkung": None, "fehler": str(err)}
+    return programm_daten(eintrag, programm, bestand, absenkung, obergrenze)
+
+
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/zeitprogramme",
         vol.Optional("ohne_zeiten", default=False): bool,
+        vol.Optional("arten"): [str],
+        vol.Optional("heizkreis"): vol.Any(None, str),
     }
 )
 @websocket_api.async_response
@@ -413,25 +445,24 @@ async def _ws_zeitprogramme(
     Haben beim Start nicht alle Zeitfenster geantwortet, wird vorher
     nachgeprüft - so erscheint das Programm ohne Neustart. ohne_zeiten:
     nur, welche Programme es gibt, ohne die Heizung nach ihren Zeiten zu
-    fragen - für die Einstellungen der Karte.
+    fragen - für die Einstellungen der Karte. arten und heizkreis: nur,
+    was die Karte zeigt, siehe gewuenscht. Jedes Programm kostet rund 30
+    Anfragen, und die Steuerung beantwortet sie nacheinander.
     """
-    programme = []
+    auswahl = []
     for eintrag in hass.config_entries.async_loaded_entries(DOMAIN):
         await eintrag.runtime_data.zeitprogramme_nachpruefen()
-        for programm in list(eintrag.runtime_data.zeitprogramm_defs):
-            if msg.get("ohne_zeiten"):
-                programme.append(kopf(eintrag, programm))
-                continue
-            try:
-                bestand = await bestand_lesen(eintrag.runtime_data, programm)
-                absenkung = await absenkung_lesen(eintrag.runtime_data, programm)
-                obergrenze = await obergrenze_lesen(eintrag.runtime_data, programm)
-            except ETAApiError as err:
-                programme.append(
-                    {**kopf(eintrag, programm), "tage": None, "absenkung": None, "fehler": str(err)}
-                )
-                continue
-            programme.append(programm_daten(eintrag, programm, bestand, absenkung, obergrenze))
+        auswahl += [
+            (eintrag, programm)
+            for programm in list(eintrag.runtime_data.zeitprogramm_defs)
+            if gewuenscht(eintrag.runtime_data, programm, msg.get("arten"), msg.get("heizkreis"))
+        ]
+    if msg.get("ohne_zeiten"):
+        programme = [kopf(eintrag, programm) for eintrag, programm in auswahl]
+    else:
+        programme = list(
+            await asyncio.gather(*(_programm_lesen(eintrag, programm) for eintrag, programm in auswahl))
+        )
     connection.send_result(msg["id"], {"programme": programme})
 
 
