@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag, der geprüft werden soll
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Tag passt zur Version im Manifest
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Version im Manifest mit dem Tag vergleichen
+        run: |
+          python3 - <<'PRUEFUNG'
+          import json
+          import os
+          import sys
+
+          tag = os.environ["TAG"]
+          version = json.load(open("custom_components/eta_heating_ws/manifest.json"))["version"]
+          if tag != version:
+              print(
+                  f"::error::Der Tag {tag} passt nicht zur Version {version} im Manifest. "
+                  "HACS zeigt den Tag an, Home Assistant die Version aus dem Manifest. "
+                  "Erst die Version setzen lassen, dann das Release neu anlegen."
+              )
+              sys.exit(1)
+          print(f"Tag und Version stimmen überein: {version}")
+          PRUEFUNG

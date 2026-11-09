@@ -38,7 +38,8 @@ body:
     id: version_integration
     attributes:
       label: Version der Integration
-      placeholder: z. B. V0.21
+      description: Einstellungen → Geräte & Dienste → ETA Web-Services, oder in HACS.
+      placeholder: z. B. 0.27.0
     validations:
       required: true
   - type: input
