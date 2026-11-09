@@ -231,7 +231,8 @@ nach dieser Kennung gesucht - nie außerhalb.
 
 Aufgenommen sind Kennungen, die in einem echten Menübaum mit ihrem
 Namen stehen. Heizkreis 2 bis 4 sind derselbe Funktionsblock-Typ wie
-Heizkreis 1 und tragen deshalb dieselben, ebenso Puffer 2 und 3.
+Heizkreis 1 und tragen deshalb dieselben, ebenso die weiteren Puffer
+und Warmwasser.
 Einzige Ausnahme ist das PV-Heizmodul: Von ihm gibt es noch keinen echten Menübaum, seine
 Kennungen sind unbelegt. Greift eine davon, steht das in der Diagnose
 unter "ueber_kennung_gefunden". Nur Messwerte: Tasten und Schalter

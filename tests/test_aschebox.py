@@ -423,3 +423,87 @@ def test_kessel_zeilen_mit_strich():
             "state_not": "unknown",
         }
     ]
+
+
+async def test_abbrechen_ohne_antwort_laesst_den_plan_bestehen(hass, entry, uhr, aschebox_ohne_hass):
+    """Sonst wäre der Kessel aus, und kein Plan schaltete ihn mehr ein."""
+    coordinator, plan = await aufbauen(hass, entry)
+    await plan.planen(uhr.jetzt + timedelta(minutes=10))
+    await ausfuehren(hass, aschebox_ohne_hass)
+    assert plan.phase == "glutabbrand"
+
+    hass.session.schreiben_erlaubt = False
+    with pytest.raises(HomeAssistantError):
+        await plan.abbrechen()
+    assert plan.phase == "glutabbrand"
+
+    hass.session.schreiben_erlaubt = True
+    await plan.abbrechen()
+    assert plan.phase == "aus"
+    assert hass.session.gesetzte_werte[-1] == (KESSEL, "950")
+
+
+async def plan_mitten_im_lauf(hass, entry, uhr, aschebox_ohne_hass) -> None:
+    coordinator, plan = await aufbauen(hass, entry)
+    await plan.planen(uhr.jetzt + timedelta(minutes=10))
+    await ausfuehren(hass, aschebox_ohne_hass)
+    assert plan.phase == "glutabbrand"
+    aschebox_ohne_hass.meldungen.clear()
+
+
+async def test_plan_ohne_bestaetigte_tasten_wird_gemeldet(hass, entry, uhr, aschebox_ohne_hass, monkeypatch):
+    """Neustart mitten im Plan, und die Anlage bestätigt die Tasten nicht: Der Kessel bliebe unbemerkt aus."""
+    from eta_heating_ws.api import ETAApiClient
+
+    from .conftest import FakeConfigEntry
+
+    await plan_mitten_im_lauf(hass, entry, uhr, aschebox_ohne_hass)
+
+    async def keine_antwort(self, uri):
+        return None
+
+    echt = ETAApiClient.async_get_varinfo
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", keine_antwort)
+    uhr.weiter(minutes=5)
+    coordinator, _ = await setup_integration(hass, FakeConfigEntry(dict(entry.data)))
+    assert coordinator.aschebox is None
+    assert "Kessel selbst wieder einschalten" in aschebox_ohne_hass.meldungen[-1]
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", echt)
+    coordinator, _ = await setup_integration(hass, FakeConfigEntry(dict(entry.data)))
+    assert coordinator.aschebox.phase == "glutabbrand", "beim nächsten Start läuft er weiter"
+
+
+async def test_plan_ohne_schreibzugriff_wird_gemeldet_und_verworfen(hass, entry, uhr, aschebox_ohne_hass):
+    from .conftest import FakeConfigEntry
+
+    await plan_mitten_im_lauf(hass, entry, uhr, aschebox_ohne_hass)
+
+    ohne = FakeConfigEntry({**entry.data, "enable_switches": False})
+    await setup_integration(hass, ohne)
+    assert "Der Plan ist beendet" in aschebox_ohne_hass.meldungen[-1]
+
+    aschebox_ohne_hass.meldungen.clear()
+    await setup_integration(hass, FakeConfigEntry({**entry.data, "enable_switches": False}))
+    assert aschebox_ohne_hass.meldungen == [], "nur einmal"
+    coordinator, _ = await setup_integration(hass, FakeConfigEntry(dict(entry.data)))
+    assert coordinator.aschebox.phase == "aus"
+
+
+async def test_eine_ausgebliebene_antwort_kostet_keinen_schalter(hass, entry, monkeypatch):
+    """Die Beschreibung einer Taste wird einmal nachgefragt."""
+    from eta_heating_ws.api import ETAApiClient
+
+    echt = ETAApiClient.async_get_varinfo
+    gefragt: dict[str, int] = {}
+
+    async def erst_beim_zweiten_mal(self, uri):
+        gefragt[uri] = gefragt.get(uri, 0) + 1
+        return None if gefragt[uri] == 1 else await echt(self, uri)
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", erst_beim_zweiten_mal)
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert "kessel_schalter" in coordinator.switch_defs
+    assert coordinator.entaschen_def is not None
+    assert coordinator.aschebox is not None

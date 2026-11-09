@@ -35,8 +35,10 @@ AKTION_KARTE = "karte_erzeugen"
 CONF_EINTRAG = "config_entry_id"
 
 _ENTITAET = re.compile(
-    r"\b(?:sensor|binary_sensor|switch|select|climate)\.eta_heizung_[a-z0-9_]+"
+    r"\b(?:sensor|binary_sensor|switch|select|climate|button|datetime)\.eta_heizung_[a-z0-9_]+"
 )
+"""Die Entitäten der Integration, wie die Karte sie nennt - auch die Knöpfe und
+die Uhrzeit des Aschebox-Plans, damit eine umbenannte nicht ins Leere zeigt."""
 
 
 def async_aktionen_registrieren(hass: HomeAssistant) -> None:

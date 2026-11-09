@@ -321,15 +321,22 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
     Statt einer Liste fertiger Anlagenschemata wird hier angegeben, was an
     der Anlage vorhanden ist: wie viele Pufferspeicher, Warmwasser und
     Heizkreise, dazu angekreuzt der Rest. Der Kessel steht nicht zur Wahl,
-    den hat jede Anlage.
+    den hat jede Anlage. Steht eine Anzahl schon in current - das Formular
+    kommt nach einem Verbindungsfehler noch einmal -, bleibt sie stehen.
     """
     komponenten = components_from_config(current)
     vorauswahl = [key for key in komponenten if key in _WAEHLBARE_KOMPONENTEN]
+
+    def anzahl(feld: str) -> str:
+        if current.get(feld) is not None:
+            return str(current[feld])
+        return str(anzahl_komponenten(komponenten, feld))
+
     return {
         **{
-            vol.Required(feld, default=str(anzahl_komponenten(komponenten, feld))): SelectSelector(
+            vol.Required(feld, default=anzahl(feld)): SelectSelector(
                 SelectSelectorConfig(
-                    options=[str(anzahl) for anzahl in range(hoechstens + 1)],
+                    options=[str(zahl) for zahl in range(hoechstens + 1)],
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             )

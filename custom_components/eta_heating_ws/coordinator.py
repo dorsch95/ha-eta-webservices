@@ -213,6 +213,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self._varset_bereit = False
         self._varset_bewaehrt = False
         self._varset_wartezyklen = 0
+        self._varset_gelesen: dict[str, ETAValue] | None = None
+        """Was _varset_vorhanden eben gelesen hat - für die Abfrage direkt danach."""
 
         self._device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -292,12 +294,19 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             )
 
     async def _varset_vorhanden(self, uris: list[str]) -> bool:
-        """Steht der Variablensatz mit genau diesen Werten schon auf der Anlage?"""
+        """Steht der Variablensatz mit genau diesen Werten schon auf der Anlage?
+
+        Die dabei gelesenen Werte nimmt die nächste Abfrage, statt den Satz
+        gleich noch einmal zu lesen.
+        """
         try:
             vorhanden = await self.client.async_get_varset(self._varset_name)
         except ETAApiError:
             return False
-        return set(vorhanden) == set(uris)
+        if set(vorhanden) != set(uris):
+            return False
+        self._varset_gelesen = vorhanden
+        return True
 
     async def async_varset_aufraeumen(self) -> None:
         """Gibt den Variablensatz auf der Anlage wieder frei."""
@@ -376,9 +385,12 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """Prüft an der Anlage nach, ob sich eine Taste schalten lässt.
 
         Bedingung: beschreibbar, genau zwei Zustände, einer davon
-        erkennbar "aus". Die Rohwerte stammen aus /user/varinfo.
+        erkennbar "aus". Die Rohwerte stammen aus /user/varinfo. Bleibt die
+        Antwort aus, wird einmal nachgefragt - sonst fehlten Schalter,
+        Betriebsart oder der Aschebox-Plan bis zum nächsten Neustart, nur
+        weil die Anlage einmal nicht geantwortet hat.
         """
-        info = await self.client.async_get_varinfo(uri)
+        [info] = await self._varinfos([uri])
         if not info or not info.get("writable"):
             _LOGGER.debug("ETA: %s ist nicht beschreibbar", key)
             return None
@@ -472,7 +484,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 uri = self.discovered_uris.get(f"{praefix}_{teil}")
                 if not uri:
                     continue
-                info = await self.client.async_get_varinfo(uri)
+                [info] = await self._varinfos([uri])
                 if info and info.get("writable"):
                     objekte[teil] = {
                         "uri": uri,
@@ -994,12 +1006,15 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
 
         if self._varset_bereit:
             try:
-                nach_uri = await self.client.async_get_varset(self._varset_name)
+                nach_uri, self._varset_gelesen = self._varset_gelesen, None
+                if nach_uri is None:
+                    nach_uri = await self.client.async_get_varset(self._varset_name)
             except ETAApiError as err:
                 self._varset_bereit = False
                 if self._varset_bewaehrt:
                     _LOGGER.info("ETA: Variablensatz neu anlegen (%s)", err)
                     await self._varset_anlegen()
+                    self._varset_gelesen = None
                 else:
                     _LOGGER.info("ETA: Variablensatz nicht lesbar (%s)", err)
                     self._varset_wartezyklen = VARSET_WARTEZYKLEN

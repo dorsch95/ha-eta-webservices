@@ -49,7 +49,7 @@ from .const import (
     raumfuehler_schluessel,
     zeitplan_schluessel,
 )
-from .aschebox import AscheboxPlan
+from .aschebox import AscheboxPlan, verwaisten_plan_melden
 from .aschebox import speicher as aschebox_speicher
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
@@ -143,6 +143,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     if _aschebox_moeglich(coordinator):
         coordinator.aschebox = AscheboxPlan(hass, coordinator)
         await coordinator.aschebox.laden()
+    else:
+        await verwaisten_plan_melden(
+            hass, entry.entry_id, endgueltig=not coordinator.enable_switches
+        )
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

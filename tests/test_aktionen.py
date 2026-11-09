@@ -176,3 +176,40 @@ def test_ohne_kessel_zustand_bleibt_das_grundbild():
     assert "state_image" not in json.dumps(angepasst)
     assert "sensor.eta_heizung_kessel_zustand" not in json.dumps(angepasst)
     assert "/kessel.png" in json.dumps(angepasst)
+
+
+def test_umbenannter_knopf_wird_in_der_karte_ersetzt():
+    """Auch Knöpfe und die Uhrzeit des Aschebox-Plans tragen die echten IDs."""
+    karte = {
+        "type": "picture-elements",
+        "elements": [
+            {
+                "type": "icon",
+                "entity": "sensor.eta_heizung_aschebox_plan",
+                "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {"entity_id": "button.eta_heizung_kessel_entaschen"},
+                },
+            },
+            {
+                "type": "icon",
+                "entity": "sensor.eta_heizung_aschebox_plan",
+                "tap_action": {
+                    "action": "more-info",
+                    "entity": "datetime.eta_heizung_aschebox_leeren_um",
+                },
+            },
+        ],
+    }
+    ergebnis = karte_anpassen(
+        karte,
+        {
+            "sensor.eta_heizung_aschebox_plan": "sensor.eta_heizung_aschebox_plan",
+            "button.eta_heizung_kessel_entaschen": "button.asche_raus",
+            "datetime.eta_heizung_aschebox_leeren_um": "datetime.leeren",
+        },
+    )
+    aktionen = [element["tap_action"] for element in ergebnis["elements"]]
+    assert aktionen[0]["target"]["entity_id"] == "button.asche_raus"
+    assert aktionen[1]["entity"] == "datetime.leeren"

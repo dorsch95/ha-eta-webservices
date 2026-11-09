@@ -121,6 +121,48 @@ async def async_vorhersage(hass: HomeAssistant, wetter_id: str | None) -> dict[d
     return {}
 
 
+def tage_vorbereiten(
+    verbrauch: list,
+    temperatur: list,
+    puffer: list[list],
+    quellen: list[dict],
+    heute: date,
+    kwh_je_kg: float,
+    puffer_jetzt: float | None,
+) -> tuple[list[prognose.Tag], float, int]:
+    """Macht aus den Stundenwerten die Lerntage, gleicht die Puffer aus.
+
+    Liefert die Tage, was heute schon verbrannt ist, und wie viele Tage um
+    die Wärme im Puffer ausgeglichen wurden. Läuft im Executor: Bei zwei
+    Jahren Verlauf sind das über hunderttausend Zeitumrechnungen, die den
+    Event Loop sonst jede Stunde spürbar anhielten.
+    """
+    tage = prognose.tage_aus_stunden(
+        verbrauch, temperatur, lokales_datum_aus_zeitstempel, heute
+    )
+    heute_schon = sum(
+        wert or 0.0
+        for zeit, wert in verbrauch
+        if lokales_datum_aus_zeitstempel(zeit) == heute
+    )
+    if not quellen or kwh_je_kg <= 0:
+        return tage, heute_schon, 0
+    je_puffer, start = [], 0
+    for quelle in quellen:
+        reihen = puffer[start:start + len(quelle["ids"])]
+        start += len(quelle["ids"])
+        je_puffer.append((
+            prognose.puffer_tagesenden(reihen, lokale_stunde_aus_zeitstempel),
+            quelle["volumen"] * prognose.WASSER_KWH_JE_LITER_KELVIN,
+        ))
+    energie = prognose.puffer_energie_enden(je_puffer)
+    tage, puffer_tage = prognose.puffer_ausgleichen(tage, energie, 1.0, kwh_je_kg)
+    gestern = energie.get(heute - timedelta(days=1))
+    if gestern is not None and puffer_jetzt is not None:
+        heute_schon -= (puffer_jetzt - gestern) / kwh_je_kg
+    return tage, heute_schon, puffer_tage
+
+
 class ETAPrognoseKoordinator(DataUpdateCoordinator[prognose.Ergebnis]):
     """Rechnet Verbrauchsprognose und Reichweite des Lagers.
 
@@ -211,30 +253,16 @@ class ETAPrognoseKoordinator(DataUpdateCoordinator[prognose.Ergebnis]):
             _LOGGER.warning("ETA Prognose: Verlauf nicht lesbar: %s", err)
             return prognose.Ergebnis(status="Verlauf nicht lesbar")
 
-        tage = prognose.tage_aus_stunden(
-            verbrauch, temperatur, lokales_datum_aus_zeitstempel, heute
+        tage, heute_schon, self.puffer_tage = await self.hass.async_add_executor_job(
+            tage_vorbereiten,
+            verbrauch,
+            temperatur,
+            puffer,
+            quellen,
+            heute,
+            kwh_je_kg,
+            self._puffer_jetzt(quellen),
         )
-        heute_schon = sum(
-            wert or 0.0
-            for zeit, wert in verbrauch
-            if lokales_datum_aus_zeitstempel(zeit) == heute
-        )
-        self.puffer_tage = 0
-        if quellen and kwh_je_kg > 0:
-            je_puffer, start = [], 0
-            for quelle in quellen:
-                reihen = puffer[start:start + len(quelle["ids"])]
-                start += len(quelle["ids"])
-                je_puffer.append((
-                    prognose.puffer_tagesenden(reihen, lokale_stunde_aus_zeitstempel),
-                    quelle["volumen"] * prognose.WASSER_KWH_JE_LITER_KELVIN,
-                ))
-            energie = prognose.puffer_energie_enden(je_puffer)
-            tage, self.puffer_tage = prognose.puffer_ausgleichen(tage, energie, 1.0, kwh_je_kg)
-            gestern = energie.get(heute - timedelta(days=1))
-            jetzt = self._puffer_jetzt(quellen)
-            if gestern is not None and jetzt is not None:
-                heute_schon -= (jetzt - gestern) / kwh_je_kg
         self.wetter_id = self._wetter()
         vorhersage = await async_vorhersage(self.hass, self.wetter_id)
         self.vorhersage_tage = len(vorhersage)

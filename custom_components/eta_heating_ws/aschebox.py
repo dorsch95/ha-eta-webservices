@@ -79,6 +79,12 @@ kam. Solange die Anlage "Aschebox fehlt" meldet, wartet er weiter.
 VERWERFEN_NACH = timedelta(hours=1)
 """Lag die gewünschte Zeit beim Neustart schon so lange zurück, entfällt der Plan."""
 
+LAEUFT = ("glutabbrand", "entaschen", "leeren")
+"""In diesen Schritten hat der Plan den Kessel ausgeschaltet."""
+
+VERWAIST_HOECHSTENS = timedelta(days=1)
+"""So lange wartet ein Plan, der nicht weiterlaufen kann, auf einen Start, bei dem es wieder geht."""
+
 _SPEICHER_VERSION = 1
 
 
@@ -93,6 +99,43 @@ def _text(zeit: datetime | None) -> str | None:
 def speicher(hass: HomeAssistant, entry_id: str, domain: str = DOMAIN) -> Store:
     """Wo sich der Plan über einen Neustart hinweg merkt, was er gelernt hat."""
     return Store(hass, _SPEICHER_VERSION, f"{domain}.aschebox_{entry_id}")
+
+
+async def verwaisten_plan_melden(hass: HomeAssistant, entry_id: str, endgueltig: bool) -> None:
+    """Meldet einen Plan, der den Kessel ausgeschaltet hat und nicht weiterlaufen kann.
+
+    Der Plan läuft nur, wenn Kessel-Schalter und Entaschentaste beim Start
+    bestätigt sind. Fehlt das nach einem Neustart mitten im Plan, bliebe
+    der Kessel aus, ohne dass es jemand merkt. endgueltig: Der
+    Schreibzugriff ist abgeschaltet, der Plan wird verworfen. Sonst bleibt
+    er gespeichert und läuft beim nächsten Start weiter, bei dem die Anlage
+    wieder antwortet - höchstens VERWAIST_HOECHSTENS lang, danach wird er
+    ebenfalls verworfen.
+    """
+    lager = speicher(hass, entry_id)
+    gespeichert = await lager.async_load() or {}
+    plan = gespeichert.get("plan") or {}
+    if plan.get("phase") not in LAEUFT:
+        return
+    abgeschaltet = _zeit(plan.get("abgeschaltet_um"))
+    if abgeschaltet is None or dt_util.utcnow() - abgeschaltet > VERWAIST_HOECHSTENS:
+        endgueltig = True
+    nachricht = (
+        "Der Aschebox-Plan hat den Kessel ausgeschaltet, kann aber nicht weiterlaufen: "
+        + (
+            "Kessel-Schalter oder Entaschentaste stehen nicht mehr zur Verfügung. "
+            "Der Plan ist beendet."
+            if endgueltig
+            else "Die Anlage hat Kessel-Schalter oder Entaschentaste beim Start nicht bestätigt."
+        )
+        + " Bitte den Kessel selbst wieder einschalten."
+    )
+    _LOGGER.warning("ETA: %s", nachricht)
+    persistent_notification.async_create(
+        hass, nachricht, title="ETA Heizung: Aschebox", notification_id=f"{DOMAIN}_aschebox_{entry_id}"
+    )
+    if endgueltig:
+        await lager.async_save({**gespeichert, "plan": {"phase": "aus"}})
 
 
 class AscheboxPlan:
@@ -189,14 +232,20 @@ class AscheboxPlan:
         self._melden(f"Aschebox leeren geplant: Der Kessel geht um {self._uhrzeit(self.abschalten_um)} aus.")
 
     async def abbrechen(self) -> None:
-        """Beendet den Plan. Hat er den Kessel ausgeschaltet, geht er wieder an."""
+        """Beendet den Plan. Hat er den Kessel ausgeschaltet, geht er vorher wieder an.
+
+        Lässt sich der Kessel gerade nicht einschalten, bleibt der Plan
+        bestehen - sonst wäre der Kessel aus und niemand schaltete ihn mehr
+        ein. Der Knopf meldet den Fehler und lässt sich erneut drücken.
+        """
         async with self._sperre:
             phase = self.phase
+            if phase in LAEUFT:
+                await self._kessel(ein=True)
             self._zeitgeber_loeschen()
             self._daten = {"phase": "aus"}
             await self._sichern()
-            if phase in ("glutabbrand", "entaschen", "leeren"):
-                await self._kessel(ein=True)
+            if phase in LAEUFT:
                 self._melden("Aschebox-Plan abgebrochen, der Kessel ist wieder eingeschaltet.")
             else:
                 self._melden("Aschebox-Plan abgebrochen.")
@@ -242,7 +291,7 @@ class AscheboxPlan:
 
     @callback
     def _abgefragt(self) -> None:
-        if self.phase in ("glutabbrand", "entaschen", "leeren"):
+        if self.phase in LAEUFT:
             self.hass.async_create_task(self.weiter())
 
     async def weiter(self) -> None:

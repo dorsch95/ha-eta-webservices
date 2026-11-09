@@ -527,7 +527,7 @@ Findet die Integration am Kessel zusätzlich die **Entaschentaste** (am Display 
   3. Ist die Entaschung durch, kommt eine Meldung: Die Aschebox kann geleert werden.
   4. Sobald die Box abgenommen und wieder eingesetzt ist (der Kessel meldet *Aschebox fehlt* und danach nicht mehr, oder der Zähler *Verbrauch seit Aschebox leeren* fällt), schaltet es den Kessel wieder ein. Wird die Box nicht innerhalb von 2 Stunden geleert, geht der Kessel trotzdem wieder an - im Winter soll das Haus nicht auskühlen.
 
-  `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab; hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst wieder ein, endet der Plan ebenfalls. Der Plan übersteht einen Neustart von Home Assistant. Jeder Schritt löst zusätzlich das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`) - damit lässt sich die Meldung etwa aufs Handy schicken.
+  `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab; hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst wieder ein, endet der Plan ebenfalls. Der Plan übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen - etwa weil die Heizung beim Start nicht geantwortet hat oder der Schreibzugriff abgeschaltet wurde -, erscheint eine Meldung, dass der Kessel von Hand wieder einzuschalten ist. Jeder Schritt löst zusätzlich das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`) - damit lässt sich die Meldung etwa aufs Handy schicken.
 
 ### Betriebsart je Heizkreis
 

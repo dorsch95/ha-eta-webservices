@@ -128,3 +128,21 @@ async def test_entfernen_loescht_die_gespeicherten_daten(hass, entry, monkeypatc
         "eta_heating_ws.aschebox_testeintrag",
         "eta_heating_ws.zeitplan_testeintrag",
     ]
+
+
+async def test_weiter_benutzter_variablensatz_wird_nur_einmal_gelesen(hass, entry, monkeypatch):
+    """Die Prüfung, ob der Satz noch passt, liefert die Werte gleich mit."""
+    await setup_integration(hass, entry)
+    gelesen: list[str] = []
+    original = ETAApiClient.async_get_varset
+
+    async def zaehlen(self, name):
+        gelesen.append(name)
+        return await original(self, name)
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varset", zaehlen)
+    coordinator, _ = await setup_integration(hass, FakeConfigEntry(dict(entry.data)))
+    assert len(gelesen) == 1
+
+    await coordinator.async_refresh()
+    assert len(gelesen) == 2, "danach wieder bei jeder Abfrage"

@@ -242,3 +242,24 @@ async def test_karte_liest_nur_was_sie_zeigt(hass, entry):
     vorher = hass.session.count
     await befehl(hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme")
     assert gelesen < (hass.session.count - vorher) / 2
+
+
+def test_anzahl_bleibt_nach_einem_verbindungsfehler_stehen():
+    """Das Formular kommt mit der Eingabe noch einmal - samt der gewählten Anzahl."""
+    from eta_heating_ws.config_flow import _connection_schema
+
+    eingabe = {
+        "host": "192.0.2.10",
+        "port": 8080,
+        "components": ["solar"],
+        CONF_ANZAHL_PUFFER: "2",
+        CONF_ANZAHL_WARMWASSER: "1",
+        CONF_ANZAHL_HEIZKREISE: "3",
+    }
+    schema = _connection_schema(eingabe)
+    vorgaben = {str(k): k.default() for k in schema.schema if callable(k.default)}
+    assert (
+        vorgaben[CONF_ANZAHL_PUFFER],
+        vorgaben[CONF_ANZAHL_WARMWASSER],
+        vorgaben[CONF_ANZAHL_HEIZKREISE],
+    ) == ("2", "1", "3")
