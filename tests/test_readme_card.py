@@ -373,9 +373,29 @@ def test_jede_genannte_entitaet_kann_entstehen():
     assert not unbekannt, f"README nennt Entitäten, die nicht entstehen: {unbekannt}"
 
 
+def weitere_speicher() -> set[str]:
+    """Pufferspeicher und Warmwasser ab Nummer 3, als Komponente und als Rolle.
+
+    Das README beschreibt die Nummer 2 ausführlich und nennt, bis zu
+    welcher Nummer es so weitergeht ("Pufferspeicher 2 bis 8") - sechs
+    weitere gleichlautende Blöcke je Tabelle läse niemand. Dass diese
+    Angabe stimmt, prüft test_readme_nennt_die_hoechste_nummer.
+    """
+    komponenten = [*list(PUFFER_SPEICHER)[2:], *list(WARMWASSER_SPEICHER)[2:]]
+    return {*komponenten, *(rolle for k in komponenten for rolle in COMPONENTS[k]["roles"])}
+
+
+def test_readme_nennt_die_hoechste_nummer():
+    text = readme_text()
+    assert f"Pufferspeicher 2 bis {len(PUFFER_SPEICHER)}" in text
+    assert f"Warmwasser 2 bis {len(WARMWASSER_SPEICHER)}" in text
+
+
 def test_jede_komponente_ist_beschrieben():
     text = readme_text()
     for key, info in COMPONENTS.items():
+        if key in weitere_speicher():
+            continue
         assert info["name"] in text or key in text, key
 
 
@@ -476,6 +496,8 @@ def test_fub_standardnamen_stehen_in_der_tabelle():
 
     text = readme_text()
     for rolle, namen in FUB_ROLE_DEFAULT_NAMES.items():
+        if rolle in weitere_speicher():
+            continue
         assert any(f"`{name}`" in text for name in namen), rolle
 
 
@@ -526,6 +548,7 @@ def entitaetstabelle() -> list[str]:
             or ("Text" if info.get("is_string") else "–"),
         )
         for info in SENSORS.values()
+        if info["component"] not in weitere_speicher()
     ]
     zeilen += [
         zeile("switch", i["translation_key"], "Schalter")
