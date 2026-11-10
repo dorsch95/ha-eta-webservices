@@ -6,5 +6,8 @@
     "AT",
     "CH"
   ],
-  "content_in_root": false
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "eta_heating_ws.zip",
+  "hide_default_branch": true
 }

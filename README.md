@@ -1,6 +1,7 @@
 # ETA Web-Services für Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
+[![Downloads](https://img.shields.io/github/downloads/dorsch95/ha-eta-webservices/total?label=Downloads)](https://github.com/dorsch95/ha-eta-webservices/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home Assistant ein: Pellet-, Hackgut- und Stückholzkessel samt Pufferspeichern, Warmwasser, Heizkreisen, Solaranlage, PV-Heizmodul, Pelletlager, zweitem Wärmeerzeuger und Fernleitung. Alles läuft lokal im Heimnetz, nichts geht ins Internet.

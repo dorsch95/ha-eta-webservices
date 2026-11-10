@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag, der geprüft werden soll
+        description: Tag, der geprüft und gepackt werden soll
         required: true
 
 permissions:
@@ -40,3 +40,23 @@ jobs:
               sys.exit(1)
           print(f"Tag und Version stimmen überein: {version}")
           PRUEFUNG
+
+  paket:
+    name: Zip-Datei für HACS an das Release hängen
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Integration packen, manifest.json muss oben in der Zip-Datei liegen
+        run: |
+          cd custom_components/eta_heating_ws
+          zip -r -q "$RUNNER_TEMP/eta_heating_ws.zip" . -x '*__pycache__*'
+          unzip -l "$RUNNER_TEMP/eta_heating_ws.zip" manifest.json
+      - name: Zip-Datei hochladen, HACS laedt sie und GitHub zaehlt die Downloads
+        run: gh release upload "$TAG" "$RUNNER_TEMP/eta_heating_ws.zip" --clobber
