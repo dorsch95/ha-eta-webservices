@@ -16,7 +16,7 @@ cards:
         state: kessel
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/kessel.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/kessel.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -42,7 +42,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_flamme.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_flamme.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -70,7 +70,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_zuendung.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_zuendung.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -97,7 +97,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_entaschen.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_entaschen.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -126,7 +126,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_stoerung.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_stoerung.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -159,7 +159,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_glut.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_glut.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -591,45 +591,45 @@ cards:
               font-size: 80%
         entity: sensor.eta_heizung_kessel_zustand
         state_image:
-          Heizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen Start: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Anheizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Pellet Betrieb: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Vorbereitung auf Messung: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Teillastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Nennlastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Zünden: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.1
-          Heizversuch: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.1
-          Entaschen: /eta_heating_ws/grafiken/kessel_entaschen.png?v=0.27.1
-          Störung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Störung beim Entaschen: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Wartung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Glutabbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Entaschung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand da ausgeschaltet: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand weil Aschebox fehlt: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Störung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Verriegelung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Ausbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Ausgeschaltet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Klappe Öffnen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Pelletsbehälter auffüllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen gestoppt wegen Zündung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen gestoppt wegen Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Bereit: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Aschebox fehlt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Verriegelt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Lambdasonde kalibrieren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorwärmen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Stoker leeren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Isoliertür geöffnet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Verzögerungszeit abwarten: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Übertemperatur: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorbereitung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorbereiten auf Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Durchlüften: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Umschaltung auf Stückholzbetrieb: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
+          Heizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen Start: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Anheizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Pellet Betrieb: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Vorbereitung auf Messung: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Teillastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Nennlastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Zünden: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.2
+          Heizversuch: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.2
+          Entaschen: /eta_heating_ws/grafiken/kessel_entaschen.png?v=0.27.2
+          Störung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Störung beim Entaschen: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Wartung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Glutabbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Entaschung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand da ausgeschaltet: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand weil Aschebox fehlt: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Störung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Verriegelung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Ausbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Ausgeschaltet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Klappe Öffnen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Pelletsbehälter auffüllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen gestoppt wegen Zündung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen gestoppt wegen Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Bereit: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Aschebox fehlt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Verriegelt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Lambdasonde kalibrieren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorwärmen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Stoker leeren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Isoliertür geöffnet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Verzögerungszeit abwarten: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Übertemperatur: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorbereitung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorbereiten auf Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Durchlüften: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Umschaltung auf Stückholzbetrieb: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
     - type: conditional
       conditions:
       - condition: state
@@ -637,7 +637,7 @@ cards:
         state: puffer
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -661,7 +661,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -685,7 +685,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -1250,7 +1250,7 @@ cards:
         state: puffer2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -1270,7 +1270,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -1294,7 +1294,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -1859,7 +1859,7 @@ cards:
         state: puffer3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -1879,7 +1879,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -1903,7 +1903,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -2468,7 +2468,7 @@ cards:
         state: fwm
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_fwm_warmwassertemperatur
@@ -2532,7 +2532,7 @@ cards:
         state: fwm2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_warmwasser_2_temperatur
@@ -2596,7 +2596,7 @@ cards:
         state: fwm3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_warmwasser_3_temperatur
@@ -2660,7 +2660,7 @@ cards:
         state: hk1
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -2683,7 +2683,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -2707,7 +2707,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -3021,7 +3021,7 @@ cards:
         state: hk2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -3041,7 +3041,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -3065,7 +3065,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -3376,7 +3376,7 @@ cards:
         state: hk3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -3396,7 +3396,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -3420,7 +3420,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -3731,7 +3731,7 @@ cards:
         state: hk4
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -3751,7 +3751,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -3775,7 +3775,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4086,7 +4086,7 @@ cards:
         state: lager
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/lager.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/lager.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -4099,7 +4099,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_100.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_100.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4120,7 +4120,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_75.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_75.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4141,7 +4141,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_50.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_50.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4162,7 +4162,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_25.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_25.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4182,7 +4182,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_leer.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_leer.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4209,7 +4209,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
-            image: /eta_heating_ws/grafiken/lager_schnecke.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_schnecke.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4233,7 +4233,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
-            image: /eta_heating_ws/grafiken/lager_schnecke.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_schnecke.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4253,7 +4253,7 @@ cards:
           elements:
           - type: image
             entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
-            image: /eta_heating_ws/grafiken/lager_warnung.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_warnung.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4300,7 +4300,7 @@ cards:
         state: solar
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/solar.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/solar.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -4313,7 +4313,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_ruhe.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_ruhe.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4340,7 +4340,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4364,7 +4364,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4404,7 +4404,7 @@ cards:
         state: pvm
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/pvm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/pvm.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -4417,7 +4417,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_ruhe.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_ruhe.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4444,7 +4444,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4468,7 +4468,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4508,7 +4508,7 @@ cards:
         state: brenner
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/brenner.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/brenner.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -4528,7 +4528,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
-            image: /eta_heating_ws/grafiken/brenner_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/brenner_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4552,7 +4552,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
-            image: /eta_heating_ws/grafiken/brenner_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/brenner_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4584,7 +4584,7 @@ cards:
         state: fernleitung
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fernleitung.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fernleitung.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -4604,7 +4604,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
-            image: /eta_heating_ws/grafiken/fernleitung_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/fernleitung_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4628,7 +4628,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
-            image: /eta_heating_ws/grafiken/fernleitung_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/fernleitung_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4661,7 +4661,7 @@ cards:
         state: kessel
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/kessel.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/kessel.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -4680,7 +4680,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_flamme.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_flamme.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4706,7 +4706,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_zuendung.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_zuendung.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4732,7 +4732,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_entaschen.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_entaschen.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4758,7 +4758,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_stoerung.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_stoerung.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -4784,7 +4784,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_glut.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_glut.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -5212,45 +5212,45 @@ cards:
               font-size: 85%
         entity: sensor.eta_heizung_kessel_zustand
         state_image:
-          Heizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen Start: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Anheizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Pellet Betrieb: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Vorbereitung auf Messung: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Teillastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Nennlastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Zünden: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.1
-          Heizversuch: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.1
-          Entaschen: /eta_heating_ws/grafiken/kessel_entaschen.png?v=0.27.1
-          Störung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Störung beim Entaschen: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Wartung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Glutabbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Entaschung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand da ausgeschaltet: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand weil Aschebox fehlt: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Störung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Verriegelung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Ausbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Ausgeschaltet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Klappe Öffnen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Pelletsbehälter auffüllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen gestoppt wegen Zündung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen gestoppt wegen Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Bereit: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Aschebox fehlt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Verriegelt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Lambdasonde kalibrieren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorwärmen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Stoker leeren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Isoliertür geöffnet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Verzögerungszeit abwarten: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Übertemperatur: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorbereitung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorbereiten auf Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Durchlüften: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Umschaltung auf Stückholzbetrieb: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
+          Heizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen Start: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Anheizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Pellet Betrieb: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Vorbereitung auf Messung: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Teillastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Nennlastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Zünden: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.2
+          Heizversuch: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.2
+          Entaschen: /eta_heating_ws/grafiken/kessel_entaschen.png?v=0.27.2
+          Störung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Störung beim Entaschen: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Wartung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Glutabbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Entaschung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand da ausgeschaltet: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand weil Aschebox fehlt: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Störung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Verriegelung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Ausbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Ausgeschaltet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Klappe Öffnen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Pelletsbehälter auffüllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen gestoppt wegen Zündung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen gestoppt wegen Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Bereit: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Aschebox fehlt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Verriegelt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Lambdasonde kalibrieren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorwärmen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Stoker leeren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Isoliertür geöffnet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Verzögerungszeit abwarten: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Übertemperatur: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorbereitung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorbereiten auf Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Durchlüften: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Umschaltung auf Stückholzbetrieb: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
     - type: conditional
       conditions:
       - condition: state
@@ -5258,7 +5258,7 @@ cards:
         state: puffer
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -5278,7 +5278,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -5302,7 +5302,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -5867,7 +5867,7 @@ cards:
         state: puffer2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -5887,7 +5887,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -5911,7 +5911,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -6476,7 +6476,7 @@ cards:
         state: puffer3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -6496,7 +6496,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -6520,7 +6520,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -7085,7 +7085,7 @@ cards:
         state: fwm
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_fwm_warmwassertemperatur
@@ -7149,7 +7149,7 @@ cards:
         state: fwm2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_warmwasser_2_temperatur
@@ -7213,7 +7213,7 @@ cards:
         state: fwm3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_warmwasser_3_temperatur
@@ -7277,7 +7277,7 @@ cards:
         state: hk1
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -7297,7 +7297,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -7321,7 +7321,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -7633,7 +7633,7 @@ cards:
         state: hk2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -7653,7 +7653,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -7677,7 +7677,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -7989,7 +7989,7 @@ cards:
         state: hk3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -8009,7 +8009,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8033,7 +8033,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8345,7 +8345,7 @@ cards:
         state: hk4
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -8365,7 +8365,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8389,7 +8389,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8701,7 +8701,7 @@ cards:
         state: lager
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/lager.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/lager.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -8714,7 +8714,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_100.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_100.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8735,7 +8735,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_75.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_75.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8756,7 +8756,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_50.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_50.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8777,7 +8777,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_25.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_25.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8797,7 +8797,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_leer.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_leer.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8824,7 +8824,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
-            image: /eta_heating_ws/grafiken/lager_schnecke.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_schnecke.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8848,7 +8848,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
-            image: /eta_heating_ws/grafiken/lager_schnecke.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_schnecke.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8868,7 +8868,7 @@ cards:
           elements:
           - type: image
             entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
-            image: /eta_heating_ws/grafiken/lager_warnung.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_warnung.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8915,7 +8915,7 @@ cards:
         state: solar
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/solar.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/solar.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -8928,7 +8928,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_ruhe.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_ruhe.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8955,7 +8955,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -8979,7 +8979,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9019,7 +9019,7 @@ cards:
         state: pvm
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/pvm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/pvm.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -9032,7 +9032,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_ruhe.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_ruhe.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9059,7 +9059,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9083,7 +9083,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9123,7 +9123,7 @@ cards:
         state: brenner
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/brenner.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/brenner.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -9143,7 +9143,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
-            image: /eta_heating_ws/grafiken/brenner_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/brenner_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9167,7 +9167,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
-            image: /eta_heating_ws/grafiken/brenner_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/brenner_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9199,7 +9199,7 @@ cards:
         state: fernleitung
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fernleitung.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fernleitung.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -9219,7 +9219,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
-            image: /eta_heating_ws/grafiken/fernleitung_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/fernleitung_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9243,7 +9243,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
-            image: /eta_heating_ws/grafiken/fernleitung_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/fernleitung_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9276,7 +9276,7 @@ cards:
         state: kessel
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/kessel.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/kessel.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -9295,7 +9295,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_flamme.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_flamme.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9321,7 +9321,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_zuendung.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_zuendung.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9347,7 +9347,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_entaschen.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_entaschen.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9373,7 +9373,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_stoerung.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_stoerung.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9399,7 +9399,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_kessel_zustand
-            image: /eta_heating_ws/grafiken/kessel_glut.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/kessel_glut.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9827,45 +9827,45 @@ cards:
               font-size: 90%
         entity: sensor.eta_heizung_kessel_zustand
         state_image:
-          Heizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen Start: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Anheizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Pellet Betrieb: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Vorbereitung auf Messung: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Teillastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Heizen, Nennlastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.1
-          Zünden: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.1
-          Heizversuch: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.1
-          Entaschen: /eta_heating_ws/grafiken/kessel_entaschen.png?v=0.27.1
-          Störung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Störung beim Entaschen: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Wartung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.1
-          Glutabbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Entaschung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand da ausgeschaltet: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand weil Aschebox fehlt: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Störung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Glutabbrand wegen Verriegelung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Ausbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.1
-          Ausgeschaltet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Klappe Öffnen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Pelletsbehälter auffüllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen gestoppt wegen Zündung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen gestoppt wegen Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Bereit: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Aschebox fehlt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Verriegelt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Lambdasonde kalibrieren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorwärmen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Stoker leeren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Füllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Isoliertür geöffnet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Verzögerungszeit abwarten: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Übertemperatur: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorbereitung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Vorbereiten auf Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Durchlüften: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
-          Umschaltung auf Stückholzbetrieb: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.1
+          Heizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen Start: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Anheizen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Pellet Betrieb: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Vorbereitung auf Messung: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Teillastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Heizen, Nennlastmessung durchführen: /eta_heating_ws/grafiken/kessel_flamme.png?v=0.27.2
+          Zünden: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.2
+          Heizversuch: /eta_heating_ws/grafiken/kessel_zuendung.png?v=0.27.2
+          Entaschen: /eta_heating_ws/grafiken/kessel_entaschen.png?v=0.27.2
+          Störung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Störung beim Entaschen: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Wartung: /eta_heating_ws/grafiken/kessel_stoerung.png?v=0.27.2
+          Glutabbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Entaschung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand da ausgeschaltet: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand weil Aschebox fehlt: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Störung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Glutabbrand wegen Verriegelung: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Ausbrand: /eta_heating_ws/grafiken/kessel_glut.png?v=0.27.2
+          Ausgeschaltet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Klappe Öffnen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Pelletsbehälter auffüllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen gestoppt wegen Zündung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen gestoppt wegen Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Bereit: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Aschebox fehlt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Verriegelt: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Lambdasonde kalibrieren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorwärmen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Stoker leeren: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Füllen: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Isoliertür geöffnet: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Verzögerungszeit abwarten: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Übertemperatur: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorbereitung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Vorbereiten auf Entaschung: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Durchlüften: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
+          Umschaltung auf Stückholzbetrieb: /eta_heating_ws/grafiken/kessel_aus.png?v=0.27.2
     - type: conditional
       conditions:
       - condition: state
@@ -9873,7 +9873,7 @@ cards:
         state: puffer
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -9893,7 +9893,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -9917,7 +9917,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -10482,7 +10482,7 @@ cards:
         state: puffer2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -10502,7 +10502,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -10526,7 +10526,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_2_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -11091,7 +11091,7 @@ cards:
         state: puffer3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/puffer.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -11111,7 +11111,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -11135,7 +11135,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_puffer_3_zustand
-            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/puffer_laden.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -11700,7 +11700,7 @@ cards:
         state: fwm
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_fwm_warmwassertemperatur
@@ -11764,7 +11764,7 @@ cards:
         state: fwm2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_warmwasser_2_temperatur
@@ -11828,7 +11828,7 @@ cards:
         state: fwm3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fwm.png?v=0.27.2
         elements:
         - type: state-label
           entity: sensor.eta_heizung_warmwasser_3_temperatur
@@ -11892,7 +11892,7 @@ cards:
         state: hk1
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -11912,7 +11912,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -11936,7 +11936,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -12248,7 +12248,7 @@ cards:
         state: hk2
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -12268,7 +12268,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -12292,7 +12292,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_2_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -12604,7 +12604,7 @@ cards:
         state: hk3
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -12624,7 +12624,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -12648,7 +12648,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_3_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -12960,7 +12960,7 @@ cards:
         state: hk4
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/heizkreis.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -12980,7 +12980,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13004,7 +13004,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_heizkreis_4_anforderung
-            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/heizkreis_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13316,7 +13316,7 @@ cards:
         state: lager
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/lager.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/lager.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -13329,7 +13329,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_100.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_100.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13350,7 +13350,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_75.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_75.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13371,7 +13371,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_50.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_50.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13392,7 +13392,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_25.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_25.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13412,7 +13412,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_fullstand
-            image: /eta_heating_ws/grafiken/lager_leer.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_leer.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13439,7 +13439,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
-            image: /eta_heating_ws/grafiken/lager_schnecke.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_schnecke.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13463,7 +13463,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_lager_austragung
-            image: /eta_heating_ws/grafiken/lager_schnecke.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_schnecke.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13483,7 +13483,7 @@ cards:
           elements:
           - type: image
             entity: binary_sensor.eta_heizung_pelletvorrat_niedrig
-            image: /eta_heating_ws/grafiken/lager_warnung.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/lager_warnung.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13530,7 +13530,7 @@ cards:
         state: solar
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/solar.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/solar.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -13543,7 +13543,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_ruhe.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_ruhe.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13570,7 +13570,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13594,7 +13594,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_solar_leistung
-            image: /eta_heating_ws/grafiken/solar_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/solar_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13634,7 +13634,7 @@ cards:
         state: pvm
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/pvm.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/pvm.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -13647,7 +13647,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_ruhe.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_ruhe.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13674,7 +13674,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13698,7 +13698,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_pv_heizmodul_heizstab
-            image: /eta_heating_ws/grafiken/pvm_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/pvm_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13738,7 +13738,7 @@ cards:
         state: brenner
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/brenner.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/brenner.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -13758,7 +13758,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
-            image: /eta_heating_ws/grafiken/brenner_aktiv.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/brenner_aktiv.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13782,7 +13782,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_brenner_anforderung
-            image: /eta_heating_ws/grafiken/brenner_aktiv.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/brenner_aktiv.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13814,7 +13814,7 @@ cards:
         state: fernleitung
       card:
         type: picture-elements
-        image: /eta_heating_ws/grafiken/fernleitung.png?v=0.27.1
+        image: /eta_heating_ws/grafiken/fernleitung.png?v=0.27.2
         elements:
         - type: conditional
           conditions:
@@ -13834,7 +13834,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
-            image: /eta_heating_ws/grafiken/fernleitung_fluss.webp?v=0.27.1
+            image: /eta_heating_ws/grafiken/fernleitung_fluss.webp?v=0.27.2
             tap_action:
               action: none
             hold_action:
@@ -13858,7 +13858,7 @@ cards:
           elements:
           - type: image
             entity: sensor.eta_heizung_fernleitung_pumpe
-            image: /eta_heating_ws/grafiken/fernleitung_fluss.png?v=0.27.1
+            image: /eta_heating_ws/grafiken/fernleitung_fluss.png?v=0.27.2
             tap_action:
               action: none
             hold_action:
