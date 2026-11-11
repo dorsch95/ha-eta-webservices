@@ -24,6 +24,7 @@ const TEXTE = {
     feld_titel: "Titel",
     feld_ansicht: "Ansicht",
     feld_anlage: "Anlage",
+    feld_fussboden: "Fußbodenheizung statt Heizkörper",
     ansicht_kacheln: "Kacheln",
     ansicht_anlagenbild: "Anlagenbild",
     ansicht_kompakt: "Kompakt",
@@ -108,6 +109,7 @@ const TEXTE = {
     feld_titel: "Title",
     feld_ansicht: "View",
     feld_anlage: "System",
+    feld_fussboden: "Underfloor heating instead of radiator",
     ansicht_kacheln: "Tiles",
     ansicht_anlagenbild: "System diagram",
     ansicht_kompakt: "Compact",
@@ -328,6 +330,10 @@ const STIL = `
   .h-sammler { fill: var(--metall-dunkel); }
   .h-vor, .h-rueck { fill: none; stroke: var(--metall-dunkel); stroke-width: 6; stroke-linecap: round; }
   .h-fluss, .f-fluss, .fe-fluss { display: none; fill: none; stroke: #fff; stroke-opacity: .8; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: .1 10; }
+  .h-schleife, .h-schleife-an { fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+  .h-schleife { stroke: var(--metall-dunkel); }
+  .h-schleife-an { display: none; }
+  [data-aktiv] .h-schleife-an { display: inline; }
   .h-wellen path { fill: none; stroke: var(--heiss); stroke-width: 3; stroke-linecap: round; opacity: 0; }
   [data-aktiv] .h-rippe { fill: var(--heiss); fill-opacity: var(--d); }
   [data-aktiv] .h-vor { stroke: var(--heiss); }
@@ -389,7 +395,6 @@ const STIL = `
   .eta-rohr { fill: none; stroke: var(--metall); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
   .eta-rohr[data-art="strom"] { stroke-width: 4; }
   .eta-rohr[data-aktiv][data-art="heiss"] { stroke: var(--heiss); }
-  .eta-rohr[data-aktiv][data-art="kalt"] { stroke: var(--kalt); }
   .eta-rohr[data-aktiv][data-art="pellets"] { stroke: var(--pellet); }
   .eta-rohr[data-aktiv][data-art="strom"] { stroke: var(--sonne); }
   .eta-rohr-fluss { fill: none; stroke: #fff; stroke-opacity: .9; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: .1 13; animation: eta-fluss .85s linear infinite; }
@@ -493,6 +498,7 @@ const ICON = {
 
 const DEFS = `<svg class="eta-defs" aria-hidden="true"><defs>
   <radialGradient id="eta-schein" cx=".5" cy="1" r=".95"><stop offset="0" stop-color="#ff9b00" stop-opacity=".8"/><stop offset="1" stop-color="#ff9b00" stop-opacity="0"/></radialGradient>
+  <linearGradient id="eta-boden" gradientUnits="userSpaceOnUse" x1="0" y1="46" x2="0" y2="94"><stop offset="0" style="stop-color:var(--heiss)"/><stop offset="1" style="stop-color:var(--kalt)"/></linearGradient>
   <pattern id="eta-pellets" width="24" height="15" patternUnits="userSpaceOnUse">
     <rect width="24" height="15" fill="var(--pellet)"/>
     <rect x="2" y="2" width="8.5" height="3.4" rx="1.7" fill="var(--pellet-hell)"/>
@@ -555,6 +561,18 @@ const heizkreisBild = () => `<svg class="eta-svg" viewBox="0 0 150 106" aria-hid
   <path class="h-fluss" d="M26 46h108"/><path class="h-fluss" d="M134 94H26"/>
   <circle cx="143" cy="46" r="6" fill="var(--metall-dunkel)"/>
 </svg>`;
+
+/** Der Heizkreis als Fußbodenheizung: eine Rohrschleife im Boden, vorn warm, hinten abgekühlt. */
+const fussbodenBild = () => {
+  const schleife = "M24 46H128a6 6 0 0 1 0 12H38a6 6 0 0 0 0 12H128a6 6 0 0 1 0 12H38a6 6 0 0 0 0 12H24";
+  return `<svg class="eta-svg" viewBox="0 0 150 106" aria-hidden="true">
+    <g class="h-wellen">${[46, 78, 110].map((x, i) => `<path style="--i:${i}" d="M${x} 28c-5-6 5-10 0-17"/>`).join("")}</g>
+    <rect x="16" y="36" width="126" height="68" rx="9" fill="var(--metall)" fill-opacity=".3"/>
+    <path class="h-vor" d="M4 46h20"/><path class="h-rueck" d="M4 94h20"/>
+    <path class="h-schleife" d="${schleife}"/><path class="h-schleife-an" stroke="url(#eta-boden)" d="${schleife}"/>
+    <path class="h-fluss" d="${schleife}"/>
+  </svg>`;
+};
 
 const lagerBild = (anteil) => {
   const y = (76 * (1 - anteil)).toFixed(1);
@@ -719,7 +737,7 @@ function pfad(punkte, r = 12) {
 }
 
 /** Wo eine Leitung an der Zeichnung eines Teils ansetzt, als Anteil von Breite und Höhe. */
-const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], pvm: [0.885, 0.69], puffer: [1, 0.14], fernleitung: [0.975, 0.31] };
+const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], pvm: [0.885, 0.69], brenner: [0.82, 0.5], puffer: [1, 0.14], fernleitung: [0.975, 0.31] };
 const EIN = { kessel: [0.015, 0.82], puffer: [0, 0.14], fernleitung: [0.025, 0.31], heizkreis: [0.04, 0.434], fwm: [0.04, 0.304], speicher: [0, 0.55] };
 
 /**
@@ -728,8 +746,9 @@ const EIN = { kessel: [0.015, 0.82], puffer: [0, 0.14], fernleitung: [0.025, 0.3
  * Ein Wert ist null, wenn es seine Entität nicht gibt oder die Anlage
  * dafür "-" meldet, etwa bei einem Warmwasserspeicher ohne Zirkulation -
  * dann fehlt die Zeile. Meldet die Entität nichts, steht ein Strich.
+ * fussboden: die Heizkreise, die als Fußbodenheizung gezeichnet werden.
  */
-function anlageLesen(hass, struktur, t) {
+function anlageLesen(hass, struktur, t, fussboden) {
   const stand = (schluessel) => {
     const id = struktur.entitaeten[schluessel];
     return id ? hass.states[id] : undefined;
@@ -805,6 +824,7 @@ function anlageLesen(hass, struktur, t) {
       const raumSoll = thermostat?.attributes?.temperature;
       return {
         name: `${t.heizkreis} ${teil.nummer}`,
+        boden: fussboden.includes(teil.id),
         vorlauf: wert(`${praefix}_vorlauf`),
         anforderung,
         heizt: an(anforderung),
@@ -892,7 +912,11 @@ class EtaUebersichtKarte extends HTMLElement {
     return { ansicht: "kacheln" };
   }
 
-  /** Die Einstellungen der Karte. Die Anlage steht nur zur Wahl, wenn es mehrere gibt. */
+  /**
+   * Die Einstellungen der Karte. Die Anlage steht nur zur Wahl, wenn es
+   * mehrere gibt. Je Heizkreis lässt sich statt des Heizkörpers eine
+   * Fußbodenheizung zeigen - was verbaut ist, weiß die Anlage nicht.
+   */
   static async getConfigForm() {
     const t = TEXTE[sprache(document.documentElement.lang)];
     let anlagen = [];
@@ -903,11 +927,15 @@ class EtaUebersichtKarte extends HTMLElement {
       anlagen = [];
     }
     const auswahl = (name, optionen) => ({ name, selector: { select: { mode: "dropdown", options: optionen } } });
+    const heizkreise = [...new Map(anlagen.flatMap((a) => a.teile).filter((teil) => teil.art === "heizkreis").map((teil) => [teil.id, teil])).values()];
     return {
       schema: [
         { name: "titel", selector: { text: {} } },
         auswahl("ansicht", ANSICHTEN.map((wert) => ({ value: wert, label: t[`ansicht_${wert}`] }))),
         ...(anlagen.length > 1 ? [auswahl("anlage", anlagen.map((a) => ({ value: a.eintrag, label: a.titel })))] : []),
+        ...(heizkreise.length
+          ? [{ name: "fussboden", selector: { select: { multiple: true, mode: "list", options: heizkreise.map((teil) => ({ value: teil.id, label: `${t.heizkreis} ${teil.nummer}` })) } } }]
+          : []),
       ],
       computeLabel: (feld) => t[`feld_${feld.name}`],
     };
@@ -1010,7 +1038,8 @@ class EtaUebersichtKarte extends HTMLElement {
     const t = this._t;
     if (!this._struktur) return `<div class="eta"><div class="eta-meldung">${e(this._fehler ? t.keine_antwort : t.laedt)}</div></div>`;
     if (this._struktur.leer) return `<div class="eta"><div class="eta-meldung">${e(t.keine_anlage)}</div></div>`;
-    const anlage = anlageLesen(this._hass, this._struktur, t);
+    const fussboden = Array.isArray(this._konfig.fussboden) ? this._konfig.fussboden : [];
+    const anlage = anlageLesen(this._hass, this._struktur, t, fussboden);
     const inhalt = this._ansicht === "anlagenbild" ? this._bild(anlage) : this._ansicht === "kompakt" ? this._kompakt(anlage) : this._kacheln(anlage);
     return `<div class="eta" ${anlage.ruhe ? "data-ruhe" : ""}>${DEFS}${inhalt}</div>`;
   }
@@ -1115,7 +1144,7 @@ class EtaUebersichtKarte extends HTMLElement {
         <div class="eta-buehne" ${this._info(w.temperatur)}>${this._warmwasserBild(w, w.bauart === "fwm" ? 124 : 96, 108)}${this._haupt(w.bauart === "fwm" ? t.temperatur_modul : t.speichertemperatur, w.temperatur)}</div>
         ${this._zeilen([[t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
       heizkreis: (h) => kachel(h, h.heizt ? "data-aktiv" : "", this._chip(this._heizkreisStatus(h), h.heizt), `
-        <div class="eta-buehne" ${h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf)}>${this._figur(heizkreisBild(), 132)}${this._haupt(t.vorlauf, h.vorlauf)}</div>
+        <div class="eta-buehne" ${h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf)}>${this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 132)}${this._haupt(t.vorlauf, h.vorlauf)}</div>
         ${this._zeilen([[t.raum, h.raum && h.raumSoll ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}
         ${this._modi(h, anlage)}`),
       lager: (l) => kachel(l, l.foerdert ? "data-foerdert" : "", l.zustand ? this._chip(l.zustand.text, l.foerdert) : "", `
@@ -1142,17 +1171,17 @@ class EtaUebersichtKarte extends HTMLElement {
   /**
    * Stellt die Teile in Spalten: links die Erzeuger, dann je Stufe, was
    * an der vorigen hängt. Die Leitungen dazu merkt sich die Karte in
-   * _kanten und misst sie nach dem Zeichnen aus, siehe _leitungen. Der
-   * Brenner steht beim Kessel und bekommt keine Leitung: Die Anlage
-   * fordert ihn nur an.
+   * _kanten und misst sie nach dem Zeichnen aus, siehe _leitungen. Jede
+   * Verbindung ist genau eine Linie; Vor- und Rücklauf zeigt die Karte
+   * nicht getrennt.
    */
   _bild(anlage) {
     const t = this._t;
     const nachId = Object.fromEntries(anlage.teile.map((teil) => [teil.id, teil]));
     const quelle = (teil) => (teil.von && nachId[teil.von] ? teil.von : null);
-    const erzeugt = (teil) => ["solar", "pvm"].includes(teil.art);
+    const erzeugt = (teil) => ["solar", "pvm", "brenner"].includes(teil.art);
     const tiefe = (teil, schutz = 0) => {
-      if (teil.art === "kessel" || teil.art === "brenner" || schutz > 20) return 0;
+      if (teil.art === "kessel" || schutz > 20) return 0;
       if (teil.art === "lager") return -1;
       const von = quelle(teil);
       if (erzeugt(teil)) return von ? tiefe(nachId[von], schutz + 1) - 1 : 0;
@@ -1175,12 +1204,12 @@ class EtaUebersichtKarte extends HTMLElement {
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       puffer: (p) => station(p, "", p.laedt ? "data-fluss" : "", this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.energie?.text, p.zustand?.text].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
-      heizkreis: (h) => station(h, "quer", h.heizt ? "data-aktiv data-fluss" : "", h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf), this._figur(heizkreisBild(), 96), schild(h, h.vorlauf, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h)].filter(Boolean).join(" · "))),
+      heizkreis: (h) => station(h, "quer", h.heizt ? "data-aktiv data-fluss" : "", h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf), this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 96), schild(h, h.vorlauf, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h)].filter(Boolean).join(" · "))),
       warmwasser: (w) => station(w, "quer", w.bauart === "fwm" && w.zirkuliert ? "data-fliesst data-fluss" : "", this._info(w.temperatur), this._warmwasserBild(w, 96, 78), schild(w, w.temperatur, w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : "")),
     };
 
     const kanten = [];
-    const kante = (von, nach, art, aktiv, aus, ein, versatz = 0) => kanten.push({ von, nach, art, aktiv, aus, ein, versatz });
+    const kante = (von, nach, art, aktiv, aus, ein) => kanten.push({ von, nach, art, aktiv, aus, ein });
     const eingang = (teil) => EIN[teil.art === "warmwasser" ? teil.bauart : teil.art];
     const aktiv = (teil) => Boolean(teil.laedt || teil.heizt || teil.pumpt || (teil.bauart === "fwm" && teil.zirkuliert));
     for (const teil of anlage.teile) {
@@ -1188,11 +1217,9 @@ class EtaUebersichtKarte extends HTMLElement {
       if (teil.art === "lager" && nachId.kessel) kante(teil.id, "kessel", "pellets", teil.foerdert, AUS.lager, EIN.kessel);
       if (!von || teil.art === "lager" || teil.art === "kessel") continue;
       if (erzeugt(teil)) {
-        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, AUS[teil.art], teil.art === "solar" ? [0, 0.14] : [0, 0.88]);
+        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, AUS[teil.art], { solar: [0, 0.14], brenner: [0, 0.74], pvm: [0, 0.88] }[teil.art]);
       } else if (nachId[von].art === "kessel" && teil.art === "puffer") {
-        const feuer = nachId[von].bild === "flamme";
-        kante(von, teil.id, "heiss", feuer, AUS.kessel, [0, 0.27], -10);
-        kante(teil.id, von, "kalt", feuer, [0, 0.73], [0.985, 0.8], 10);
+        kante(von, teil.id, "heiss", nachId[von].bild === "flamme", AUS.kessel, [0, 0.27]);
       } else {
         kante(von, teil.id, "heiss", aktiv(teil), AUS[nachId[von].art], eingang(teil));
       }
@@ -1256,7 +1283,7 @@ class EtaUebersichtKarte extends HTMLElement {
     for (const kante of this._kanten) {
       const p = anker(kante.von, kante.aus), q = anker(kante.nach, kante.ein);
       if (!p || !q) continue;
-      const mitte = (p[0] + q[0]) / 2 + kante.versatz;
+      const mitte = (p[0] + q[0]) / 2;
       wege.push({ ...kante, d: pfad([p, [mitte, p[1]], [mitte, q[1]], q]) });
     }
     wege.sort((a, b) => a.aktiv - b.aktiv);

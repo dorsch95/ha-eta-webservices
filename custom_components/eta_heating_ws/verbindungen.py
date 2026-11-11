@@ -12,12 +12,11 @@ Fernleitung -, fragt der Einrichtungsdialog je Teil nach der Quelle, siehe
 braucht_auswahl.
 
 Puffer und Fernleitung sind beides: Sie bekommen Wärme und geben sie
-weiter. Kessel, Solar und PV-Heizmodul erzeugen nur, Heizkreise und
-Warmwasser verbrauchen nur.
+weiter. Kessel, Solar, PV-Heizmodul und Brenner erzeugen nur, Heizkreise
+und Warmwasser verbrauchen nur.
 
-Der Brenner bekommt keine Verbindung. Sein Funktionsblock fordert ihn nur
-an und gibt Leistung und Temperatur vor; Vor- und Rücklauf zu einem
-anderen Teil der Anlage hat er im Menübaum nicht.
+Eine Verbindung ist genau eine Linie in der Karte. Vor- und Rücklauf
+unterscheidet sie nicht.
 
 Das Modul kommt ohne Home Assistant aus.
 """
@@ -29,7 +28,7 @@ from .const import HEIZKREISE, PUFFER_SPEICHER, WARMWASSER_SPEICHER
 KESSEL = "kessel"
 FERNLEITUNG = "fernleitung"
 
-ERZEUGER = ("solar", "pvm")
+ERZEUGER = ("solar", "pvm", "brenner")
 """Erzeuger neben dem Kessel. Bei ihnen steht nicht die Quelle, sondern der Puffer, in den sie laden."""
 
 FELD = "verbindung_"
@@ -54,7 +53,8 @@ def moegliche_quellen(komponenten, teil: str) -> list[str]:
 
     Für Puffer, Fernleitung, Heizkreise und Warmwasser: woher die Wärme
     kommt - Kessel, jeder Puffer, die Fernleitung, nur nicht das Teil
-    selbst. Für Solar und PV-Heizmodul: in welchen Puffer sie laden.
+    selbst. Für Solar, PV-Heizmodul und Brenner: in welchen Puffer sie
+    laden.
     """
     if teil in ERZEUGER:
         return _puffer(komponenten)
@@ -70,9 +70,9 @@ def vorgabe(komponenten) -> dict[str, str | None]:
 
     Der Kessel lädt den ersten Puffer, weitere Puffer hängen
     hintereinander. Die Fernleitung geht vom ersten Puffer ab, Heizkreise
-    und Warmwasser hängen am letzten. Solar und PV-Heizmodul laden in den
-    ersten Puffer. Ohne Puffer hängt alles am Kessel; die übrigen Erzeuger
-    haben dann kein Ziel.
+    und Warmwasser hängen am letzten. Solar, PV-Heizmodul und Brenner
+    laden in den ersten Puffer. Ohne Puffer hängt alles am Kessel; die
+    übrigen Erzeuger haben dann kein Ziel.
     """
     puffer = _puffer(komponenten)
     erster = puffer[0] if puffer else None
@@ -108,7 +108,7 @@ def im_kreis(komponenten, gewaehlt: dict[str, str]) -> bool:
 
 
 def verbindungen(komponenten, gespeichert: dict[str, str] | None = None) -> dict[str, str | None]:
-    """Je Teil seine Quelle, bei Solar und PV-Heizmodul ihr Ziel.
+    """Je Teil seine Quelle, bei Solar, PV-Heizmodul und Brenner ihr Ziel.
 
     Gespeichertes gilt, soweit es zur heutigen Auswahl der Komponenten
     passt, sonst die Vorgabe. Entsteht dabei ein Kreis - eine gespeicherte

@@ -147,7 +147,8 @@
           "verbindung_fwm7": "Hot water 7 gets its heat from",
           "verbindung_fwm8": "Hot water 8 gets its heat from",
           "verbindung_solar": "Solar thermal system charges",
-          "verbindung_pvm": "PV heating module charges"
+          "verbindung_pvm": "PV heating module charges",
+          "verbindung_brenner": "Burner charges"
         }
       }
     },
@@ -288,7 +289,8 @@
           "verbindung_fwm7": "Hot water 7 gets its heat from",
           "verbindung_fwm8": "Hot water 8 gets its heat from",
           "verbindung_solar": "Solar thermal system charges",
-          "verbindung_pvm": "PV heating module charges"
+          "verbindung_pvm": "PV heating module charges",
+          "verbindung_brenner": "Burner charges"
         }
       }
     },

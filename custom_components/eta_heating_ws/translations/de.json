@@ -147,7 +147,8 @@
           "verbindung_fwm7": "Warmwasser 7 bekommt Wärme von",
           "verbindung_fwm8": "Warmwasser 8 bekommt Wärme von",
           "verbindung_solar": "Solar lädt in",
-          "verbindung_pvm": "PV-Heizmodul lädt in"
+          "verbindung_pvm": "PV-Heizmodul lädt in",
+          "verbindung_brenner": "Brenner lädt in"
         }
       }
     },
@@ -288,7 +289,8 @@
           "verbindung_fwm7": "Warmwasser 7 bekommt Wärme von",
           "verbindung_fwm8": "Warmwasser 8 bekommt Wärme von",
           "verbindung_solar": "Solar lädt in",
-          "verbindung_pvm": "PV-Heizmodul lädt in"
+          "verbindung_pvm": "PV-Heizmodul lädt in",
+          "verbindung_brenner": "Brenner lädt in"
         }
       }
     },

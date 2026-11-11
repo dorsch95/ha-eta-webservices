@@ -48,8 +48,7 @@ def test_vorgabe_mit_mehreren_puffern_und_fernleitung():
     assert wege["puffer2"] == "puffer", "weitere Puffer hängen hintereinander"
     assert wege["fernleitung"] == "puffer"
     assert wege["hk1"] == wege["fwm"] == "puffer2", "Verbraucher am letzten Puffer"
-    assert wege["solar"] == "puffer", "Solar und PV-Heizmodul laden in den ersten"
-    assert "brenner" not in wege, "der Brenner wird nur angefordert, eine Leitung hat er nicht"
+    assert wege["solar"] == wege["brenner"] == "puffer", "Erzeuger laden in den ersten"
     assert braucht_auswahl(MIT_FERNLEITUNG)
 
 
@@ -95,7 +94,7 @@ def test_kreis_wird_erkannt_und_haengt_am_kessel():
 
 def test_felder_nur_wo_es_etwas_zu_waehlen_gibt():
     assert felder(MIT_FERNLEITUNG) == [
-        "puffer", "puffer2", "fwm", "hk1", "hk2", "solar", "fernleitung"
+        "puffer", "puffer2", "fwm", "hk1", "hk2", "solar", "brenner", "fernleitung"
     ]
     assert "solar" not in felder(["kessel", "puffer", "fernleitung", "solar"]), "nur ein Puffer als Ziel"
 
