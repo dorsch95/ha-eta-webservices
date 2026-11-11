@@ -120,11 +120,41 @@
           "hk3_zeitplan": "Heating circuit 3: schedule",
           "hk4_zeitplan": "Heating circuit 4: schedule"
         }
+      },
+      "verbindungen": {
+        "title": "Who is connected to what",
+        "description": "The webservices do not tell which part of the system feeds which. Pick the source for each part - this is what the lines in the **ETA Overview** card follow. The preset: the boiler charges the first buffer tank, further buffer tanks follow one after another, heating circuits and hot water hang on the last one. Buffer tanks and the transfer line both receive heat and pass it on.",
+        "data": {
+          "verbindung_puffer": "Buffer tank gets its heat from",
+          "verbindung_puffer2": "Buffer tank 2 gets its heat from",
+          "verbindung_puffer3": "Buffer tank 3 gets its heat from",
+          "verbindung_puffer4": "Buffer tank 4 gets its heat from",
+          "verbindung_puffer5": "Buffer tank 5 gets its heat from",
+          "verbindung_puffer6": "Buffer tank 6 gets its heat from",
+          "verbindung_puffer7": "Buffer tank 7 gets its heat from",
+          "verbindung_puffer8": "Buffer tank 8 gets its heat from",
+          "verbindung_fernleitung": "Transfer line gets its heat from",
+          "verbindung_hk1": "Heating circuit 1 gets its heat from",
+          "verbindung_hk2": "Heating circuit 2 gets its heat from",
+          "verbindung_hk3": "Heating circuit 3 gets its heat from",
+          "verbindung_hk4": "Heating circuit 4 gets its heat from",
+          "verbindung_fwm": "Hot water gets its heat from",
+          "verbindung_fwm2": "Hot water 2 gets its heat from",
+          "verbindung_fwm3": "Hot water 3 gets its heat from",
+          "verbindung_fwm4": "Hot water 4 gets its heat from",
+          "verbindung_fwm5": "Hot water 5 gets its heat from",
+          "verbindung_fwm6": "Hot water 6 gets its heat from",
+          "verbindung_fwm7": "Hot water 7 gets its heat from",
+          "verbindung_fwm8": "Hot water 8 gets its heat from",
+          "verbindung_solar": "Solar thermal system charges",
+          "verbindung_pvm": "PV heating module charges"
+        }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler.",
-      "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written."
+      "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written.",
+      "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round."
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
@@ -231,10 +261,40 @@
           "hk3_zeitplan": "Heating circuit 3: schedule",
           "hk4_zeitplan": "Heating circuit 4: schedule"
         }
+      },
+      "verbindungen": {
+        "title": "Who is connected to what",
+        "description": "The webservices do not tell which part of the system feeds which. Pick the source for each part - this is what the lines in the **ETA Overview** card follow. The preset: the boiler charges the first buffer tank, further buffer tanks follow one after another, heating circuits and hot water hang on the last one. Buffer tanks and the transfer line both receive heat and pass it on.",
+        "data": {
+          "verbindung_puffer": "Buffer tank gets its heat from",
+          "verbindung_puffer2": "Buffer tank 2 gets its heat from",
+          "verbindung_puffer3": "Buffer tank 3 gets its heat from",
+          "verbindung_puffer4": "Buffer tank 4 gets its heat from",
+          "verbindung_puffer5": "Buffer tank 5 gets its heat from",
+          "verbindung_puffer6": "Buffer tank 6 gets its heat from",
+          "verbindung_puffer7": "Buffer tank 7 gets its heat from",
+          "verbindung_puffer8": "Buffer tank 8 gets its heat from",
+          "verbindung_fernleitung": "Transfer line gets its heat from",
+          "verbindung_hk1": "Heating circuit 1 gets its heat from",
+          "verbindung_hk2": "Heating circuit 2 gets its heat from",
+          "verbindung_hk3": "Heating circuit 3 gets its heat from",
+          "verbindung_hk4": "Heating circuit 4 gets its heat from",
+          "verbindung_fwm": "Hot water gets its heat from",
+          "verbindung_fwm2": "Hot water 2 gets its heat from",
+          "verbindung_fwm3": "Hot water 3 gets its heat from",
+          "verbindung_fwm4": "Hot water 4 gets its heat from",
+          "verbindung_fwm5": "Hot water 5 gets its heat from",
+          "verbindung_fwm6": "Hot water 6 gets its heat from",
+          "verbindung_fwm7": "Hot water 7 gets its heat from",
+          "verbindung_fwm8": "Hot water 8 gets its heat from",
+          "verbindung_solar": "Solar thermal system charges",
+          "verbindung_pvm": "PV heating module charges"
+        }
       }
     },
     "error": {
-      "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written."
+      "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written.",
+      "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round."
     }
   },
   "selector": {
@@ -246,6 +306,20 @@
         "lager": "Pellet store",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
         "fernleitung": "Transfer line (to another building)"
+      }
+    },
+    "waermequelle": {
+      "options": {
+        "kessel": "Boiler",
+        "puffer": "Buffer tank",
+        "puffer2": "Buffer tank 2",
+        "puffer3": "Buffer tank 3",
+        "puffer4": "Buffer tank 4",
+        "puffer5": "Buffer tank 5",
+        "puffer6": "Buffer tank 6",
+        "puffer7": "Buffer tank 7",
+        "puffer8": "Buffer tank 8",
+        "fernleitung": "Transfer line"
       }
     }
   },

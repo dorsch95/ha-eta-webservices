@@ -539,6 +539,7 @@ class FakeEntityRegistry:
             self.unique_id = unique_id
             self.config_entry_id = config_entry_id
             self.translation_key = translation_key
+            self.disabled_by = None
 
     def __init__(self) -> None:
         self.eintraege: dict[str, FakeEntityRegistry.Eintrag] = {}

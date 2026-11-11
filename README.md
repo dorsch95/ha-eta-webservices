@@ -328,6 +328,22 @@ Die Karte wählt die Spaltenzahl nach der Breite der Ansicht:
 - **Pufferfühler:** Die Karte zeigt so viele Fühler, wie deine Anlage hat, gleichmäßig über die Speicherhöhe verteilt. Anzupassen ist nichts.
 - **Beschriftungen** stehen als `prefix` im YAML, nicht im Bild. Aus `prefix: 'Kessel: '` wird also einfach `prefix: 'Vorlauf Kessel: '`. Denk daran, die Änderung in allen drei Breiten zu machen.
 
+### Neue Karte „ETA Übersicht“
+
+Daneben gibt es eine zweite Karte, die du wie jede andere über **Karte hinzufügen** findest: **ETA Übersicht**. Sie braucht keine Aktion und kein YAML, passt sich selbst an deine Anlage an und folgt dem hellen oder dunklen Design von Home Assistant. Die bisherige Karte bleibt, wie sie ist.
+
+In den Einstellungen der Karte wählst du die **Ansicht**:
+
+| Ansicht | Zeigt |
+|---|---|
+| Kacheln | je Teil der Anlage eine Kachel mit Zeichnung, Hauptwert, weiteren Werten und Tasten |
+| Anlagenbild | die Anlage als Schema: links die Erzeuger, dann Puffer und Verbraucher, dazwischen Leitungen |
+| Kompakt | das Wichtigste als Liste, für das Handy oder neben anderen Karten |
+
+Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz, am besten eine Ansicht vom Typ **Panel (1 Karte)**. Ist das Anlagenbild zu breit, rückt es enger zusammen und wird am Handy zur Liste.
+
+**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar und PV-Heizmodul laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Der Brenner steht ohne Leitung beim Kessel, weil die Anlage ihn nur anfordert.
+
 ---
 
 ## 🪵 Was deine Anlage liefert

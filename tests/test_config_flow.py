@@ -309,6 +309,14 @@ async def options_schritt(monkeypatch, bisher, eingabe):
     return flow, await flow.async_step_init(eingabe)
 
 
+async def verbindungen_bestaetigen(flow, schritt):
+    """Mit zwei Puffern fragt der Dialog zuletzt, wer woran hängt - hier bleibt die Vorgabe."""
+    assert schritt["step_id"] == "verbindungen"
+    return await flow.async_step_verbindungen(
+        {str(feld): feld.default() for feld in schritt["data_schema"].schema}
+    )
+
+
 def optionen(**overrides):
     daten = gueltige_eingabe(**overrides)
     daten.pop("host")
@@ -444,9 +452,10 @@ def test_wetter_vorschlag():
 async def test_puffer_mit_eigenem_volumen_wird_nicht_gefragt(monkeypatch):
     """PufferFlex meldet sein effektives Volumen - dann gibt es keinen Schritt dafür."""
     flow, _ = await options_schritt(monkeypatch, {}, optionen(components=["puffer", "puffer2"]))
-    fertig = await flow.async_step_fub_names(
+    schritt = await flow.async_step_fub_names(
         {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "PufferFlex 2"}
     )
+    fertig = await verbindungen_bestaetigen(flow, schritt)
     assert fertig["type"] == "create_entry"
     assert "puffer_volumen" not in fertig["data"]
 
@@ -470,7 +479,9 @@ async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
     assert felder == {"puffer2_volumen": 650}
     with pytest.raises(vol.Invalid):
         schritt["data_schema"]({"puffer2_volumen": -5})
-    fertig = await flow.async_step_puffer({"puffer2_volumen": 800})
+    fertig = await verbindungen_bestaetigen(
+        flow, await flow.async_step_puffer({"puffer2_volumen": 800})
+    )
     assert fertig["type"] == "create_entry"
     assert fertig["data"]["puffer2_volumen"] == 800
     assert fertig["data"]["fub_names"]["pufferflex2"] == "Puffer"

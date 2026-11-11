@@ -188,11 +188,13 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
     assert Hass.http.pfade[-1].cache_headers is False
 
     assert Hass.data[DATA_EXTRA_MODULE_URL] == {
-        f"/eta_heating_ws/oberflaeche/eta-zeitprogramm-karte.js?v={VERSION}"
-    }, "jedes Dashboard lädt die Karte von selbst"
+        f"/eta_heating_ws/oberflaeche/eta-zeitprogramm-karte.js?v={VERSION}",
+        f"/eta_heating_ws/oberflaeche/eta-uebersicht-karte.js?v={VERSION}",
+    }, "jedes Dashboard lädt die Karten von selbst"
     assert set(Hass.data["websocket_api"]) == {
         "eta_heating_ws/zeitprogramme",
         "eta_heating_ws/zeitprogramm_setzen",
+        "eta_heating_ws/uebersicht",
     }
 
 

@@ -34,6 +34,9 @@ eintragen.
 KARTE_ZEITPROGRAMM = "eta-zeitprogramm-karte.js"
 """Die Karte "ETA Zeitprogramm", siehe zeitprogramm.py."""
 
+KARTE_UEBERSICHT = "eta-uebersicht-karte.js"
+"""Die Karte "ETA Übersicht", siehe uebersicht.py."""
+
 ALTE_DOMAIN = "eta_webservices"
 """So hieß die Integration intern bis Version 0.25.
 
@@ -71,6 +74,8 @@ DEFAULT_ENABLE_SWITCHES = False
 
 DEFAULT_ENABLE_ERRORS = True
 CONF_FUB_NAMES = "fub_names"
+CONF_VERBINDUNGEN = "verbindungen"
+"""Je Teil der Anlage, woher es seine Wärme bekommt - siehe verbindungen.py."""
 CONF_SCAN_INTERVAL = "scan_interval"
 
 DEFAULT_PELLET_KWH_PER_KG = 4.8

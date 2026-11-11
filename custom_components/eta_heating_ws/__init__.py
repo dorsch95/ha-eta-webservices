@@ -60,6 +60,7 @@ from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
 from .repairs import async_raumfuehler_pruefen, async_zeitplan_hinweise_entfernen
 from .zeitplan import ZeitplanAbgleich
 from .zeitplan import speicher as zeitplan_speicher
+from .uebersicht import async_uebersicht_anmelden
 from .zeitprogramm import OBERFLAECHE, async_karte_anmelden
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,6 +91,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     async_aktionen_registrieren(hass)
     async_karte_anmelden(hass)
+    async_uebersicht_anmelden(hass)
     return True
 
 

@@ -120,11 +120,41 @@
           "hk3_zeitplan": "Heizkreis 3: Zeitplan",
           "hk4_zeitplan": "Heizkreis 4: Zeitplan"
         }
+      },
+      "verbindungen": {
+        "title": "Wer hängt woran",
+        "description": "Die Webservices verraten nicht, welches Teil der Anlage welches versorgt. Wähl für jedes Teil die Quelle - danach richten sich die Leitungen in der Karte **ETA Übersicht**. Die Vorgabe: Der Kessel lädt den ersten Pufferspeicher, weitere Pufferspeicher hängen hintereinander, Heizkreise und Warmwasser am letzten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter.",
+        "data": {
+          "verbindung_puffer": "Pufferspeicher bekommt Wärme von",
+          "verbindung_puffer2": "Pufferspeicher 2 bekommt Wärme von",
+          "verbindung_puffer3": "Pufferspeicher 3 bekommt Wärme von",
+          "verbindung_puffer4": "Pufferspeicher 4 bekommt Wärme von",
+          "verbindung_puffer5": "Pufferspeicher 5 bekommt Wärme von",
+          "verbindung_puffer6": "Pufferspeicher 6 bekommt Wärme von",
+          "verbindung_puffer7": "Pufferspeicher 7 bekommt Wärme von",
+          "verbindung_puffer8": "Pufferspeicher 8 bekommt Wärme von",
+          "verbindung_fernleitung": "Fernleitung bekommt Wärme von",
+          "verbindung_hk1": "Heizkreis 1 bekommt Wärme von",
+          "verbindung_hk2": "Heizkreis 2 bekommt Wärme von",
+          "verbindung_hk3": "Heizkreis 3 bekommt Wärme von",
+          "verbindung_hk4": "Heizkreis 4 bekommt Wärme von",
+          "verbindung_fwm": "Warmwasser bekommt Wärme von",
+          "verbindung_fwm2": "Warmwasser 2 bekommt Wärme von",
+          "verbindung_fwm3": "Warmwasser 3 bekommt Wärme von",
+          "verbindung_fwm4": "Warmwasser 4 bekommt Wärme von",
+          "verbindung_fwm5": "Warmwasser 5 bekommt Wärme von",
+          "verbindung_fwm6": "Warmwasser 6 bekommt Wärme von",
+          "verbindung_fwm7": "Warmwasser 7 bekommt Wärme von",
+          "verbindung_fwm8": "Warmwasser 8 bekommt Wärme von",
+          "verbindung_solar": "Solar lädt in",
+          "verbindung_pvm": "PV-Heizmodul lädt in"
+        }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind.",
-      "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden."
+      "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden.",
+      "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt."
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
@@ -231,10 +261,40 @@
           "hk3_zeitplan": "Heizkreis 3: Zeitplan",
           "hk4_zeitplan": "Heizkreis 4: Zeitplan"
         }
+      },
+      "verbindungen": {
+        "title": "Wer hängt woran",
+        "description": "Die Webservices verraten nicht, welches Teil der Anlage welches versorgt. Wähl für jedes Teil die Quelle - danach richten sich die Leitungen in der Karte **ETA Übersicht**. Die Vorgabe: Der Kessel lädt den ersten Pufferspeicher, weitere Pufferspeicher hängen hintereinander, Heizkreise und Warmwasser am letzten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter.",
+        "data": {
+          "verbindung_puffer": "Pufferspeicher bekommt Wärme von",
+          "verbindung_puffer2": "Pufferspeicher 2 bekommt Wärme von",
+          "verbindung_puffer3": "Pufferspeicher 3 bekommt Wärme von",
+          "verbindung_puffer4": "Pufferspeicher 4 bekommt Wärme von",
+          "verbindung_puffer5": "Pufferspeicher 5 bekommt Wärme von",
+          "verbindung_puffer6": "Pufferspeicher 6 bekommt Wärme von",
+          "verbindung_puffer7": "Pufferspeicher 7 bekommt Wärme von",
+          "verbindung_puffer8": "Pufferspeicher 8 bekommt Wärme von",
+          "verbindung_fernleitung": "Fernleitung bekommt Wärme von",
+          "verbindung_hk1": "Heizkreis 1 bekommt Wärme von",
+          "verbindung_hk2": "Heizkreis 2 bekommt Wärme von",
+          "verbindung_hk3": "Heizkreis 3 bekommt Wärme von",
+          "verbindung_hk4": "Heizkreis 4 bekommt Wärme von",
+          "verbindung_fwm": "Warmwasser bekommt Wärme von",
+          "verbindung_fwm2": "Warmwasser 2 bekommt Wärme von",
+          "verbindung_fwm3": "Warmwasser 3 bekommt Wärme von",
+          "verbindung_fwm4": "Warmwasser 4 bekommt Wärme von",
+          "verbindung_fwm5": "Warmwasser 5 bekommt Wärme von",
+          "verbindung_fwm6": "Warmwasser 6 bekommt Wärme von",
+          "verbindung_fwm7": "Warmwasser 7 bekommt Wärme von",
+          "verbindung_fwm8": "Warmwasser 8 bekommt Wärme von",
+          "verbindung_solar": "Solar lädt in",
+          "verbindung_pvm": "PV-Heizmodul lädt in"
+        }
       }
     },
     "error": {
-      "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden."
+      "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden.",
+      "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt."
     }
   },
   "selector": {
@@ -246,6 +306,20 @@
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
         "fernleitung": "Fernleitung (zu einem Nebengebäude)"
+      }
+    },
+    "waermequelle": {
+      "options": {
+        "kessel": "Kessel",
+        "puffer": "Pufferspeicher",
+        "puffer2": "Pufferspeicher 2",
+        "puffer3": "Pufferspeicher 3",
+        "puffer4": "Pufferspeicher 4",
+        "puffer5": "Pufferspeicher 5",
+        "puffer6": "Pufferspeicher 6",
+        "puffer7": "Pufferspeicher 7",
+        "puffer8": "Pufferspeicher 8",
+        "fernleitung": "Fernleitung"
       }
     }
   },

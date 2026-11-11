@@ -30,6 +30,8 @@ from . import uebernahme
 from .api import ETAApiClient, ETAApiError, ETAValue
 from .prognose_koordinator import einzige_wetter_entitaet
 from .uri_discovery import async_discover_uris, fub_namen_im_menue, fub_namen_vorschlagen
+from .verbindungen import braucht_auswahl, felder, im_kreis, moegliche_quellen, verbindungen
+from .verbindungen import feld as verbindung_feld
 from .zeitplan import programm_zusammenfassen
 from .const import (
     COMPONENTS,
@@ -41,6 +43,7 @@ from .const import (
     CONF_PELLET_PREIS,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
+    CONF_VERBINDUNGEN,
     CONF_WETTER,
     CONF_ZEITRAEUME,
     DEFAULT_ENABLE_ERRORS,
@@ -238,9 +241,9 @@ async def _programm_der_anlage(
 def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[str, Any]:
     """Die Einstellungen, wenn der Menübaum gerade nicht lesbar ist.
 
-    Dann entfallen die Schritte für Puffervolumen, Raumfühler und Zeitpläne.
-    Was dort bisher eingetragen war, bleibt für die weiter gewählten
-    Komponenten stehen - sonst ginge es verloren, nur weil die Anlage beim
+    Dann entfallen die Schritte für Puffervolumen, Raumfühler, Zeitpläne
+    und Verbindungen. Was dort bisher eingetragen war, bleibt für die weiter
+    gewählten Komponenten stehen - sonst ginge es verloren, nur weil die Anlage beim
     Speichern gerade nicht geantwortet hat.
     """
     komponenten = daten.get(CONF_COMPONENTS, [])
@@ -252,6 +255,7 @@ def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[st
             if heizkreis in komponenten
             for feld in (raumfuehler_schluessel, zeitplan_schluessel)
         ]
+    schluessel.append(CONF_VERBINDUNGEN)
     return {**{k: bisher[k] for k in schluessel if bisher.get(k)}, **daten}
 
 
@@ -264,6 +268,22 @@ def _zeitplaene_schema(zeitprogramme, current: dict[str, Any]) -> vol.Schema:
                 description={"suggested_value": current.get(zeitplan_schluessel(heizkreis))},
             ): EntitySelector(EntitySelectorConfig(domain="schedule"))
             for heizkreis in zeitprogramme
+        }
+    )
+
+
+def _verbindungen_schema(komponenten: list[str], wege: dict[str, str | None]) -> vol.Schema:
+    """Je Teil mit mehreren möglichen Quellen eine Auswahl, vorbelegt mit wege."""
+    return vol.Schema(
+        {
+            vol.Required(verbindung_feld(teil), default=wege[teil]): SelectSelector(
+                SelectSelectorConfig(
+                    options=moegliche_quellen(komponenten, teil),
+                    mode=SelectSelectorMode.DROPDOWN,
+                    translation_key="waermequelle",
+                )
+            )
+            for teil in felder(komponenten)
         }
     )
 
@@ -454,7 +474,40 @@ class _Anlagenschritte:
     async def _nach_raumfuehler(self) -> ConfigFlowResult:
         if self._zeitprogramme:
             return await self.async_step_zeitplaene()
+        return await self._nach_zeitplaene()
+
+    async def _nach_zeitplaene(self) -> ConfigFlowResult:
+        if braucht_auswahl(self._data[CONF_COMPONENTS]):
+            return await self.async_step_verbindungen()
         return self._fertig(self._data)
+
+    async def async_step_verbindungen(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wer woher seine Wärme bekommt - für die Leitungen der Karte "ETA Übersicht".
+
+        Nur mit mehreren Puffern oder einer Fernleitung, siehe
+        verbindungen.py. Eine Auswahl im Kreis wird nicht angenommen.
+        """
+        komponenten = self._data[CONF_COMPONENTS]
+        errors: dict[str, str] = {}
+        wege = verbindungen(komponenten, self._bisher.get(CONF_VERBINDUNGEN))
+        if user_input is not None:
+            gewaehlt = {
+                teil: user_input[verbindung_feld(teil)]
+                for teil in felder(komponenten)
+                if user_input.get(verbindung_feld(teil))
+            }
+            if not im_kreis(komponenten, gewaehlt):
+                self._data[CONF_VERBINDUNGEN] = gewaehlt
+                return self._fertig(self._data)
+            errors["base"] = "verbindung_im_kreis"
+            wege = {**verbindungen(komponenten), **gewaehlt}
+        return self.async_show_form(
+            step_id="verbindungen",
+            data_schema=_verbindungen_schema(komponenten, wege),
+            errors=errors,
+        )
 
     async def async_step_zeitplaene(
         self, user_input: dict[str, Any] | None = None
@@ -468,7 +521,7 @@ class _Anlagenschritte:
                     if user_input.get(zeitplan_schluessel(hk))
                 }
             )
-            return self._fertig(self._data)
+            return await self._nach_zeitplaene()
         host, port = self._adresse()
         return self.async_show_form(
             step_id="zeitplaene",
