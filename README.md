@@ -58,6 +58,10 @@ Zur Probe im Browser `http://<IP-der-Heizung>:8080/user/menu` öffnen. Erscheint
 
 ## 🚀 Installation
 
+[![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dorsch95&repository=ha-eta-webservices&category=integration)
+
+Der Knopf öffnet die Integration direkt in HACS. Von Hand geht es so:
+
 1. **HACS** öffnen, nach **ETA Web-Services** suchen und **Herunterladen**.
 2. Home Assistant neu starten.
 
@@ -592,6 +596,10 @@ pytest
 ```
 
 Dieselben Tests laufen zusammen mit `hassfest` und der HACS-Validierung bei jedem Push in GitHub Actions. Ein Teil prüft dieses README: dass jede genannte Entität wirklich entsteht und dass die Entitätsübersicht vollständig ist.
+
+---
+
+⭐ Gefällt dir die Integration? Ein Stern auf GitHub hilft anderen ETA-Besitzern, sie zu finden.
 
 ## 📄 Lizenz
 
