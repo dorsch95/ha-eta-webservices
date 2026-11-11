@@ -1098,6 +1098,126 @@
       },
       "solar_waermemenge": {
         "name": "Solar Wärmemenge"
+      },
+      "puffer_warmwasser": {
+        "name": "Puffer Warmwasser"
+      },
+      "puffer_warmwasser_zustand": {
+        "name": "Puffer Warmwasser Zustand"
+      },
+      "fwm_zustand": {
+        "name": "FWM Zustand"
+      },
+      "fwm_ladepumpe": {
+        "name": "FWM Ladepumpe"
+      },
+      "fwm_pufferpumpe": {
+        "name": "FWM Pufferpumpe"
+      },
+      "puffer2_warmwasser": {
+        "name": "Puffer 2 Warmwasser"
+      },
+      "puffer2_warmwasser_zustand": {
+        "name": "Puffer 2 Warmwasser Zustand"
+      },
+      "fwm2_zustand": {
+        "name": "Warmwasser 2 Zustand"
+      },
+      "fwm2_ladepumpe": {
+        "name": "Warmwasser 2 Ladepumpe"
+      },
+      "fwm2_pufferpumpe": {
+        "name": "Warmwasser 2 Pufferpumpe"
+      },
+      "puffer3_warmwasser": {
+        "name": "Puffer 3 Warmwasser"
+      },
+      "puffer3_warmwasser_zustand": {
+        "name": "Puffer 3 Warmwasser Zustand"
+      },
+      "fwm3_zustand": {
+        "name": "Warmwasser 3 Zustand"
+      },
+      "fwm3_ladepumpe": {
+        "name": "Warmwasser 3 Ladepumpe"
+      },
+      "fwm3_pufferpumpe": {
+        "name": "Warmwasser 3 Pufferpumpe"
+      },
+      "puffer4_warmwasser": {
+        "name": "Puffer 4 Warmwasser"
+      },
+      "puffer4_warmwasser_zustand": {
+        "name": "Puffer 4 Warmwasser Zustand"
+      },
+      "fwm4_zustand": {
+        "name": "Warmwasser 4 Zustand"
+      },
+      "fwm4_ladepumpe": {
+        "name": "Warmwasser 4 Ladepumpe"
+      },
+      "fwm4_pufferpumpe": {
+        "name": "Warmwasser 4 Pufferpumpe"
+      },
+      "puffer5_warmwasser": {
+        "name": "Puffer 5 Warmwasser"
+      },
+      "puffer5_warmwasser_zustand": {
+        "name": "Puffer 5 Warmwasser Zustand"
+      },
+      "fwm5_zustand": {
+        "name": "Warmwasser 5 Zustand"
+      },
+      "fwm5_ladepumpe": {
+        "name": "Warmwasser 5 Ladepumpe"
+      },
+      "fwm5_pufferpumpe": {
+        "name": "Warmwasser 5 Pufferpumpe"
+      },
+      "puffer6_warmwasser": {
+        "name": "Puffer 6 Warmwasser"
+      },
+      "puffer6_warmwasser_zustand": {
+        "name": "Puffer 6 Warmwasser Zustand"
+      },
+      "fwm6_zustand": {
+        "name": "Warmwasser 6 Zustand"
+      },
+      "fwm6_ladepumpe": {
+        "name": "Warmwasser 6 Ladepumpe"
+      },
+      "fwm6_pufferpumpe": {
+        "name": "Warmwasser 6 Pufferpumpe"
+      },
+      "puffer7_warmwasser": {
+        "name": "Puffer 7 Warmwasser"
+      },
+      "puffer7_warmwasser_zustand": {
+        "name": "Puffer 7 Warmwasser Zustand"
+      },
+      "fwm7_zustand": {
+        "name": "Warmwasser 7 Zustand"
+      },
+      "fwm7_ladepumpe": {
+        "name": "Warmwasser 7 Ladepumpe"
+      },
+      "fwm7_pufferpumpe": {
+        "name": "Warmwasser 7 Pufferpumpe"
+      },
+      "puffer8_warmwasser": {
+        "name": "Puffer 8 Warmwasser"
+      },
+      "puffer8_warmwasser_zustand": {
+        "name": "Puffer 8 Warmwasser Zustand"
+      },
+      "fwm8_zustand": {
+        "name": "Warmwasser 8 Zustand"
+      },
+      "fwm8_ladepumpe": {
+        "name": "Warmwasser 8 Ladepumpe"
+      },
+      "fwm8_pufferpumpe": {
+        "name": "Warmwasser 8 Pufferpumpe"
       }
     },
     "switch": {

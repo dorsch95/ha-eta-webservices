@@ -588,6 +588,67 @@ def _weitere_puffer_sensoren():
     return sensoren
 
 
+def _kombi_sensoren():
+    """Das Warmwasser im Kombispeicher, je Puffer: Temperatur und - beim älteren Puffer - Zustand.
+
+    Den Warmwasserbereich führt ein Puffer im Menübaum auch ohne
+    Kombispeicher. Die Sensoren entstehen deshalb nur, wenn er eingerichtet
+    ist, siehe ETADataUpdateCoordinator._kombi_pruefen.
+    """
+    sensoren = {}
+    for komponente, zusatz in PUFFER_SPEICHER.items():
+        sensoren.update(
+            {
+                f"{komponente}_warmwasser": {
+                    "component": komponente,
+                    "name": f"Puffer{zusatz} Warmwasser",
+                    "translation_key": f"{komponente}_warmwasser",
+                    "nur_wenn_vorhanden": True,
+                    "icon": "mdi:water-thermometer",
+                    "device_class": SensorDeviceClass.TEMPERATURE,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "default_unit": "°C",
+                },
+                f"{komponente}_warmwasser_zustand": {
+                    "component": komponente,
+                    "name": f"Puffer{zusatz} Warmwasser Zustand",
+                    "translation_key": f"{komponente}_warmwasser_zustand",
+                    "nur_wenn_vorhanden": True,
+                    "icon": "mdi:water-boiler",
+                    "is_string": True,
+                },
+            }
+        )
+    return sensoren
+
+
+def _warmwasser_zustand_sensoren():
+    """Zustand und Pumpen je Frischwassermodul oder Warmwasserspeicher.
+
+    Der Zustand sagt beim Warmwasserspeicher, ob er lädt, die Ladepumpe, ob
+    dafür gerade Wärme fließt. Das Frischwassermodul hat stattdessen eine
+    Pufferpumpe: Sie läuft, solange es Wasser erwärmt - beim Zapfen und bei
+    laufender Zirkulation. Jeder Sensor nur, wenn der Menübaum ihn führt.
+    """
+    sensoren = {}
+    for komponente, zusatz in WARMWASSER_SPEICHER.items():
+        name = f"Warmwasser{zusatz}" if zusatz else "FWM"
+        for art, bezeichnung, symbol in (
+            ("zustand", "Zustand", "mdi:water-boiler"),
+            ("ladepumpe", "Ladepumpe", "mdi:pump"),
+            ("pufferpumpe", "Pufferpumpe", "mdi:pump"),
+        ):
+            sensoren[f"{komponente}_{art}"] = {
+                "component": komponente,
+                "name": f"{name} {bezeichnung}",
+                "translation_key": f"{komponente}_{art}",
+                "nur_wenn_vorhanden": True,
+                "icon": symbol,
+                "is_string": True,
+            }
+    return sensoren
+
+
 def _weitere_warmwasser_sensoren():
     """Temperatur und Zirkulationspumpe des zweiten bis achten Warmwassers.
 
@@ -755,6 +816,7 @@ SENSORS = {
         "is_string": True,
     },
     **_weitere_puffer_sensoren(),
+    **_kombi_sensoren(),
     "heizkreis_vorlauf": {
         "component": "hk1",
         "name": "Heizkreis Vorlauftemperatur",
@@ -861,6 +923,7 @@ SENSORS = {
         "default_unit": "°C",
     },
     **_weitere_warmwasser_sensoren(),
+    **_warmwasser_zustand_sensoren(),
     "kessel_zustand": {
         "component": "kessel",
         "name": "Kessel Zustand",

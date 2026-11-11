@@ -1098,6 +1098,126 @@
       },
       "solar_waermemenge": {
         "name": "Solar heat quantity"
+      },
+      "puffer_warmwasser": {
+        "name": "Buffer hot water"
+      },
+      "puffer_warmwasser_zustand": {
+        "name": "Buffer hot water state"
+      },
+      "fwm_zustand": {
+        "name": "Hot water state"
+      },
+      "fwm_ladepumpe": {
+        "name": "Hot water charging pump"
+      },
+      "fwm_pufferpumpe": {
+        "name": "Hot water buffer pump"
+      },
+      "puffer2_warmwasser": {
+        "name": "Buffer 2 hot water"
+      },
+      "puffer2_warmwasser_zustand": {
+        "name": "Buffer 2 hot water state"
+      },
+      "fwm2_zustand": {
+        "name": "Hot water 2 state"
+      },
+      "fwm2_ladepumpe": {
+        "name": "Hot water 2 charging pump"
+      },
+      "fwm2_pufferpumpe": {
+        "name": "Hot water 2 buffer pump"
+      },
+      "puffer3_warmwasser": {
+        "name": "Buffer 3 hot water"
+      },
+      "puffer3_warmwasser_zustand": {
+        "name": "Buffer 3 hot water state"
+      },
+      "fwm3_zustand": {
+        "name": "Hot water 3 state"
+      },
+      "fwm3_ladepumpe": {
+        "name": "Hot water 3 charging pump"
+      },
+      "fwm3_pufferpumpe": {
+        "name": "Hot water 3 buffer pump"
+      },
+      "puffer4_warmwasser": {
+        "name": "Buffer 4 hot water"
+      },
+      "puffer4_warmwasser_zustand": {
+        "name": "Buffer 4 hot water state"
+      },
+      "fwm4_zustand": {
+        "name": "Hot water 4 state"
+      },
+      "fwm4_ladepumpe": {
+        "name": "Hot water 4 charging pump"
+      },
+      "fwm4_pufferpumpe": {
+        "name": "Hot water 4 buffer pump"
+      },
+      "puffer5_warmwasser": {
+        "name": "Buffer 5 hot water"
+      },
+      "puffer5_warmwasser_zustand": {
+        "name": "Buffer 5 hot water state"
+      },
+      "fwm5_zustand": {
+        "name": "Hot water 5 state"
+      },
+      "fwm5_ladepumpe": {
+        "name": "Hot water 5 charging pump"
+      },
+      "fwm5_pufferpumpe": {
+        "name": "Hot water 5 buffer pump"
+      },
+      "puffer6_warmwasser": {
+        "name": "Buffer 6 hot water"
+      },
+      "puffer6_warmwasser_zustand": {
+        "name": "Buffer 6 hot water state"
+      },
+      "fwm6_zustand": {
+        "name": "Hot water 6 state"
+      },
+      "fwm6_ladepumpe": {
+        "name": "Hot water 6 charging pump"
+      },
+      "fwm6_pufferpumpe": {
+        "name": "Hot water 6 buffer pump"
+      },
+      "puffer7_warmwasser": {
+        "name": "Buffer 7 hot water"
+      },
+      "puffer7_warmwasser_zustand": {
+        "name": "Buffer 7 hot water state"
+      },
+      "fwm7_zustand": {
+        "name": "Hot water 7 state"
+      },
+      "fwm7_ladepumpe": {
+        "name": "Hot water 7 charging pump"
+      },
+      "fwm7_pufferpumpe": {
+        "name": "Hot water 7 buffer pump"
+      },
+      "puffer8_warmwasser": {
+        "name": "Buffer 8 hot water"
+      },
+      "puffer8_warmwasser_zustand": {
+        "name": "Buffer 8 hot water state"
+      },
+      "fwm8_zustand": {
+        "name": "Hot water 8 state"
+      },
+      "fwm8_ladepumpe": {
+        "name": "Hot water 8 charging pump"
+      },
+      "fwm8_pufferpumpe": {
+        "name": "Hot water 8 buffer pump"
       }
     },
     "switch": {

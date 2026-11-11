@@ -125,6 +125,21 @@ ERWARTETE_IDS = {
         for teil, endung in (("warmwasser", "temperatur"), ("zirkulationspumpe", "zirkulationspumpe"))
     },
     **{f"komponente_fwm{n}": f"sensor.eta_heizung_komponente_warmwasser_{n}" for n in range(2, 9)},
+    "fwm_zustand": "sensor.eta_heizung_fwm_zustand",
+    "fwm_ladepumpe": "sensor.eta_heizung_fwm_ladepumpe",
+    "fwm_pufferpumpe": "sensor.eta_heizung_fwm_pufferpumpe",
+    **{
+        f"fwm{n}_{teil}": f"sensor.eta_heizung_warmwasser_{n}_{teil}"
+        for n in range(2, 9)
+        for teil in ("zustand", "ladepumpe", "pufferpumpe")
+    },
+    "puffer_warmwasser": "sensor.eta_heizung_puffer_warmwasser",
+    "puffer_warmwasser_zustand": "sensor.eta_heizung_puffer_warmwasser_zustand",
+    **{
+        f"puffer{n}_{teil}": f"sensor.eta_heizung_puffer_{n}_{teil}"
+        for n in range(2, 9)
+        for teil in ("warmwasser", "warmwasser_zustand")
+    },
 }
 
 

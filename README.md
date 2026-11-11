@@ -141,7 +141,9 @@ Was eine Erklärung braucht:
 - **Effektives Puffervolumen:** Die Regelung errechnet es aus Gesamtvolumen und Lage der Fühler. PufferFlex meldet es, beim älteren „Puffer“ trägst du es beim Einrichten ein. Damit rechnen der Energieinhalt und die Prognose.
 - **Ladezustand** gibt es nur beim PufferFlex, eine **Ladepumpe** nur bei einem Puffer, der im ETA-Assistenten als dezentral geladen eingerichtet ist.
 - **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Volumen und Ladepumpe mit, Warmwasser 2 bis 8 die Temperatur und die Zirkulationspumpe. Den Energieinhalt gibt es nur für den ersten Puffer.
-- **Pumpen** (Zirkulation, Ladepumpe, Fernleitung) melden `Ein` oder `Aus`, also ob sie gerade laufen.
+- **Pumpen** (Zirkulation, Ladepumpe, Pufferpumpe, Fernleitung) melden `Ein` oder `Aus`, also ob sie gerade laufen.
+- **Warmwasser:** Der **Zustand** sagt beim Warmwasserspeicher, ob er lädt. Seine **Ladepumpe** läuft, solange dafür Wärme fließt. Das Frischwassermodul hat stattdessen eine **Pufferpumpe**: Sie läuft, solange es Wasser erwärmt, also beim Zapfen und bei laufender Zirkulation. Jeden dieser Werte gibt es nur, wenn deine Anlage ihn führt.
+- **Kombispeicher:** Ist im Pufferspeicher ein Warmwasserbereich eingerichtet, gibt es dessen Temperatur als **Puffer Warmwasser**, beim älteren Funktionsblock „Puffer“ dazu den Zustand. Ohne Kombispeicher entstehen beide nicht.
 - **`sensor.eta_heizung_aschebox_status`** fasst Verbrauch und Schwelle in einem Text zusammen („459/1000kg“), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
 - **Komponenten-Marker** (Diagnose): je Komponente eine Entität, an der die Dashboard-Karte erkennt, was vorhanden ist.
 - **Schalter, Betriebsart, Thermostat und Knöpfe** entstehen nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen).
@@ -181,6 +183,8 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_puffer_zustand` | Puffer Zustand | Text |
 | `sensor.eta_heizung_puffer_effektives_volumen` | Puffer effektives Volumen | L |
 | `sensor.eta_heizung_puffer_ladepumpe` | Puffer Ladepumpe | Text |
+| `sensor.eta_heizung_puffer_warmwasser` | Puffer Warmwasser | °C |
+| `sensor.eta_heizung_puffer_warmwasser_zustand` | Puffer Warmwasser Zustand | Text |
 | `sensor.eta_heizung_puffer_energieinhalt` | Wärme im Puffer über 30 °C, nur mit bekanntem Volumen | kWh |
 | `sensor.eta_heizung_puffer_fuhler_1` … `_9` | je vorhandenem Pufferfühler einer | °C |
 | **Pufferspeicher 2 bis 8** (hier für Nummer 2, die weiteren heißen genauso mit ihrer Nummer) | | |
@@ -188,13 +192,21 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_puffer_2_ladezustand` | Puffer 2 Ladezustand | % |
 | `sensor.eta_heizung_puffer_2_effektives_volumen` | Puffer 2 effektives Volumen | L |
 | `sensor.eta_heizung_puffer_2_ladepumpe` | Puffer 2 Ladepumpe | Text |
+| `sensor.eta_heizung_puffer_2_warmwasser` | Puffer 2 Warmwasser | °C |
+| `sensor.eta_heizung_puffer_2_warmwasser_zustand` | Puffer 2 Warmwasser Zustand | Text |
 | `sensor.eta_heizung_puffer_2_fuhler_1` … `_9` | je vorhandenem Pufferfühler einer | °C |
 | **FWM** (erstes Frischwassermodul oder erster Warmwasserspeicher) | | |
 | `sensor.eta_heizung_fwm_warmwassertemperatur` | FWM Warmwassertemperatur | °C |
 | `sensor.eta_heizung_fwm_zirkulationspumpe` | FWM Zirkulationspumpe | Text |
+| `sensor.eta_heizung_fwm_zustand` | FWM Zustand | Text |
+| `sensor.eta_heizung_fwm_ladepumpe` | FWM Ladepumpe | Text |
+| `sensor.eta_heizung_fwm_pufferpumpe` | FWM Pufferpumpe | Text |
 | **Warmwasser 2 bis 8** (hier für Nummer 2, die weiteren heißen genauso mit ihrer Nummer) | | |
 | `sensor.eta_heizung_warmwasser_2_temperatur` | Warmwasser 2 Temperatur | °C |
 | `sensor.eta_heizung_warmwasser_2_zirkulationspumpe` | Warmwasser 2 Zirkulationspumpe | Text |
+| `sensor.eta_heizung_warmwasser_2_zustand` | Warmwasser 2 Zustand | Text |
+| `sensor.eta_heizung_warmwasser_2_ladepumpe` | Warmwasser 2 Ladepumpe | Text |
+| `sensor.eta_heizung_warmwasser_2_pufferpumpe` | Warmwasser 2 Pufferpumpe | Text |
 | **Heizkreis 1** | | |
 | `select.eta_heizung_heizkreis_1_betriebsart` | Heizkreis 1 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_anforderung` | Heizkreis Anforderung | Text |

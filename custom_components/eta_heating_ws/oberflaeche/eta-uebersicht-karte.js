@@ -62,11 +62,14 @@ const TEXTE = {
     laedt_klein: "lädt",
     bereit_klein: "bereit",
     warmwasser: "Warmwasser",
+    warmwasser_zustand: "Warmwasser Zustand",
     fwm: "Frischwassermodul",
     temperatur_modul: "Temperatur am Modul",
     speichertemperatur: "Speichertemperatur",
     zirkulation: "Zirkulation",
     zirkulation_laeuft: "Zirkulation läuft",
+    zapfung: "Zapfung läuft",
+    warmwasser_im_puffer: "Warmwasser im Puffer",
     laeuft: "Läuft",
     ruht: "Ruht",
     aus: "Aus",
@@ -147,11 +150,14 @@ const TEXTE = {
     laedt_klein: "charging",
     bereit_klein: "ready",
     warmwasser: "Hot water",
+    warmwasser_zustand: "Hot water state",
     fwm: "Fresh water module",
     temperatur_modul: "Temperature at the module",
     speichertemperatur: "Tank temperature",
     zirkulation: "Circulation",
     zirkulation_laeuft: "Circulation running",
+    zapfung: "Hot water running",
+    warmwasser_im_puffer: "Hot water in buffer",
     laeuft: "Running",
     ruht: "Idle",
     aus: "Off",
@@ -209,6 +215,7 @@ const KESSEL_BILDER = {
   ],
 };
 const PUFFER_LAEDT = ["Anfordern", "Laden", "Restwärme", "Abschöpfen"];
+const WARMWASSER_LAEDT = [...PUFFER_LAEDT, "Extra Laden"];
 const OHNE_FLUSS = ["Aus", "-", "", "unavailable", "unknown"];
 const LAGER_FOERDERT = "Fördern";
 const PLAN_LAEUFT = ["geplant", "glutabbrand", "entaschen", "leeren"];
@@ -303,6 +310,9 @@ const STIL = `
   .eta-tank-fuehler { position: absolute; inset: 0; margin: 0; padding: 4px 0; list-style: none; display: flex; flex-direction: column; }
   .eta-tank-fuehler li { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
   .eta-tank-fuehler span { padding: 1px 8px; border-radius: 10px; background: rgba(0, 0, 0, .34); color: #fff; font-size: 12.5px; line-height: 1.35; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .eta-tank-kombi { position: absolute; left: 6px; right: 6px; top: 6px; height: calc(36% - 10px); box-sizing: border-box; border: 2px solid rgba(255, 255, 255, .88); border-radius: 14px; background: rgba(0, 0, 0, .28); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #fff; font-size: 12.5px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .eta-tank-kombi .eta-hahn { position: static; transform: none; width: 24px; }
+  .eta-tank[data-kombi] .eta-tank-fuehler { top: 36%; }
   .eta-hahn { position: absolute; left: 50%; top: 50%; width: 46%; transform: translate(-50%, -50%); fill: #fff; }
 
   .eta-svg [class^="z-"] { display: none; }
@@ -359,7 +369,11 @@ const STIL = `
   [data-fliesst] .f-platte { fill: var(--f); animation: eta-leuchten 1.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
   [data-fliesst] .f-vor { stroke: var(--heiss); }
   [data-fliesst] .f-rueck { stroke: var(--kalt); }
-  [data-fliesst] .f-fluss { display: inline; animation: eta-fluss-kurz .7s linear infinite; }
+  [data-fliesst] .f-fluss.prim, [data-zapft] .f-fluss.sek { display: inline; animation: eta-fluss-kurz .7s linear infinite; }
+  [data-zapft] .f-warm { stroke: var(--heiss); }
+  [data-zapft] .f-kalt { stroke: var(--kalt); }
+  .f-tropfen { fill: var(--kalt); opacity: 0; }
+  [data-zapft] .f-tropfen { animation: eta-tropfen 1s ease-in infinite; animation-delay: calc(var(--i) * -.5s); }
 
   .fe-rohr { fill: none; stroke: var(--metall-dunkel); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
   .fe-boden { fill: none; stroke: var(--metall); stroke-width: 2.5; stroke-linecap: round; }
@@ -388,6 +402,7 @@ const STIL = `
   .eta-bild[data-dicht] .eta-name { font-size: 13px; }
   .eta-bild[data-dicht] .eta-schild .eta-neben { font-size: 12px; }
   .eta-bild[data-dicht] .eta-tank-fuehler span { font-size: 11.5px; padding: 0 6px; }
+  .eta-bild[data-dicht] .eta-tank-kombi { font-size: 11.5px; }
   .eta-bild[data-dicht] .eta-station.quer { gap: 10px; }
   .eta-anschluss { display: none; }
   .eta-bild[data-schmal] .eta-anschluss { display: inline; }
@@ -406,6 +421,7 @@ const STIL = `
   .eta-bild:not([data-schmal]) .eta-station.oben { order: -1; }
   .eta-station .eta-figur { width: var(--b, 110px); }
   .eta-schild { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .eta-station:not(.quer) .eta-schild { max-width: 168px; }
   .eta-name { font-size: 14px; font-weight: 500; }
   .eta-schild .eta-zahl { font-size: 24px; }
   .eta-schild .eta-neben { font-size: 12.5px; }
@@ -421,6 +437,7 @@ const STIL = `
   .eta-bild[data-schmal] .eta-station { flex-direction: row; align-items: center; text-align: left; gap: 14px; padding-left: 22px; }
   .eta-bild[data-schmal] .eta-station .eta-figur { --b: 88px !important; }
   .eta-bild[data-schmal] [data-art="puffer"] .eta-figur { --tankhoehe: 176px !important; }
+  .eta-bild[data-schmal] [data-art="puffer"][data-kombi] .eta-figur { --tankhoehe: 232px !important; }
   .eta-bild[data-schmal] .eta-station::before { content: ""; position: absolute; left: 3px; top: -9px; bottom: -9px; width: 6px; border-radius: 3px; background-color: var(--metall); }
   .eta-bild[data-schmal] .eta-station[data-erste]::before { top: 50%; }
   .eta-bild[data-schmal] .eta-station[data-letzte]::before { bottom: 50%; }
@@ -462,6 +479,7 @@ const STIL = `
   @keyframes eta-fluss { to { stroke-dashoffset: -13.1; } }
   @keyframes eta-schiene { to { background-position: 0 13px; } }
   @keyframes eta-stroemen { to { background-position: 0 18px; } }
+  @keyframes eta-tropfen { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(13px); opacity: 0; } }
   @keyframes eta-schnecke { to { transform: translateX(12px); } }
   @keyframes eta-drehen { to { transform: rotate(360deg); } }
   @keyframes eta-leuchten { 0%, 100% { fill-opacity: .78; } 50% { fill-opacity: 1; } }
@@ -625,7 +643,9 @@ const fwmBild = () => `<svg class="eta-svg" viewBox="0 0 150 112" aria-hidden="t
   <rect x="30" y="10" width="78" height="92" rx="10" fill="var(--metall)"/>
   <rect x="42" y="22" width="54" height="68" rx="5" fill="var(--metall-dunkel)"/>
   ${reihe(6, (i) => `<rect class="f-platte" style="--f:${i % 2 ? "var(--kalt)" : "var(--heiss)"};--i:${i}" x="${47.5 + i * 7.5}" y="27" width="4.5" height="58" rx="2.25"/>`)}
-  <path class="f-fluss" d="M8 34h22"/><path class="f-fluss" d="M30 80H8"/>
+  <path class="f-fluss prim" d="M8 34h22"/><path class="f-fluss prim" d="M30 80H8"/>
+  <path class="f-fluss sek" d="M108 34h18a10 10 0 0 1 10 10v6"/><path class="f-fluss sek" d="M142 80h-34"/>
+  ${reihe(2, (i) => `<path class="f-tropfen" style="--i:${i}" d="M136 58c2.4 3.4 4 5.2 4 7.4a4 4 0 0 1-8 0c0-2.2 1.6-4 4-7.4z"/>`)}
 </svg>`;
 
 const fernBild = () => {
@@ -678,16 +698,21 @@ function sprache(code) {
 
 /**
  * Ein Speicher, gefärbt nach seinen Temperaturen von oben nach unten.
- * Ohne Fühler mit Wert bleibt er grau. beschriftet: die Werte stehen im
- * Speicher; sonst ein Wasserhahn - so zeigt sich der Warmwasserspeicher.
+ * Ohne Fühler mit Wert bleibt er grau. Die Werte stehen im Speicher;
+ * mit hahn stattdessen ein Wasserhahn - so zeigt sich der
+ * Warmwasserspeicher. kombi: der Text für den Warmwasserbereich, der
+ * oben im Kombispeicher abgesetzt steht; die Fühler rücken darunter.
  */
-function tank(grade, texte, { laedt = false, hahn = false } = {}) {
+function tank(grade, texte, { laedt = false, hahn = false, kombi = null } = {}) {
   const bekannt = grade.filter((g) => g !== null);
   const farben = grade.map((g) => farbe(g ?? bekannt[0] ?? 20));
-  const stopps = farben.map((f, i) => `${f} ${(((i + 0.5) / farben.length) * 100).toFixed(1)}%`);
+  const ab = kombi === null ? 0 : 36;
+  const stopps = farben.map((f, i) => `${f} ${(ab + ((i + 0.5) / farben.length) * (100 - ab)).toFixed(1)}%`);
+  if (ab) stopps.unshift(`${farben[0]} 0%`);
   const verlauf = !bekannt.length ? "" : stopps.length > 1 ? `background: linear-gradient(180deg, ${stopps.join(", ")})` : `background: ${farben[0]}`;
-  const innen = hahn ? HAHN : `<ol class="eta-tank-fuehler">${texte.map((t) => `<li><span>${e(t)}</span></li>`).join("")}</ol>`;
-  return `<div class="eta-tank" ${laedt ? "data-laedt" : ""}><div class="eta-tank-stutzen"></div><div class="eta-tank-koerper" style="${verlauf}"><div class="eta-tank-stroemung"></div>${innen}</div></div>`;
+  const bereich = kombi === null ? "" : `<div class="eta-tank-kombi">${HAHN}<b>${e(kombi)}</b></div>`;
+  const innen = hahn ? HAHN : `${bereich}<ol class="eta-tank-fuehler">${texte.map((t) => `<li><span>${e(t)}</span></li>`).join("")}</ol>`;
+  return `<div class="eta-tank" ${laedt ? "data-laedt" : ""} ${ab ? "data-kombi" : ""}><div class="eta-tank-stutzen"></div><div class="eta-tank-koerper" style="${verlauf}"><div class="eta-tank-stroemung"></div>${innen}</div></div>`;
 }
 
 /**
@@ -746,6 +771,12 @@ const EIN = { kessel: [0.015, 0.82], puffer: [0, 0.14], fernleitung: [0.025, 0.3
  * Ein Wert ist null, wenn es seine Entität nicht gibt oder die Anlage
  * dafür "-" meldet, etwa bei einem Warmwasserspeicher ohne Zirkulation -
  * dann fehlt die Zeile. Meldet die Entität nichts, steht ein Strich.
+ *
+ * Beim Warmwasserspeicher sind Laden und Zirkulation zweierlei: laedt
+ * kommt von der Ladepumpe, ohne sie vom Zustand. Das Frischwassermodul
+ * erwärmt Wasser (fliesst), solange seine Pufferpumpe läuft - bei
+ * laufender Zirkulation und beim Zapfen. zapft heißt deshalb: Die
+ * Pufferpumpe läuft, die Zirkulation nicht.
  * fussboden: die Heizkreise, die als Fußbodenheizung gezeichnet werden.
  */
 function anlageLesen(hass, struktur, t, fussboden) {
@@ -764,7 +795,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
     const n = fehlt || s.state === "" || Number.isNaN(Number(s.state)) ? null : Number(s.state);
     return { id: s.entity_id, text, zahl, einheit, roh: fehlt ? "" : s.state, n };
   };
-  const an = (w) => Boolean(w) && !OHNE_FLUSS.includes(w.roh);
+  const an = (w) => Boolean(w) && (w.n === null ? !OHNE_FLUSS.includes(w.roh) : w.n > 0);
   const ueber = (w) => Boolean(w) && w.n !== null && w.n > LEISTUNG_AB;
   const mehrere = (art) => struktur.teile.filter((teil) => teil.art === art).length > 1;
 
@@ -796,6 +827,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const fuehler = [];
       for (let nr = 1; struktur.entitaeten[`${teil.id}_fuehler_${nr}`]; nr++) fuehler.push(wert(`${teil.id}_fuehler_${nr}`));
       const zustand = wert(`${teil.id}_zustand`);
+      const kombi = wert(`${teil.id}_warmwasser`), kombiZustand = wert(`${teil.id}_warmwasser_zustand`);
       return {
         name: mehrere("puffer") ? teil.block : t.puffer,
         fuehler: fuehler.filter(Boolean),
@@ -804,16 +836,26 @@ function anlageLesen(hass, struktur, t, fussboden) {
         ladepumpe: wert(`${teil.id}_ladepumpe`),
         zustand,
         laedt: PUFFER_LAEDT.includes(zustand?.roh),
+        kombi: kombi ? { temperatur: kombi, zustand: kombiZustand, laedt: WARMWASSER_LAEDT.includes(kombiZustand?.roh) } : null,
       };
     },
     warmwasser(teil) {
-      const zirkulation = wert(`${teil.id}_zirkulationspumpe`);
+      const fwm = teil.bauart === "fwm";
+      const zirkulation = wert(`${teil.id}_zirkulationspumpe`), zustand = wert(`${teil.id}_zustand`);
+      const ladepumpe = wert(`${teil.id}_ladepumpe`), pufferpumpe = wert(`${teil.id}_pufferpumpe`);
+      const zirkuliert = an(zirkulation);
+      const fliesst = fwm && (pufferpumpe ? an(pufferpumpe) : zirkuliert);
       return {
-        name: mehrere("warmwasser") ? teil.block : teil.bauart === "fwm" ? t.fwm : t.warmwasser,
+        name: mehrere("warmwasser") ? teil.block : fwm ? t.fwm : t.warmwasser,
         bauart: teil.bauart,
         temperatur: wert(`${teil.id}_warmwasser`),
+        zustand,
         zirkulation,
-        zirkuliert: an(zirkulation),
+        zirkuliert,
+        ladepumpe,
+        laedt: !fwm && (ladepumpe ? an(ladepumpe) : WARMWASSER_LAEDT.includes(zustand?.roh)),
+        fliesst,
+        zapft: Boolean(pufferpumpe) && fliesst && !zirkuliert,
       };
     },
     heizkreis(teil) {
@@ -1116,14 +1158,29 @@ class EtaUebersichtKarte extends HTMLElement {
   _pufferBild(p, breite, hoehe) {
     const grade = p.fuehler.map((f) => f.n);
     const zeilen = p.fuehler.length;
-    const mindest = Math.max(hoehe, zeilen * 26);
-    return this._figur(tank(grade.length ? grade : [null], p.fuehler.map((f) => f.text), { laedt: p.laedt }), breite, `--tankhoehe:${mindest}px`);
+    const mindest = Math.max(hoehe, zeilen * 26) + (p.kombi ? 44 : 0);
+    const kombi = p.kombi ? p.kombi.temperatur.text : null;
+    return this._figur(tank(grade.length ? grade : [null], p.fuehler.map((f) => f.text), { laedt: p.laedt, kombi }), breite, `--tankhoehe:${mindest}px`);
   }
 
   _warmwasserBild(w, breite, hoehe) {
     if (w.bauart === "fwm") return this._figur(fwmBild(), breite);
     const grad = w.temperatur?.n ?? null;
-    return this._figur(tank(grad === null ? [null] : [grad, grad - 24], [], { hahn: true }), breite, `--tankhoehe:${hoehe}px`);
+    return this._figur(tank(grad === null ? [null] : [grad, grad - 24], [], { hahn: true, laedt: w.laedt }), breite, `--tankhoehe:${hoehe}px`);
+  }
+
+  /** Was beim Warmwasser gerade geschieht, und ob es dafür arbeitet - für Schild und Punkt. */
+  _warmwasserStatus(w) {
+    const t = this._t;
+    const arbeitet = w.laedt || w.fliesst;
+    if (w.zapft) return [t.zapfung, true];
+    if (w.zustand && w.zustand.roh) return [w.zustand.text, arbeitet];
+    if (w.bauart === "fwm" && w.zirkuliert) return [t.zirkulation_laeuft, true];
+    return [w.laedt ? t.laden : t.bereit, arbeitet];
+  }
+
+  _warmwasserMerkmale(w) {
+    return `${w.fliesst ? "data-fliesst" : ""} ${w.zapft ? "data-zapft" : ""}`;
   }
 
   /* Ansicht: Kacheln */
@@ -1139,10 +1196,10 @@ class EtaUebersichtKarte extends HTMLElement {
         ${this._bedienung(k, anlage)}`),
       puffer: (p) => kachel(p, "", p.zustand ? this._chip(p.zustand.text, p.laedt) : "", `
         <div class="eta-buehne" ${this._info(p.ladung || p.fuehler[0])}>${this._pufferBild(p, 112, 208)}${p.ladung ? this._haupt(t.ladezustand, p.ladung, p.energie ? p.energie.text : "") : p.fuehler.length ? this._haupt(t.oben, p.fuehler[0]) : ""}</div>
-        ${this._zeilen([...(p.ladung && p.fuehler.length ? [[t.oben, p.fuehler[0]], [t.unten, p.fuehler[p.fuehler.length - 1]]] : []), [t.ladepumpe, p.ladepumpe]])}`),
-      warmwasser: (w) => kachel(w, w.bauart === "fwm" && w.zirkuliert ? "data-fliesst" : "", w.zirkulation ? this._chip(w.zirkuliert ? t.zirkulation_laeuft : t.bereit, w.zirkuliert) : "", `
+        ${this._zeilen([...(p.kombi ? [[t.warmwasser, p.kombi.temperatur], [t.warmwasser_zustand, p.kombi.zustand]] : []), ...(p.ladung && p.fuehler.length ? [[t.oben, p.fuehler[0]], [t.unten, p.fuehler[p.fuehler.length - 1]]] : []), [t.ladepumpe, p.ladepumpe]])}`),
+      warmwasser: (w) => kachel(w, this._warmwasserMerkmale(w), this._chip(...this._warmwasserStatus(w)), `
         <div class="eta-buehne" ${this._info(w.temperatur)}>${this._warmwasserBild(w, w.bauart === "fwm" ? 124 : 96, 108)}${this._haupt(w.bauart === "fwm" ? t.temperatur_modul : t.speichertemperatur, w.temperatur)}</div>
-        ${this._zeilen([[t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
+        ${this._zeilen([[t.ladepumpe, w.ladepumpe], [t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
       heizkreis: (h) => kachel(h, h.heizt ? "data-aktiv" : "", this._chip(this._heizkreisStatus(h), h.heizt), `
         <div class="eta-buehne" ${h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf)}>${this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 132)}${this._haupt(t.vorlauf, h.vorlauf)}</div>
         ${this._zeilen([[t.raum, h.raum && h.raumSoll ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}
@@ -1202,16 +1259,16 @@ class EtaUebersichtKarte extends HTMLElement {
       solar: (s) => station(s, "quer links oben", s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
-      puffer: (p) => station(p, "", p.laedt ? "data-fluss" : "", this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.energie?.text, p.zustand?.text].filter(Boolean).join(" · "))),
+      puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.energie?.text, p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
       heizkreis: (h) => station(h, "quer", h.heizt ? "data-aktiv data-fluss" : "", h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf), this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 96), schild(h, h.vorlauf, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h)].filter(Boolean).join(" · "))),
-      warmwasser: (w) => station(w, "quer", w.bauart === "fwm" && w.zirkuliert ? "data-fliesst data-fluss" : "", this._info(w.temperatur), this._warmwasserBild(w, 96, 78), schild(w, w.temperatur, w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : "")),
+      warmwasser: (w) => station(w, "quer", `${this._warmwasserMerkmale(w)} ${w.laedt || w.fliesst ? "data-fluss" : ""}`, this._info(w.temperatur), this._warmwasserBild(w, 96, 78), schild(w, w.temperatur, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "))),
     };
 
     const kanten = [];
     const kante = (von, nach, art, aktiv, aus, ein) => kanten.push({ von, nach, art, aktiv, aus, ein });
     const eingang = (teil) => EIN[teil.art === "warmwasser" ? teil.bauart : teil.art];
-    const aktiv = (teil) => Boolean(teil.laedt || teil.heizt || teil.pumpt || (teil.bauart === "fwm" && teil.zirkuliert));
+    const aktiv = (teil) => Boolean(teil.laedt || teil.heizt || teil.pumpt || teil.fliesst);
     for (const teil of anlage.teile) {
       const von = quelle(teil);
       if (teil.art === "lager" && nachId.kessel) kante(teil.id, "kessel", "pellets", teil.foerdert, AUS.lager, EIN.kessel);
@@ -1296,12 +1353,15 @@ class EtaUebersichtKarte extends HTMLElement {
     const t = this._t;
     const kessel = anlage.teile.find((teil) => teil.art === "kessel");
     const erster = anlage.teile.find((teil) => teil.art === "puffer");
+    const mehrere = anlage.teile.filter((teil) => teil.art === "puffer").length > 1;
     const zeile = (symbol, an, name, neben, w, extra = "") => `<div class="eta-reihe" ${this._info(w)}><span class="eta-symbol" ${an ? "data-an" : ""}>${ICON[symbol]}</span><div class="eta-reihe-text"><b>${e(name)}</b>${extra}${neben ? `<span>${e(neben)}</span>` : ""}</div><span class="eta-reihe-wert">${e(w ? w.text : "–")}</span></div>`;
     const balken = (anteil, art = "") => (anteil === null ? "" : `<div class="eta-balken" ${art ? `data-art="${art}"` : ""}><i style="width:${(anteil * 100).toFixed(1)}%"></i></div>`);
     const reihen = {
       kessel: () => "",
-      puffer: (p) => (p === erster ? "" : zeile("thermo", p.laedt, p.name, [p.energie?.text, p.zustand?.text].filter(Boolean).join(" · "), p.ladung || p.fuehler[0])),
-      warmwasser: (w) => zeile("tropfen", w.zirkuliert, w.name, w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : "", w.temperatur),
+      puffer: (p) =>
+        (p === erster ? "" : zeile("thermo", p.laedt, p.name, [p.energie?.text, p.zustand?.text].filter(Boolean).join(" · "), p.ladung || p.fuehler[0])) +
+        (p.kombi ? zeile("tropfen", p.kombi.laedt, mehrere ? `${t.warmwasser} ${p.name}` : t.warmwasser_im_puffer, p.kombi.zustand?.text || "", p.kombi.temperatur) : ""),
+      warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur),
       heizkreis: (h) => zeile("heizung", h.heizt, h.name, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h), h.raum ? `${t.raum} ${h.raum.text}` : ""].filter(Boolean).join(" · "), h.vorlauf),
       lager: (l) => zeile("lager", l.foerdert, l.name, l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : "", l.vorrat, balken(l.anteil, "pellet")),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),

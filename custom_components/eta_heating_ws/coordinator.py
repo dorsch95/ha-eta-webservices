@@ -883,6 +883,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 f"Menübaum der Anlage nicht lesbar: {err}"
             ) from err
 
+        await self._kombi_pruefen()
         self.sensor_defs = build_sensor_defs(
             self.discovered_uris, indices, self.components
         )
@@ -898,6 +899,41 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._betriebsarten_pruefen()
         await self._thermostate_pruefen()
         await self._varset_anlegen()
+
+    async def _kombi_pruefen(self) -> None:
+        """Nimmt das Warmwasser eines Puffers heraus, der kein Kombispeicher ist.
+
+        Den Warmwasserbereich führt ein Puffer im Menübaum auch ohne
+        Kombispeicher. Eingerichtet ist er, wenn seine Solltemperatur eine
+        Einheit meldet - dasselbe Merkmal wie bei den Ladezeiten, siehe
+        _programm_eingerichtet. Ohne Solltemperatur im Menübaum oder ohne
+        Antwort der Anlage bleiben die Werte stehen.
+        """
+        for komponente in PUFFER_SPEICHER:
+            schluessel = [
+                key
+                for key in (f"{komponente}_warmwasser", f"{komponente}_warmwasser_zustand")
+                if key in self.discovered_uris
+            ]
+            soll = next(
+                (
+                    info["soll_uri"]
+                    for info in self.zeitprogramm_namen.values()
+                    if info.get("komponente") == komponente and info.get("soll_uri")
+                ),
+                None,
+            )
+            if not schluessel or komponente not in self.components or soll is None:
+                continue
+            [beschreibung] = await self._varinfos([soll])
+            if beschreibung is not None and not beschreibung.get("unit"):
+                for key in schluessel:
+                    del self.discovered_uris[key]
+                _LOGGER.info(
+                    "ETA: %s ist kein Kombispeicher, die Solltemperatur seines "
+                    "Warmwasserbereichs hat keine Einheit",
+                    komponente,
+                )
 
     def funktionsblock(self, komponente: str) -> str:
         """Wie der Funktionsblock dieser Komponente an der Anlage heißt.

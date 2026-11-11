@@ -88,6 +88,18 @@ DISCOVERY_PATHS = {
     "heizkreis4_zeitprogramm": ("hk4", ["Heizkreis", "Heizzeiten", "Schaltzustand"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     **{f"{k}_warmwasser": (_rolle(k), ["Eingänge", "Warmwasser"]) for k in WEITERES_WARMWASSER},
+    **{
+        f"{k}_zustand": (_rolle(k), ["Warmwasser", "Warmwasser-Zustand detailliert"])
+        for k in WARMWASSER_SPEICHER
+    },
+    **{
+        f"{k}_warmwasser": (_rolle(k), ["Puffer", "Warmwasserbereich", "Warmwasser"])
+        for k in PUFFER_SPEICHER
+    },
+    **{
+        f"{k}_warmwasser_zustand": (_rolle(k), ["Warmwasser-Zustand detailliert"])
+        for k in PUFFER_SPEICHER
+    },
     "lager_vorrat": ("lager", ["Vorrat"]),
     "lager_warngrenze": ("lager", ["Vorrat", "Vorrat Warngrenze"]),
     "lager_maximum": ("lager", ["Vorrat", "Maximaler Vorrat"]),
@@ -117,6 +129,8 @@ PUMPEN = {
     "fernleitung_pumpe": ("fernleitung", "fernpumpe"),
     "puffer_ladepumpe": ("pufferflex", "pufferlade"),
     **{f"{k}_ladepumpe": (_rolle(k), "pufferlade") for k in WEITERE_PUFFER},
+    **{f"{k}_ladepumpe": (_rolle(k), "ladepumpe") for k in WARMWASSER_SPEICHER},
+    **{f"{k}_pufferpumpe": (_rolle(k), "pufferpumpe") for k in WARMWASSER_SPEICHER},
 }
 """Pumpen, die über ein Stichwort in ihrem Namen gesucht werden.
 
@@ -160,12 +174,27 @@ Formular gespeichert wurde.
 """
 
 AUSWEICHPFADE = {
-    f"{k}_warmwasser": [["Eingänge", "Warmwasserspeicher"]] for k in WARMWASSER_SPEICHER
+    **{f"{k}_warmwasser": [["Eingänge", "Warmwasserspeicher"]] for k in WARMWASSER_SPEICHER},
+    **{
+        f"{k}_zustand": [["Warmwasserspeicher", "Warmwasser-Zustand detailliert"]]
+        for k in WARMWASSER_SPEICHER
+    },
+    **{
+        f"{k}_warmwasser": [["Warmwasser-Zustand detailliert", "Warmwasserspeicher"]]
+        for k in PUFFER_SPEICHER
+    },
 }
 """Weitere Namenspfade, falls der Hauptpfad im Funktionsblock fehlt.
 
 Ein reiner Warmwasserspeicher (Funktionsblock "WW") nennt seinen Fühler
-"Warmwasserspeicher", das Frischwassermodul "Warmwasser".
+"Warmwasserspeicher", das Frischwassermodul "Warmwasser". Seinen Zustand
+führt er unter "Warmwasserspeicher", das Frischwassermodul unter
+"Warmwasser".
+
+Das Warmwasser im Kombispeicher steht beim PufferFlex unter "Puffer >
+Warmwasserbereich", beim älteren Funktionsblock "Puffer" unter
+"Warmwasser-Zustand detailliert" - dieser Knoten ist dort zugleich der
+Zustand.
 """
 
 KENNUNGEN = {
