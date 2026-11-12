@@ -80,6 +80,10 @@ CONF_SCAN_INTERVAL = "scan_interval"
 CONF_SCHNELL_INTERVALL = "schnell_intervall"
 """Alle wie viele Sekunden die schnelle Gruppe gelesen wird, 0 = gar nicht.
 
+Die Vorgabe sind 3 Sekunden. An einer Anlage lief über längere Zeit sogar
+die volle Abfrage im Sekundentakt, ohne dass die Platinen laut Display
+stark ausgelastet waren.
+
 Die schnelle Gruppe sind die wenigen Werte, die ein Dashboard ohne Verzug
 zeigen soll - siehe ETADataUpdateCoordinator.schnelle_uris.
 """
@@ -137,7 +141,7 @@ zeitweise ausbleiben.
 """
 MAX_SCAN_INTERVAL = 600
 
-DEFAULT_SCHNELL_INTERVALL = 0
+DEFAULT_SCHNELL_INTERVALL = 3
 MAX_SCHNELL_INTERVALL = MAX_SCAN_INTERVAL
 """Dieselbe Obergrenze wie beim Abfrageintervall, damit beide Felder gleich aussehen.
 

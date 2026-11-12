@@ -629,6 +629,8 @@ class FakeHass:
         self.session = FakeSession(menu)
         self.entity_registry = FakeEntityRegistry()
         self.states = FakeStates()
+        self.schnelltakte: list = []
+        """Die Abstände, mit denen die schnelle Abfrage gestartet wurde - ohne laufendes Home Assistant tickt nichts."""
         self.is_stopping = False
         self.ereignisse: list[tuple[str, dict]] = []
         self.bus = SimpleNamespace(
@@ -684,6 +686,10 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
     monkeypatch.setattr(
         "eta_heating_ws.er.async_entries_for_config_entry",
         lambda registry, config_entry_id: registry.fuer_eintrag(config_entry_id),
+    )
+    monkeypatch.setattr(
+        "eta_heating_ws.async_track_time_interval",
+        lambda _hass, _takt, abstand: instance.schnelltakte.append(abstand) or (lambda: None),
     )
     return instance
 

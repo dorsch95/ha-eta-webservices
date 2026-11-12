@@ -60,6 +60,9 @@ dadurch früher auffiele.
 SCHNELL_PLATTFORMEN = ("switch", "button", "select", "climate")
 """Was sich schalten oder stellen lässt, gehört zur schnellen Gruppe."""
 
+SCHNELL_WARMWASSER = ("durchfluss", "pufferpumpe_drehzahl", "zirkulationspumpe")
+"""Von Frischwassermodul und Warmwasserspeicher gehört zur schnellen Gruppe nur, woran sich das Zapfen zeigt."""
+
 SCHNELL_PAUSE = 12
 """So viele Takte ruht die schnelle Gruppe, nachdem ihr Variablensatz gescheitert ist."""
 
@@ -308,13 +311,13 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
 
     @property
     def schnelle_uris(self) -> dict[str, str]:
-        """Die schnelle Gruppe: was ein Dashboard ohne Verzug zeigen soll.
+        """Die schnelle Gruppe: das Wenige, das ein Dashboard ohne Verzug zeigen soll.
 
         Alles, was sich schalten oder stellen lässt - Kessel ein/aus,
         Entaschen, die Tasten der Heizkreise, Raum Soll -, dazu als deren
-        Wirkung der Kessel-Zustand und die Raumtemperatur. Und alle Werte
-        von Frischwassermodul und Warmwasserspeicher: Dort soll das Zapfen
-        sofort zu sehen und der Durchfluss mitzulesen sein.
+        Wirkung der Kessel-Zustand und die Raumtemperatur. Vom
+        Frischwassermodul nur, woran sich das Zapfen zeigt: Durchfluss,
+        Drehzahl der Pufferpumpe und Zirkulationspumpe.
         """
         return {
             key: info["uri"]
@@ -322,7 +325,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             if info.get("uri")
             and (
                 info.get("platform") in SCHNELL_PLATTFORMEN
-                or info.get("component") in WARMWASSER_SPEICHER
+                or (
+                    info.get("component") in WARMWASSER_SPEICHER
+                    and key.partition("_")[2] in SCHNELL_WARMWASSER
+                )
                 or key == "kessel_zustand"
                 or (info.get("component") in HEIZKREISE and key.endswith("_raum"))
             )

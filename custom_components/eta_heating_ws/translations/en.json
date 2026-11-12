@@ -37,7 +37,7 @@
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and the fresh water module more often than the rest. Only applies if smaller than the polling interval."
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
         }
       },
       "fub_names": {
@@ -190,7 +190,7 @@
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and the fresh water module more often than the rest. Only applies if smaller than the polling interval."
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
         }
       },
       "fub_names": {

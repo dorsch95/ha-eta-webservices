@@ -17,19 +17,29 @@ from . import test_puffer_ohne_kombi as nutzeranlage
 from .test_sensors import setup_integration
 
 
-async def test_schnelle_gruppe_ist_schaltbares_und_frischwassermodul(hass, entry):
+async def test_vom_frischwassermodul_nur_woran_sich_das_zapfen_zeigt(hass, entry):
+    """Die Gruppe soll klein bleiben: Durchfluss und Drehzahl ja, Temperatur und Zustand nein."""
     coordinator = await nutzeranlage.aufbauen(hass, entry)
 
     schnell = set(coordinator.schnelle_uris)
 
-    assert {
+    assert {"fwm_durchfluss", "fwm_pufferpumpe_drehzahl"} <= schnell
+    assert not {
         "fwm_warmwasser",
         "fwm_zustand",
         "fwm_pufferpumpe",
-        "fwm_durchfluss",
-        "fwm_pufferpumpe_drehzahl",
-    } <= schnell
-    assert not {"kessel_temperatur", "puffer_fuehler_1", "aussentemperatur"} & schnell
+        "kessel_temperatur",
+        "puffer_fuehler_1",
+        "aussentemperatur",
+    } & schnell
+
+
+async def test_zirkulationspumpe_gehoert_dazu(hass, entry):
+    """Zapfen heißt: Es fließt Wasser, und die Zirkulation läuft nicht."""
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert "fwm_zirkulationspumpe" in coordinator.abfragbare_uris
+    assert "fwm_zirkulationspumpe" in coordinator.schnelle_uris
 
 
 async def test_alles_schaltbare_und_die_raumtemperatur_gehoeren_dazu(hass, entry):
@@ -71,12 +81,12 @@ async def test_schnelle_abfrage_gibt_nur_geaendertes_weiter(hass, entry):
     )
     assert weitergegeben == [], "nichts Neues, also bleibt es still"
 
-    hass.session.texte[coordinator.sensor_defs["fwm_zustand"]["uri"]] = "Zapfen"
+    hass.session.texte[coordinator.sensor_defs["fwm_durchfluss"]["uri"]] = "8,5"
     anfragen = hass.session.count
     await coordinator.async_schnell_lesen()
 
     assert hass.session.count == anfragen + 1, "ein Takt ist eine Anfrage"
-    assert coordinator.data["fwm_zustand"].text == "Zapfen"
+    assert coordinator.data["fwm_durchfluss"].text == "8,5"
     assert weitergegeben == [False], "die Entitäten erfahren, dass es keine volle Abfrage war"
     assert coordinator.volle_abfrage is True
 
@@ -84,7 +94,7 @@ async def test_schnelle_abfrage_gibt_nur_geaendertes_weiter(hass, entry):
 async def test_schnelle_abfrage_ruht_waehrend_der_vollen(hass, entry):
     """Sonst könnte ein älterer Wert einen neueren überschreiben."""
     coordinator, weitergegeben = await aufgebaut(hass, entry)
-    hass.session.texte[coordinator.sensor_defs["fwm_zustand"]["uri"]] = "Zapfen"
+    hass.session.texte[coordinator.sensor_defs["fwm_durchfluss"]["uri"]] = "8,5"
 
     async with coordinator._lese_sperre:
         anfragen = hass.session.count
@@ -98,11 +108,11 @@ async def test_volle_abfrage_bleibt_wie_sie_war(hass, entry):
     """Die schnelle Gruppe ändert nichts an dem, was die volle Abfrage liest."""
     coordinator, _ = await aufgebaut(hass, entry)
     await coordinator.async_schnell_lesen()
-    hass.session.texte[coordinator.sensor_defs["fwm_zustand"]["uri"]] = "Zapfen"
+    hass.session.texte[coordinator.sensor_defs["fwm_durchfluss"]["uri"]] = "8,5"
 
     daten = await coordinator._async_update_data()
 
-    assert daten["fwm_zustand"].text == "Zapfen"
+    assert daten["fwm_durchfluss"].text == "8,5"
     assert set(hass.session.varsets) == {coordinator._varset_name, coordinator._schnell_name}
 
 
@@ -146,32 +156,34 @@ async def test_aufraeumen_gibt_beide_variablensaetze_frei(hass, entry):
     assert hass.session.varsets == {}, "ein letzter Takt legt den Satz nicht wieder an"
 
 
-async def test_takt_laeuft_nur_wenn_er_kuerzer_ist_als_das_abfrageintervall(hass, entry, monkeypatch):
-    gestartet: list[timedelta] = []
-    monkeypatch.setattr(
-        eta_heating_ws,
-        "async_track_time_interval",
-        lambda _hass, _takt, abstand: gestartet.append(abstand) or (lambda: None),
-    )
+async def test_schnelle_abfrage_laeuft_ohne_angabe_alle_drei_sekunden(hass, entry):
+    await setup_integration(hass, entry)
 
+    assert hass.schnelltakte == [timedelta(seconds=3)]
+
+
+async def test_takt_folgt_der_einstellung(hass, entry):
     entry.data["schnell_intervall"] = 5
     await setup_integration(hass, entry)
-    assert gestartet == [timedelta(seconds=5)]
+
+    assert hass.schnelltakte == [timedelta(seconds=5)]
 
 
-async def test_ohne_angabe_gibt_es_keine_schnelle_abfrage(hass, entry, monkeypatch):
-    gestartet: list[timedelta] = []
-    monkeypatch.setattr(
-        eta_heating_ws,
-        "async_track_time_interval",
-        lambda _hass, _takt, abstand: gestartet.append(abstand) or (lambda: None),
-    )
-
-    await setup_integration(hass, entry)
-    entry.data["schnell_intervall"] = 30
+async def test_null_schaltet_die_schnelle_abfrage_aus(hass, entry):
+    entry.data["schnell_intervall"] = 0
     await setup_integration(hass, entry)
 
-    assert gestartet == [], "aus ist die Vorgabe, und so oft wie die volle Abfrage lohnt nicht"
+    assert hass.schnelltakte == []
+
+
+async def test_takt_laeuft_nur_wenn_er_kuerzer_ist_als_das_abfrageintervall(hass, entry):
+    """Sonst liest die volle Abfrage dieselben Werte ohnehin so oft."""
+    entry.data["scan_interval"] = 3
+    await setup_integration(hass, entry)
+    entry.data["scan_interval"] = 1
+    await setup_integration(hass, entry)
+
+    assert hass.schnelltakte == []
 
 
 def test_einstellung_steht_im_dialog():
@@ -180,7 +192,7 @@ def test_einstellung_steht_im_dialog():
 
     for schema in (_connection_schema({}), _options_schema({})):
         felder = {str(k): k for k in schema.schema}
-        assert felder["schnell_intervall"].default() == DEFAULT_SCHNELL_INTERVALL == 0
+        assert felder["schnell_intervall"].default() == DEFAULT_SCHNELL_INTERVALL == 3
 
     assert _options_schema({"schnell_intervall": 5}).schema  # baut mit gespeichertem Wert
     assert MIN_SCAN_INTERVAL == 1
