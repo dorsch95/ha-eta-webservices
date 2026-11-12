@@ -477,8 +477,16 @@ class _Anlagenschritte:
         return await self._nach_zeitplaene()
 
     async def _nach_zeitplaene(self) -> ConfigFlowResult:
+        """Fragt nach den Verbindungen, wenn es etwas zu wählen gibt.
+
+        Sonst bleibt die bisherige Auswahl stehen. Konfigurieren ersetzt
+        die gespeicherten Optionen im Ganzen - ohne das Mitnehmen gälte
+        danach wieder die ältere Auswahl aus dem Einrichten.
+        """
         if braucht_auswahl(self._data[CONF_COMPONENTS]):
             return await self.async_step_verbindungen()
+        if self._bisher.get(CONF_VERBINDUNGEN):
+            self._data[CONF_VERBINDUNGEN] = self._bisher[CONF_VERBINDUNGEN]
         return self._fertig(self._data)
 
     async def async_step_verbindungen(

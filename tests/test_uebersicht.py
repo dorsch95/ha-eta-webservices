@@ -100,6 +100,12 @@ def test_felder_nur_wo_es_etwas_zu_waehlen_gibt():
     assert "solar" not in felder(["kessel", "puffer", "fernleitung", "solar"]), "nur ein Puffer als Ziel"
 
 
+def test_fernleitung_ohne_puffer_wird_gefragt():
+    assert braucht_auswahl(["kessel", "fernleitung", "hk1"]), "der Heizkreis kann vor oder hinter ihr hängen"
+    assert felder(["kessel", "fernleitung", "hk1"]) == ["hk1"]
+    assert not braucht_auswahl(["kessel", "fernleitung"]), "ohne Verbraucher gibt es nichts zu wählen"
+
+
 FUB_NAMEN = {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "PufferFlex 2"}
 
 
@@ -162,6 +168,17 @@ async def test_ohne_menuebaum_bleibt_die_auswahl(monkeypatch):
 
     assert fertig["type"] == "create_entry"
     assert fertig["data"]["verbindungen"] == {"puffer2": "kessel"}
+
+
+async def test_ohne_schritt_bleibt_die_letzte_auswahl(monkeypatch):
+    """Konfigurieren ersetzt die Optionen im Ganzen - die Auswahl darf dabei nicht verloren gehen."""
+    bisher = {"verbindungen": {"hk1": "kessel"}}
+    flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "hk1"]))
+
+    fertig = await flow.async_step_fub_names({**FUB_NAMEN, "hk": "HK"})
+
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["verbindungen"] == {"hk1": "kessel"}
 
 
 async def uebersicht(hass):

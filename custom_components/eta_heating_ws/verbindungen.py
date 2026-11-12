@@ -126,12 +126,15 @@ def verbindungen(komponenten, gespeichert: dict[str, str] | None = None) -> dict
 
 
 def braucht_auswahl(komponenten) -> bool:
-    """Gibt es etwas zu wählen? Erst mit zwei Puffern oder mit Puffer und Fernleitung.
+    """Gibt es etwas zu wählen? Erst mit zwei Puffern oder mit einer Fernleitung.
 
     Mit einem einzigen Puffer stimmt die Vorgabe so gut wie immer, und der
-    Dialog bleibt um einen Schritt kürzer.
+    Dialog bleibt um einen Schritt kürzer. Eine Fernleitung macht es immer
+    mehrdeutig, auch ohne Puffer: Ein Heizkreis kann vor oder hinter ihr
+    hängen.
     """
-    return sum(k in PUFFER_SPEICHER or k == FERNLEITUNG for k in komponenten) >= 2
+    mehrdeutig = FERNLEITUNG in komponenten or len(_puffer(komponenten)) >= 2
+    return mehrdeutig and bool(felder(komponenten))
 
 
 def felder(komponenten) -> list[str]:
