@@ -72,11 +72,10 @@ const TEXTE = {
     warmwasser: "Warmwasser",
     warmwasser_zustand: "Warmwasser Zustand",
     fwm: "Frischwassermodul",
-    temperatur_modul: "Temperatur am Modul",
+    temperatur_modul: "WW-Temperatur",
     speichertemperatur: "Speichertemperatur",
     zirkulation: "Zirkulation",
     durchfluss: "Durchfluss",
-    pufferpumpe: "Pufferpumpe",
     zirkulation_laeuft: "Zirkulation läuft",
     zapfung: "Zapfung läuft",
     warmwasser_im_puffer: "Warmwasser im Puffer",
@@ -174,11 +173,10 @@ const TEXTE = {
     warmwasser: "Hot water",
     warmwasser_zustand: "Hot water state",
     fwm: "Fresh water module",
-    temperatur_modul: "Temperature at the module",
+    temperatur_modul: "Hot water temperature",
     speichertemperatur: "Tank temperature",
     zirkulation: "Circulation",
     durchfluss: "Flow",
-    pufferpumpe: "Buffer pump",
     zirkulation_laeuft: "Circulation running",
     zapfung: "Hot water running",
     warmwasser_im_puffer: "Hot water in buffer",
@@ -970,7 +968,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
         zirkuliert,
         ladepumpe,
         durchfluss,
-        drehzahl,
         laedt: !fwm && (ladepumpe ? an(ladepumpe) : WARMWASSER_LAEDT.includes(zustand?.roh)),
         fliesst,
         zapft: Boolean(gemessen || pufferpumpe) && fliesst && !zirkuliert,
@@ -1416,7 +1413,7 @@ class EtaUebersichtKarte extends HTMLElement {
         ${this._zeilen([...(p.kombi ? [[t.warmwasser, p.kombi.temperatur], [t.warmwasser_zustand, p.kombi.zustand]] : []), ...(p.ladung && p.fuehler.length ? [[t.oben, p.fuehler[0]], ...(p.fuehler.length > 1 ? [[t.unten, p.fuehler[p.fuehler.length - 1]]] : [])] : []), [t.ladepumpe, p.ladepumpe]])}`),
       warmwasser: (w) => kachel(w, this._warmwasserMerkmale(w), this._chip(...this._warmwasserStatus(w)), `
         <div class="eta-buehne" ${this._info(w.temperatur)}>${this._warmwasserBild(w, w.bauart === "fwm" ? 124 : 96, 108)}${this._haupt(w.bauart === "fwm" ? t.temperatur_modul : t.speichertemperatur, w.temperatur)}</div>
-        ${this._zeilen([[t.ladepumpe, w.ladepumpe], [t.pufferpumpe, w.drehzahl], [t.durchfluss, w.durchfluss], [t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
+        ${this._zeilen([[t.ladepumpe, w.ladepumpe], [t.durchfluss, w.durchfluss], [t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
       heizkreis: (h) => kachel(h, h.heizt ? "data-aktiv" : "", this._chip(this._heizkreisStatus(h), h.heizt), `
         <div class="eta-buehne" ${h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf)}>${this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 132)}${this._haupt(t.vorlauf, h.vorlauf)}</div>
         ${this._zeilen([[t.raum, h.raum && h.raumSoll && !(anlage.schreiben && h.soll) ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}
