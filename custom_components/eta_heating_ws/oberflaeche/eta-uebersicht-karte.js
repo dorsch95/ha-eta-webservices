@@ -17,6 +17,8 @@ const ANSICHTEN = ["kacheln", "anlagenbild", "kompakt"];
 const NEU_FRAGEN_NACH = 300000;
 const NOCHMAL_NACH = 30000;
 const LEISTUNG_AB = 0.05;
+const SOLL_SENDEN_NACH = 700;
+const SOLL_WARTEN = 8000;
 
 const TEXTE = {
   de: {
@@ -77,6 +79,9 @@ const TEXTE = {
     heizkreis: "Heizkreis",
     vorlauf: "Vorlauf",
     raum: "Raum",
+    raum_soll: "Raum Soll",
+    waermer: "wärmer",
+    kaelter: "kälter",
     zeitprogramm: "Zeitprogramm",
     anforderung: "Anforderung",
     heizt: "Heizt",
@@ -165,6 +170,9 @@ const TEXTE = {
     heizkreis: "Heating circuit",
     vorlauf: "Flow",
     raum: "Room",
+    raum_soll: "Room target",
+    waermer: "warmer",
+    kaelter: "cooler",
     zeitprogramm: "Schedule",
     anforderung: "Demand",
     heizt: "Heating",
@@ -301,6 +309,13 @@ const STIL = `
   .eta-modus { min-height: 48px; padding: 4px 2px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font: inherit; font-size: 11px; font-weight: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
   .eta-modus .eta-icon { width: 18px; height: 18px; }
   .eta-modus[aria-pressed="true"] { background: var(--akzent); color: var(--auf-akzent); }
+
+  .eta-soll { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 12px; background: var(--flaeche); }
+  .eta-soll span { flex: 1; min-width: 0; color: var(--text-2); }
+  .eta-soll b { min-width: 68px; text-align: center; font-size: 17px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .eta-rund { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: var(--karte); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .eta-rund:disabled { opacity: .4; cursor: default; }
+  .eta-rund:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
   .eta-tank { width: 100%; display: flex; flex-direction: column; align-items: center; }
   .eta-tank-stutzen { width: 30%; height: 9px; border-radius: 5px 5px 0 0; background: var(--metall); }
@@ -457,6 +472,11 @@ const STIL = `
   .eta-liste { display: flex; flex-direction: column; }
   .eta-reihe { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 0; border-top: 1px solid var(--rand); }
   .eta-reihe:first-child { border-top: 0; }
+  .eta-reihe[data-aktion] { cursor: pointer; }
+  .eta-reihe[data-aktion]:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+  .eta-pfeil { color: var(--text-2); transition: transform .2s; }
+  [aria-expanded="true"] .eta-pfeil { transform: rotate(180deg); }
+  .eta-klappe { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 14px; }
   .eta-symbol { width: 36px; height: 36px; flex: none; border-radius: 10px; background: var(--flaeche); display: flex; align-items: center; justify-content: center; color: var(--text-2); }
   .eta-symbol[data-an] { background: var(--akzent); color: var(--auf-akzent); }
   .eta-reihe-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -502,6 +522,9 @@ const ICON = {
   besen: sym('<path d="M14.5 3.5l6 6"/><path d="M12 6l6 6-4.5 4.5-6-6z"/><path d="M7.5 10.5L3 20.5l10-4.5"/>'),
   box: sym('<path d="M4 8h16l-1.5 11h-13z"/><path d="M9 8V5h6v3"/>'),
   thermo: sym('<path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0z"/>'),
+  minus: sym('<path d="M6 12h12"/>'),
+  plus: sym('<path d="M12 6v12M6 12h12"/>'),
+  pfeil: sym('<path d="M6 9l6 6 6-6"/>', "eta-pfeil"),
   haken: sym('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   warn: sym('<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.01"/>'),
   umlauf: sym(UMLAUF),
@@ -875,6 +898,9 @@ function anlageLesen(hass, struktur, t, fussboden) {
         programm: wert(`${praefix}_zeitprogramm`),
         modus: modus && modus.state !== "unavailable" && modus.state !== "unknown" ? { id: modus.entity_id, wert: modus.state } : null,
         thermostat: thermostat?.entity_id || null,
+        soll: typeof raumSoll === "number"
+          ? { wert: raumSoll, min: thermostat.attributes.min_temp ?? 10, max: thermostat.attributes.max_temp ?? 30, schritt: thermostat.attributes.target_temp_step || 0.5 }
+          : null,
       };
     },
     lager() {
@@ -938,12 +964,15 @@ class EtaUebersichtKarte extends HTMLElement {
     this._staende = {};
     this._gezeichnet = "";
     this._frage = null;
+    this._offen = null;
+    this._wunsch = {};
+    this._sollTakt = {};
     this._kanten = [];
     this._gemessen = "";
     this._beobachter = new ResizeObserver(() => this._leitungen(true));
     this.shadowRoot.addEventListener("click", (ereignis) => this._klick(ereignis));
     this.shadowRoot.addEventListener("keydown", (ereignis) => {
-      if ((ereignis.key === "Enter" || ereignis.key === " ") && ereignis.target.matches?.("[data-info]:not(button)")) {
+      if ((ereignis.key === "Enter" || ereignis.key === " ") && ereignis.target.matches?.("[data-info]:not(button), [data-aktion]:not(button)")) {
         ereignis.preventDefault();
         this._klick(ereignis);
       }
@@ -1144,6 +1173,21 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<div class="eta-modi" role="group" aria-label="${e(t.betriebsart)} ${e(heizkreis.name)}">${MODI.map(([modus, symbol]) => `<button type="button" class="eta-modus" data-aktion="modus" data-ziel="${e(heizkreis.modus.id)}" data-modus="${modus}" aria-pressed="${heizkreis.modus.wert === modus}">${ICON[symbol]}<span>${e(t[`modus_${modus}`])}</span></button>`).join("")}</div>`;
   }
 
+  /**
+   * Raum Soll mit zwei Tasten - nur mit Schreibzugriff und Thermostat.
+   * Gezeigt wird sofort der gewünschte Wert, siehe _sollStellen.
+   */
+  _raumSoll(h, anlage) {
+    const t = this._t;
+    if (!anlage.schreiben || !h.soll || !h.thermostat) return "";
+    const wunsch = this._wunsch[h.thermostat];
+    if (wunsch && (wunsch.bis < Date.now() || Math.abs(wunsch.wert - h.soll.wert) < 0.01)) delete this._wunsch[h.thermostat];
+    const wert = this._wunsch[h.thermostat]?.wert ?? h.soll.wert;
+    const text = `${wert.toLocaleString(this._hass.locale?.language || "de", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} °C`;
+    const taste = (ziel, symbol, name) => `<button type="button" class="eta-rund" data-aktion="soll" data-ziel="${e(h.thermostat)}" data-wert="${ziel}" aria-label="${e(name)}" ${ziel < h.soll.min || ziel > h.soll.max ? "disabled" : ""}>${ICON[symbol]}</button>`;
+    return `<div class="eta-soll" role="group" aria-label="${e(t.raum_soll)} ${e(h.name)}"><span>${e(t.raum_soll)}</span>${taste(wert - h.soll.schritt, "minus", t.kaelter)}<b>${e(text)}</b>${taste(wert + h.soll.schritt, "plus", t.waermer)}</div>`;
+  }
+
   _heizkreisStatus(h) {
     const t = this._t;
     if (h.modus?.wert === "aus") return t.aus;
@@ -1202,7 +1246,8 @@ class EtaUebersichtKarte extends HTMLElement {
         ${this._zeilen([[t.ladepumpe, w.ladepumpe], [t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
       heizkreis: (h) => kachel(h, h.heizt ? "data-aktiv" : "", this._chip(this._heizkreisStatus(h), h.heizt), `
         <div class="eta-buehne" ${h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf)}>${this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 132)}${this._haupt(t.vorlauf, h.vorlauf)}</div>
-        ${this._zeilen([[t.raum, h.raum && h.raumSoll ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}
+        ${this._zeilen([[t.raum, h.raum && h.raumSoll && !(anlage.schreiben && h.soll) ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}
+        ${this._raumSoll(h, anlage)}
         ${this._modi(h, anlage)}`),
       lager: (l) => kachel(l, l.foerdert ? "data-foerdert" : "", l.zustand ? this._chip(l.zustand.text, l.foerdert) : "", `
         <div class="eta-buehne" ${this._info(l.vorrat)}>${this._figur(lagerBild(l.anteil ?? 0), 118)}${this._haupt(t.vorrat, l.vorrat, l.anteil !== null && l.maximum ? `${Math.round(l.anteil * 100)} % ${t.von} ${l.maximum.text}` : "")}</div>
@@ -1362,7 +1407,13 @@ class EtaUebersichtKarte extends HTMLElement {
         (p === erster ? "" : zeile("thermo", p.laedt, p.name, [p.energie?.text, p.zustand?.text].filter(Boolean).join(" · "), p.ladung || p.fuehler[0])) +
         (p.kombi ? zeile("tropfen", p.kombi.laedt, mehrere ? `${t.warmwasser} ${p.name}` : t.warmwasser_im_puffer, p.kombi.zustand?.text || "", p.kombi.temperatur) : ""),
       warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur),
-      heizkreis: (h) => zeile("heizung", h.heizt, h.name, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h), h.raum ? `${t.raum} ${h.raum.text}` : ""].filter(Boolean).join(" · "), h.vorlauf),
+      heizkreis: (h) => {
+        const neben = [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h), h.raum ? `${t.raum} ${h.raum.text}` : ""].filter(Boolean).join(" · ");
+        const stellen = `${this._raumSoll(h, anlage)}${this._modi(h, anlage)}`;
+        if (!stellen) return zeile("heizung", h.heizt, h.name, neben, h.vorlauf);
+        const offen = this._offen === h.id;
+        return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${h.heizt ? "data-an" : ""}>${ICON.heizung}</span><div class="eta-reihe-text"><b>${e(h.name)}</b><span>${e(neben)}</span></div><span class="eta-reihe-wert">${e(h.vorlauf ? h.vorlauf.text : "–")}</span>${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
+      },
       lager: (l) => zeile("lager", l.foerdert, l.name, l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : "", l.vorrat, balken(l.anteil, "pellet")),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
@@ -1397,6 +1448,24 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
+   * Stellt Raum Soll. Die Karte zeigt den neuen Wert sofort und schickt
+   * ihn erst nach einer kurzen Pause - wer mehrmals tippt, schreibt nur
+   * einmal auf die Anlage. Kommt der Wert nicht zurück, steht nach ein
+   * paar Sekunden wieder der alte da.
+   */
+  _sollStellen(thermostat, wert) {
+    this._wunsch[thermostat] = { wert, bis: Date.now() + SOLL_WARTEN };
+    clearTimeout(this._sollTakt[thermostat]);
+    this._sollTakt[thermostat] = setTimeout(() => {
+      this._hass.callService("climate", "set_temperature", { entity_id: thermostat, temperature: wert });
+      setTimeout(() => {
+        this._neuZeichnen = true;
+        this._zeichnen();
+      }, SOLL_WARTEN);
+    }, SOLL_SENDEN_NACH);
+  }
+
+  /**
    * Führt eine Taste aus. Entaschen und das Abbrechen des Aschebox-Plans
    * fragen vorher in der Karte nach, wie die bisherige Karte.
    */
@@ -1408,6 +1477,10 @@ class EtaUebersichtKarte extends HTMLElement {
       dienst("switch", knopf.getAttribute("aria-pressed") === "true" ? "turn_off" : "turn_on", { entity_id: entitaeten.kessel_schalter });
     } else if (aktion === "modus") {
       dienst("select", "select_option", { entity_id: knopf.dataset.ziel, option: knopf.dataset.modus });
+    } else if (aktion === "aufklappen") {
+      this._offen = this._offen === knopf.dataset.teil ? null : knopf.dataset.teil;
+    } else if (aktion === "soll") {
+      this._sollStellen(knopf.dataset.ziel, Number(knopf.dataset.wert));
     } else if (aktion === "entaschen" || aktion === "plan") {
       this._frage = aktion;
     } else if (aktion === "ja" || aktion === "nein") {
