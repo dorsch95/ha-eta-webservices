@@ -13,6 +13,7 @@
  */
 
 const KARTE = "eta-uebersicht-karte";
+const ZEITKARTE = "eta-zeitprogramm-karte";
 const ANSICHTEN = ["kacheln", "anlagenbild", "kompakt"];
 const NEU_FRAGEN_NACH = 300000;
 const NOCHMAL_NACH = 15000;
@@ -122,6 +123,8 @@ const TEXTE = {
     bestellen_bis: "Bestellen bis",
     verbrauch_heute: "Verbrauch heute",
     schliessen: "Schließen",
+    zeiten: "Zeiten einstellen",
+    zeitprogramm: "Zeitprogramm",
     weitere: "weitere",
   },
   en: {
@@ -223,6 +226,8 @@ const TEXTE = {
     bestellen_bis: "Order by",
     verbrauch_heute: "Used today",
     schliessen: "Close",
+    zeiten: "Set times",
+    zeitprogramm: "Time program",
     weitere: "more",
   },
 };
@@ -369,6 +374,18 @@ const STIL = `
   .eta-soll b { min-width: 68px; text-align: center; font-size: 17px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .eta-rund { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: var(--karte); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .eta-rund:disabled { opacity: .4; cursor: default; }
+  .eta-zeit { width: 32px; height: 32px; background: var(--flaeche); color: var(--text-2); }
+  .eta-zeit svg { width: 18px; height: 18px; }
+  .eta-kopf-rechts { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+  .eta-name .eta-zeit, .eta-label .eta-zeit { display: inline-flex; vertical-align: middle; width: 26px; height: 26px; margin: -5px 0 -3px 6px; }
+  .eta-name .eta-zeit svg, .eta-label .eta-zeit svg { width: 15px; height: 15px; }
+  .eta-dialog { border: 0; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); border-radius: 16px; overflow: auto; background: var(--card-background-color, #fff); color: var(--text); box-shadow: 0 24px 60px -12px rgba(0, 0, 0, .45); }
+  .eta-dialog::backdrop { background: rgba(0, 0, 0, .5); }
+  .eta-dialog-kopf { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 0 16px; background: var(--card-background-color, #fff); }
+  .eta-dialog-kopf b { font-size: 15px; font-weight: 500; color: var(--text-2); }
+  .eta-dialog-kopf .eta-rund { width: 40px; height: 40px; background: transparent; }
+  .eta-dialog-inhalt { --ha-card-border-width: 0; --ha-card-box-shadow: none; --ha-card-background: transparent; }
+  .eta-dialog-inhalt > * { display: block; }
   .eta-rund:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
   .eta-tank { width: 100%; display: flex; flex-direction: column; align-items: center; }
@@ -1067,8 +1084,15 @@ class EtaUebersichtKarte extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this.shadowRoot.innerHTML = `<style>${STIL}</style><div class="eta"></div>`;
+    this.shadowRoot.innerHTML = `<style>${STIL}</style><div class="eta"></div><dialog class="eta-dialog"><div class="eta-dialog-kopf"><b></b><button type="button" class="eta-rund" data-aktion="dialog-zu">${ICON.zu}</button></div><div class="eta-dialog-inhalt"></div></dialog>`;
     this._wurzel = this.shadowRoot.querySelector(".eta");
+    this._dialog = this.shadowRoot.querySelector(".eta-dialog");
+    this._zeitKarte = null;
+    this._zurueck = () => this._zeitenSchliessen(true);
+    this._dialog.addEventListener("close", () => this._zeitenSchliessen());
+    this._dialog.addEventListener("click", (ereignis) => {
+      if (ereignis.target === this._dialog) this._zeitenSchliessen();
+    });
     this._konfig = {};
     this._anlagen = null;
     this._struktur = null;
@@ -1145,6 +1169,7 @@ class EtaUebersichtKarte extends HTMLElement {
     this._sprache = sprache_;
     this._hass = hass;
     this.toggleAttribute("dunkel", Boolean(hass?.themes?.darkMode));
+    if (this._zeitKarte) this._zeitKarte.hass = hass;
     this._fragen();
     this._zeichnen();
   }
@@ -1168,6 +1193,7 @@ class EtaUebersichtKarte extends HTMLElement {
   /** Ein Raum Soll, das noch auf seine Pause wartet, geht vorher noch an die Anlage. */
   disconnectedCallback() {
     this._beobachter.disconnect();
+    this._zeitenSchliessen();
     Object.keys(this._sollTakt).forEach((thermostat) => this._sollSenden(thermostat));
     this._wunsch = {};
   }
@@ -1194,10 +1220,12 @@ class EtaUebersichtKarte extends HTMLElement {
    * einmal, solange keine Anlage da ist - nach einem Neustart lädt die
    * Integration erst nach der Oberfläche -, ohne Antwort und wenn eine
    * der genannten Entitäten fehlt: Dann wurde die Anlage gerade neu
-   * eingerichtet.
+   * eingerichtet. Ebenso, solange die Integration die Zeitprogramme
+   * noch prüft - das tut sie nach dem Start im Hintergrund, und erst
+   * danach steht fest, wo der Knopf für die Zeiten hingehört.
    */
   async _fragen() {
-    const steht = this._struktur && !this._struktur.leer && !this._struktur.fehlt && !this._veraltet && !this._fehler;
+    const steht = this._struktur && !this._struktur.leer && !this._struktur.fehlt && !this._veraltet && !this._fehler && this._struktur.zeitprogramme_bereit !== false;
     const abstand = steht ? NEU_FRAGEN_NACH : NOCHMAL_NACH;
     if (this._fragt || !this._hass?.callWS || (this._gefragt && Date.now() - this._gefragt < abstand)) return;
     this._fragt = true;
@@ -1290,6 +1318,16 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /* Bausteine */
+
+  /**
+   * Der Knopf, der die Zeiten eines Teils öffnet - Heizzeiten, Ladezeiten,
+   * Zirkulation. Nur, wo die Anlage beschreibbare Zeitprogramme führt;
+   * die nennt die Integration nur mit Schreibzugriff.
+   */
+  _zeitKnopf(teil) {
+    if (!teil.programme?.length) return "";
+    return `<button type="button" class="eta-rund eta-zeit" data-aktion="zeiten" data-teil="${e(teil.id)}" title="${e(this._t.zeiten)}" aria-label="${e(this._t.zeiten)}: ${e(teil.name)}">${ICON.uhr}</button>`;
+  }
 
   _info(w) {
     return w?.id ? `data-info="${e(w.id)}" tabindex="0" role="button"` : "";
@@ -1418,7 +1456,7 @@ class EtaUebersichtKarte extends HTMLElement {
 
   _kacheln(anlage) {
     const t = this._t;
-    const kachel = (teil, merkmale, kopf, inhalt) => `<article class="eta-kachel" data-art="${teil.art}" ${merkmale}><header class="eta-kachelkopf"><h3>${e(teil.name)}</h3>${kopf}</header>${inhalt}</article>`;
+    const kachel = (teil, merkmale, kopf, inhalt) => `<article class="eta-kachel" data-art="${teil.art}" ${merkmale}><header class="eta-kachelkopf"><h3>${e(teil.name)}</h3><span class="eta-kopf-rechts">${kopf}${this._zeitKnopf(teil)}</span></header>${inhalt}</article>`;
     const zeichnen = {
       kessel: (k) => kachel(k, `data-zustand="${k.bild}"`, k.zustand ? this._chip(k.zustand.text, k.bild !== "aus" && k.bild !== "stoerung", k.bild === "stoerung" ? "stoer" : "") : "", `
         <div class="eta-buehne" ${this._info(k.temperatur)}>${this._figur(kesselBild(), 90)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
@@ -1491,14 +1529,14 @@ class EtaUebersichtKarte extends HTMLElement {
       const mehrere = anlage.teile.filter((x) => x.art === "puffer" || x.art === "fernleitung").length > 1;
       return mehrere && von && nachId[von].art !== "kessel" ? `<span class="eta-anschluss"> · ${e(t.an_teil)} ${e(nachId[von].name)}</span>` : "";
     };
-    const schild = (teil, w, neben, text = null) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}</span><span class="eta-zahl">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span></div>`;
+    const schild = (teil, w, neben, text = null) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}${this._zeitKnopf(teil)}</span><span class="eta-zahl">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span></div>`;
     const station = (teil, klasse, merkmale, info, bild, text) => `<div class="eta-station ${klasse}" data-id="${teil.id}" data-art="${teil.art}" ${merkmale} ${info}>${bild}${text}</div>`;
     const rang = { solar: 1, kessel: 0, brenner: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
       kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
-      solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
+      solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "))),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
@@ -1634,20 +1672,20 @@ class EtaUebersichtKarte extends HTMLElement {
     const kessel = anlage.teile.find((teil) => teil.art === "kessel");
     const erster = anlage.teile.find((teil) => teil.art === "puffer");
     const mehrere = anlage.teile.filter((teil) => teil.art === "puffer").length > 1;
-    const zeile = (symbol, an, name, neben, w, extra = "") => `<div class="eta-reihe" ${this._info(w)}><span class="eta-symbol" ${an ? "data-an" : ""}>${ICON[symbol]}</span><div class="eta-reihe-text"><b>${e(name)}</b>${extra}${neben ? `<span>${e(neben)}</span>` : ""}</div><span class="eta-reihe-wert">${e(w ? w.text : "–")}</span></div>`;
+    const zeile = (symbol, an, name, neben, w, extra = "", knopf = "") => `<div class="eta-reihe" ${this._info(w)}><span class="eta-symbol" ${an ? "data-an" : ""}>${ICON[symbol]}</span><div class="eta-reihe-text"><b>${e(name)}</b>${extra}${neben ? `<span>${e(neben)}</span>` : ""}</div><span class="eta-reihe-wert">${e(w ? w.text : "–")}</span>${knopf}</div>`;
     const balken = (anteil, art = "") => (anteil === null ? "" : `<div class="eta-balken" ${art ? `data-art="${art}"` : ""}><i style="width:${(anteil * 100).toFixed(1)}%"></i></div>`);
     const reihen = {
       kessel: () => "",
       puffer: (p) =>
-        (p === erster ? "" : zeile("thermo", p.laedt, p.name, p.zustand?.text || "", p.ladung || p.fuehler[0])) +
+        (p === erster ? "" : zeile("thermo", p.laedt, p.name, p.zustand?.text || "", p.ladung || p.fuehler[0], "", this._zeitKnopf(p))) +
         (p.kombi ? zeile("tropfen", p.kombi.laedt, mehrere ? `${t.warmwasser} ${p.name}` : t.warmwasser_im_puffer, p.kombi.zustand?.text || "", p.kombi.temperatur) : ""),
-      warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur),
+      warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur, "", this._zeitKnopf(w)),
       heizkreis: (h) => {
         const neben = [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h), h.raum ? `${t.raum} ${h.raum.text}` : ""].filter(Boolean).join(" · ");
         const stellen = this._stellen(h, anlage);
-        if (!stellen) return zeile("heizung", h.heizt, h.name, neben, h.vorlauf);
+        if (!stellen) return zeile("heizung", h.heizt, h.name, neben, h.vorlauf, "", this._zeitKnopf(h));
         const offen = this._offen === h.id;
-        return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${h.heizt ? "data-an" : ""}>${ICON.heizung}</span><div class="eta-reihe-text"><b>${e(h.name)}</b><span>${e(neben)}</span></div><span class="eta-reihe-wert">${e(h.vorlauf ? h.vorlauf.text : "–")}</span>${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
+        return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${h.heizt ? "data-an" : ""}>${ICON.heizung}</span><div class="eta-reihe-text"><b>${e(h.name)}</b><span>${e(neben)}</span></div><span class="eta-reihe-wert">${e(h.vorlauf ? h.vorlauf.text : "–")}</span>${this._zeitKnopf(h)}${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
       },
       lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet")),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
@@ -1658,7 +1696,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
     const titel = this._konfig.titel ?? t.titel;
     const pufferTeil = erster
-      ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.zustand?.text ? `<span class="eta-neben">${e(erster.zustand.text)}</span>` : ""}</div></div>`
+      ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}${this._zeitKnopf(erster)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.zustand?.text ? `<span class="eta-neben">${e(erster.zustand.text)}</span>` : ""}</div></div>`
       : "";
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
       ${this._banner(anlage)}
@@ -1727,6 +1765,44 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
+   * Öffnet die Zeiten eines Teils in einem Fenster über dem Dashboard:
+   * die Karte ETA Zeitprogramm, beschränkt auf die Programme dieses
+   * Teils. Sie liest und schreibt selbst, die Übersicht reicht ihr nur
+   * Home Assistant weiter.
+   *
+   * Das Fenster trägt einen Eintrag in den Verlauf des Browsers ein. So
+   * schließt "Zurück" am Handy das Fenster, statt das Dashboard zu
+   * verlassen.
+   */
+  _zeitenOeffnen(teilId) {
+    const teil = this._struktur?.teile?.find((x) => x.id === teilId);
+    if (!teil?.programme?.length || this._zeitKarte || !customElements.get(ZEITKARTE)) return;
+    const karte = document.createElement(ZEITKARTE);
+    karte.setConfig({ programme: teil.programme, anlage: this._struktur.eintrag, titel: this._t.zeitprogramm });
+    karte.hass = this._hass;
+    this._zeitKarte = karte;
+    this._dialog.querySelector("b").textContent = teilName(teil, this._struktur.teile, this._t);
+    this._dialog.querySelector("[data-aktion]").setAttribute("aria-label", this._t.schliessen);
+    this._dialog.querySelector(".eta-dialog-inhalt").replaceChildren(karte);
+    this._dialog.showModal();
+    history.pushState({ etaZeiten: true }, "");
+    window.addEventListener("popstate", this._zurueck);
+  }
+
+  /**
+   * Schließt das Fenster mit den Zeiten. vonZurueck: "Zurück" hat den
+   * Eintrag im Verlauf schon genommen - sonst nimmt ihn das Schließen.
+   */
+  _zeitenSchliessen(vonZurueck = false) {
+    if (!this._zeitKarte) return;
+    window.removeEventListener("popstate", this._zurueck);
+    this._zeitKarte = null;
+    this._dialog.querySelector(".eta-dialog-inhalt").replaceChildren();
+    if (this._dialog.open) this._dialog.close();
+    if (!vonZurueck && history.state?.etaZeiten) history.back();
+  }
+
+  /**
    * Führt eine Taste aus. Entaschen und das Abbrechen des Aschebox-Plans
    * fragen vorher in der Karte nach, wie die bisherige Karte. Nach
    * allem, was die Karte umbaut, ruht sie kurz, siehe _klick.
@@ -1734,6 +1810,14 @@ class EtaUebersichtKarte extends HTMLElement {
   _aktion(knopf) {
     const aktion = knopf.dataset.aktion;
     if (["aufklappen", "entaschen", "plan", "ja", "nein"].includes(aktion)) this._ruhigBis = Date.now() + DOPPELTIPP;
+    if (aktion === "zeiten") {
+      this._zeitenOeffnen(knopf.dataset.teil);
+      return;
+    }
+    if (aktion === "dialog-zu") {
+      this._zeitenSchliessen();
+      return;
+    }
     const entitaeten = this._struktur?.entitaeten || {};
     const dienst = (bereich, name, daten) => this._hass.callService(bereich, name, daten);
     if (aktion === "kessel" && entitaeten.kessel_schalter) {

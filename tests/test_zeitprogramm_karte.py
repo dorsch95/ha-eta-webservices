@@ -54,6 +54,24 @@ async def befehl(hass, handler, **nachricht):
     return verbindung
 
 
+async def test_karte_fragt_nach_einzelnen_programmen(hass, entry, menu_xml):
+    """So öffnet die Karte ETA Übersicht die Zeiten eines einzelnen Teils."""
+    await aufbauen(hass, entry, menu_xml)
+
+    async def programme(**auswahl):
+        verbindung = await befehl(
+            hass, _ws_zeitprogramme, type="eta_heating_ws/zeitprogramme", ohne_zeiten=True, **auswahl
+        )
+        [(_, ergebnis)] = verbindung.ergebnisse
+        return [p["programm"] for p in ergebnis["programme"]]
+
+    assert await programme(programme=["hk1"]) == ["hk1"]
+    assert await programme(programme=["hk1"], arten=["warmwasser"]) == ["hk1"], "der Name geht der Art vor"
+    assert await programme(programme=["gibt_es_nicht"]) == []
+    assert await programme(programme=["hk1"], eintrag="testeintrag") == ["hk1"]
+    assert await programme(programme=["hk1"], eintrag="andere_anlage") == []
+
+
 async def test_karte_liest_das_zeitprogramm(hass, entry, menu_xml):
     await aufbauen(hass, entry, menu_xml)
 

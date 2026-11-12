@@ -550,7 +550,22 @@ class EtaZeitprogrammKarte extends HTMLElement {
     return Array.isArray(anzeigen) && anzeigen.length ? anzeigen : ["heizzeiten"];
   }
 
+  /**
+   * Die Programme, auf die die Karte beschränkt ist - so bettet die Karte
+   * ETA Übersicht sie für ein einzelnes Teil der Anlage ein. Sonst null.
+   */
+  _programme_() {
+    const programme = this._konfig.programme;
+    return Array.isArray(programme) && programme.length ? programme.map(String) : null;
+  }
+
   _anfrageText() {
+    const programme = this._programme_();
+    if (programme) {
+      const anfrage = { type: "eta_heating_ws/zeitprogramme", programme };
+      if (this._konfig.anlage) anfrage.eintrag = String(this._konfig.anlage);
+      return JSON.stringify(anfrage);
+    }
     const anfrage = { type: "eta_heating_ws/zeitprogramme", arten: this._arten() };
     if (this._konfig.heizkreis) anfrage.heizkreis = String(this._konfig.heizkreis);
     return JSON.stringify(anfrage);
@@ -562,6 +577,11 @@ class EtaZeitprogrammKarte extends HTMLElement {
    * wählt unter den Heizzeiten einen Heizkreis aus.
    */
   _auswahl() {
+    const programme = this._programme_();
+    if (programme) {
+      const anlage = this._konfig.anlage ? String(this._konfig.anlage) : null;
+      return (this._programme || []).filter((hk) => programme.includes(hk.programm) && (!anlage || hk.eintrag === anlage));
+    }
     const gesucht = String(this._konfig.heizkreis || "").toLowerCase();
     const arten = this._arten();
     return (this._programme || []).filter((hk) => {

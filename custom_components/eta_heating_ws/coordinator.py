@@ -866,6 +866,23 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             if heizkreis in THERMOSTATE:
                 self.bei_neuem_zeitprogramm(heizkreis)
 
+    @property
+    def zeitprogramme_geprueft(self) -> bool:
+        """Ist die erste Prüfung der Zeitprogramme durch? Vorher fehlen sie noch."""
+        return self._erstpruefung is None or self._erstpruefung.done()
+
+    def zeitprogramme_von(self, komponente: str) -> list[str]:
+        """Die beschreibbaren Zeitprogramme eines Teils: Heizzeiten, Ladezeiten, Zirkulation.
+
+        Die Heizzeiten heißen wie ihr Heizkreis. Lade- und
+        Bereitschaftszeiten führt zeitprogramm_namen mit ihrer Komponente.
+        """
+        return [
+            programm
+            for programm in self.zeitprogramm_defs
+            if self.zeitprogramm_namen.get(programm, {}).get("komponente", programm) == komponente
+        ]
+
     async def zeitprogramme_bereit(self) -> None:
         """Wartet, bis die erste Prüfung der Zeitprogramme durch ist.
 

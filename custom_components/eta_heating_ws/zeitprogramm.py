@@ -400,11 +400,21 @@ def _eintrag(hass: HomeAssistant, entry_id: str):
     return None
 
 
-def gewuenscht(coordinator, programm: str, arten: list[str] | None, heizkreis: str | None) -> bool:
+def gewuenscht(
+    coordinator,
+    programm: str,
+    arten: list[str] | None,
+    heizkreis: str | None,
+    programme: list[str] | None = None,
+) -> bool:
     """Zeigt die Karte dieses Programm? Wie ihre Auswahl: Arten, bei Heizzeiten ein Heizkreis.
 
-    Ohne Angaben alle - so fragen die Einstellungen der Karte.
+    Ohne Angaben alle - so fragen die Einstellungen der Karte. programme
+    nennt die Programme beim Namen und geht allem anderen vor: So fragt
+    die Karte ETA Übersicht nach den Zeiten eines einzelnen Teils.
     """
+    if programme is not None:
+        return programm in programme
     art = coordinator.zeitprogramm_art(programm)
     if arten and art not in arten:
         return False
@@ -434,6 +444,8 @@ async def _programm_lesen(eintrag, programm: str) -> dict:
         vol.Optional("ohne_zeiten", default=False): bool,
         vol.Optional("arten"): [str],
         vol.Optional("heizkreis"): vol.Any(None, str),
+        vol.Optional("programme"): [str],
+        vol.Optional("eintrag"): str,
     }
 )
 @websocket_api.async_response
@@ -447,15 +459,24 @@ async def _ws_zeitprogramme(
     nur, welche Programme es gibt, ohne die Heizung nach ihren Zeiten zu
     fragen - für die Einstellungen der Karte. arten und heizkreis: nur,
     was die Karte zeigt, siehe gewuenscht. Jedes Programm kostet rund 30
-    Anfragen, und die Steuerung beantwortet sie nacheinander.
+    Anfragen, und die Steuerung beantwortet sie nacheinander. eintrag:
+    nur diese Anlage.
     """
     auswahl = []
     for eintrag in hass.config_entries.async_loaded_entries(DOMAIN):
+        if msg.get("eintrag") not in (None, eintrag.entry_id):
+            continue
         await eintrag.runtime_data.zeitprogramme_nachpruefen()
         auswahl += [
             (eintrag, programm)
             for programm in list(eintrag.runtime_data.zeitprogramm_defs)
-            if gewuenscht(eintrag.runtime_data, programm, msg.get("arten"), msg.get("heizkreis"))
+            if gewuenscht(
+                eintrag.runtime_data,
+                programm,
+                msg.get("arten"),
+                msg.get("heizkreis"),
+                msg.get("programme"),
+            )
         ]
     if msg.get("ohne_zeiten"):
         programme = [kopf(eintrag, programm) for eintrag, programm in auswahl]

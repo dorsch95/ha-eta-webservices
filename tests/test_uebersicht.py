@@ -201,7 +201,14 @@ async def test_karte_erfaehrt_teile_und_verbindungen(hass, entry):
     teile = {teil["id"]: teil for teil in anlage["teile"]}
     assert list(teile) == ["kessel", "puffer", "fwm", "hk1", "hk2"]
     assert teile["kessel"]["art"] == "kessel" and teile["kessel"]["von"] is None
-    assert teile["puffer"] == {"id": "puffer", "art": "puffer", "nummer": 1, "block": "PufferFlex", "von": "kessel"}
+    assert teile["puffer"] == {
+        "id": "puffer",
+        "art": "puffer",
+        "nummer": 1,
+        "block": "PufferFlex",
+        "von": "kessel",
+        "programme": [],
+    }
     assert teile["hk2"]["art"] == "heizkreis" and teile["hk2"]["nummer"] == 2
     assert teile["hk2"]["von"] == "puffer"
     assert teile["fwm"]["bauart"] == "fwm", "das Frischwassermodul bekommt ein eigenes Bild"
@@ -267,6 +274,33 @@ async def test_karte_findet_entitaeten_ueber_ihren_schluessel(hass, entry):
         "kessel_temperatur": "sensor.keller_kessel",
         "kessel_schalter": "switch.eta_heizung_kessel",
     }
+
+
+async def test_karte_kennt_die_zeitprogramme_jedes_teils(hass, entry):
+    """Für sie zeigt die Karte einen Knopf, der die Zeiten zum Einstellen öffnet."""
+    from . import test_puffer_ohne_kombi as nutzeranlage
+
+    await nutzeranlage.aufbauen(hass, entry)
+
+    [anlage] = await uebersicht(hass)
+    programme = {teil["id"]: teil["programme"] for teil in anlage["teile"]}
+
+    assert programme["puffer"] == ["puffer_12130"], "die Ladezeiten des Puffers"
+    assert programme["fwm"] == ["fwm_12318"], "die Bereitschaftszeiten des Frischwassermoduls"
+    assert anlage["zeitprogramme_bereit"] is True
+
+
+async def test_heizzeiten_stehen_beim_heizkreis(hass, entry, menu_xml):
+    from . import test_zeitprogramm_karte as zeitprogramm
+
+    await zeitprogramm.aufbauen(hass, entry, menu_xml)
+
+    [anlage] = await uebersicht(hass)
+    programme = {teil["id"]: teil["programme"] for teil in anlage["teile"]}
+
+    assert programme["hk1"] == ["hk1"]
+    assert programme["hk2"] == [], "Heizkreis 2 hat an dieser Anlage kein beschreibbares Zeitprogramm"
+    assert programme["kessel"] == []
 
 
 def test_karte_liegt_bei_der_integration():

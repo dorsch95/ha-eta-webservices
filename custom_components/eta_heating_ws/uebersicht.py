@@ -76,6 +76,8 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     Warmwasserspeicher, weil seine Temperatur ohne Zapfen sinkt und ein
     Speicher mit kalten Farben nach "kein Warmwasser" aussähe. Welches von
     beiden es ist, sagt ETADataUpdateCoordinator.frischwassermodul.
+    programme: die beschreibbaren Zeitprogramme dieses Teils - für sie
+    zeigt die Karte einen Knopf, der die Zeiten zum Einstellen öffnet.
     """
     block = coordinator.funktionsblock(komponente)
     teil = {
@@ -84,6 +86,7 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
         "nummer": _nummer(komponente),
         "block": block,
         "von": quelle,
+        "programme": coordinator.zeitprogramme_von(komponente),
     }
     if komponente in WARMWASSER_SPEICHER:
         teil["bauart"] = "fwm" if coordinator.frischwassermodul(komponente) else "speicher"
@@ -155,6 +158,7 @@ def anlage(hass: HomeAssistant, eintrag) -> dict:
         "eintrag": eintrag.entry_id,
         "titel": eintrag.title,
         "schreiben": bool(coordinator.enable_switches),
+        "zeitprogramme_bereit": coordinator.zeitprogramme_geprueft,
         "teile": [
             _teil(
                 coordinator,
