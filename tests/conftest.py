@@ -574,6 +574,26 @@ class FakeEntityRegistry:
         ]
 
 
+class FakeStates:
+    """Die Zustände, soweit die Karte "ETA Übersicht" nach ihnen fragt.
+
+    Jede Entität hat einen Zustand. Steht sie in verwaist, bringt keine
+    Einrichtung sie mehr hervor - Home Assistant führt sie dann aus dem
+    Register weiter und kennzeichnet ihren Zustand mit restored.
+    """
+
+    def __init__(self) -> None:
+        self.verwaist: set[str] = set()
+
+    def get(self, entity_id: str) -> SimpleNamespace:
+        verwaist = entity_id in self.verwaist
+        return SimpleNamespace(
+            entity_id=entity_id,
+            state="unavailable" if verwaist else "unknown",
+            attributes={"restored": True} if verwaist else {},
+        )
+
+
 class FakeHass:
     """Nachbildung der HomeAssistant-Teile, die die Integration benutzt."""
 
@@ -608,6 +628,7 @@ class FakeHass:
         self.data: dict = {}
         self.session = FakeSession(menu)
         self.entity_registry = FakeEntityRegistry()
+        self.states = FakeStates()
         self.is_stopping = False
         self.ereignisse: list[tuple[str, dict]] = []
         self.bus = SimpleNamespace(

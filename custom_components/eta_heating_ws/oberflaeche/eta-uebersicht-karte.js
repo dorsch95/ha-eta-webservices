@@ -923,7 +923,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
         name: mehrere("puffer") ? teil.block : t.puffer,
         fuehler: fuehler.filter(Boolean),
         ladung: wert(`${teil.id}_ladezustand`),
-        energie: wert(`${teil.id}_energieinhalt`),
         ladepumpe: wert(`${teil.id}_ladepumpe`),
         zustand,
         laedt: PUFFER_LAEDT.includes(zustand?.roh),
@@ -1362,7 +1361,7 @@ class EtaUebersichtKarte extends HTMLElement {
         ${k.asche ? `<div class="eta-messung" ${this._info(k.ascheStatus || k.asche)}><div class="eta-messung-kopf"><span>${e(t.aschebox)}</span><b>${k.ascheFaellig ? `<span class="eta-warnzeichen">${ICON.warn}</span>` : ""}${e((k.ascheStatus || k.asche).text)}</b></div>${k.ascheAnteil === null ? "" : `<div class="eta-balken" ${k.ascheFaellig ? 'data-art="warn"' : ""}><i style="width:${(k.ascheAnteil * 100).toFixed(1)}%"></i></div>`}</div>` : ""}
         ${this._bedienung(k, anlage)}`),
       puffer: (p) => kachel(p, "", p.zustand ? this._chip(p.zustand.text, p.laedt) : "", `
-        <div class="eta-buehne" ${this._info(p.ladung || p.fuehler[0])}>${this._pufferBild(p, 112, 208)}${p.ladung ? this._haupt(t.ladezustand, p.ladung, p.energie ? p.energie.text : "") : p.fuehler.length ? this._haupt(t.oben, p.fuehler[0]) : ""}</div>
+        <div class="eta-buehne" ${this._info(p.ladung || p.fuehler[0])}>${this._pufferBild(p, 112, 208)}${p.ladung ? this._haupt(t.ladezustand, p.ladung) : p.fuehler.length ? this._haupt(t.oben, p.fuehler[0]) : ""}</div>
         ${this._zeilen([...(p.kombi ? [[t.warmwasser, p.kombi.temperatur], [t.warmwasser_zustand, p.kombi.zustand]] : []), ...(p.ladung && p.fuehler.length ? [[t.oben, p.fuehler[0]], ...(p.fuehler.length > 1 ? [[t.unten, p.fuehler[p.fuehler.length - 1]]] : [])] : []), [t.ladepumpe, p.ladepumpe]])}`),
       warmwasser: (w) => kachel(w, this._warmwasserMerkmale(w), this._chip(...this._warmwasserStatus(w)), `
         <div class="eta-buehne" ${this._info(w.temperatur)}>${this._warmwasserBild(w, w.bauart === "fwm" ? 124 : 96, 108)}${this._haupt(w.bauart === "fwm" ? t.temperatur_modul : t.speichertemperatur, w.temperatur)}</div>
@@ -1433,7 +1432,7 @@ class EtaUebersichtKarte extends HTMLElement {
       solar: (s) => station(s, "quer links oben", s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
-      puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.energie?.text, p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
+      puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
       heizkreis: (h) => {
         const stellen = this._stellen(h, anlage), offen = this._offen === h.id;
@@ -1568,7 +1567,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const reihen = {
       kessel: () => "",
       puffer: (p) =>
-        (p === erster ? "" : zeile("thermo", p.laedt, p.name, [p.energie?.text, p.zustand?.text].filter(Boolean).join(" · "), p.ladung || p.fuehler[0])) +
+        (p === erster ? "" : zeile("thermo", p.laedt, p.name, p.zustand?.text || "", p.ladung || p.fuehler[0])) +
         (p.kombi ? zeile("tropfen", p.kombi.laedt, mehrere ? `${t.warmwasser} ${p.name}` : t.warmwasser_im_puffer, p.kombi.zustand?.text || "", p.kombi.temperatur) : ""),
       warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur),
       heizkreis: (h) => {
@@ -1587,7 +1586,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
     const titel = this._konfig.titel ?? t.titel;
     const pufferTeil = erster
-      ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.energie ? `<span class="eta-neben">${e(erster.energie.text)}</span>` : ""}</div></div>`
+      ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.zustand?.text ? `<span class="eta-neben">${e(erster.zustand.text)}</span>` : ""}</div></div>`
       : "";
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
       ${this._banner(anlage)}

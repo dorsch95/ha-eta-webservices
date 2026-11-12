@@ -246,7 +246,10 @@ async def test_teil_ohne_funktionsblock_fehlt_in_der_karte(hass):
 
 
 async def test_karte_findet_entitaeten_ueber_ihren_schluessel(hass, entry):
-    """Auch umbenannte: Die Karte fragt nach dem Schlüssel, nicht nach der ID."""
+    """Auch umbenannte: Die Karte fragt nach dem Schlüssel, nicht nach der ID.
+
+    Deaktivierte fehlen, ebenso Entitäten, die nur noch im Register stehen.
+    """
     assert await eta_heating_ws.async_setup_entry(hass, entry)
     hass.config_entries.geladen.append(entry)
     register = hass.entity_registry
@@ -255,6 +258,8 @@ async def test_karte_findet_entitaeten_ueber_ihren_schluessel(hass, entry):
     register.anlegen("sensor.fremd", "eta_static_andere_kessel_temperatur", "andere")
     register.anlegen("sensor.aus", "eta_static_testeintrag_kessel_druck", "testeintrag")
     register.eintraege["sensor.aus"].disabled_by = "user"
+    register.anlegen("sensor.verwaist", "eta_static_testeintrag_puffer_warmwasser", "testeintrag")
+    hass.states.verwaist.add("sensor.verwaist")
 
     [anlage] = await uebersicht(hass)
 

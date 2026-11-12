@@ -17,6 +17,7 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.const import ATTR_RESTORED
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
@@ -103,12 +104,30 @@ def _vorhanden(coordinator, komponente: str) -> bool:
     return True
 
 
+def _bereitgestellt(hass: HomeAssistant, entity_id: str) -> bool:
+    """Bringt die Einrichtung diese Entität gerade hervor?
+
+    Eine Entität, die nur noch im Register steht, führt Home Assistant als
+    "nicht verfügbar" weiter und kennzeichnet ihren Zustand mit restored.
+    Das trifft etwa das Warmwasser im Puffer, wenn die Anlage beim ersten
+    Start nicht sagen konnte, ob er ein Kombispeicher ist, und es beim
+    nächsten verneint. Die Karte zeichnete sonst einen Warmwasserbereich,
+    den es nicht gibt.
+    """
+    stand = hass.states.get(entity_id)
+    return stand is not None and not stand.attributes.get(ATTR_RESTORED)
+
+
 def entitaeten(hass: HomeAssistant, entry_id: str) -> dict[str, str]:
-    """Die Entitäten einer Anlage: Schlüssel aus const.py und ihre heutige ID."""
+    """Die Entitäten einer Anlage: Schlüssel aus const.py und ihre heutige ID.
+
+    Nur, was es gerade gibt: Deaktivierte fehlen, ebenso solche, die die
+    Einrichtung nicht mehr hervorbringt, siehe _bereitgestellt.
+    """
     praefixe = (f"eta_static_{entry_id}_", f"eta_switch_{entry_id}_")
     gefunden = {}
     for eintrag in er.async_entries_for_config_entry(er.async_get(hass), entry_id):
-        if eintrag.disabled_by is not None:
+        if eintrag.disabled_by is not None or not _bereitgestellt(hass, eintrag.entity_id):
             continue
         for praefix in praefixe:
             if eintrag.unique_id.startswith(praefix):
