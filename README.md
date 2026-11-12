@@ -7,7 +7,7 @@
 Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home Assistant ein: Pellet-, Hackgut- und Stückholzkessel samt Pufferspeichern, Warmwasser, Heizkreisen, Solaranlage, PV-Heizmodul, Pelletlager, zweitem Wärmeerzeuger und Fernleitung. Alles läuft lokal im Heimnetz, nichts geht ins Internet.
 
 - **Einrichten ohne Adressen:** Du gibst an, was deine Anlage hat. Die Werte findet die Integration selbst im Menübaum der Heizung.
-- **Fertige Dashboard-Karte:** eine Karte für alle Anlagen, mit eigenen Grafiken, für PC, Tablet und Handy.
+- **Fertige Dashboard-Karten:** „ETA Übersicht“ zeigt deine Anlage als Anlagenbild, als Kacheln oder kompakt, ohne YAML und mit eigenen Zeichnungen, für PC, Tablet und Handy.
 - **Pelletverbrauch:** im Energie-Dashboard und je Tag, Woche und Jahr, auf Wunsch mit Kosten.
 - **Verbrauchsprognose:** lernt aus deinem Verlauf und sagt, wann das Pelletlager leer ist.
 - **Schalten nur auf Wunsch:** Ab Werk liest die Integration nur. Kesselschalter, Betriebsart, Thermostat, Zeitprogramm und Aschebox-Plan gibt es erst, wenn du den Schreibzugriff freigibst.
@@ -18,23 +18,11 @@ Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home As
 
 ## 👀 So sieht es aus
 
-![Die Karte ETA Übersicht als Anlagenbild: Pelletlager, Kessel, Solar und PV-Heizmodul laden den Pufferspeicher, daran hängen zwei Heizkreise und das Frischwassermodul](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/uebersicht_anlagenbild.webp)
+![Die Karte ETA Übersicht im hellen Design: am PC als Anlagenbild mit Pelletlager, Kessel, Solar, PV-Heizmodul, Pufferspeicher, zwei Heizkreisen und Frischwassermodul, daneben kompakt am Handy](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/vorschau_hell.webp)
 
-<p>
-<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/uebersicht_kacheln.webp" alt="Dieselbe Karte als Kacheln im dunklen Design" width="560">
-<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/uebersicht_kompakt.webp" alt="Dieselbe Karte kompakt am Handy, Heizkreis 1 zum Stellen aufgeklappt" width="230">
-</p>
+![Dieselbe Karte im dunklen Design: am PC als Kacheln, daneben kompakt am Handy](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/vorschau_dunkel.webp)
 
-Die Karte [ETA Übersicht](#neue-karte-eta-übersicht): oben als Anlagenbild, darunter als Kacheln im dunklen Design und kompakt am Handy. Die Werte sind Beispiele.
-
-![Die bisherige Dashboard-Karte am PC: Kessel, Puffer, Frischwassermodul, zwei Heizkreise, Pelletlager und Solar](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard.webp)
-
-<p>
-<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard_handy.webp" alt="Dieselbe Karte am Handy, zweispaltig" width="230">
-<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm_bearbeiten.webp" alt="Die Karte ETA Zeitprogramm, Montag zum Bearbeiten geöffnet" width="400">
-</p>
-
-Darüber die bisherige [Dashboard-Karte](#-dashboard-karte) am PC, darunter am Handy und die Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard) mit einem geöffneten Tag. Die Werte stammen von einer nachgebauten Testanlage.
+Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: als Anlagenbild, als Kacheln und kompakt am Handy, wo ein Tipp auf den Heizkreis Raum Soll und Betriebsart aufklappt. Sie folgt dem hellen oder dunklen Design von Home Assistant. Die Werte sind Beispiele.
 
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
@@ -316,6 +304,13 @@ Ein einzelner Aussetzer ändert nichts, der letzte Wert bleibt stehen. Erst wenn
 
 Eine Karte für alle Anlagen. Sie zeigt die Komponenten, die du gewählt hast, und passt sich an PC, Tablet und Handy an. Die Grafiken bringt die Integration mit.
 
+<p>
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard.webp" alt="Die Dashboard-Karte am PC: Kessel, Puffer, Frischwassermodul, zwei Heizkreise, Pelletlager und Solar" width="520">
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard_handy.webp" alt="Dieselbe Karte am Handy, zweispaltig" width="170">
+</p>
+
+Die Werte stammen von einer nachgebauten Testanlage. Daneben gibt es die [neue Karte ETA Übersicht](#neue-karte-eta-übersicht), die ohne YAML auskommt.
+
 ### Einrichten
 
 1. **Entwicklerwerkzeuge → Aktionen** öffnen, **ETA Web-Services: Dashboard-Karte erzeugen** wählen und **Aktion ausführen**. Die Antwort ist die fertige Karte, zugeschnitten auf deine Anlage. Kopiere sie komplett.
@@ -519,7 +514,10 @@ Die Integration schreibt den Wert des Thermometers alle 30 Sekunden und bei jede
 
 Die Karte **ETA Zeitprogramm** zeigt die Heizzeiten jedes Heizkreises als Wochenbalken, und du änderst sie direkt dort, am PC wie in der Handy-App.
 
+<p>
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm.webp" alt="Die Karte ETA Zeitprogramm mit den Heizzeiten einer Woche" width="400">
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm_bearbeiten.webp" alt="Die Karte ETA Zeitprogramm, Montag zum Bearbeiten geöffnet" width="330">
+</p>
 
 1. **Dashboard bearbeiten → Karte hinzufügen**, Reiter **Nach Karte**, und **ETA Zeitprogramm** wählen. Home Assistant lädt die Karte von selbst, ein Eintrag unter *Ressourcen* ist nicht nötig.
 2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und Temperatur, dazu die Temperatur außerhalb der Zeitfenster (die Absenkung).
