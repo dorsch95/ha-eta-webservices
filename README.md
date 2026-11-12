@@ -91,7 +91,7 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Heizkreise | 0 | Anzahl, bis 4 |
 | Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fernleitung, TWIN. Was dahintersteckt, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
 | Abfrageintervall | 30 Sekunden | erlaubt sind 1 bis 600. Die Integration liest alle Messwerte mit einer einzigen Anfrage. Je kürzer, desto öfter muss die Anlage antworten - bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten. Die Störungsliste wird dann nur alle 10 Sekunden gelesen |
-| Schnelle Abfrage | 0 (aus) | in Sekunden, bis 60. Liest eine kleine Gruppe öfter als den Rest: alles Schaltbare (Kessel ein/aus, Entaschen, Betriebsart und Raum Soll der Heizkreise), den Kessel-Zustand, die Raumtemperatur und alle Werte von Frischwassermodul und Warmwasserspeicher. So zeigt das Dashboard etwa das Zapfen ohne Verzug. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall |
+| Schnelle Abfrage | 0 (aus) | in Sekunden. Liest eine kleine Gruppe öfter als den Rest: alles Schaltbare (Kessel ein/aus, Entaschen, Betriebsart und Raum Soll der Heizkreise), den Kessel-Zustand, die Raumtemperatur und alle Werte von Frischwassermodul und Warmwasserspeicher. So zeigt das Dashboard etwa das Zapfen ohne Verzug. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall |
 | Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1. Steht auf dem Lieferschein ein anderer Wert, trag ihn ein |
 | Pelletpreis | 0 | in Euro je Tonne. Mit einem Preis rechnet die Integration auch die Kosten aus |
 | Störungsmeldungen auslesen | an | siehe [Störungen](#-störungen) |

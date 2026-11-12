@@ -176,14 +176,22 @@ async def test_ohne_angabe_gibt_es_keine_schnelle_abfrage(hass, entry, monkeypat
 
 def test_einstellung_steht_im_dialog():
     from eta_heating_ws.config_flow import _connection_schema, _options_schema
-    from eta_heating_ws.const import DEFAULT_SCHNELL_INTERVALL, MAX_SCHNELL_INTERVALL, MIN_SCAN_INTERVAL
+    from eta_heating_ws.const import DEFAULT_SCHNELL_INTERVALL, MIN_SCAN_INTERVAL
 
     for schema in (_connection_schema({}), _options_schema({})):
         felder = {str(k): k for k in schema.schema}
         assert felder["schnell_intervall"].default() == DEFAULT_SCHNELL_INTERVALL == 0
 
     assert _options_schema({"schnell_intervall": 5}).schema  # baut mit gespeichertem Wert
-    assert MIN_SCAN_INTERVAL == 1 and MAX_SCHNELL_INTERVALL == 60
+    assert MIN_SCAN_INTERVAL == 1
+
+
+def test_beide_felder_sehen_gleich_aus():
+    """Home Assistant zeigt ein Zahlenfeld mit einer Spanne unter 256 als Schieberegler."""
+    from eta_heating_ws.const import MAX_SCAN_INTERVAL, MAX_SCHNELL_INTERVALL, MIN_SCAN_INTERVAL
+
+    assert MAX_SCAN_INTERVAL - MIN_SCAN_INTERVAL >= 256
+    assert MAX_SCHNELL_INTERVALL - 0 >= 256
 
 
 async def test_stoerungsliste_bei_kurzem_intervall_nicht_in_jedem_zyklus(hass, entry):

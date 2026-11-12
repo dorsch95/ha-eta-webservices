@@ -138,7 +138,13 @@ zeitweise ausbleiben.
 MAX_SCAN_INTERVAL = 600
 
 DEFAULT_SCHNELL_INTERVALL = 0
-MAX_SCHNELL_INTERVALL = 60
+MAX_SCHNELL_INTERVALL = MAX_SCAN_INTERVAL
+"""Dieselbe Obergrenze wie beim Abfrageintervall, damit beide Felder gleich aussehen.
+
+Home Assistant zeigt ein Zahlenfeld mit einer Spanne unter 256 als
+Schieberegler. Wirksam ist die schnelle Abfrage ohnehin nur unterhalb des
+Abfrageintervalls.
+"""
 
 REQUEST_TIMEOUT = 8
 MENU_TIMEOUT = 20
