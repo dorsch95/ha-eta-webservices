@@ -48,11 +48,15 @@ async def test_frischwassermodul_meldet_zustand_und_pufferpumpe(hass, entry):
 
 
 async def test_frischwassermodul_meldet_durchfluss_und_drehzahl(hass, entry):
-    """Die Anforderung der Pufferpumpe bleibt nach dem Zapfen stehen - Durchfluss und Drehzahl nicht."""
+    """Die Anforderung der Pufferpumpe bleibt nach dem Zapfen stehen - Durchfluss und Drehzahl nicht.
+
+    Der Durchfluss kommt aus dem Menü Warmwasser. Der Eingang
+    "Durchflusssensor" meldet an der Anlage Hz und fällt nie auf null.
+    """
     coordinator = await nutzeranlage.aufbauen(hass, entry)
 
     assert uris(coordinator, "fwm_durchfluss", "fwm_pufferpumpe_drehzahl") == {
-        "fwm_durchfluss": "/79/10531/0/2310/0",
+        "fwm_durchfluss": "/79/10531/12785/0/0",
         "fwm_pufferpumpe_drehzahl": "/79/10531/0/0/12575",
     }
 

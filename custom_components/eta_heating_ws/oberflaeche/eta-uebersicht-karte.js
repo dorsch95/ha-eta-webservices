@@ -17,6 +17,7 @@ const ANSICHTEN = ["kacheln", "anlagenbild", "kompakt"];
 const NEU_FRAGEN_NACH = 300000;
 const NOCHMAL_NACH = 15000;
 const LEISTUNG_AB = 0.05;
+const FLUSS_AB = 0.05;
 const SOLL_SENDEN_NACH = 700;
 const SOLL_WARTEN = 8000;
 const DOPPELTIPP = 500;
@@ -883,7 +884,9 @@ function teilName(teil, teile, t) {
  * erwärmt Wasser (fliesst), solange welches hindurchfließt - bei
  * laufender Zirkulation und beim Zapfen. zapft heißt deshalb: Es
  * fließt Wasser, die Zirkulation läuft nicht. Ob Wasser fließt, sagt
- * der Durchfluss, ohne ihn die Drehzahl der Pufferpumpe. Erst ohne
+ * der Durchfluss, ohne ihn die Drehzahl der Pufferpumpe - beide erst
+ * über FLUSS_AB, denn der Durchfluss fällt an einer echten Anlage in
+ * Ruhe nicht genau auf null. Erst ohne
  * beide zählt die Anforderung der Pufferpumpe: Sie bleibt nach dem
  * Zapfen stehen, die Karte zeigte dann weiter "Zapfung läuft".
  * fussboden: die Heizkreise, die als Fußbodenheizung gezeichnet werden.
@@ -955,7 +958,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const durchfluss = wert(`${teil.id}_durchfluss`);
       const gemessen = [durchfluss, wert(`${teil.id}_pufferpumpe_drehzahl`)].find((w) => w && w.n !== null);
       const zirkuliert = an(zirkulation);
-      const fliesst = fwm && (gemessen ? gemessen.n > 0 : pufferpumpe ? an(pufferpumpe) : zirkuliert);
+      const fliesst = fwm && (gemessen ? gemessen.n > FLUSS_AB : pufferpumpe ? an(pufferpumpe) : zirkuliert);
       return {
         bauart: teil.bauart,
         temperatur: wert(`${teil.id}_warmwasser`),

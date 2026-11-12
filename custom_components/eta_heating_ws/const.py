@@ -650,6 +650,11 @@ def _warmwasser_zustand_sensoren():
     Frischwassermodul). Ob gerade Wasser erwärmt wird, zeigen deshalb der
     Durchfluss und die Drehzahl der Pufferpumpe. Ihre Einheit kommt von der
     Anlage (einheit_der_anlage): Belegt ist sie an keinem Bericht.
+
+    Der Durchfluss ist "Warmwasser > Sekundär Durchfluss". Der Eingang
+    "Durchflusssensor" meldet an derselben Anlage die Impulse in Hz und
+    fällt in Ruhe nicht auf null - die Karte zeigte damit dauerhaft
+    "Zapfung läuft".
     """
     sensoren = {}
     for komponente, zusatz in WARMWASSER_SPEICHER.items():
