@@ -77,6 +77,12 @@ CONF_FUB_NAMES = "fub_names"
 CONF_VERBINDUNGEN = "verbindungen"
 """Je Teil der Anlage, woher es seine Wärme bekommt - siehe verbindungen.py."""
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_SCHNELL_INTERVALL = "schnell_intervall"
+"""Alle wie viele Sekunden die schnelle Gruppe gelesen wird, 0 = gar nicht.
+
+Die schnelle Gruppe sind die wenigen Werte, die ein Dashboard ohne Verzug
+zeigen soll - siehe ETADataUpdateCoordinator.schnelle_uris.
+"""
 
 DEFAULT_PELLET_KWH_PER_KG = 4.8
 """Heizwert von Holzpellets in kWh/kg.
@@ -122,8 +128,17 @@ keine Vorhersage, nur das langjährige Mittel.
 """
 
 DEFAULT_SCAN_INTERVAL = 30
-MIN_SCAN_INTERVAL = 10
+MIN_SCAN_INTERVAL = 1
+"""Bis 0.28.0b2 waren es 10 Sekunden.
+
+Welche Abfragerate eine Anlage verträgt, ist an keiner gemessen. Wer weit
+heruntergeht, beobachtet die Auslastung am Display der Anlage und ob Werte
+zeitweise ausbleiben.
+"""
 MAX_SCAN_INTERVAL = 600
+
+DEFAULT_SCHNELL_INTERVALL = 0
+MAX_SCHNELL_INTERVALL = 60
 
 REQUEST_TIMEOUT = 8
 MENU_TIMEOUT = 20

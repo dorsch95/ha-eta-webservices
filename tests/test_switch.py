@@ -210,14 +210,16 @@ async def test_bestaetigung_der_anlage_beendet_die_vorwegnahme(hass, entry):
     assert einer.is_on is False
 
 
-async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry):
+async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry, monkeypatch):
     """Ein Befehl, den die Anlage nie ausführt, darf nicht ewig gezeigt werden.
 
     Sonst zeigte der Schalter dauerhaft einen Zustand, den die Heizung nie
     eingenommen hat.
     """
+    from eta_heating_ws import switch as modul
     from eta_heating_ws.switch import VERWERFEN_NACH
 
+    monkeypatch.setattr(modul, "VERWERFEN_FRUEHESTENS", 0)
     _, schalter = await schalter_von(hass, entry)
     einer = next(iter(schalter.values()))
 
@@ -318,3 +320,37 @@ async def test_animationen_behalten_ihre_einstellung(hass, entry, gespeichert, e
     animationen.async_get_last_state = letzter_zustand
     await animationen.async_added_to_hass()
     assert animationen.is_on is erwartet
+
+
+
+async def test_vorwegnahme_haelt_mindestens_ihre_frist(hass, entry):
+    """Bei einem Abfrageintervall von wenigen Sekunden wären drei Abfragen sonst zu schnell vorbei."""
+    from eta_heating_ws.switch import VERWERFEN_NACH
+
+    _, schalter = await schalter_von(hass, entry)
+    einer = next(iter(schalter.values()))
+
+    hass.session.traege = True
+    await einer.async_turn_off()
+    for _ in range(VERWERFEN_NACH + 3):
+        einer._handle_coordinator_update()
+
+    assert einer.is_on is False, "Schalter springt zurück, bevor die Anlage Zeit hatte"
+
+
+async def test_schnelle_gruppe_zaehlt_nicht_als_widerspruch(hass, entry, monkeypatch):
+    """Sie meldet sich öfter, als die Anlage für einen Schaltbefehl braucht."""
+    from eta_heating_ws import switch as modul
+    from eta_heating_ws.switch import VERWERFEN_NACH
+
+    monkeypatch.setattr(modul, "VERWERFEN_FRUEHESTENS", 0)
+    coordinator, schalter = await schalter_von(hass, entry)
+    einer = next(iter(schalter.values()))
+
+    hass.session.traege = True
+    await einer.async_turn_off()
+    coordinator.volle_abfrage = False
+    for _ in range(VERWERFEN_NACH + 3):
+        einer._handle_coordinator_update()
+
+    assert einer.is_on is False

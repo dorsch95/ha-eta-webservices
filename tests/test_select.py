@@ -149,10 +149,12 @@ async def test_traege_anlage_laesst_die_betriebsart_nicht_zurueckspringen(hass, 
     assert betriebsart.current_option == "absenken", "Auswahl springt zurück"
 
 
-async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry):
+async def test_dauerhafter_widerspruch_entscheidet_zugunsten_der_anlage(hass, entry, monkeypatch):
     """Eine Betriebsart, die die Anlage nie übernimmt, darf nicht haften."""
+    from eta_heating_ws import switch as modul
     from eta_heating_ws.switch import VERWERFEN_NACH
 
+    monkeypatch.setattr(modul, "VERWERFEN_FRUEHESTENS", 0)
     _, auswahl = await aufbauen(hass, entry)
     betriebsart = auswahl["heizkreis_betriebsart"]
     vorher = betriebsart.current_option

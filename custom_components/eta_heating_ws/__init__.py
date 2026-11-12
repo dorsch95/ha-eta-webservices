@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import timedelta
 from pathlib import Path
 
 from homeassistant.components.http import StaticPathConfig
@@ -12,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
@@ -25,6 +27,7 @@ from .const import (
     ASCHEBOX_ENTITAETEN,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
+    CONF_SCHNELL_INTERVALL,
     CONF_WETTER,
     CONF_ZEITRAEUME,
     DEFAULT_ENABLE_ERRORS,
@@ -33,6 +36,7 @@ from .const import (
     DEFAULT_PELLET_PREIS,
     DEFAULT_PROGNOSE,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SCHNELL_INTERVALL,
     DEFAULT_ZEITRAEUME,
     DOMAIN,
     PLATFORMS,
@@ -122,6 +126,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     )
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
+    coordinator.schnell_intervall = config.get(
+        CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL
+    )
     coordinator.puffer_volumen_eingetragen = {
         komponente: float(config.get(puffer_volumen_schluessel(komponente)) or 0)
         for komponente in PUFFER_SPEICHER
@@ -160,8 +167,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         entry.async_on_unload(async_at_started(hass, _prognose_starten(coordinator)))
     _raumfuehler_starten(hass, entry, coordinator, config)
     _zeitplaene_starten(hass, entry, coordinator, config)
+    _schnelle_abfrage_starten(hass, entry, coordinator)
     coordinator.zeitprogramme_im_hintergrund_pruefen()
     return True
+
+
+def _schnelle_abfrage_starten(
+    hass: HomeAssistant, entry: ETAConfigEntry, coordinator: ETADataUpdateCoordinator
+) -> None:
+    """Liest die schnelle Gruppe im eigenen Takt, siehe async_schnell_lesen.
+
+    Nur, wenn der Takt kürzer ist als das Abfrageintervall - sonst liest
+    die volle Abfrage dieselben Werte ohnehin so oft.
+    """
+    sekunden = coordinator.schnell_intervall
+    if sekunden <= 0 or sekunden >= coordinator.update_interval.total_seconds():
+        return
+
+    async def takt(_jetzt) -> None:
+        await coordinator.async_schnell_lesen()
+
+    entry.async_on_unload(
+        async_track_time_interval(hass, takt, timedelta(seconds=sekunden))
+    )
 
 
 def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:

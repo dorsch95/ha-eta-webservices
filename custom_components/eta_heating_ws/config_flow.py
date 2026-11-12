@@ -43,6 +43,7 @@ from .const import (
     CONF_PELLET_PREIS,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
+    CONF_SCHNELL_INTERVALL,
     CONF_VERBINDUNGEN,
     CONF_WETTER,
     CONF_ZEITRAEUME,
@@ -54,11 +55,13 @@ from .const import (
     DEFAULT_PROGNOSE,
     DEFAULT_ZEITRAEUME,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SCHNELL_INTERVALL,
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
     MAX_PELLET_PREIS,
     MAX_PUFFER_VOLUMEN,
     MAX_SCAN_INTERVAL,
+    MAX_SCHNELL_INTERVALL,
     MIN_PELLET_KWH_PER_KG,
     MIN_SCAN_INTERVAL,
     PUFFER_SPEICHER,
@@ -376,6 +379,13 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
         ): vol.All(
             cv.positive_int,
             vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+        ),
+        vol.Required(
+            CONF_SCHNELL_INTERVALL,
+            default=current.get(CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL),
+        ): vol.All(
+            cv.positive_int,
+            vol.Range(min=0, max=MAX_SCHNELL_INTERVALL),
         ),
         vol.Required(
             CONF_ENABLE_ERRORS,

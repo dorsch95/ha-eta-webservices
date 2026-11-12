@@ -23,6 +23,7 @@
           "anzahl_heizkreise": "Heizkreise",
           "components": "Weitere Komponenten an deiner Anlage",
           "scan_interval": "Abfrageintervall (Sekunden)",
+          "schnell_intervall": "Schnelle Abfrage (Sekunden, 0 = aus)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
@@ -34,7 +35,9 @@
         "data_description": {
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
-          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
+          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
+          "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und das Frischwassermodul öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
         }
       },
       "fub_names": {
@@ -173,6 +176,7 @@
           "anzahl_heizkreise": "Heizkreise",
           "components": "Weitere Komponenten an deiner Anlage",
           "scan_interval": "Abfrageintervall (Sekunden)",
+          "schnell_intervall": "Schnelle Abfrage (Sekunden, 0 = aus)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
@@ -184,7 +188,9 @@
         "data_description": {
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
-          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
+          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
+          "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und das Frischwassermodul öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
         }
       },
       "fub_names": {

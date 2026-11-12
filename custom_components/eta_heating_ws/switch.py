@@ -10,6 +10,7 @@ nichts in die Anlage und entsteht deshalb auch ohne Schreibzugriff.
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
@@ -33,6 +34,31 @@ sonst springt der Schalter im Dashboard auf den alten zurück, obwohl der
 Befehl angekommen ist. Widerspricht die Anlage dauerhaft, hat sie recht:
 dann wurde der Befehl nicht ausgeführt.
 """
+
+
+VERWERFEN_FRUEHESTENS = 20
+"""So viele Sekunden gilt der erwartete Zustand mindestens.
+
+Bei einem Abfrageintervall von wenigen Sekunden wären VERWERFEN_NACH
+Abfragen vorbei, bevor die Anlage den Schaltbefehl in ihre Antworten
+übernommen hat. 20 Sekunden sind die Frist, die drei Abfragen beim
+früheren kürzesten Intervall von 10 Sekunden ließen.
+"""
+
+
+def vorwegnahme_pruefen(
+    coordinator: ETADataUpdateCoordinator, widerspruch: int, seit: float
+) -> tuple[int, bool]:
+    """Zählt einen Widerspruch der Anlage und sagt, ob die Vorwegnahme damit endet.
+
+    Gezählt wird nur bei einer vollen Abfrage: Die schnelle Gruppe meldet
+    sich öfter, als die Anlage für einen Schaltbefehl braucht. seit ist der
+    Zeitpunkt des Schreibens nach time.monotonic().
+    """
+    if coordinator.volle_abfrage:
+        widerspruch += 1
+    abgelaufen = time.monotonic() - seit >= VERWERFEN_FRUEHESTENS
+    return widerspruch, widerspruch >= VERWERFEN_NACH and abgelaufen
 
 
 async def async_setup_entry(
@@ -81,6 +107,7 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
         )
         self._attr_device_info = coordinator.device_info
         self._erwartet: bool | None = None
+        self._erwartet_seit = 0.0
         self._widerspruch = 0
 
     def _gemeldet(self) -> bool | None:
@@ -106,15 +133,17 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
     def _handle_coordinator_update(self) -> None:
         """Gibt die Vorwegnahme auf, sobald die Anlage bestätigt hat.
 
-        Bestätigt sie nicht, bekommt sie VERWERFEN_NACH Abfragen Zeit.
-        Danach zählt wieder, was sie meldet.
+        Bestätigt sie nicht, bekommt sie VERWERFEN_NACH Abfragen Zeit,
+        siehe vorwegnahme_pruefen. Danach zählt wieder, was sie meldet.
         """
         if self._erwartet is not None:
             if self._gemeldet() == self._erwartet:
                 self._erwartet = None
             else:
-                self._widerspruch += 1
-                if self._widerspruch >= VERWERFEN_NACH:
+                self._widerspruch, vorbei = vorwegnahme_pruefen(
+                    self.coordinator, self._widerspruch, self._erwartet_seit
+                )
+                if vorbei:
                     self._erwartet = None
         super()._handle_coordinator_update()
 
@@ -133,6 +162,7 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
                 f"Die Anlage hat den Schaltbefehl nicht angenommen: {err}"
             ) from err
         self._erwartet = erwartet
+        self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

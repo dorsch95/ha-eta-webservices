@@ -21,10 +21,12 @@ from .const import (
     SELECTS,
     SWITCHES,
     DOMAIN,
+    HEIZKREISE,
     PUFFER_FUEHLER_MINDEST,
     PUFFER_SPEICHER,
     SENSORS,
     THERMOSTATE,
+    WARMWASSER_SPEICHER,
     KOMBI_GRENZEN,
     WARMWASSER_GRENZEN,
     WOCHENTAGE,
@@ -46,6 +48,31 @@ VERALTET_AB = 2
 Danach gilt der Sensor als nicht erreichbar, statt weiter den letzten
 bekannten Wert zu zeigen.
 """
+
+FEHLER_ABSTAND = 10
+"""Bei kürzerem Abfrageintervall wird die Störungsliste nur alle so viele Sekunden gelesen.
+
+Sie ist eine eigene Anfrage. Bei einem Intervall von einer Sekunde
+müsste die Anlage sonst doppelt so oft antworten, ohne dass eine Störung
+dadurch früher auffiele.
+"""
+
+SCHNELL_PLATTFORMEN = ("switch", "button", "select", "climate")
+"""Was sich schalten oder stellen lässt, gehört zur schnellen Gruppe."""
+
+SCHNELL_PAUSE = 12
+"""So viele Takte ruht die schnelle Gruppe, nachdem ihr Variablensatz gescheitert ist."""
+
+
+def _gleich(alt: ETAValue | None, neu: ETAValue) -> bool:
+    """Meldet die Anlage denselben Wert wie zuvor?"""
+    return alt is not None and (alt.value, alt.text, alt.unit, alt.is_text) == (
+        neu.value,
+        neu.text,
+        neu.unit,
+        neu.is_text,
+    )
+
 
 VARSET_WARTEZYKLEN = 10
 """Nach so vielen Abfragen wird ein gescheiterter Variablensatz neu angelegt.
@@ -215,6 +242,26 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self._varset_wartezyklen = 0
         self._varset_gelesen: dict[str, ETAValue] | None = None
         """Was _varset_vorhanden eben gelesen hat - für die Abfrage direkt danach."""
+        self.schnell_intervall = 0
+        """Sekunden zwischen zwei Abfragen der schnellen Gruppe, 0 = keine."""
+        self.volle_abfrage = True
+        """False, solange nur die schnelle Gruppe ihre neuen Werte weitergibt.
+
+        Wer Abfragen zählt - die Vorwegnahme nach dem Schalten, der
+        Aschebox-Plan -, zählt nur die vollen.
+        """
+        self._lese_sperre = asyncio.Lock()
+        """Volle und schnelle Abfrage lesen nie gleichzeitig.
+
+        So kommen die Werte in der Reihenfolge an, in der sie gelesen
+        wurden, und ein älterer überschreibt keinen neueren.
+        """
+        self._schnell_name = f"hs{entry.entry_id}"[:32]
+        self._schnell_uris: set[str] | None = None
+        """Die Werte, mit denen der Variablensatz der schnellen Gruppe auf der Anlage steht."""
+        self._schnell_pause = 0
+        self._schnell_beendet = False
+        self._fehler_gelesen = float("-inf")
 
         self._device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -258,6 +305,91 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             for key, info in self.sensor_defs.items()
             if info.get("uri")
         }
+
+    @property
+    def schnelle_uris(self) -> dict[str, str]:
+        """Die schnelle Gruppe: was ein Dashboard ohne Verzug zeigen soll.
+
+        Alles, was sich schalten oder stellen lässt - Kessel ein/aus,
+        Entaschen, die Tasten der Heizkreise, Raum Soll -, dazu als deren
+        Wirkung der Kessel-Zustand und die Raumtemperatur. Und alle Werte
+        von Frischwassermodul und Warmwasserspeicher: Dort soll das Zapfen
+        sofort zu sehen und der Durchfluss mitzulesen sein.
+        """
+        return {
+            key: info["uri"]
+            for key, info in self.sensor_defs.items()
+            if info.get("uri")
+            and (
+                info.get("platform") in SCHNELL_PLATTFORMEN
+                or info.get("component") in WARMWASSER_SPEICHER
+                or key == "kessel_zustand"
+                or (info.get("component") in HEIZKREISE and key.endswith("_raum"))
+            )
+        }
+
+    async def async_schnell_lesen(self) -> None:
+        """Liest die schnelle Gruppe und gibt geänderte Werte weiter.
+
+        Mit einer Anfrage über einen eigenen kleinen Variablensatz. Läuft
+        gerade die volle Abfrage oder noch die vorige schnelle, fällt der
+        Takt aus. Scheitert der Variablensatz, ruht die Gruppe
+        SCHNELL_PAUSE Takte - die volle Abfrage liest dieselben Werte
+        weiter. Die Zähler für ausbleibende Werte führt nur sie.
+        """
+        if self.data is None or self._schnell_beendet or self._lese_sperre.locked():
+            return
+        uris = self.schnelle_uris
+        if not uris:
+            return
+        if self._schnell_pause > 0:
+            self._schnell_pause -= 1
+            return
+        async with self._lese_sperre:
+            try:
+                if self._schnell_uris != set(uris.values()):
+                    await self._schnell_anlegen(uris)
+                nach_uri = await self.client.async_get_varset(self._schnell_name)
+            except ETAApiError as err:
+                nach_uri = {}
+                _LOGGER.debug("ETA: schnelle Gruppe nicht lesbar: %s", err)
+        gelesen = {key: nach_uri[uri] for key, uri in uris.items() if uri in nach_uri}
+        if not gelesen:
+            self._schnell_uris = None
+            self._schnell_pause = SCHNELL_PAUSE
+            return
+        neu = {
+            key: wert for key, wert in gelesen.items() if not _gleich(self.data.get(key), wert)
+        }
+        if not neu:
+            return
+        self.data = {**self.data, **neu}
+        self.volle_abfrage = False
+        try:
+            self.async_update_listeners()
+        finally:
+            self.volle_abfrage = True
+
+    async def _schnell_anlegen(self, uris: dict[str, str]) -> None:
+        """Legt den Variablensatz der schnellen Gruppe an.
+
+        Steht er schon mit genau diesen Werten auf der Anlage - Home
+        Assistant wurde neu gestartet, die Anlage nicht -, bleibt er.
+        """
+        gesucht = set(uris.values())
+        try:
+            vorhanden = set(await self.client.async_get_varset(self._schnell_name))
+        except ETAApiError:
+            vorhanden = set()
+        if vorhanden != gesucht:
+            await self.client.async_delete_varset(self._schnell_name)
+            await self.client.async_create_varset(self._schnell_name, list(uris.values()))
+            _LOGGER.debug(
+                "ETA: Variablensatz %s für die schnelle Gruppe mit %d Werten angelegt",
+                self._schnell_name,
+                len(gesucht),
+            )
+        self._schnell_uris = gesucht
 
     async def _varset_anlegen(self) -> None:
         """Legt den Variablensatz für die Sammelabfrage an.
@@ -309,10 +441,18 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return True
 
     async def async_varset_aufraeumen(self) -> None:
-        """Gibt den Variablensatz auf der Anlage wieder frei."""
+        """Gibt die Variablensätze auf der Anlage wieder frei.
+
+        Die schnelle Gruppe liest danach nicht mehr - sonst legte ein
+        letzter Takt ihren Satz gleich wieder an.
+        """
+        self._schnell_beendet = True
         if self._varset_bereit:
             await self.client.async_delete_varset(self._varset_name)
             self._varset_bereit = False
+        if self._schnell_uris is not None:
+            await self.client.async_delete_varset(self._schnell_name)
+            self._schnell_uris = None
 
     async def _schalter_pruefen(self) -> None:
         """Prüft die gefundenen Schalt-Kandidaten an der Anlage nach.
@@ -1019,7 +1159,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         if not uris:
             raise UpdateFailed("Keine abfragbaren Messwerte bekannt")
 
-        values = await self._werte_lesen(uris)
+        async with self._lese_sperre:
+            values = await self._werte_lesen(uris)
 
         if not values:
             raise UpdateFailed(
@@ -1082,9 +1223,19 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return await self.client.async_get_values(uris)
 
     async def _fehler_lesen(self) -> None:
-        """Holt die aktiven Fehler; ein Fehlschlag kippt den Zyklus nicht."""
+        """Holt die aktiven Fehler; ein Fehlschlag kippt den Zyklus nicht.
+
+        Bei einem Abfrageintervall unter FEHLER_ABSTAND nicht in jedem Zyklus.
+        """
         if not self.enable_errors:
             return
+        jetzt = time.monotonic()
+        kurz = self.update_interval is not None and (
+            self.update_interval.total_seconds() < FEHLER_ABSTAND
+        )
+        if kurz and jetzt - self._fehler_gelesen < FEHLER_ABSTAND:
+            return
+        self._fehler_gelesen = jetzt
         try:
             self.errors = await self.client.async_get_errors()
         except ETAApiError as err:

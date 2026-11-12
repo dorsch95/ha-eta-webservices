@@ -23,6 +23,7 @@
           "anzahl_heizkreise": "Heating circuits",
           "components": "Other components on your system",
           "scan_interval": "Polling interval (seconds)",
+          "schnell_intervall": "Fast polling (seconds, 0 = off)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
@@ -34,7 +35,9 @@
         "data_description": {
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
-          "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
+          "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
+          "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and the fresh water module more often than the rest. Only applies if smaller than the polling interval."
         }
       },
       "fub_names": {
@@ -173,6 +176,7 @@
           "anzahl_heizkreise": "Heating circuits",
           "components": "Other components on your system",
           "scan_interval": "Polling interval (seconds)",
+          "schnell_intervall": "Fast polling (seconds, 0 = off)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
@@ -184,7 +188,9 @@
         "data_description": {
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
-          "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
+          "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
+          "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and the fresh water module more often than the rest. Only applies if smaller than the polling interval."
         }
       },
       "fub_names": {

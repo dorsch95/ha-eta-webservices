@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant, callback
@@ -13,7 +14,7 @@ from .api import ETAApiError
 from .const import BETRIEBSART_AUS
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
-from .switch import VERWERFEN_NACH
+from .switch import vorwegnahme_pruefen
 
 
 async def async_setup_entry(
@@ -60,6 +61,7 @@ class ETABetriebsartSelect(
         self._attr_device_info = coordinator.device_info
         self._attr_options = [BETRIEBSART_AUS, *self._tasten]
         self._erwartet: str | None = None
+        self._erwartet_seit = 0.0
         self._widerspruch = 0
 
     def _gemeldet(self) -> str | None:
@@ -103,6 +105,7 @@ class ETABetriebsartSelect(
             ) from err
 
         self._erwartet = option
+        self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
@@ -118,14 +121,16 @@ class ETABetriebsartSelect(
     def _handle_coordinator_update(self) -> None:
         """Gibt die Vorwegnahme auf, sobald die Anlage bestätigt hat.
 
-        Bestätigt sie nicht, bekommt sie VERWERFEN_NACH Abfragen Zeit.
-        Danach zählt wieder, was sie meldet.
+        Bestätigt sie nicht, bekommt sie VERWERFEN_NACH Abfragen Zeit,
+        siehe switch.vorwegnahme_pruefen. Danach zählt wieder, was sie meldet.
         """
         if self._erwartet is not None:
             if self._gemeldet() == self._erwartet:
                 self._erwartet = None
             else:
-                self._widerspruch += 1
-                if self._widerspruch >= VERWERFEN_NACH:
+                self._widerspruch, vorbei = vorwegnahme_pruefen(
+                    self.coordinator, self._widerspruch, self._erwartet_seit
+                )
+                if vorbei:
                     self._erwartet = None
         super()._handle_coordinator_update()

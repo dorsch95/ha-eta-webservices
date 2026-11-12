@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from homeassistant.components.climate import (
@@ -22,7 +23,7 @@ from .api import ETAApiError
 from .const import BETRIEBSART_AUS, THERMOSTAT_SOLL_GRENZEN, raumfuehler_schluessel
 from .coordinator import AUS_BEGRIFFE, ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
-from .switch import VERWERFEN_NACH
+from .switch import vorwegnahme_pruefen
 
 MODUS_ZU_BETRIEBSART = {
     HVACMode.AUTO: "automatik",
@@ -101,6 +102,7 @@ class ETAThermostat(CoordinatorEntity[ETADataUpdateCoordinator], ClimateEntity):
         self._attr_max_temp = obere
 
         self._erwartet: float | None = None
+        self._erwartet_seit = 0.0
         self._widerspruch = 0
 
     @property
@@ -216,6 +218,7 @@ class ETAThermostat(CoordinatorEntity[ETADataUpdateCoordinator], ClimateEntity):
         except ETAApiError as err:
             raise HomeAssistantError(f"Raum Soll konnte nicht gesetzt werden: {err}") from err
         self._erwartet = temperatur
+        self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
@@ -252,7 +255,9 @@ class ETAThermostat(CoordinatorEntity[ETADataUpdateCoordinator], ClimateEntity):
             if gemeldet is not None and abs(gemeldet - self._erwartet) < 0.05:
                 self._erwartet = None
             else:
-                self._widerspruch += 1
-                if self._widerspruch >= VERWERFEN_NACH:
+                self._widerspruch, vorbei = vorwegnahme_pruefen(
+                    self.coordinator, self._widerspruch, self._erwartet_seit
+                )
+                if vorbei:
                     self._erwartet = None
         super()._handle_coordinator_update()

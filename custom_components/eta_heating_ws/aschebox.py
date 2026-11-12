@@ -291,7 +291,8 @@ class AscheboxPlan:
 
     @callback
     def _abgefragt(self) -> None:
-        if self.phase in LAEUFT:
+        """Ein Schritt je voller Abfrage - die schnelle Gruppe treibt den Plan nicht."""
+        if self.phase in LAEUFT and self.coordinator.volle_abfrage:
             self.hass.async_create_task(self.weiter())
 
     async def weiter(self) -> None:
