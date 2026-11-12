@@ -629,10 +629,28 @@ def _warmwasser_zustand_sensoren():
     dafür gerade Wärme fließt. Das Frischwassermodul hat stattdessen eine
     Pufferpumpe: Sie läuft, solange es Wasser erwärmt - beim Zapfen und bei
     laufender Zirkulation. Jeder Sensor nur, wenn der Menübaum ihn führt.
+
+    Die Anforderung der Pufferpumpe bleibt nach dem Zapfen stehen, obwohl
+    kein Wasser mehr fließt (Rückmeldung von einer Anlage mit
+    Frischwassermodul). Ob gerade Wasser erwärmt wird, zeigen deshalb der
+    Durchfluss und die Drehzahl der Pufferpumpe. Ihre Einheit kommt von der
+    Anlage (einheit_der_anlage): Belegt ist sie an keinem Bericht.
     """
     sensoren = {}
     for komponente, zusatz in WARMWASSER_SPEICHER.items():
         name = f"Warmwasser{zusatz}" if zusatz else "FWM"
+        for art, bezeichnung, symbol in (
+            ("durchfluss", "Durchfluss", "mdi:waves-arrow-right"),
+            ("pufferpumpe_drehzahl", "Pufferpumpe Drehzahl", "mdi:pump"),
+        ):
+            sensoren[f"{komponente}_{art}"] = {
+                "component": komponente,
+                "name": f"{name} {bezeichnung}",
+                "translation_key": f"{komponente}_{art}",
+                "nur_wenn_vorhanden": True,
+                "icon": symbol,
+                "einheit_der_anlage": True,
+            }
         for art, bezeichnung, symbol in (
             ("zustand", "Zustand", "mdi:water-boiler"),
             ("ladepumpe", "Ladepumpe", "mdi:pump"),

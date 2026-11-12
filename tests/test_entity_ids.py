@@ -128,10 +128,12 @@ ERWARTETE_IDS = {
     "fwm_zustand": "sensor.eta_heizung_fwm_zustand",
     "fwm_ladepumpe": "sensor.eta_heizung_fwm_ladepumpe",
     "fwm_pufferpumpe": "sensor.eta_heizung_fwm_pufferpumpe",
+    "fwm_durchfluss": "sensor.eta_heizung_fwm_durchfluss",
+    "fwm_pufferpumpe_drehzahl": "sensor.eta_heizung_fwm_pufferpumpe_drehzahl",
     **{
         f"fwm{n}_{teil}": f"sensor.eta_heizung_warmwasser_{n}_{teil}"
         for n in range(2, 9)
-        for teil in ("zustand", "ladepumpe", "pufferpumpe")
+        for teil in ("zustand", "ladepumpe", "pufferpumpe", "durchfluss", "pufferpumpe_drehzahl")
     },
     "puffer_warmwasser": "sensor.eta_heizung_puffer_warmwasser",
     "puffer_warmwasser_zustand": "sensor.eta_heizung_puffer_warmwasser_zustand",

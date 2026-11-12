@@ -1114,6 +1114,12 @@
       "fwm_pufferpumpe": {
         "name": "Hot water buffer pump"
       },
+      "fwm_durchfluss": {
+        "name": "Hot water flow"
+      },
+      "fwm_pufferpumpe_drehzahl": {
+        "name": "Hot water buffer pump speed"
+      },
       "puffer2_warmwasser": {
         "name": "Buffer 2 hot water"
       },
@@ -1128,6 +1134,12 @@
       },
       "fwm2_pufferpumpe": {
         "name": "Hot water 2 buffer pump"
+      },
+      "fwm2_durchfluss": {
+        "name": "Hot water 2 flow"
+      },
+      "fwm2_pufferpumpe_drehzahl": {
+        "name": "Hot water 2 buffer pump speed"
       },
       "puffer3_warmwasser": {
         "name": "Buffer 3 hot water"
@@ -1144,6 +1156,12 @@
       "fwm3_pufferpumpe": {
         "name": "Hot water 3 buffer pump"
       },
+      "fwm3_durchfluss": {
+        "name": "Hot water 3 flow"
+      },
+      "fwm3_pufferpumpe_drehzahl": {
+        "name": "Hot water 3 buffer pump speed"
+      },
       "puffer4_warmwasser": {
         "name": "Buffer 4 hot water"
       },
@@ -1158,6 +1176,12 @@
       },
       "fwm4_pufferpumpe": {
         "name": "Hot water 4 buffer pump"
+      },
+      "fwm4_durchfluss": {
+        "name": "Hot water 4 flow"
+      },
+      "fwm4_pufferpumpe_drehzahl": {
+        "name": "Hot water 4 buffer pump speed"
       },
       "puffer5_warmwasser": {
         "name": "Buffer 5 hot water"
@@ -1174,6 +1198,12 @@
       "fwm5_pufferpumpe": {
         "name": "Hot water 5 buffer pump"
       },
+      "fwm5_durchfluss": {
+        "name": "Hot water 5 flow"
+      },
+      "fwm5_pufferpumpe_drehzahl": {
+        "name": "Hot water 5 buffer pump speed"
+      },
       "puffer6_warmwasser": {
         "name": "Buffer 6 hot water"
       },
@@ -1188,6 +1218,12 @@
       },
       "fwm6_pufferpumpe": {
         "name": "Hot water 6 buffer pump"
+      },
+      "fwm6_durchfluss": {
+        "name": "Hot water 6 flow"
+      },
+      "fwm6_pufferpumpe_drehzahl": {
+        "name": "Hot water 6 buffer pump speed"
       },
       "puffer7_warmwasser": {
         "name": "Buffer 7 hot water"
@@ -1204,6 +1240,12 @@
       "fwm7_pufferpumpe": {
         "name": "Hot water 7 buffer pump"
       },
+      "fwm7_durchfluss": {
+        "name": "Hot water 7 flow"
+      },
+      "fwm7_pufferpumpe_drehzahl": {
+        "name": "Hot water 7 buffer pump speed"
+      },
       "puffer8_warmwasser": {
         "name": "Buffer 8 hot water"
       },
@@ -1218,6 +1260,12 @@
       },
       "fwm8_pufferpumpe": {
         "name": "Hot water 8 buffer pump"
+      },
+      "fwm8_durchfluss": {
+        "name": "Hot water 8 flow"
+      },
+      "fwm8_pufferpumpe_drehzahl": {
+        "name": "Hot water 8 buffer pump speed"
       }
     },
     "switch": {

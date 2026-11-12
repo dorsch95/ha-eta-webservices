@@ -105,6 +105,14 @@ def _nachkommastellen(coordinator: ETADataUpdateCoordinator, key: str) -> int:
     return max(0, min(reading.dec_places, 3))
 
 
+def _einheit_der_anlage(coordinator: ETADataUpdateCoordinator, key: str) -> str | None:
+    """Die Einheit, mit der die Anlage diesen Wert meldet - None ohne Messwert und bei Text."""
+    reading = (coordinator.data or {}).get(key)
+    if reading is None or reading.is_text or not reading.unit:
+        return None
+    return reading.unit
+
+
 class ETABaseSensor(CoordinatorEntity[ETADataUpdateCoordinator], SensorEntity):
     """Gemeinsame Basis aller ETA-Sensoren."""
 
@@ -122,6 +130,10 @@ class ETAMeasurementSensor(ETABaseSensor):
 
     Die Einheit stammt fest aus der Sensordefinition, nicht aus der
     XML-Antwort: eine wechselnde Einheit verwirft die Langzeitstatistik.
+
+    Die Ausnahme sind Werte mit einheit_der_anlage: Ihre Einheit ist an
+    keinem Bericht belegt, sie kommt deshalb beim Einrichten von der
+    Anlage. Solche Werte führen keine Langzeitstatistik.
     """
 
     _missing_value = None
@@ -138,7 +150,11 @@ class ETAMeasurementSensor(ETABaseSensor):
         self._attr_device_class = info.get("device_class")
         self._attr_state_class = info.get("state_class")
 
-        if not info.get("is_string"):
+        if info.get("einheit_der_anlage"):
+            self._attr_native_unit_of_measurement = _einheit_der_anlage(coordinator, key)
+            if self._attr_native_unit_of_measurement:
+                self._attr_suggested_display_precision = _nachkommastellen(coordinator, key)
+        elif not info.get("is_string"):
             self._attr_native_unit_of_measurement = info.get("default_unit")
             if info.get("suggested_unit"):
                 self._attr_suggested_unit_of_measurement = info["suggested_unit"]

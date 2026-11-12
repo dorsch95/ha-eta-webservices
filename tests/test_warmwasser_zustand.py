@@ -47,6 +47,43 @@ async def test_frischwassermodul_meldet_zustand_und_pufferpumpe(hass, entry):
     assert "fwm_ladepumpe" not in coordinator.sensor_defs, "die hat nur der Warmwasserspeicher"
 
 
+async def test_frischwassermodul_meldet_durchfluss_und_drehzahl(hass, entry):
+    """Die Anforderung der Pufferpumpe bleibt nach dem Zapfen stehen - Durchfluss und Drehzahl nicht."""
+    coordinator = await nutzeranlage.aufbauen(hass, entry)
+
+    assert uris(coordinator, "fwm_durchfluss", "fwm_pufferpumpe_drehzahl") == {
+        "fwm_durchfluss": "/79/10531/0/2310/0",
+        "fwm_pufferpumpe_drehzahl": "/79/10531/0/0/12575",
+    }
+
+
+async def test_warmwasserspeicher_hat_weder_durchfluss_noch_drehzahl(hass, entry):
+    coordinator = await testanlage.aufbauen(hass, entry)
+
+    for key in ("fwm_durchfluss", "fwm_pufferpumpe_drehzahl", "fwm2_durchfluss"):
+        assert key not in coordinator.sensor_defs
+
+
+def test_einheit_kommt_von_der_anlage():
+    """Belegt ist die Einheit an keinem Bericht - die Anlage nennt sie selbst."""
+    from types import SimpleNamespace
+
+    from eta_heating_ws.api import ETAValue
+    from eta_heating_ws.sensor import _einheit_der_anlage
+
+    daten = {
+        "zahl": ETAValue(8.5, "8,5", "l/min", False, 1),
+        "text": ETAValue(None, "Ein", "", True, 0),
+        "ohne": ETAValue(35.0, "35", "", False, 0),
+    }
+    coordinator = SimpleNamespace(data=daten)
+
+    assert _einheit_der_anlage(coordinator, "zahl") == "l/min"
+    assert _einheit_der_anlage(coordinator, "text") is None
+    assert _einheit_der_anlage(coordinator, "ohne") is None
+    assert _einheit_der_anlage(coordinator, "fehlt") is None
+
+
 async def test_kombispeicher_meldet_sein_warmwasser(hass, entry):
     """PufferFlex unter "Warmwasserbereich", der ältere Puffer unter seinem Warmwasser-Zustand."""
     coordinator = await testanlage.aufbauen(hass, entry)

@@ -74,6 +74,7 @@ const TEXTE = {
     temperatur_modul: "Temperatur am Modul",
     speichertemperatur: "Speichertemperatur",
     zirkulation: "Zirkulation",
+    durchfluss: "Durchfluss",
     zirkulation_laeuft: "Zirkulation läuft",
     zapfung: "Zapfung läuft",
     warmwasser_im_puffer: "Warmwasser im Puffer",
@@ -174,6 +175,7 @@ const TEXTE = {
     temperatur_modul: "Temperature at the module",
     speichertemperatur: "Tank temperature",
     zirkulation: "Circulation",
+    durchfluss: "Flow",
     zirkulation_laeuft: "Circulation running",
     zapfung: "Hot water running",
     warmwasser_im_puffer: "Hot water in buffer",
@@ -878,9 +880,12 @@ function teilName(teil, teile, t) {
  *
  * Beim Warmwasserspeicher sind Laden und Zirkulation zweierlei: laedt
  * kommt von der Ladepumpe, ohne sie vom Zustand. Das Frischwassermodul
- * erwärmt Wasser (fliesst), solange seine Pufferpumpe läuft - bei
- * laufender Zirkulation und beim Zapfen. zapft heißt deshalb: Die
- * Pufferpumpe läuft, die Zirkulation nicht.
+ * erwärmt Wasser (fliesst), solange welches hindurchfließt - bei
+ * laufender Zirkulation und beim Zapfen. zapft heißt deshalb: Es
+ * fließt Wasser, die Zirkulation läuft nicht. Ob Wasser fließt, sagt
+ * der Durchfluss, ohne ihn die Drehzahl der Pufferpumpe. Erst ohne
+ * beide zählt die Anforderung der Pufferpumpe: Sie bleibt nach dem
+ * Zapfen stehen, die Karte zeigte dann weiter "Zapfung läuft".
  * fussboden: die Heizkreise, die als Fußbodenheizung gezeichnet werden.
  */
 function anlageLesen(hass, struktur, t, fussboden) {
@@ -947,8 +952,10 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const fwm = teil.bauart === "fwm";
       const zirkulation = wert(`${teil.id}_zirkulationspumpe`), zustand = wert(`${teil.id}_zustand`);
       const ladepumpe = wert(`${teil.id}_ladepumpe`), pufferpumpe = wert(`${teil.id}_pufferpumpe`);
+      const durchfluss = wert(`${teil.id}_durchfluss`);
+      const gemessen = [durchfluss, wert(`${teil.id}_pufferpumpe_drehzahl`)].find((w) => w && w.n !== null);
       const zirkuliert = an(zirkulation);
-      const fliesst = fwm && (pufferpumpe ? an(pufferpumpe) : zirkuliert);
+      const fliesst = fwm && (gemessen ? gemessen.n > 0 : pufferpumpe ? an(pufferpumpe) : zirkuliert);
       return {
         bauart: teil.bauart,
         temperatur: wert(`${teil.id}_warmwasser`),
@@ -956,9 +963,10 @@ function anlageLesen(hass, struktur, t, fussboden) {
         zirkulation,
         zirkuliert,
         ladepumpe,
+        durchfluss,
         laedt: !fwm && (ladepumpe ? an(ladepumpe) : WARMWASSER_LAEDT.includes(zustand?.roh)),
         fliesst,
-        zapft: Boolean(pufferpumpe) && fliesst && !zirkuliert,
+        zapft: Boolean(gemessen || pufferpumpe) && fliesst && !zirkuliert,
       };
     },
     heizkreis(teil) {
@@ -1401,7 +1409,7 @@ class EtaUebersichtKarte extends HTMLElement {
         ${this._zeilen([...(p.kombi ? [[t.warmwasser, p.kombi.temperatur], [t.warmwasser_zustand, p.kombi.zustand]] : []), ...(p.ladung && p.fuehler.length ? [[t.oben, p.fuehler[0]], ...(p.fuehler.length > 1 ? [[t.unten, p.fuehler[p.fuehler.length - 1]]] : [])] : []), [t.ladepumpe, p.ladepumpe]])}`),
       warmwasser: (w) => kachel(w, this._warmwasserMerkmale(w), this._chip(...this._warmwasserStatus(w)), `
         <div class="eta-buehne" ${this._info(w.temperatur)}>${this._warmwasserBild(w, w.bauart === "fwm" ? 124 : 96, 108)}${this._haupt(w.bauart === "fwm" ? t.temperatur_modul : t.speichertemperatur, w.temperatur)}</div>
-        ${this._zeilen([[t.ladepumpe, w.ladepumpe], [t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
+        ${this._zeilen([[t.ladepumpe, w.ladepumpe], [t.durchfluss, w.durchfluss], [t.zirkulation, this._umlauf(w.zirkulation, w.zirkuliert)]])}`),
       heizkreis: (h) => kachel(h, h.heizt ? "data-aktiv" : "", this._chip(this._heizkreisStatus(h), h.heizt), `
         <div class="eta-buehne" ${h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf)}>${this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 132)}${this._haupt(t.vorlauf, h.vorlauf)}</div>
         ${this._zeilen([[t.raum, h.raum && h.raumSoll && !(anlage.schreiben && h.soll) ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}

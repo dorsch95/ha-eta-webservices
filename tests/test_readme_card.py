@@ -545,6 +545,7 @@ def entitaetstabelle() -> list[str]:
             info["translation_key"],
             info.get("suggested_unit")
             or info.get("default_unit")
+            or ("von der Anlage" if info.get("einheit_der_anlage") else None)
             or ("Text" if info.get("is_string") else "–"),
         )
         for info in SENSORS.values()

@@ -93,6 +93,14 @@ DISCOVERY_PATHS = {
         for k in WARMWASSER_SPEICHER
     },
     **{
+        f"{k}_durchfluss": (_rolle(k), ["Eingänge", "Durchflusssensor"])
+        for k in WARMWASSER_SPEICHER
+    },
+    **{
+        f"{k}_pufferpumpe_drehzahl": (_rolle(k), ["Warmwasser", "Pufferpumpe"])
+        for k in WARMWASSER_SPEICHER
+    },
+    **{
         f"{k}_warmwasser": (_rolle(k), ["Puffer", "Warmwasserbereich", "Warmwasser"])
         for k in PUFFER_SPEICHER
     },

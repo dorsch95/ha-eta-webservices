@@ -1114,6 +1114,12 @@
       "fwm_pufferpumpe": {
         "name": "FWM Pufferpumpe"
       },
+      "fwm_durchfluss": {
+        "name": "FWM Durchfluss"
+      },
+      "fwm_pufferpumpe_drehzahl": {
+        "name": "FWM Pufferpumpe Drehzahl"
+      },
       "puffer2_warmwasser": {
         "name": "Puffer 2 Warmwasser"
       },
@@ -1128,6 +1134,12 @@
       },
       "fwm2_pufferpumpe": {
         "name": "Warmwasser 2 Pufferpumpe"
+      },
+      "fwm2_durchfluss": {
+        "name": "Warmwasser 2 Durchfluss"
+      },
+      "fwm2_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 2 Pufferpumpe Drehzahl"
       },
       "puffer3_warmwasser": {
         "name": "Puffer 3 Warmwasser"
@@ -1144,6 +1156,12 @@
       "fwm3_pufferpumpe": {
         "name": "Warmwasser 3 Pufferpumpe"
       },
+      "fwm3_durchfluss": {
+        "name": "Warmwasser 3 Durchfluss"
+      },
+      "fwm3_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 3 Pufferpumpe Drehzahl"
+      },
       "puffer4_warmwasser": {
         "name": "Puffer 4 Warmwasser"
       },
@@ -1158,6 +1176,12 @@
       },
       "fwm4_pufferpumpe": {
         "name": "Warmwasser 4 Pufferpumpe"
+      },
+      "fwm4_durchfluss": {
+        "name": "Warmwasser 4 Durchfluss"
+      },
+      "fwm4_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 4 Pufferpumpe Drehzahl"
       },
       "puffer5_warmwasser": {
         "name": "Puffer 5 Warmwasser"
@@ -1174,6 +1198,12 @@
       "fwm5_pufferpumpe": {
         "name": "Warmwasser 5 Pufferpumpe"
       },
+      "fwm5_durchfluss": {
+        "name": "Warmwasser 5 Durchfluss"
+      },
+      "fwm5_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 5 Pufferpumpe Drehzahl"
+      },
       "puffer6_warmwasser": {
         "name": "Puffer 6 Warmwasser"
       },
@@ -1188,6 +1218,12 @@
       },
       "fwm6_pufferpumpe": {
         "name": "Warmwasser 6 Pufferpumpe"
+      },
+      "fwm6_durchfluss": {
+        "name": "Warmwasser 6 Durchfluss"
+      },
+      "fwm6_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 6 Pufferpumpe Drehzahl"
       },
       "puffer7_warmwasser": {
         "name": "Puffer 7 Warmwasser"
@@ -1204,6 +1240,12 @@
       "fwm7_pufferpumpe": {
         "name": "Warmwasser 7 Pufferpumpe"
       },
+      "fwm7_durchfluss": {
+        "name": "Warmwasser 7 Durchfluss"
+      },
+      "fwm7_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 7 Pufferpumpe Drehzahl"
+      },
       "puffer8_warmwasser": {
         "name": "Puffer 8 Warmwasser"
       },
@@ -1218,6 +1260,12 @@
       },
       "fwm8_pufferpumpe": {
         "name": "Warmwasser 8 Pufferpumpe"
+      },
+      "fwm8_durchfluss": {
+        "name": "Warmwasser 8 Durchfluss"
+      },
+      "fwm8_pufferpumpe_drehzahl": {
+        "name": "Warmwasser 8 Pufferpumpe Drehzahl"
       }
     },
     "switch": {
