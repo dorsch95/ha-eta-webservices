@@ -18,14 +18,23 @@ Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home As
 
 ## 👀 So sieht es aus
 
-![Die Dashboard-Karte am PC: Kessel, Puffer, Frischwassermodul, zwei Heizkreise, Pelletlager und Solar](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard.webp)
+![Die Karte ETA Übersicht als Anlagenbild: Pelletlager, Kessel, Solar und PV-Heizmodul laden den Pufferspeicher, daran hängen zwei Heizkreise und das Frischwassermodul](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/uebersicht_anlagenbild.webp)
+
+<p>
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/uebersicht_kacheln.webp" alt="Dieselbe Karte als Kacheln im dunklen Design" width="560">
+<img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/uebersicht_kompakt.webp" alt="Dieselbe Karte kompakt am Handy, Heizkreis 1 zum Stellen aufgeklappt" width="230">
+</p>
+
+Die Karte [ETA Übersicht](#neue-karte-eta-übersicht): oben als Anlagenbild, darunter als Kacheln im dunklen Design und kompakt am Handy. Die Werte sind Beispiele.
+
+![Die bisherige Dashboard-Karte am PC: Kessel, Puffer, Frischwassermodul, zwei Heizkreise, Pelletlager und Solar](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard.webp)
 
 <p>
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard_handy.webp" alt="Dieselbe Karte am Handy, zweispaltig" width="230">
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm_bearbeiten.webp" alt="Die Karte ETA Zeitprogramm, Montag zum Bearbeiten geöffnet" width="400">
 </p>
 
-Oben die [Dashboard-Karte](#-dashboard-karte) am PC, darunter am Handy und die Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard) mit einem geöffneten Tag. Die Werte stammen von einer nachgebauten Testanlage.
+Darüber die bisherige [Dashboard-Karte](#-dashboard-karte) am PC, darunter am Handy und die Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard) mit einem geöffneten Tag. Die Werte stammen von einer nachgebauten Testanlage.
 
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
@@ -38,7 +47,8 @@ Oben die [Dashboard-Karte](#-dashboard-karte) am PC, darunter am Handy und die K
 - With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Buffer loading times and hot water times can be shown too (*Show* in the card editor); hot water temperatures are editable from 0 to 80 °C, buffer loading times only switch loading on and off. Home Assistant loads the card by itself - add it via *Edit dashboard → Add card*.
 - Alternatively, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
 - A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
-- The ready-made dashboard card: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
+- The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which.
+- The earlier ready-made dashboard card stays available: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
 - Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
 
 </details>
@@ -342,7 +352,7 @@ Die Karte wählt die Spaltenzahl nach der Breite der Ansicht:
 
 ### Neue Karte „ETA Übersicht“
 
-Daneben gibt es eine zweite Karte, die du wie jede andere über **Karte hinzufügen** findest: **ETA Übersicht**. Sie braucht keine Aktion und kein YAML, passt sich selbst an deine Anlage an und folgt dem hellen oder dunklen Design von Home Assistant. Die bisherige Karte bleibt, wie sie ist.
+Daneben gibt es eine zweite Karte, die du wie jede andere über **Karte hinzufügen** findest: **ETA Übersicht**. Sie braucht keine Aktion und kein YAML, passt sich selbst an deine Anlage an und folgt dem hellen oder dunklen Design von Home Assistant. Die bisherige Karte bleibt, wie sie ist - an einem eingerichteten Dashboard ändert sich nichts.
 
 In den Einstellungen der Karte wählst du die **Ansicht**:
 
@@ -354,7 +364,9 @@ In den Einstellungen der Karte wählst du die **Ansicht**:
 
 In den Einstellungen wählst du auch, welche Heizkreise statt des Heizkörpers als **Fußbodenheizung** erscheinen.
 
-Mit Schreibzugriff stellst du Heizkreise direkt in der Karte: die **Betriebsart** und, wenn der Heizkreis einen Thermostat hat, **Raum Soll** in Schritten von 0,5 °C. In den Kacheln stehen die Tasten in der Kachel, in der Kompaktansicht klappt ein Tipp auf den Heizkreis sie auf. Mehrere Tipps hintereinander schreiben nur einmal auf die Anlage.
+Mit Schreibzugriff stellst du Heizkreise direkt in der Karte: die **Betriebsart** und, wenn der Heizkreis einen Thermostat hat, **Raum Soll** in Schritten von 0,5 °C. In den Kacheln stehen die Tasten in der Kachel, in der Kompaktansicht und im Anlagenbild klappt ein Tipp auf den Heizkreis sie auf. Mehrere Tipps hintereinander schreiben nur einmal auf die Anlage.
+
+Steht eine **Störung** an, nennt die Karte oben die Meldungen der Anlage. Ein **niedriger Vorrat** im Lager und eine **fällige Aschebox** sind farbig hervorgehoben.
 
 Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz, am besten eine Ansicht vom Typ **Panel (1 Karte)**. Ist das Anlagenbild zu breit, rückt es enger zusammen und wird am Handy zur Liste.
 

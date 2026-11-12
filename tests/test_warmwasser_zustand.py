@@ -12,6 +12,7 @@ from eta_heating_ws.uebersicht import _ws_uebersicht
 
 from . import test_mehrere_speicher as testanlage
 from . import test_puffer_ohne_kombi as nutzeranlage
+from .test_sensors import setup_integration
 from .test_zeitprogramm_karte import Verbindung
 
 
@@ -88,6 +89,37 @@ async def test_ohne_antwort_bleibt_das_warmwasser(hass, entry, monkeypatch):
     assert "puffer_warmwasser" in coordinator.sensor_defs
 
 
+async def test_umbenanntes_frischwassermodul_bleibt_eines(hass, entry):
+    """Der Name zählt nicht: Das Frischwassermodul hat eine Pufferpumpe, der Speicher eine Ladepumpe."""
+    hass.session.menu = nutzeranlage.MENU.replace('<fub name="FWM"', '<fub name="Warmwasser Haus"')
+    hass.session.ohne_einheit.add(nutzeranlage.SOLL)
+    entry.data["components"] = ["puffer", "fwm"]
+    entry.data["fub_names"] = {"fwm": "Warmwasser Haus"}
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.funktionsblock("fwm") == "Warmwasser Haus"
+    assert coordinator.frischwassermodul("fwm") is True
+
+
+async def test_warmwasserspeicher_namens_fwm_bleibt_speicher(hass, entry):
+    hass.session.menu = testanlage.MENU.replace('<fub name="WW"', '<fub name="FWM"')
+    entry.data["components"] = ["puffer", "fwm"]
+    entry.data["fub_names"] = {"pufferflex": "PufferFlex", "fwm": "FWM"}
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.funktionsblock("fwm") == "FWM"
+    assert coordinator.frischwassermodul("fwm") is False, "er hat eine Ladepumpe"
+
+
+async def test_ohne_pumpen_zaehlt_der_name(hass, entry):
+    """Die ältere Aufzeichnung des Menübaums: Dort hat das FWM keinen Zustand, aber seine Pufferpumpe."""
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.frischwassermodul("fwm") is True
+    del coordinator.discovered_uris["fwm_pufferpumpe"]
+    assert coordinator.frischwassermodul("fwm") is True, "der Funktionsblock heißt FWM"
+
+
 async def test_karte_bekommt_die_neuen_werte(hass, entry):
     """Die Karte fragt nach dem Schlüssel - die neuen Sensoren kommen ohne Zutun mit."""
     await testanlage.aufbauen(hass, entry)
@@ -102,3 +134,7 @@ async def test_karte_bekommt_die_neuen_werte(hass, entry):
     assert {"fwm_zustand", "fwm_ladepumpe", "puffer_warmwasser"} <= set(anlage["entitaeten"])
     bauarten = {teil["id"]: teil.get("bauart") for teil in anlage["teile"] if teil["art"] == "warmwasser"}
     assert bauarten == {"fwm": "speicher", "fwm2": "speicher"}, "WW und WW 2 sind Warmwasserspeicher"
+    von = {teil["id"]: teil["von"] for teil in anlage["teile"]}
+    assert "kessel" not in von, "die Testanlage hat keinen Kessel - dann zeigt die Karte auch keinen"
+    assert von["puffer"] is None, "und die Leitung vom Kessel zum ersten Puffer entfällt"
+    assert von["puffer2"] == "puffer"

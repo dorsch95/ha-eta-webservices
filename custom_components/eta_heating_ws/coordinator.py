@@ -525,12 +525,26 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return info.get("maximum_uri")
 
+    def frischwassermodul(self, komponente: str) -> bool:
+        """Ist dieses Warmwasser ein Frischwassermodul und kein Warmwasserspeicher?
+
+        Das Frischwassermodul hat unter "Ausgänge" eine Pufferpumpe, der
+        Warmwasserspeicher eine Warmwasser Ladepumpe. Das gilt auch, wenn der
+        Funktionsblock umbenannt wurde. Führt der Menübaum keine von beiden,
+        zählt der Name: Das Frischwassermodul heißt ab Werk "FWM".
+        """
+        if f"{komponente}_pufferpumpe" in self.discovered_uris:
+            return True
+        if f"{komponente}_ladepumpe" in self.discovered_uris:
+            return False
+        return self.funktionsblock(komponente).casefold().startswith("fwm")
+
     def zeitprogramm_fwm(self, programm: str) -> bool:
         """Gehört das Programm zum Frischwassermodul? Nur dort gibt es den Hinweis zur Regelung."""
         info = self.zeitprogramm_namen.get(programm)
         if info is None or not info["komponente"].startswith("fwm"):
             return False
-        return self.funktionsblock(info["komponente"]).casefold().startswith("fwm")
+        return self.frischwassermodul(info["komponente"])
 
     def zeitprogramm_name(self, programm: str) -> str:
         """So heißt ein Zeitprogramm in der Karte: der Heizkreis oder die letzten zwei Stufen im Menübaum.

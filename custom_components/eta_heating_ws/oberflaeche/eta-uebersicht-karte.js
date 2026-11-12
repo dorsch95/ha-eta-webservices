@@ -111,6 +111,11 @@ const TEXTE = {
     fernleitung: "Fernleitung",
     fernpumpe: "Fernpumpe",
     an_teil: "an",
+    vorrat_niedrig: "Vorrat niedrig",
+    bestellen_bis: "Bestellen bis",
+    verbrauch_heute: "Verbrauch heute",
+    schliessen: "Schließen",
+    weitere: "weitere",
   },
   en: {
     karte_beschreibung: "The heating system as tiles, as a system diagram with pipes or as a compact list.",
@@ -202,12 +207,19 @@ const TEXTE = {
     fernleitung: "Transfer line",
     fernpumpe: "Line pump",
     an_teil: "on",
+    vorrat_niedrig: "Stock low",
+    bestellen_bis: "Order by",
+    verbrauch_heute: "Used today",
+    schliessen: "Close",
+    weitere: "more",
   },
 };
 
 /**
- * Die Texte, die die Anlage für "Kessel-Zustand detailliert" meldet, und
- * welches bewegte Bild dazu gehört - dieselben Listen wie in karte.py.
+ * Die Texte, die ein Pelletkessel für "Kessel-Zustand detailliert" meldet,
+ * und welches bewegte Bild dazu gehört - dieselben Listen wie in karte.py.
+ * Ein Text, der in keiner steht - etwa von einem anderen Kesseltyp -,
+ * bekommt sein Bild über ein Stichwort, siehe kesselArt.
  */
 const KESSEL_BILDER = {
   flamme: [
@@ -221,7 +233,22 @@ const KESSEL_BILDER = {
     "Glutabbrand", "Glutabbrand wegen Entaschung", "Glutabbrand da ausgeschaltet",
     "Glutabbrand weil Aschebox fehlt", "Glutabbrand wegen Störung", "Glutabbrand wegen Verriegelung", "Ausbrand",
   ],
+  aus: [
+    "Ausgeschaltet", "Klappe Öffnen", "Pelletsbehälter auffüllen", "Füllen gestoppt wegen Zündung",
+    "Füllen gestoppt wegen Entaschung", "Bereit", "Aschebox fehlt", "Verriegelt", "Lambdasonde kalibrieren",
+    "Vorwärmen", "Stoker leeren", "Füllen", "Isoliertür geöffnet", "Verzögerungszeit abwarten", "Übertemperatur",
+    "Vorbereitung", "Vorbereiten auf Entaschung", "Durchlüften", "Umschaltung auf Stückholzbetrieb",
+  ],
 };
+const KESSEL_STICHWORTE = [["stör", "stoerung"], ["zünd", "zuendung"], ["glut", "glut"], ["ausbrand", "glut"], ["entasch", "entaschen"], ["heiz", "flamme"]];
+
+function kesselArt(text) {
+  if (!text) return "aus";
+  const genau = Object.keys(KESSEL_BILDER).find((bild) => KESSEL_BILDER[bild].includes(text));
+  if (genau) return genau;
+  const klein = text.toLowerCase();
+  return KESSEL_STICHWORTE.find(([wort]) => klein.includes(wort))?.[1] || "aus";
+}
 const PUFFER_LAEDT = ["Anfordern", "Laden", "Restwärme", "Abschöpfen"];
 const WARMWASSER_LAEDT = [...PUFFER_LAEDT, "Extra Laden"];
 const OHNE_FLUSS = ["Aus", "-", "", "unavailable", "unknown"];
@@ -243,12 +270,14 @@ const STIL = `
     --akzent: #ff9b00; --auf-akzent: #1a1c20;
     --heiss: #e5484d; --kalt: #3b82f6; --pellet: #c8963e; --pellet-hell: #dcb062; --pellet-dunkel: #a87a2c;
     --sonne: #f2a900; --zelle: #6d7786; --pv: #2c56b0;
+    --stoer: #c62f35; --warn: #9a5b00; --auf-warn: #fff;
   }
   :host([vollbild]) { padding: 12px 16px 16px; box-sizing: border-box; }
   :host([dunkel]) {
     --metall: #5a606b; --metall-hell: #7a818d; --metall-dunkel: #3b4049; --kammer: #0a0b0d;
     --heiss: #f0595e; --kalt: #5b9bff; --pellet: #d1a04a; --pellet-hell: #e3b96c;
     --sonne: #ffc02e; --zelle: #4c5562; --pv: #3d68c9;
+    --stoer: #d93a40; --warn: #f0a92a; --auf-warn: #1a1c20;
   }
   .eta { position: relative; color: var(--text); container-type: inline-size; }
   .eta-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
@@ -260,8 +289,15 @@ const STIL = `
   button.eta-chip { cursor: pointer; }
   .eta-chip.klein { height: 26px; padding: 0 10px; font-size: 12px; background: var(--flaeche); border-color: transparent; }
   .eta-chip .eta-icon { width: 16px; height: 16px; }
-  .eta-chip[data-art="stoer"] { background: var(--heiss); border-color: transparent; color: #fff; }
+  .eta-chip[data-art="stoer"] { background: var(--stoer); border-color: transparent; color: #fff; }
   .eta-chip[data-art="stoer"] .eta-punkt { background: #fff; }
+  .eta-chip[data-art="warn"] { background: var(--warn); border-color: transparent; color: var(--auf-warn); }
+  .eta-chip[data-art="warn"] .eta-punkt { background: var(--auf-warn); }
+  .eta-banner { display: flex; align-items: flex-start; gap: 10px; width: 100%; box-sizing: border-box; margin: 0 0 14px; padding: 12px 14px; border: 0; border-radius: var(--rund); background: var(--stoer); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+  .eta-banner ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .eta-banner b { font-weight: 500; }
+  .eta-banner:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  .eta-kompakt .eta-banner { margin: 0; }
   .eta-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--metall-dunkel); flex: none; }
   .eta-punkt[data-an] { background: var(--akzent); animation: eta-puls 2s ease-in-out infinite; }
   .eta-icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -295,6 +331,10 @@ const STIL = `
   .eta-balken { position: relative; height: 8px; border-radius: 4px; background: var(--flaeche); overflow: hidden; }
   .eta-balken i { display: block; height: 100%; border-radius: 4px; background: var(--metall-dunkel); transition: width .6s ease; }
   .eta-balken[data-art="pellet"] i { background: var(--pellet); }
+  .eta-balken[data-art="warn"] i { background: var(--warn); }
+  .eta-warnzeichen { display: inline-flex; color: var(--warn); }
+  .eta-warnzeichen .eta-icon { width: 16px; height: 16px; }
+  .eta-messung-kopf b { display: inline-flex; align-items: center; gap: 6px; }
   .eta-balken u { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text); }
   .eta-knoepfe { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
   .eta-knopf { min-height: 54px; padding: 6px 4px; border: 0; border-radius: 12px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 12px; font-weight: 500; line-height: 1.2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: transform .1s; }
@@ -446,6 +486,17 @@ const STIL = `
   .eta-kennzahlen dt { font-size: 12px; color: var(--text-2); }
   .eta-kennzahlen dd { margin: 0; font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
   .eta-szenenfuss .eta-bedienung { flex: 1 1 300px; max-width: 420px; display: flex; flex-direction: column; gap: 8px; }
+  .eta-station[data-aktion] { cursor: pointer; }
+  .eta-station[data-aktion]:focus-visible { outline: 2px solid var(--akzent); outline-offset: 6px; border-radius: 12px; }
+  .eta-station[aria-expanded="true"] { outline: 2px solid var(--akzent); outline-offset: 6px; border-radius: 12px; }
+  .eta-stellen { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px; border-radius: 12px; background: var(--buehne); }
+  .eta-stellen > b { font-weight: 500; }
+  .eta-stellen .eta-soll { flex: 1 1 240px; max-width: 320px; }
+  .eta-stellen .eta-modi { flex: 1 1 260px; max-width: 360px; }
+  .eta-stellen .zu { margin-left: auto; background: transparent; }
+  .eta-klappe.eta-inline { display: none; }
+  .eta-bild[data-schmal] .eta-klappe.eta-inline { display: flex; padding: 0 0 4px 22px; }
+  .eta-bild[data-schmal] ~ .eta-stellen { display: none; }
   .eta-bild[data-schmal] { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 0; }
   .eta-bild[data-schmal] .eta-leitungen { display: none; }
   .eta-bild[data-schmal] .eta-spalte { display: contents; }
@@ -504,6 +555,11 @@ const STIL = `
   @keyframes eta-drehen { to { transform: rotate(360deg); } }
   @keyframes eta-leuchten { 0%, 100% { fill-opacity: .78; } 50% { fill-opacity: 1; } }
 
+  @media (hover: hover) {
+    .eta-knopf:hover, .eta-rund:hover, .eta-frage button:hover, button.eta-chip:hover { filter: brightness(.95); }
+    .eta-modus:not([aria-pressed="true"]):hover { color: var(--text); }
+    .eta-zeilen div[data-info]:hover dt, .eta-kennzahlen div[data-info]:hover dt { color: var(--text); }
+  }
   .eta[data-ruhe] *, .eta[data-ruhe] *::before { animation: none !important; }
   @media (prefers-reduced-motion: reduce) { .eta *, .eta *::before { animation: none !important; transition: none !important; } }
   @container (max-width: 480px) {
@@ -524,6 +580,7 @@ const ICON = {
   thermo: sym('<path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0z"/>'),
   minus: sym('<path d="M6 12h12"/>'),
   plus: sym('<path d="M12 6v12M6 12h12"/>'),
+  zu: sym('<path d="M6 6l12 12M18 6 6 18"/>'),
   pfeil: sym('<path d="M6 9l6 6 6-6"/>', "eta-pfeil"),
   haken: sym('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   warn: sym('<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.01"/>'),
@@ -825,7 +882,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
   const lesen = {
     kessel() {
       const zustand = wert("kessel_zustand");
-      const bild = Object.keys(KESSEL_BILDER).find((b) => KESSEL_BILDER[b].includes(zustand?.roh)) || "aus";
+      const bild = kesselArt(zustand?.roh);
       const schalter = stand("kessel_schalter");
       const plan = wert("aschebox_plan");
       const asche = wert("aschebox_verbrauch"), schwelle = wert("aschebox_schwelle");
@@ -844,6 +901,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
         leeren: struktur.entitaeten.aschebox_leeren_um || null,
         abbrechen: struktur.entitaeten.aschebox_plan_abbrechen || null,
         plan: plan && PLAN_LAEUFT.includes(plan.roh) ? plan : null,
+        ascheFaellig: stand("aschebox_faellig")?.state === "on",
       };
     },
     puffer(teil) {
@@ -917,6 +975,9 @@ function anlageLesen(hass, struktur, t, fussboden) {
         zustand,
         foerdert: zustand?.roh === LAGER_FOERDERT,
         reichtBis: wert("lager_reicht_bis"),
+        bestellenBis: wert("lager_bestellen_bis"),
+        heute: wert("pellet_verbrauch_heute"),
+        niedrig: stand("lager_niedrig")?.state === "on",
       };
     },
     solar() {
@@ -945,6 +1006,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
     schreiben: struktur.schreiben,
     aussen: wert("aussentemperatur"),
     stoerung: stoerung?.state === "on",
+    meldungen: (Array.isArray(stoerung?.attributes?.fehler) ? stoerung.attributes.fehler : []).map((f) => ({ block: f?.funktionsblock || "", text: f?.meldung || "" })),
     fehler: struktur.entitaeten.aktive_fehler || struktur.entitaeten.stoerung || null,
     ruhe: animationen?.state === "off",
   };
@@ -1019,6 +1081,9 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   set hass(hass) {
+    const sprache_ = hass?.locale?.language || hass?.language;
+    if (sprache_ !== this._sprache) this._neuZeichnen = true;
+    this._sprache = sprache_;
     this._hass = hass;
     this.toggleAttribute("dunkel", Boolean(hass?.themes?.darkMode));
     this._fragen();
@@ -1043,6 +1108,9 @@ class EtaUebersichtKarte extends HTMLElement {
 
   disconnectedCallback() {
     this._beobachter.disconnect();
+    Object.values(this._sollTakt).forEach(clearTimeout);
+    this._sollTakt = {};
+    this._wunsch = {};
   }
 
   getCardSize() {
@@ -1064,10 +1132,11 @@ class EtaUebersichtKarte extends HTMLElement {
   /**
    * Fragt die Integration nach der Anlage - beim ersten Mal, danach alle
    * paar Minuten, falls sich die Einrichtung geändert hat. Ohne Antwort
-   * bald noch einmal.
+   * bald noch einmal, ebenso, wenn eine der genannten Entitäten nicht
+   * mehr da ist: Dann wurde die Anlage gerade neu eingerichtet.
    */
   async _fragen() {
-    const abstand = this._struktur ? NEU_FRAGEN_NACH : NOCHMAL_NACH;
+    const abstand = this._struktur && !this._veraltet ? NEU_FRAGEN_NACH : NOCHMAL_NACH;
     if (this._fragt || !this._hass?.callWS || (this._gefragt && Date.now() - this._gefragt < abstand)) return;
     this._fragt = true;
     this._gefragt = Date.now();
@@ -1090,6 +1159,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const struktur = this._struktur;
     if (struktur && !struktur.leer) {
       const ids = Object.values(struktur.entitaeten);
+      this._veraltet = ids.some((id) => !(id in this._hass.states));
       const neu = ids.some((id) => this._hass.states[id] !== this._staende[id]) || !Object.keys(this._staende).length;
       if (!neu && !this._neuZeichnen) return;
       this._staende = Object.fromEntries(ids.map((id) => [id, this._hass.states[id]]));
@@ -1147,7 +1217,20 @@ class EtaUebersichtKarte extends HTMLElement {
     if (anlage.aussen) chips.push(`<button type="button" class="eta-chip" data-info="${e(anlage.aussen.id)}">${ICON.thermo}${e(t.aussen)} ${e(anlage.aussen.text)}</button>`);
     if (kessel?.zustand) chips.push(`<button type="button" class="eta-chip" data-info="${e(kessel.zustand.id)}"><i class="eta-punkt" ${kessel.bild !== "aus" && kessel.bild !== "stoerung" ? "data-an" : ""}></i>${e(t.kessel)}: ${e(kessel.zustand.text)}</button>`);
     if (anlage.fehler) chips.push(`<button type="button" class="eta-chip" ${anlage.stoerung ? 'data-art="stoer"' : ""} data-info="${e(anlage.fehler)}">${anlage.stoerung ? ICON.warn : ICON.haken}${e(anlage.stoerung ? t.stoerung : t.keine_stoerung)}</button>`);
-    return `<div class="eta-kopf">${titel ? `<h2 class="eta-titel">${e(titel)}</h2>` : "<span></span>"}<div class="eta-chips">${chips.join("")}</div></div>`;
+    return `<div class="eta-kopf">${titel ? `<h2 class="eta-titel">${e(titel)}</h2>` : "<span></span>"}<div class="eta-chips">${chips.join("")}</div></div>${this._banner(anlage)}`;
+  }
+
+  /** Steht eine Störung an, nennt die Karte die Meldungen der Anlage - höchstens drei, dann die Zahl der übrigen. */
+  _banner(anlage) {
+    if (!anlage.stoerung || !anlage.meldungen.length) return "";
+    const zeilen = anlage.meldungen.slice(0, 3).map((m) => `<li><b>${e(m.block)}</b>${m.block && m.text ? ": " : ""}${e(m.text)}</li>`);
+    if (anlage.meldungen.length > 3) zeilen.push(`<li>+${anlage.meldungen.length - 3} ${e(this._t.weitere)}</li>`);
+    return `<button type="button" class="eta-banner" ${anlage.fehler ? `data-info="${e(anlage.fehler)}"` : ""}>${ICON.warn}<ul>${zeilen.join("")}</ul></button>`;
+  }
+
+  /** Raum Soll und Betriebsart eines Heizkreises, soweit sie sich stellen lassen. */
+  _stellen(h, anlage) {
+    return `${this._raumSoll(h, anlage)}${this._modi(h, anlage)}`;
   }
 
   /** Die Tasten am Kessel - nur mit Schreibzugriff und nur, was die Anlage hat. */
@@ -1236,7 +1319,7 @@ class EtaUebersichtKarte extends HTMLElement {
       kessel: (k) => kachel(k, `data-zustand="${k.bild}"`, k.zustand ? this._chip(k.zustand.text, k.bild !== "aus" && k.bild !== "stoerung", k.bild === "stoerung" ? "stoer" : "") : "", `
         <div class="eta-buehne" ${this._info(k.temperatur)}>${this._figur(kesselBild(), 116)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
         ${this._zeilen(k.zeilen)}
-        ${k.asche ? `<div class="eta-messung" ${this._info(k.ascheStatus || k.asche)}><div class="eta-messung-kopf"><span>${e(t.aschebox)}</span><b>${e((k.ascheStatus || k.asche).text)}</b></div>${k.ascheAnteil === null ? "" : `<div class="eta-balken"><i style="width:${(k.ascheAnteil * 100).toFixed(1)}%"></i></div>`}</div>` : ""}
+        ${k.asche ? `<div class="eta-messung" ${this._info(k.ascheStatus || k.asche)}><div class="eta-messung-kopf"><span>${e(t.aschebox)}</span><b>${k.ascheFaellig ? `<span class="eta-warnzeichen">${ICON.warn}</span>` : ""}${e((k.ascheStatus || k.asche).text)}</b></div>${k.ascheAnteil === null ? "" : `<div class="eta-balken" ${k.ascheFaellig ? 'data-art="warn"' : ""}><i style="width:${(k.ascheAnteil * 100).toFixed(1)}%"></i></div>`}</div>` : ""}
         ${this._bedienung(k, anlage)}`),
       puffer: (p) => kachel(p, "", p.zustand ? this._chip(p.zustand.text, p.laedt) : "", `
         <div class="eta-buehne" ${this._info(p.ladung || p.fuehler[0])}>${this._pufferBild(p, 112, 208)}${p.ladung ? this._haupt(t.ladezustand, p.ladung, p.energie ? p.energie.text : "") : p.fuehler.length ? this._haupt(t.oben, p.fuehler[0]) : ""}</div>
@@ -1249,10 +1332,10 @@ class EtaUebersichtKarte extends HTMLElement {
         ${this._zeilen([[t.raum, h.raum && h.raumSoll && !(anlage.schreiben && h.soll) ? { ...h.raum, text: `${h.raum.text} · ${t.soll} ${h.raumSoll}` } : h.raum], [t.zeitprogramm, h.programm], [t.anforderung, h.anforderung]])}
         ${this._raumSoll(h, anlage)}
         ${this._modi(h, anlage)}`),
-      lager: (l) => kachel(l, l.foerdert ? "data-foerdert" : "", l.zustand ? this._chip(l.zustand.text, l.foerdert) : "", `
+      lager: (l) => kachel(l, l.foerdert ? "data-foerdert" : "", l.niedrig ? this._chip(t.vorrat_niedrig, false, "warn") : l.zustand ? this._chip(l.zustand.text, l.foerdert) : "", `
         <div class="eta-buehne" ${this._info(l.vorrat)}>${this._figur(lagerBild(l.anteil ?? 0), 118)}${this._haupt(t.vorrat, l.vorrat, l.anteil !== null && l.maximum ? `${Math.round(l.anteil * 100)} % ${t.von} ${l.maximum.text}` : "")}</div>
-        ${l.anteil === null ? "" : `<div class="eta-messung"><div class="eta-balken" data-art="pellet"><i style="width:${(l.anteil * 100).toFixed(1)}%"></i>${l.warnAnteil === null ? "" : `<u style="left:${(l.warnAnteil * 100).toFixed(1)}%"></u>`}</div></div>`}
-        ${this._zeilen([[t.reicht_bis, l.reichtBis], [t.warnung_ab, l.warnung]])}`),
+        ${l.anteil === null ? "" : `<div class="eta-messung"><div class="eta-balken" data-art="${l.niedrig ? "warn" : "pellet"}"><i style="width:${(l.anteil * 100).toFixed(1)}%"></i>${l.warnAnteil === null ? "" : `<u style="left:${(l.warnAnteil * 100).toFixed(1)}%"></u>`}</div></div>`}
+        ${this._zeilen([[t.reicht_bis, l.reichtBis], [t.bestellen_bis, l.bestellenBis], [t.verbrauch_heute, l.heute], [t.warnung_ab, l.warnung]])}`),
       solar: (s) => kachel(s, s.aktiv ? "data-aktiv" : "", this._chip(s.aktiv ? t.liefert : t.ruht, s.aktiv), `
         <div class="eta-buehne" ${this._info(s.leistung)}>${this._figur(solarBild(), 132)}${this._haupt(t.leistung, s.leistung)}</div>
         ${this._zeilen([[t.kollektor, s.kollektor], [t.ertrag_heute, s.heute]])}`),
@@ -1273,7 +1356,9 @@ class EtaUebersichtKarte extends HTMLElement {
   /**
    * Stellt die Teile in Spalten: links die Erzeuger, dann je Stufe, was
    * an der vorigen hängt. Die Leitungen dazu merkt sich die Karte in
-   * _kanten und misst sie nach dem Zeichnen aus, siehe _leitungen. Jede
+   * _kanten und misst sie nach dem Zeichnen aus, siehe _leitungen. In
+   * einer Spalte steht oben, was an dem oberen Teil der vorigen hängt -
+   * so kreuzen sich die Leitungen möglichst wenig. Jede
    * Verbindung ist genau eine Linie; Vor- und Rücklauf zeigt die Karte
    * nicht getrennt.
    */
@@ -1299,14 +1384,22 @@ class EtaUebersichtKarte extends HTMLElement {
     const rang = { solar: 1, kessel: 0, brenner: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
     const zeichnen = {
-      lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : "")),
+      lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
       kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 132), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
       solar: (s) => station(s, "quer links oben", s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.energie?.text, p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
-      heizkreis: (h) => station(h, "quer", h.heizt ? "data-aktiv data-fluss" : "", h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf), this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 96), schild(h, h.vorlauf, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h)].filter(Boolean).join(" · "))),
+      heizkreis: (h) => {
+        const stellen = this._stellen(h, anlage), offen = this._offen === h.id;
+        const tipp = stellen
+          ? `data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"`
+          : h.thermostat ? `data-info="${e(h.thermostat)}" tabindex="0" role="button"` : this._info(h.vorlauf);
+        const bild = this._figur(h.boden ? fussbodenBild() : heizkreisBild(), 96);
+        const text = schild(h, h.vorlauf, [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h)].filter(Boolean).join(" · "));
+        return `${station(h, "quer", h.heizt ? "data-aktiv data-fluss" : "", tipp, bild, text)}${stellen && offen ? `<div class="eta-klappe eta-inline">${stellen}</div>` : ""}`;
+      },
       warmwasser: (w) => station(w, "quer", `${this._warmwasserMerkmale(w)} ${w.laedt || w.fliesst ? "data-fluss" : ""}`, this._info(w.temperatur), this._warmwasserBild(w, 96, 78), schild(w, w.temperatur, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "))),
     };
 
@@ -1328,17 +1421,25 @@ class EtaUebersichtKarte extends HTMLElement {
     }
     this._kanten = kanten;
 
-    const sortiert = anlage.teile.map((teil, platz) => ({ teil, platz, spalte: tiefe(teil) })).sort((a, b) => a.spalte - b.spalte || rang[a.teil.art] - rang[b.teil.art] || a.platz - b.platz);
-    const spalten = [...new Set(sortiert.map((x) => x.spalte))].map((nr) => {
-      const drin = sortiert.filter((x) => x.spalte === nr);
+    const verteilt = anlage.teile.map((teil, platz) => ({ teil, platz, spalte: tiefe(teil) }));
+    const stelle = {};
+    const vorher = (x) => (erzeugt(x.teil) || !quelle(x.teil) ? 0 : stelle[quelle(x.teil)] ?? 0);
+    const spalten = [...new Set(verteilt.map((x) => x.spalte))].sort((a, b) => a - b).map((nr) => {
+      const drin = verteilt.filter((x) => x.spalte === nr).sort((a, b) => vorher(a) - vorher(b) || rang[a.teil.art] - rang[b.teil.art] || a.platz - b.platz);
+      drin.forEach((x, i) => {
+        stelle[x.teil.id] = i;
+      });
       const quer = drin.every((x) => x.teil.art === "heizkreis" || x.teil.art === "warmwasser");
       return `<div class="eta-spalte ${quer ? "eta-verbraucher" : ""}">${drin.map((x) => zeichnen[x.teil.art](x.teil)).join("")}</div>`;
     });
     const kessel = nachId.kessel;
     const kennzahlen = kessel ? [...kessel.zeilen, [t.aschebox, kessel.ascheStatus || kessel.asche]].filter(([, w]) => w) : [];
     const fuss = this._bedienung(kessel, anlage);
+    const offener = anlage.teile.find((teil) => teil.art === "heizkreis" && teil.id === this._offen);
+    const stellen = offener ? this._stellen(offener, anlage) : "";
     return `${this._kopf(anlage)}<section class="eta-kachel eta-szene">
       <div class="eta-bild"><svg class="eta-leitungen" aria-hidden="true" data-fest></svg>${spalten.join("")}</div>
+      ${stellen ? `<div class="eta-stellen"><b>${e(offener.name)}</b>${stellen}<button type="button" class="eta-rund zu" data-aktion="aufklappen" data-teil="${offener.id}" aria-label="${e(t.schliessen)}">${ICON.zu}</button></div>` : ""}
       ${kennzahlen.length || fuss ? `<div class="eta-szenenfuss"><dl class="eta-kennzahlen">${kennzahlen.map(([name, w]) => `<div ${this._info(w)}><dt>${e(name)}</dt><dd>${e(w.text)}</dd></div>`).join("")}</dl>${fuss}</div>` : ""}
     </section>`;
   }
@@ -1409,23 +1510,24 @@ class EtaUebersichtKarte extends HTMLElement {
       warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur),
       heizkreis: (h) => {
         const neben = [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h), h.raum ? `${t.raum} ${h.raum.text}` : ""].filter(Boolean).join(" · ");
-        const stellen = `${this._raumSoll(h, anlage)}${this._modi(h, anlage)}`;
+        const stellen = this._stellen(h, anlage);
         if (!stellen) return zeile("heizung", h.heizt, h.name, neben, h.vorlauf);
         const offen = this._offen === h.id;
         return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${h.heizt ? "data-an" : ""}>${ICON.heizung}</span><div class="eta-reihe-text"><b>${e(h.name)}</b><span>${e(neben)}</span></div><span class="eta-reihe-wert">${e(h.vorlauf ? h.vorlauf.text : "–")}</span>${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
       },
-      lager: (l) => zeile("lager", l.foerdert, l.name, l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : "", l.vorrat, balken(l.anteil, "pellet")),
+      lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet")),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur),
       fernleitung: (f) => zeile("rohr", f.pumpt, f.name, f.pumpt ? t.laeuft : t.ruht, f.pumpe),
     };
-    const liste = anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil)) : "");
+    const liste = anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
     const titel = this._konfig.titel ?? t.titel;
     const pufferTeil = erster
       ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.energie ? `<span class="eta-neben">${e(erster.energie.text)}</span>` : ""}</div></div>`
       : "";
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
+      ${this._banner(anlage)}
       <header class="eta-kompakt-kopf"><h3>${e(titel)}</h3>${kessel?.zustand ? this._chip(`${t.kessel}: ${kessel.zustand.text}`, kessel.bild !== "aus" && kessel.bild !== "stoerung", kessel.bild === "stoerung" ? "stoer" : "") : ""}</header>
       ${kessel ? `<div class="eta-buehne"><div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._figur(kesselBild(), 60)}${this._haupt(t.kessel, kessel.temperatur, anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : "")}</div>${pufferTeil}</div>` : ""}
       <div class="eta-liste">${liste}</div>

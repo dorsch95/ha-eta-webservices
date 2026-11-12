@@ -73,7 +73,8 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     block: wie der Funktionsblock an der Anlage heißt. bauart: nur beim
     Warmwasser - das Frischwassermodul bekommt ein anderes Bild als der
     Warmwasserspeicher, weil seine Temperatur ohne Zapfen sinkt und ein
-    Speicher mit kalten Farben nach "kein Warmwasser" aussähe.
+    Speicher mit kalten Farben nach "kein Warmwasser" aussähe. Welches von
+    beiden es ist, sagt ETADataUpdateCoordinator.frischwassermodul.
     """
     block = coordinator.funktionsblock(komponente)
     teil = {
@@ -84,8 +85,22 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
         "von": quelle,
     }
     if komponente in WARMWASSER_SPEICHER:
-        teil["bauart"] = "fwm" if block.casefold().startswith("fwm") else "speicher"
+        teil["bauart"] = "fwm" if coordinator.frischwassermodul(komponente) else "speicher"
     return teil
+
+
+def _vorhanden(coordinator, komponente: str) -> bool:
+    """Führt die Anlage dieses Teil? Ohne einen einzigen Wert im Menübaum bleibt es aus der Karte.
+
+    Der Kessel ist als Komponente nicht abwählbar, aber nicht jede Anlage
+    hat einen: An einer Unterstation kommt die Wärme über die Fernleitung.
+    Die Außentemperatur allein macht noch keinen Kessel.
+    """
+    if komponente in coordinator.components_without_data:
+        return False
+    if komponente == "kessel":
+        return any(key.startswith("kessel_") for key in coordinator.discovered_uris)
+    return True
 
 
 def entitaeten(hass: HomeAssistant, entry_id: str) -> dict[str, str]:
@@ -102,20 +117,32 @@ def entitaeten(hass: HomeAssistant, entry_id: str) -> dict[str, str]:
 
 
 def anlage(hass: HomeAssistant, eintrag) -> dict:
-    """Eine Anlage für die Karte: Teile, Verbindungen, Entitäten, Schreibzugriff."""
+    """Eine Anlage für die Karte: Teile, Verbindungen, Entitäten, Schreibzugriff.
+
+    Ein Teil, das die Anlage nicht führt, fehlt - und mit ihm die Leitung
+    zu allem, was laut Auswahl an ihm hängt.
+    """
     coordinator = eintrag.runtime_data
     komponenten = [k for k in coordinator.components if k in COMPONENTS]
     wege = verbindungen(
         komponenten, {**eintrag.data, **eintrag.options}.get(CONF_VERBINDUNGEN)
     )
+    gezeigt = [
+        komponente
+        for komponente in komponenten
+        if komponente not in OHNE_KACHEL and _vorhanden(coordinator, komponente)
+    ]
     return {
         "eintrag": eintrag.entry_id,
         "titel": eintrag.title,
         "schreiben": bool(coordinator.enable_switches),
         "teile": [
-            _teil(coordinator, komponente, wege.get(komponente))
-            for komponente in komponenten
-            if komponente not in OHNE_KACHEL
+            _teil(
+                coordinator,
+                komponente,
+                wege.get(komponente) if wege.get(komponente) in gezeigt else None,
+            )
+            for komponente in gezeigt
         ],
         "entitaeten": entitaeten(hass, eintrag.entry_id),
     }

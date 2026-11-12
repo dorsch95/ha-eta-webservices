@@ -22,6 +22,7 @@ from eta_heating_ws.verbindungen import (
     vorgabe,
 )
 
+from . import test_mehrere_speicher as testanlage
 from .conftest import FakeConfigEntry, ohne_version
 from .test_config_flow import optionen, options_schritt
 from .test_zeitprogramm_karte import Verbindung
@@ -189,28 +190,41 @@ async def test_karte_erfaehrt_teile_und_verbindungen(hass, entry):
     assert teile["fwm"]["bauart"] == "fwm", "das Frischwassermodul bekommt ein eigenes Bild"
 
 
-async def test_karte_folgt_der_auswahl_im_dialog(hass):
+async def test_karte_folgt_der_auswahl_im_dialog(hass, entry):
+    """An der Testanlage mit vier Puffern: Puffer 3 hängt laut Auswahl am ersten statt am zweiten."""
+    entry.options = {"verbindungen": {"puffer3": "puffer", "fwm": "puffer3"}}
+    await testanlage.aufbauen(hass, entry)
+
+    [anlage] = await uebersicht(hass)
+
+    von = {teil["id"]: teil["von"] for teil in anlage["teile"]}
+    assert von["puffer2"] == "puffer", "Vorgabe: hintereinander"
+    assert von["puffer3"] == "puffer", "die Auswahl"
+    assert von["puffer4"] == "puffer3"
+    assert von["fwm"] == "puffer3", "die Auswahl"
+    assert von["fwm2"] == "puffer4", "Vorgabe: am letzten Puffer"
+
+
+async def test_teil_ohne_funktionsblock_fehlt_in_der_karte(hass):
+    """Gewählt, aber an der Anlage nicht zu finden: Dann zeigt die Karte es nicht, auch keine Leitung dorthin."""
     eintrag = FakeConfigEntry(
         {
             "host": "192.0.2.10",
             "port": 8080,
             "components": ["kessel", "puffer", "puffer2", "hk1", "fernleitung"],
         },
-        {"verbindungen": {"puffer2": "fernleitung", "hk1": "puffer"}},
+        {"verbindungen": {"hk1": "puffer2"}},
     )
     assert await eta_heating_ws.async_setup_entry(hass, eintrag)
     hass.config_entries.geladen.append(eintrag)
 
     [anlage] = await uebersicht(hass)
 
-    von = {teil["id"]: teil["von"] for teil in anlage["teile"]}
-    assert von == {
+    assert {teil["id"]: teil["von"] for teil in anlage["teile"]} == {
         "kessel": None,
         "puffer": "kessel",
-        "puffer2": "fernleitung",
-        "hk1": "puffer",
-        "fernleitung": "puffer",
-    }
+        "hk1": None,
+    }, "Puffer 2 und Fernleitung gibt es an dieser Anlage nicht"
     assert anlage["schreiben"] is False
 
 
