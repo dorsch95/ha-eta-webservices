@@ -28,6 +28,8 @@ const TEXTE = {
     feld_ansicht: "Ansicht",
     feld_anlage: "Anlage",
     feld_fussboden: "Fußbodenheizung statt Heizkörper",
+    feld_reihenfolge: "Reihenfolge der Teile",
+    hilfe_reihenfolge: "Teile auswählen und in die gewünschte Reihenfolge ziehen. Was fehlt, folgt dahinter wie gewohnt. Im Anlagenbild gilt die Reihenfolge innerhalb einer Spalte.",
     ansicht_kacheln: "Kacheln",
     ansicht_anlagenbild: "Anlagenbild",
     ansicht_kompakt: "Kompakt",
@@ -126,6 +128,8 @@ const TEXTE = {
     feld_ansicht: "View",
     feld_anlage: "System",
     feld_fussboden: "Underfloor heating instead of radiator",
+    feld_reihenfolge: "Order of the parts",
+    hilfe_reihenfolge: "Pick parts and drag them into the order you want. Anything left out follows as usual. In the system diagram the order applies within a column.",
     ansicht_kacheln: "Tiles",
     ansicht_anlagenbild: "System diagram",
     ansicht_kompakt: "Compact",
@@ -853,6 +857,19 @@ const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], 
 const EIN = { kessel: [0.015, 0.82], puffer: [0, 0.14], fernleitung: [0.025, 0.31], heizkreis: [0.04, 0.434], fwm: [0.04, 0.304], speicher: [0, 0.55] };
 
 /**
+ * Wie ein Teil in der Karte heißt. Gibt es mehrere Puffer oder mehrere
+ * Warmwasser, steht der Name des Funktionsblocks da - so heißen sie auch
+ * am Display der Anlage.
+ */
+function teilName(teil, teile, t) {
+  const mehrere = teile.filter((x) => x.art === teil.art).length > 1;
+  if (teil.art === "puffer") return mehrere ? teil.block : t.puffer;
+  if (teil.art === "warmwasser") return mehrere ? teil.block : teil.bauart === "fwm" ? t.fwm : t.warmwasser;
+  if (teil.art === "heizkreis") return `${t.heizkreis} ${teil.nummer}`;
+  return t[teil.art] || teil.block || teil.id;
+}
+
+/**
  * Liest die Anlage aus den Entitäten: je Teil, was die Karte zeigt.
  *
  * Ein Wert ist null, wenn es seine Entität nicht gibt oder die Anlage
@@ -884,7 +901,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
   };
   const an = (w) => Boolean(w) && (w.n === null ? !OHNE_FLUSS.includes(w.roh) : w.n > 0);
   const ueber = (w) => Boolean(w) && w.n !== null && w.n > LEISTUNG_AB;
-  const mehrere = (art) => struktur.teile.filter((teil) => teil.art === art).length > 1;
 
   const lesen = {
     kessel() {
@@ -894,7 +910,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const plan = wert("aschebox_plan");
       const asche = wert("aschebox_verbrauch"), schwelle = wert("aschebox_schwelle");
       return {
-        name: t.kessel,
         zustand,
         bild,
         temperatur: wert("kessel_temperatur"),
@@ -920,7 +935,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const zustand = wert(`${teil.id}_zustand`);
       const kombi = wert(`${teil.id}_warmwasser`), kombiZustand = wert(`${teil.id}_warmwasser_zustand`);
       return {
-        name: mehrere("puffer") ? teil.block : t.puffer,
         fuehler: fuehler.filter(Boolean),
         ladung: wert(`${teil.id}_ladezustand`),
         ladepumpe: wert(`${teil.id}_ladepumpe`),
@@ -936,7 +950,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const zirkuliert = an(zirkulation);
       const fliesst = fwm && (pufferpumpe ? an(pufferpumpe) : zirkuliert);
       return {
-        name: mehrere("warmwasser") ? teil.block : fwm ? t.fwm : t.warmwasser,
         bauart: teil.bauart,
         temperatur: wert(`${teil.id}_warmwasser`),
         zustand,
@@ -955,7 +968,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const thermostat = stand(`${praefix}_thermostat`);
       const raumSoll = thermostat?.attributes?.temperature;
       return {
-        name: `${t.heizkreis} ${teil.nummer}`,
         boden: fussboden.includes(teil.id),
         vorlauf: wert(`${praefix}_vorlauf`),
         anforderung,
@@ -977,7 +989,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const fuellstand = wert("lager_fuellstand"), zustand = wert("lager_zustand");
       const anteil = fuellstand && fuellstand.n !== null ? fuellstand.n / 100 : vorrat && maximum && vorrat.n !== null && maximum.n ? vorrat.n / maximum.n : null;
       return {
-        name: t.lager,
         vorrat,
         maximum,
         warnung,
@@ -993,23 +1004,23 @@ function anlageLesen(hass, struktur, t, fussboden) {
     },
     solar() {
       const leistung = wert("solar_leistung");
-      return { name: t.solar, leistung, aktiv: ueber(leistung), kollektor: wert("solar_kollektor"), heute: wert("solar_ertrag_heute") };
+      return { leistung, aktiv: ueber(leistung), kollektor: wert("solar_kollektor"), heute: wert("solar_ertrag_heute") };
     },
     pvm() {
       const leistung = wert("pvm_heizstab");
-      return { name: t.pvm, leistung, aktiv: ueber(leistung), oben: wert("pvm_temperatur_oben"), heute: wert("pvm_ertrag_heute") };
+      return { leistung, aktiv: ueber(leistung), oben: wert("pvm_temperatur_oben"), heute: wert("pvm_ertrag_heute") };
     },
     brenner() {
       const anforderung = wert("brenner_anforderung");
-      return { name: t.brenner, anforderung, aktiv: an(anforderung), temperatur: wert("brenner_temperatur"), leistung: wert("brenner_leistung_soll") };
+      return { anforderung, aktiv: an(anforderung), temperatur: wert("brenner_temperatur"), leistung: wert("brenner_leistung_soll") };
     },
     fernleitung() {
       const pumpe = wert("fernleitung_pumpe");
-      return { name: t.fernleitung, pumpe, pumpt: an(pumpe) };
+      return { pumpe, pumpt: an(pumpe) };
     },
   };
 
-  const teile = struktur.teile.filter((teil) => lesen[teil.art]).map((teil) => ({ ...teil, ...lesen[teil.art](teil) }));
+  const teile = struktur.teile.filter((teil) => lesen[teil.art]).map((teil) => ({ ...teil, name: teilName(teil, struktur.teile, t), ...lesen[teil.art](teil) }));
   const stoerung = stand("stoerung");
   const animationen = stand("animationen");
   return {
@@ -1063,6 +1074,7 @@ class EtaUebersichtKarte extends HTMLElement {
    * Die Einstellungen der Karte. Die Anlage steht nur zur Wahl, wenn es
    * mehrere gibt. Je Heizkreis lässt sich statt des Heizkörpers eine
    * Fußbodenheizung zeigen - was verbaut ist, weiß die Anlage nicht.
+   * Die Reihenfolge der Teile lässt sich ziehen, siehe _geordnet.
    */
   static async getConfigForm() {
     const t = TEXTE[sprache(document.documentElement.lang)];
@@ -1075,6 +1087,7 @@ class EtaUebersichtKarte extends HTMLElement {
     }
     const auswahl = (name, optionen) => ({ name, selector: { select: { mode: "dropdown", options: optionen } } });
     const heizkreise = [...new Map(anlagen.flatMap((a) => a.teile).filter((teil) => teil.art === "heizkreis").map((teil) => [teil.id, teil])).values()];
+    const teile = [...new Map(anlagen.flatMap((a) => a.teile.map((teil) => [teil.id, { value: teil.id, label: teilName(teil, a.teile, t) }]))).values()];
     return {
       schema: [
         { name: "titel", selector: { text: {} } },
@@ -1083,8 +1096,10 @@ class EtaUebersichtKarte extends HTMLElement {
         ...(heizkreise.length
           ? [{ name: "fussboden", selector: { select: { multiple: true, mode: "list", options: heizkreise.map((teil) => ({ value: teil.id, label: `${t.heizkreis} ${teil.nummer}` })) } } }]
           : []),
+        ...(teile.length > 1 ? [{ name: "reihenfolge", selector: { select: { multiple: true, reorder: true, options: teile } } }] : []),
       ],
       computeLabel: (feld) => t[`feld_${feld.name}`],
+      computeHelper: (feld) => t[`hilfe_${feld.name}`],
     };
   }
 
@@ -1219,9 +1234,30 @@ class EtaUebersichtKarte extends HTMLElement {
     if (!this._struktur) return `<div class="eta"><div class="eta-meldung">${e(this._fehler ? t.keine_antwort : t.laedt)}</div></div>`;
     if (!this._struktur.entitaeten) return `<div class="eta"><div class="eta-meldung">${e(this._struktur.fehlt ? t.anlage_fehlt : t.keine_anlage)}</div></div>`;
     const fussboden = Array.isArray(this._konfig.fussboden) ? this._konfig.fussboden : [];
-    const anlage = anlageLesen(this._hass, this._struktur, t, fussboden);
+    const anlage = this._geordnet(anlageLesen(this._hass, this._struktur, t, fussboden));
     const inhalt = this._ansicht === "anlagenbild" ? this._bild(anlage) : this._ansicht === "kompakt" ? this._kompakt(anlage) : this._kacheln(anlage);
     return `<div class="eta" ${anlage.ruhe ? "data-ruhe" : ""}>${DEFS}${inhalt}</div>`;
+  }
+
+  /**
+   * Stellt die Teile in die Reihenfolge aus den Einstellungen der Karte:
+   * erst die dort genannten, dann die übrigen wie gewohnt. So stehen die
+   * Kacheln und die Zeilen der Kompaktansicht. Im Anlagenbild bestimmen
+   * die Verbindungen die Spalten; die Reihenfolge gilt dort innerhalb
+   * einer Spalte, siehe _bild. gewaehlt sagt, an welcher Stelle der
+   * Auswahl ein Teil steht.
+   */
+  _geordnet(anlage) {
+    const folge = Array.isArray(this._konfig.reihenfolge) ? this._konfig.reihenfolge : [];
+    const gewaehlt = (teil) => {
+      const stelle = folge.indexOf(teil.id);
+      return stelle < 0 ? Infinity : stelle;
+    };
+    const teile = anlage.teile
+      .map((teil, platz) => ({ teil, platz }))
+      .sort((a, b) => gewaehlt(a.teil) - gewaehlt(b.teil) || a.platz - b.platz)
+      .map((x) => x.teil);
+    return { ...anlage, teile, gewaehlt };
   }
 
   /* Bausteine */
@@ -1397,7 +1433,11 @@ class EtaUebersichtKarte extends HTMLElement {
    * an der vorigen hängt. Die Leitungen dazu merkt sich die Karte in
    * _kanten und misst sie nach dem Zeichnen aus, siehe _leitungen. In
    * einer Spalte steht oben, was an dem oberen Teil der vorigen hängt -
-   * so kreuzen sich die Leitungen möglichst wenig. Jede
+   * so kreuzen sich die Leitungen möglichst wenig. Was der Nutzer in den
+   * Einstellungen in eine Reihenfolge gezogen hat, steht davor. Solar
+   * rückt im breiten Bild von selbst nach oben (Klasse oben), in der
+   * schmalen Liste folgt es dem Kessel - außer, in seiner Spalte ist
+   * etwas gezogen: Dann gilt dort überall dieselbe Reihenfolge. Jede
    * Verbindung ist genau eine Linie; Vor- und Rücklauf zeigt die Karte
    * nicht getrennt.
    */
@@ -1429,7 +1469,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
       kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 132), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
-      solar: (s) => station(s, "quer links oben", s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
+      solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
@@ -1468,12 +1508,15 @@ class EtaUebersichtKarte extends HTMLElement {
     const stelle = {};
     const vorher = (x) => (erzeugt(x.teil) || !quelle(x.teil) ? 0 : stelle[quelle(x.teil)] ?? 0);
     const spalten = [...new Set(verteilt.map((x) => x.spalte))].sort((a, b) => a - b).map((nr) => {
-      const drin = verteilt.filter((x) => x.spalte === nr).sort((a, b) => vorher(a) - vorher(b) || rang[a.teil.art] - rang[b.teil.art] || a.platz - b.platz);
+      const inSpalte = verteilt.filter((x) => x.spalte === nr);
+      const frei = inSpalte.every((x) => anlage.gewaehlt(x.teil) === Infinity);
+      const stufe = (x) => (!frei && x.teil.art === "solar" ? -1 : rang[x.teil.art]);
+      const drin = inSpalte.sort((a, b) => anlage.gewaehlt(a.teil) - anlage.gewaehlt(b.teil) || vorher(a) - vorher(b) || stufe(a) - stufe(b) || a.platz - b.platz);
       drin.forEach((x, i) => {
         stelle[x.teil.id] = i;
       });
       const quer = drin.every((x) => x.teil.art === "heizkreis" || x.teil.art === "warmwasser");
-      return `<div class="eta-spalte ${quer ? "eta-verbraucher" : ""}">${drin.map((x) => zeichnen[x.teil.art](x.teil)).join("")}</div>`;
+      return `<div class="eta-spalte ${quer ? "eta-verbraucher" : ""}">${drin.map((x) => zeichnen[x.teil.art](x.teil, frei)).join("")}</div>`;
     });
     const kessel = nachId.kessel;
     const kennzahlen = kessel ? [...kessel.zeilen, [t.aschebox, kessel.ascheStatus || kessel.asche]].filter(([, w]) => w) : [];

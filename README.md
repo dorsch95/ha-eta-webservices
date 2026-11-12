@@ -47,7 +47,7 @@ Darüber die bisherige [Dashboard-Karte](#-dashboard-karte) am PC, darunter am H
 - With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Buffer loading times and hot water times can be shown too (*Show* in the card editor); hot water temperatures are editable from 0 to 80 °C, buffer loading times only switch loading on and off. Home Assistant loads the card by itself - add it via *Edit dashboard → Add card*.
 - Alternatively, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
 - A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
-- The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which.
+- The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which. The order of the parts can be dragged in the card settings.
 - The earlier ready-made dashboard card stays available: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
 - Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
 
@@ -364,13 +364,15 @@ In den Einstellungen der Karte wählst du die **Ansicht**:
 
 In den Einstellungen wählst du auch, welche Heizkreise statt des Heizkörpers als **Fußbodenheizung** erscheinen.
 
+Unter **Reihenfolge der Teile** wählst du Teile aus und ziehst sie in die Reihenfolge, die du haben willst. Was du nicht auswählst, folgt dahinter wie gewohnt. In den Kacheln und in der Kompaktansicht gilt die Reihenfolge für alles, im Anlagenbild innerhalb einer Spalte - die Spalten selbst ergeben sich daraus, wer woran hängt.
+
 Mit Schreibzugriff stellst du Heizkreise direkt in der Karte: die **Betriebsart** und, wenn der Heizkreis einen Thermostat hat, **Raum Soll** in Schritten von 0,5 °C. In den Kacheln stehen die Tasten in der Kachel, in der Kompaktansicht und im Anlagenbild klappt ein Tipp auf den Heizkreis sie auf. Mehrere Tipps hintereinander schreiben nur einmal auf die Anlage.
 
 Steht eine **Störung** an, nennt die Karte oben die Meldungen der Anlage. Ein **niedriger Vorrat** im Lager und eine **fällige Aschebox** sind farbig hervorgehoben.
 
 Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz, am besten eine Ansicht vom Typ **Panel (1 Karte)**. Ist das Anlagenbild zu breit, rückt es enger zusammen und wird am Handy zur Liste.
 
-**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul und Brenner laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
+**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul und Brenner laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
 
 ---
 
