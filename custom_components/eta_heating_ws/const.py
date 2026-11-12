@@ -652,9 +652,10 @@ def _warmwasser_zustand_sensoren():
     laufender Zirkulation. Jeder Sensor nur, wenn der Menübaum ihn führt.
 
     Die Anforderung der Pufferpumpe bleibt nach dem Zapfen stehen, obwohl
-    kein Wasser mehr fließt (Rückmeldung von einer Anlage mit
-    Frischwassermodul). Ob gerade Wasser erwärmt wird, zeigen deshalb der
-    Durchfluss und die Drehzahl der Pufferpumpe. Ihre Einheit kommt von der
+    kein Wasser mehr fließt: Geregelt wird die Pumpe über ihre Drehzahl,
+    und die steht in Ruhe auf 0 % (Rückmeldung von einer Anlage mit
+    Frischwassermodul). Ob gerade Wasser erwärmt wird, zeigen deshalb die
+    Drehzahl der Pufferpumpe und der Durchfluss. Ihre Einheit kommt von der
     Anlage (einheit_der_anlage): Belegt ist sie an keinem Bericht.
 
     Der Durchfluss ist "Warmwasser > Sekundär Durchfluss". Der Eingang
