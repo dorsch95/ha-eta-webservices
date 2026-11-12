@@ -279,6 +279,7 @@ const STIL = `
     --buehne: rgba(127, 127, 127, .08);
     --rund: 12px;
     --metall: #c3c9d2; --metall-hell: #dde2e9; --metall-dunkel: #8b93a0; --kammer: #1d2025;
+    --kessel-gelb: #fcc10f; --kessel-rand: #d9a406; --kessel-dunkel: #3f434a; --kessel-sockel: #2c2f34;
     --akzent: #ff9b00; --auf-akzent: #1a1c20;
     --heiss: #e5484d; --kalt: #3b82f6; --pellet: #c8963e; --pellet-hell: #dcb062; --pellet-dunkel: #a87a2c;
     --sonne: #f2a900; --zelle: #6d7786; --pv: #2c56b0;
@@ -287,6 +288,7 @@ const STIL = `
   :host([vollbild]) { padding: 12px 16px 16px; box-sizing: border-box; }
   :host([dunkel]) {
     --metall: #5a606b; --metall-hell: #7a818d; --metall-dunkel: #3b4049; --kammer: #0a0b0d;
+    --kessel-gelb: #f2b70b; --kessel-rand: #c79405; --kessel-dunkel: #34373d; --kessel-sockel: #1f2125;
     --heiss: #f0595e; --kalt: #5b9bff; --pellet: #d1a04a; --pellet-hell: #e3b96c;
     --sonne: #ffc02e; --zelle: #4c5562; --pv: #3d68c9;
     --stoer: #d93a40; --warn: #f0a92a; --auf-warn: #1a1c20;
@@ -386,6 +388,7 @@ const STIL = `
   [data-zustand="flamme"] .z-flamme, [data-zustand="glut"] .z-glut, [data-zustand="zuendung"] .z-zuendung, [data-zustand="entaschen"] .z-entaschen, [data-zustand="stoerung"] .z-stoerung { display: inline; }
   [data-zustand="entaschen"] .k-rost { display: none; }
   .k-anzeige { fill: var(--akzent); }
+  .k-front { fill: var(--kessel-gelb); stroke: var(--kessel-rand); stroke-width: 1; }
   [data-zustand="aus"] .k-anzeige { fill: var(--metall-dunkel); }
   [data-zustand="stoerung"] .k-anzeige { fill: var(--heiss); animation: eta-blinken 1s steps(2, jump-none) infinite; }
   .k-schein { opacity: 0; }
@@ -620,14 +623,30 @@ const DEFS = `<svg class="eta-defs" aria-hidden="true"><defs>
 
 const reihe = (anzahl, zeichnen) => Array.from({ length: anzahl }, (_, i) => zeichnen(i)).join("");
 
-const kesselBild = () => `<svg class="eta-svg" viewBox="14 0 132 170" aria-hidden="true">
-  <rect x="102" y="2" width="20" height="22" rx="3" fill="var(--metall-dunkel)"/>
-  <rect x="16" y="18" width="128" height="140" rx="12" fill="var(--metall)"/>
-  <path d="M16 30a12 12 0 0 1 12-12h104a12 12 0 0 1 12 12v16H16z" fill="var(--metall-hell)"/>
-  <rect x="28" y="25" width="42" height="14" rx="3.5" fill="var(--kammer)"/>
-  <rect class="k-anzeige" x="31.5" y="28.5" width="19" height="7" rx="1.5"/>
-  <circle cx="57.5" cy="32" r="2" fill="var(--metall-dunkel)"/><circle cx="64" cy="32" r="2" fill="var(--metall-dunkel)"/>
-  <rect x="28" y="54" width="104" height="72" rx="9" fill="var(--metall-dunkel)"/>
+/**
+ * Der Kessel: ein hoher Schrank mit gelber Front, silberner Seite, dunklem
+ * Sockel und dem Bildschirm obenauf - so stehen die Kessel dieser Bauart
+ * im Heizraum. Ein Sichtfenster in der Front zeigt, was im Brennraum
+ * geschieht; das gibt es am echten Kessel nicht, die Karte braucht es für
+ * Flamme, Zündung, Glut und Entaschen.
+ */
+const kesselBild = () => `<svg class="eta-svg" viewBox="0 0 104 180" aria-hidden="true">
+  <rect x="68" y="17" width="16" height="7" rx="1.5" fill="var(--kessel-dunkel)"/>
+  <g transform="translate(62 1) skewX(-9)">
+    <rect width="38" height="21" rx="2.5" fill="var(--kessel-dunkel)"/>
+    <rect x="2.5" y="2.5" width="33" height="15" rx="1.5" fill="var(--kammer)"/>
+    <rect class="k-anzeige" x="5.5" y="5.5" width="12" height="5" rx="1.2"/>
+    <rect x="20.5" y="5.5" width="11" height="2" rx="1" fill="var(--metall-dunkel)"/><rect x="20.5" y="9.5" width="7" height="2" rx="1" fill="var(--metall-dunkel)"/>
+  </g>
+  <rect x="2" y="20" width="100" height="154" rx="5" fill="var(--kessel-dunkel)"/>
+  <path d="M2 25a5 5 0 0 1 5-5h12v146H2z" fill="var(--metall-hell)"/>
+  <rect x="6" y="40" width="9" height="62" rx="1.5" fill="none" stroke="var(--metall)" stroke-width="1.3"/>
+  ${reihe(5, (i) => `<rect x="8.2" y="${62 + i * 4}" width="4.6" height="1.6" rx=".8" fill="var(--metall)"/>`)}
+  <rect class="k-front" x="19" y="22" width="83" height="144" rx="5"/>
+  <rect x="23" y="27" width="7" height="134" rx="3.5" fill="#fff" opacity=".16"/>
+  <rect x="4" y="166" width="98" height="8" rx="2" fill="var(--kessel-sockel)"/>
+  <g transform="translate(4.5 56.8) scale(.7)">
+  <rect x="31" y="56" width="98" height="68" rx="9" fill="var(--kessel-dunkel)"/>
   <rect x="37" y="62" width="86" height="56" rx="6" fill="var(--kammer)"/>
   <rect class="k-schein" x="37" y="62" width="86" height="56" rx="6" fill="url(#eta-schein)"/>
   <g class="z-flamme">
@@ -658,9 +677,7 @@ const kesselBild = () => `<svg class="eta-svg" viewBox="14 0 132 170" aria-hidde
     <rect x="77.8" y="82" width="4.4" height="14" rx="2.2" fill="#1d2025"/><circle cx="80" cy="102" r="2.7" fill="#1d2025"/>
   </g>
   <rect class="k-rost" x="45" y="108" width="70" height="3.5" rx="1.75" fill="#737984"/>
-  <rect x="28" y="132" width="104" height="16" rx="4" fill="var(--metall-dunkel)"/>
-  <rect x="66" y="138" width="28" height="4" rx="2" fill="var(--metall-hell)"/>
-  <rect x="26" y="158" width="16" height="9" rx="2" fill="var(--metall-dunkel)"/><rect x="118" y="158" width="16" height="9" rx="2" fill="var(--metall-dunkel)"/>
+  </g>
 </svg>`;
 
 const heizkreisBild = () => `<svg class="eta-svg" viewBox="0 0 150 106" aria-hidden="true">
@@ -1404,7 +1421,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const kachel = (teil, merkmale, kopf, inhalt) => `<article class="eta-kachel" data-art="${teil.art}" ${merkmale}><header class="eta-kachelkopf"><h3>${e(teil.name)}</h3>${kopf}</header>${inhalt}</article>`;
     const zeichnen = {
       kessel: (k) => kachel(k, `data-zustand="${k.bild}"`, k.zustand ? this._chip(k.zustand.text, k.bild !== "aus" && k.bild !== "stoerung", k.bild === "stoerung" ? "stoer" : "") : "", `
-        <div class="eta-buehne" ${this._info(k.temperatur)}>${this._figur(kesselBild(), 116)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
+        <div class="eta-buehne" ${this._info(k.temperatur)}>${this._figur(kesselBild(), 90)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
         ${this._zeilen(k.zeilen)}
         ${k.asche ? `<div class="eta-messung" ${this._info(k.ascheStatus || k.asche)}><div class="eta-messung-kopf"><span>${e(t.aschebox)}</span><b>${k.ascheFaellig ? `<span class="eta-warnzeichen">${ICON.warn}</span>` : ""}${e((k.ascheStatus || k.asche).text)}</b></div>${k.ascheAnteil === null ? "" : `<div class="eta-balken" ${k.ascheFaellig ? 'data-art="warn"' : ""}><i style="width:${(k.ascheAnteil * 100).toFixed(1)}%"></i></div>`}</div>` : ""}
         ${this._bedienung(k, anlage)}`),
@@ -1480,7 +1497,7 @@ class EtaUebersichtKarte extends HTMLElement {
 
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
-      kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 132), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
+      kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
       solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "")),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
@@ -1646,7 +1663,7 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
       ${this._banner(anlage)}
       <header class="eta-kompakt-kopf"><h3>${e(titel)}</h3>${kessel?.zustand ? this._chip(`${t.kessel}: ${kessel.zustand.text}`, kessel.bild !== "aus" && kessel.bild !== "stoerung", kessel.bild === "stoerung" ? "stoer" : "") : ""}</header>
-      ${kessel || pufferTeil ? `<div class="eta-buehne">${kessel ? `<div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._figur(kesselBild(), 60)}${this._haupt(t.kessel, kessel.temperatur, anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : "")}</div>` : ""}${pufferTeil}</div>` : ""}
+      ${kessel || pufferTeil ? `<div class="eta-buehne">${kessel ? `<div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._figur(kesselBild(), 46)}${this._haupt(t.kessel, kessel.temperatur, anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : "")}</div>` : ""}${pufferTeil}</div>` : ""}
       <div class="eta-liste">${liste}</div>
       ${this._bedienung(kessel, anlage)}
     </section>`;
