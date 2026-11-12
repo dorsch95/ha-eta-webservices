@@ -314,7 +314,7 @@ Eine Karte für alle Anlagen. Sie zeigt die Komponenten, die du gewählt hast, u
 ### Einrichten
 
 1. **Entwicklerwerkzeuge → Aktionen** öffnen, **ETA Web-Services: Dashboard-Karte erzeugen** wählen und **Aktion ausführen**. Die Antwort ist die fertige Karte, zugeschnitten auf deine Anlage. Kopiere sie komplett.
-2. Im Dashboard eine **neue Ansicht** anlegen (Stift oben rechts, dann `+`) und als Typ **Panel (1 Karte)** wählen. In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, die Beschriftungen würden abgeschnitten.
+2. Im Dashboard eine **neue Ansicht** anlegen (Stift oben rechts, dann `+`) und als Layout **Panel (einzelne Karte)** wählen. In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, die Beschriftungen würden abgeschnitten.
 3. Eine Karte vom Typ **Manuell** einfügen und den Inhalt durch die kopierte Antwort ersetzen.
 
 Baust du deine Anlage um oder benennst eine Entität um, führ die Aktion einfach noch einmal aus.
@@ -370,7 +370,7 @@ Mit Schreibzugriff stellst du Heizkreise direkt in der Karte: die **Betriebsart*
 
 Steht eine **Störung** an, nennt die Karte oben die Meldungen der Anlage. Ein **niedriger Vorrat** im Lager und eine **fällige Aschebox** sind farbig hervorgehoben.
 
-Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz, am besten eine Ansicht vom Typ **Panel (1 Karte)**. Ist das Anlagenbild zu breit, rückt es enger zusammen und wird am Handy zur Liste.
+Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz. Das Anlagenbild liegt waagerecht, sobald die Karte breit genug ist: mit einem Pufferspeicher ab etwa 750 Pixeln, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. In einer Ansicht mit Abschnitten stellst du die **Breite** des Abschnitts auf *Volle Breite*. Reicht der Platz nicht, wird das Bild zur Liste von oben nach unten - so auch am Handy und in der Vorschau beim Bearbeiten der Karte.
 
 **Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul und Brenner laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
 
