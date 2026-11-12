@@ -352,7 +352,7 @@ Die Karte wählt die Spaltenzahl nach der Breite der Ansicht:
 
 ### Neue Karte „ETA Übersicht“
 
-Daneben gibt es eine zweite Karte, die du wie jede andere über **Karte hinzufügen** findest: **ETA Übersicht**. Sie braucht keine Aktion und kein YAML, passt sich selbst an deine Anlage an und folgt dem hellen oder dunklen Design von Home Assistant. Die bisherige Karte bleibt, wie sie ist - an einem eingerichteten Dashboard ändert sich nichts.
+Daneben gibt es eine zweite Karte, die du wie jede andere über **Karte hinzufügen** findest: **ETA Übersicht**. Der Dialog öffnet mit dem Reiter *Nach Entität*, die Karte steht im Reiter **Nach Karte** - dort nach „ETA“ suchen. Fehlt sie nach einem Update, Home Assistant neu starten und die Seite im Browser neu laden. Sie braucht keine Aktion und kein YAML, passt sich selbst an deine Anlage an und folgt dem hellen oder dunklen Design von Home Assistant. Die bisherige Karte bleibt, wie sie ist - an einem eingerichteten Dashboard ändert sich nichts.
 
 In den Einstellungen der Karte wählst du die **Ansicht**:
 
@@ -514,7 +514,7 @@ Die Karte **ETA Zeitprogramm** zeigt die Heizzeiten jedes Heizkreises als Wochen
 
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm.webp" alt="Die Karte ETA Zeitprogramm mit den Heizzeiten einer Woche" width="400">
 
-1. **Dashboard bearbeiten → Karte hinzufügen** und **ETA Zeitprogramm** wählen. Home Assistant lädt die Karte von selbst, ein Eintrag unter *Ressourcen* ist nicht nötig.
+1. **Dashboard bearbeiten → Karte hinzufügen**, Reiter **Nach Karte**, und **ETA Zeitprogramm** wählen. Home Assistant lädt die Karte von selbst, ein Eintrag unter *Ressourcen* ist nicht nötig.
 2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und Temperatur, dazu die Temperatur außerhalb der Zeitfenster (die Absenkung).
 3. Unter **Gilt für** weitere Tage wählen, etwa **Mo–Fr**.
 4. **Speichern.** Die Integration schreibt nur, was sich ändert, und liest es zur Kontrolle von der Heizung nach.
