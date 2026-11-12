@@ -37,7 +37,7 @@
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
-          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
         }
       },
       "fub_names": {
@@ -190,7 +190,7 @@
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
-          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
         }
       },
       "fub_names": {

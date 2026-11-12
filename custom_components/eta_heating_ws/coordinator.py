@@ -60,8 +60,12 @@ dadurch früher auffiele.
 SCHNELL_PLATTFORMEN = ("switch", "button", "select", "climate")
 """Was sich schalten oder stellen lässt, gehört zur schnellen Gruppe."""
 
-SCHNELL_WARMWASSER = ("durchfluss", "pufferpumpe_drehzahl", "zirkulationspumpe")
-"""Von Frischwassermodul und Warmwasserspeicher gehört zur schnellen Gruppe nur, woran sich das Zapfen zeigt."""
+SCHNELL_WARMWASSER = ("warmwasser", "durchfluss", "pufferpumpe_drehzahl", "zirkulationspumpe")
+"""Von Frischwassermodul und Warmwasserspeicher gehört zur schnellen Gruppe nur, woran sich das Zapfen zeigt.
+
+Dazu zählt die Warmwassertemperatur: Am Frischwassermodul steigt sie beim
+Zapfen in Sekunden.
+"""
 
 SCHNELL_PAUSE = 12
 """So viele Takte ruht die schnelle Gruppe, nachdem ihr Variablensatz gescheitert ist.
@@ -324,8 +328,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Alles, was sich schalten oder stellen lässt - Kessel ein/aus,
         Entaschen, die Tasten der Heizkreise, Raum Soll -, dazu als deren
         Wirkung der Kessel-Zustand und die Raumtemperatur. Vom
-        Frischwassermodul nur, woran sich das Zapfen zeigt: Durchfluss,
-        Drehzahl der Pufferpumpe und Zirkulationspumpe.
+        Frischwassermodul nur, woran sich das Zapfen zeigt:
+        Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und
+        Zirkulationspumpe.
         """
         return {
             key: info["uri"]

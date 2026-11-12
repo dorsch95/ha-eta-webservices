@@ -18,14 +18,13 @@ from .test_sensors import setup_integration
 
 
 async def test_vom_frischwassermodul_nur_woran_sich_das_zapfen_zeigt(hass, entry):
-    """Die Gruppe soll klein bleiben: Durchfluss und Drehzahl ja, Temperatur und Zustand nein."""
+    """Die Gruppe soll klein bleiben: Temperatur, Durchfluss und Drehzahl ja, Zustand und Anforderung nein."""
     coordinator = await nutzeranlage.aufbauen(hass, entry)
 
     schnell = set(coordinator.schnelle_uris)
 
-    assert {"fwm_durchfluss", "fwm_pufferpumpe_drehzahl"} <= schnell
+    assert {"fwm_warmwasser", "fwm_durchfluss", "fwm_pufferpumpe_drehzahl"} <= schnell
     assert not {
-        "fwm_warmwasser",
         "fwm_zustand",
         "fwm_pufferpumpe",
         "kessel_temperatur",
