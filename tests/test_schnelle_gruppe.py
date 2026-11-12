@@ -117,19 +117,33 @@ async def test_volle_abfrage_bleibt_wie_sie_war(hass, entry):
 
 
 async def test_schnelle_gruppe_uebersteht_den_neustart_der_anlage(hass, entry):
-    """Die Anlage hält Variablensätze nur im Arbeitsspeicher."""
-    coordinator, _ = await aufgebaut(hass, entry)
+    """Die Anlage hält Variablensätze nur im Arbeitsspeicher - nach ihrem Neustart ist der Satz weg."""
+    coordinator, weitergegeben = await aufgebaut(hass, entry)
     await coordinator.async_schnell_lesen()
 
     del hass.session.varsets[coordinator._schnell_name]
+    hass.session.texte[coordinator.sensor_defs["fwm_durchfluss"]["uri"]] = "8,5"
     await coordinator.async_schnell_lesen()
 
-    assert coordinator._schnell_pause == SCHNELL_PAUSE, "erst einmal Ruhe"
+    assert coordinator._schnell_name in hass.session.varsets, "im selben Takt neu angelegt"
+    assert coordinator._schnell_pause == 0
+    assert coordinator.data["fwm_durchfluss"].text == "8,5"
+    assert weitergegeben == [False]
+
+
+async def test_nach_einem_fehlschlag_ruht_die_gruppe(hass, entry):
+    coordinator, _ = await aufgebaut(hass, entry)
+    hass.session.varset_unterstuetzt = False
+
+    await coordinator.async_schnell_lesen()
+
+    assert coordinator._schnell_pause == SCHNELL_PAUSE
     anfragen = hass.session.count
     for _ in range(SCHNELL_PAUSE):
         await coordinator.async_schnell_lesen()
     assert hass.session.count == anfragen, "in der Pause keine Anfrage"
 
+    hass.session.varset_unterstuetzt = True
     await coordinator.async_schnell_lesen()
 
     assert coordinator._schnell_name in hass.session.varsets
@@ -246,3 +260,72 @@ async def test_stoerungsliste_sonst_in_jedem_zyklus(hass, entry):
         await coordinator._async_update_data()
 
     assert gelesen == [1, 1, 1]
+
+
+async def test_schnelle_gruppe_ruht_solange_die_anlage_nicht_erreichbar_ist(hass, entry):
+    """Jeder Versuch hielte sonst die volle Abfrage auf, bis er am Zeitlimit scheitert."""
+    coordinator, weitergegeben = await aufgebaut(hass, entry)
+    coordinator.last_update_success = False
+
+    anfragen = hass.session.count
+    await coordinator.async_schnell_lesen()
+
+    assert hass.session.count == anfragen
+    assert weitergegeben == []
+
+
+async def test_pause_waechst_wenn_der_variablensatz_immer_wieder_scheitert(hass, entry):
+    """Eine Anlage ohne Variablensätze soll kaum noch gefragt werden."""
+    coordinator, _ = await aufgebaut(hass, entry)
+    hass.session.varset_unterstuetzt = False
+
+    pausen = []
+    for _ in range(4):
+        await coordinator.async_schnell_lesen()
+        pausen.append(coordinator._schnell_pause)
+        coordinator._schnell_pause = 0
+
+    assert pausen == [SCHNELL_PAUSE, 2 * SCHNELL_PAUSE, 4 * SCHNELL_PAUSE, 8 * SCHNELL_PAUSE]
+
+    hass.session.varset_unterstuetzt = True
+    await coordinator.async_schnell_lesen()
+    hass.session.varset_unterstuetzt = False
+    await coordinator.async_schnell_lesen()
+
+    assert coordinator._schnell_pause == SCHNELL_PAUSE, "nach einem Erfolg beginnt es wieder klein"
+
+
+async def test_unerwarteter_fehler_beendet_die_schnelle_abfrage(hass, entry):
+    """Sonst stünde derselbe Fehler alle drei Sekunden im Protokoll."""
+    coordinator, _ = await setup_integration(hass, entry)
+
+    async def kaputt():
+        raise RuntimeError("unerwartet")
+
+    coordinator.async_schnell_lesen = kaputt
+    await hass.schnelltakt(None)
+    await hass.schnelltakt(None)
+
+    assert hass.schnelltakt_beendet == [timedelta(seconds=3)], "genau einmal abgemeldet"
+
+
+async def test_nach_einem_ausfall_geht_es_sofort_weiter(hass, entry):
+    """Der erste schnelle Takt bemerkt den Ausfall vor der vollen Abfrage - seine Pause soll danach nicht nachwirken."""
+    coordinator, weitergegeben = await aufgebaut(hass, entry)
+    await coordinator.async_schnell_lesen()
+
+    hass.session.fail_uris.add("/user/vars/")
+    await coordinator.async_schnell_lesen()
+    assert coordinator._schnell_pause == SCHNELL_PAUSE
+
+    coordinator.last_update_success = False
+    await coordinator.async_schnell_lesen()
+    hass.session.fail_uris.clear()
+    del hass.session.varsets[coordinator._schnell_name]
+    hass.session.texte[coordinator.sensor_defs["fwm_durchfluss"]["uri"]] = "8,5"
+    coordinator.last_update_success = True
+    await coordinator.async_schnell_lesen()
+
+    assert coordinator.data["fwm_durchfluss"].text == "8,5", "im ersten Takt nach dem Ausfall"
+    assert weitergegeben == [False]
+

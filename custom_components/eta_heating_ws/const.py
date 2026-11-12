@@ -133,7 +133,7 @@ keine Vorhersage, nur das langjährige Mittel.
 
 DEFAULT_SCAN_INTERVAL = 30
 MIN_SCAN_INTERVAL = 1
-"""Bis 0.28.0b2 waren es 10 Sekunden.
+"""Bis Version 0.27 waren es 10 Sekunden.
 
 Welche Abfragerate eine Anlage verträgt, ist an keiner gemessen. Wer weit
 heruntergeht, beobachtet die Auslastung am Display der Anlage und ob Werte

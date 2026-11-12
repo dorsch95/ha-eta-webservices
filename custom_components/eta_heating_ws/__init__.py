@@ -184,12 +184,26 @@ def _schnelle_abfrage_starten(
     if sekunden <= 0 or sekunden >= coordinator.update_interval.total_seconds():
         return
 
-    async def takt(_jetzt) -> None:
-        await coordinator.async_schnell_lesen()
+    lauf: dict = {}
 
-    entry.async_on_unload(
-        async_track_time_interval(hass, takt, timedelta(seconds=sekunden))
-    )
+    def stoppen() -> None:
+        abmelden = lauf.pop("abmelden", None)
+        if abmelden is not None:
+            abmelden()
+
+    async def takt(_jetzt) -> None:
+        """Ein unerwarteter Fehler beendet die schnelle Abfrage - sonst stünde er alle paar Sekunden im Protokoll."""
+        try:
+            await coordinator.async_schnell_lesen()
+        except Exception:
+            _LOGGER.exception(
+                "ETA: Die schnelle Abfrage ist an einem Fehler gescheitert und ruht "
+                "bis zum nächsten Laden der Integration"
+            )
+            stoppen()
+
+    lauf["abmelden"] = async_track_time_interval(hass, takt, timedelta(seconds=sekunden))
+    entry.async_on_unload(stoppen)
 
 
 def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:

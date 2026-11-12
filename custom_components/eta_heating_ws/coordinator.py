@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import ETAApiClient, ETAApiError, ETAError, ETAValue
+from .api import ETAApiClient, ETAApiError, ETAError, ETANotFoundError, ETAValue
 from .const import (
     BETRIEBSART_AUS,
     BETRIEBSART_TASTEN,
@@ -64,7 +64,14 @@ SCHNELL_WARMWASSER = ("durchfluss", "pufferpumpe_drehzahl", "zirkulationspumpe")
 """Von Frischwassermodul und Warmwasserspeicher gehört zur schnellen Gruppe nur, woran sich das Zapfen zeigt."""
 
 SCHNELL_PAUSE = 12
-"""So viele Takte ruht die schnelle Gruppe, nachdem ihr Variablensatz gescheitert ist."""
+"""So viele Takte ruht die schnelle Gruppe, nachdem ihr Variablensatz gescheitert ist.
+
+Scheitert er wieder, verdoppelt sich die Pause jedes Mal, bis zum
+SCHNELL_PAUSE_HOECHSTENS-Fachen - eine Anlage ohne Variablensätze wird so
+kaum noch gefragt.
+"""
+
+SCHNELL_PAUSE_HOECHSTENS = 32
 
 
 def _gleich(alt: ETAValue | None, neu: ETAValue) -> bool:
@@ -263,6 +270,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self._schnell_uris: set[str] | None = None
         """Die Werte, mit denen der Variablensatz der schnellen Gruppe auf der Anlage steht."""
         self._schnell_pause = 0
+        self._schnell_fehlschlaege = 0
         self._schnell_beendet = False
         self._fehler_gelesen = float("-inf")
 
@@ -342,8 +350,20 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Takt aus. Scheitert der Variablensatz, ruht die Gruppe
         SCHNELL_PAUSE Takte - die volle Abfrage liest dieselben Werte
         weiter. Die Zähler für ausbleibende Werte führt nur sie.
+
+        Ist die Anlage nicht erreichbar, ruht die Gruppe ganz: Jeder
+        Versuch hielte die volle Abfrage auf, bis er am Zeitlimit
+        scheitert. Erst wenn die volle Abfrage wieder gelingt, geht es
+        weiter, und zwar sofort: Eine Pause, die der Ausfall ausgelöst
+        hat, verfällt. Kennt die Anlage den Variablensatz dann nicht mehr
+        - sie hält ihn nur im Arbeitsspeicher und wurde neu gestartet -,
+        wird er im selben Takt neu angelegt.
         """
         if self.data is None or self._schnell_beendet or self._lese_sperre.locked():
+            return
+        if not self.last_update_success:
+            self._schnell_pause = 0
+            self._schnell_fehlschlaege = 0
             return
         uris = self.schnelle_uris
         if not uris:
@@ -355,15 +375,23 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             try:
                 if self._schnell_uris != set(uris.values()):
                     await self._schnell_anlegen(uris)
-                nach_uri = await self.client.async_get_varset(self._schnell_name)
+                try:
+                    nach_uri = await self.client.async_get_varset(self._schnell_name)
+                except ETANotFoundError:
+                    await self._schnell_anlegen(uris)
+                    nach_uri = await self.client.async_get_varset(self._schnell_name)
             except ETAApiError as err:
                 nach_uri = {}
                 _LOGGER.debug("ETA: schnelle Gruppe nicht lesbar: %s", err)
         gelesen = {key: nach_uri[uri] for key, uri in uris.items() if uri in nach_uri}
         if not gelesen:
             self._schnell_uris = None
-            self._schnell_pause = SCHNELL_PAUSE
+            self._schnell_pause = SCHNELL_PAUSE * min(
+                2**self._schnell_fehlschlaege, SCHNELL_PAUSE_HOECHSTENS
+            )
+            self._schnell_fehlschlaege += 1
             return
+        self._schnell_fehlschlaege = 0
         neu = {
             key: wert for key, wert in gelesen.items() if not _gleich(self.data.get(key), wert)
         }
