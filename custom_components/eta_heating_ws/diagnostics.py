@@ -208,6 +208,7 @@ async def async_get_config_entry_diagnostics(
             "schalter": sorted(coordinator.switch_defs),
             "betriebsarten": sorted(coordinator.select_defs),
             "thermostate": sorted(coordinator.thermostat_defs),
+            "zahlen": sorted(coordinator.zahl_defs),
             "zeitprogramme": zeitprogramme,
             "zeitprogramm_nicht_beschreibbar": zeitprogramm_pruefung,
             "ausserhalb_der_zeitfenster_nicht_beschreibbar": {

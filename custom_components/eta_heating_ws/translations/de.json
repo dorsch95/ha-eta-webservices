@@ -398,6 +398,11 @@
         "name": "Aschebox leeren um"
       }
     },
+    "number": {
+      "lager_maximum_stellen": {
+        "name": "Lager Fassungsvermögen"
+      }
+    },
     "select": {
       "heizkreis_betriebsart": {
         "name": "Heizkreis 1 Betriebsart",

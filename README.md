@@ -10,7 +10,7 @@ Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home As
 - **Fertige Dashboard-Karten:** „ETA Übersicht“ zeigt deine Anlage als Anlagenbild, als Kacheln oder kompakt, ohne YAML und mit eigenen Zeichnungen, für PC, Tablet und Handy.
 - **Pelletverbrauch:** im Energie-Dashboard und je Tag, Woche und Jahr, auf Wunsch mit Kosten.
 - **Verbrauchsprognose:** lernt aus deinem Verlauf und sagt, wann das Pelletlager leer ist.
-- **Schalten nur auf Wunsch:** Ab Werk liest die Integration nur. Kesselschalter, Betriebsart, Thermostat, Zeitprogramm und Aschebox-Plan gibt es erst, wenn du den Schreibzugriff freigibst.
+- **Schalten nur auf Wunsch:** Ab Werk liest die Integration nur. Kesselschalter, Betriebsart, Thermostat, Zeitprogramm, Aschebox-Plan und das Fassungsvermögen des Pelletlagers gibt es erst, wenn du den Schreibzugriff freigibst.
 
 > ℹ️ Benötigt Home Assistant **2025.8** oder neuer.
 
@@ -241,6 +241,7 @@ Was eine Erklärung braucht:
 | **Pelletlager** | | |
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
 | `sensor.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen | kg |
+| `number.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen zum Einstellen, nur mit Schreibzugriff | kg |
 | `sensor.eta_heizung_lager_fullstand` | Lager Füllstand (Vorrat geteilt durch maximalen Vorrat) | % |
 | `sensor.eta_heizung_lager_reicht_bis` | Tag, an dem das Lager voraussichtlich leer ist | Datum |
 | `sensor.eta_heizung_lager_bestellen_bis` | Tag, an dem voraussichtlich die Warngrenze erreicht ist | Datum |
@@ -481,6 +482,10 @@ Findet die Integration zusätzlich die **Entaschentaste** (am Display unter *Son
   4. Sobald die Box abgenommen und wieder eingesetzt ist, schaltet es den Kessel wieder ein. Nach 2 Stunden geht der Kessel auch ohne Leeren wieder an, damit das Haus im Winter nicht auskühlt.
 
 `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab. Hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst ein, endet der Plan ebenfalls. Er übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen, erscheint eine Meldung, dass der Kessel von Hand einzuschalten ist. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
+
+### Fassungsvermögen des Pelletlagers
+
+Wie viel dein Lager fasst, steht an der Anlage unter *Lager → Vorrat → Maximaler Vorrat*, nicht in der Integration. Mit Schreibzugriff stellst du es auch in Home Assistant: `number.eta_heizung_lager_fassungsvermogen`, auf der Seite des Geräts *ETA Heizung* unter **Konfiguration**. Das Feld erscheint nur, wenn deine Anlage den Wert als beschreibbar meldet. Die Grenzen nennt sie selbst, an einer Anlage sind es 0 bis 100.000 kg. Der Füllstand in Prozent rechnet mit diesem Wert.
 
 ### Betriebsart je Heizkreis
 

@@ -58,6 +58,7 @@ PLATFORMS = [
     Platform.BUTTON,
     Platform.CLIMATE,
     Platform.DATETIME,
+    Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
@@ -427,6 +428,32 @@ SELECTS = {
     },
 }
 """Je Heizkreis eine Auswahl der Betriebsart."""
+
+ZAHLEN = {
+    "lager_maximum_stellen": {
+        "component": "lager",
+        "name": "Lager Fassungsvermögen",
+        "translation_key": "lager_maximum_stellen",
+        "icon": "mdi:silo-outline",
+        "quelle": "lager_maximum",
+        "einheit": "kg",
+        "schritt": 1,
+        "grenzen": (0, 100000),
+    },
+}
+"""Zahlen, die sich an der Anlage einstellen lassen.
+
+Jede nur mit freigegebenem Schreibzugriff und nur, wenn die Anlage sie in
+/user/varinfo als beschreibbar meldet. quelle: der Messwert, dessen Objekt
+geschrieben wird - die Zahl zeigt denselben Wert wie sein Sensor. grenzen:
+der Bereich, falls die Anlage keinen nennt; nennt sie einen, gilt der
+engere.
+
+Das Fassungsvermögen des Pelletlagers ("Lager > Vorrat > Maximaler
+Vorrat") steht an der Anlage, nicht in der Integration. Eine Anlage meldet
+es als beschreibbar, von 0 bis 100000 kg. Der Füllstand in Prozent rechnet
+mit ihm.
+"""
 
 THERMOSTATE = {
     "hk1": {"role": "hk", "praefix": "heizkreis", "betriebsart": "heizkreis_betriebsart"},

@@ -20,6 +20,7 @@ from .const import (
     COMPONENTS,
     SELECTS,
     SWITCHES,
+    ZAHLEN,
     DOMAIN,
     HEIZKREISE,
     PUFFER_FUEHLER_MINDEST,
@@ -246,6 +247,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.errors: list[ETAError] = []
         self.switch_defs: dict[str, dict] = {}
         self.select_defs: dict[str, dict] = {}
+        self.zahl_defs: dict[str, dict] = {}
+        """Je einstellbarer Zahl ihr Objekt, ihre Skalierung und ihre Grenzen, siehe ZAHLEN."""
         self.entaschen_def: dict | None = None
         self.aschebox = None
         self.fehlzyklen: dict[str, int] = {}
@@ -687,6 +690,33 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 "ETA: Thermostat für %s erkannt (%s)", heizkreis, ", ".join(sorted(objekte))
             )
 
+    async def _zahlen_pruefen(self) -> None:
+        """Prüft die Zahlen, die sich an der Anlage einstellen lassen, siehe ZAHLEN.
+
+        Nur mit freigegebenem Schreibzugriff, und nur, was die Anlage selbst
+        als beschreibbar meldet. Skalierung und Grenzen kommen aus
+        /user/varinfo.
+        """
+        self.zahl_defs = {}
+        if not self.enable_switches:
+            return
+        for key, definition in ZAHLEN.items():
+            uri = self.discovered_uris.get(definition["quelle"])
+            if definition["component"] not in self.components or not uri:
+                continue
+            [info] = await self._varinfos([uri])
+            if not info or not info.get("writable"):
+                _LOGGER.debug("ETA: %s ist nicht beschreibbar", key)
+                continue
+            self.zahl_defs[key] = {
+                **definition,
+                "uri": uri,
+                "scale": info["scale"],
+                "min_roh": info["min_roh"],
+                "max_roh": info["max_roh"],
+            }
+            _LOGGER.info("ETA: %s lässt sich einstellen (%s)", key, uri)
+
     def zeitprogramm_art(self, programm: str) -> str:
         """heizzeiten, puffer, warmwasser oder zirkulation - danach wählt die Karte aus, was sie zeigt."""
         info = self.zeitprogramm_namen.get(programm)
@@ -1108,6 +1138,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._entaschen_pruefen()
         await self._betriebsarten_pruefen()
         await self._thermostate_pruefen()
+        await self._zahlen_pruefen()
         await self._varset_anlegen()
 
     async def _kombi_pruefen(self) -> None:

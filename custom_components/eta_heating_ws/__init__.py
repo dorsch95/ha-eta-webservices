@@ -44,6 +44,7 @@ from .const import (
     SELECTS,
     SENSORS,
     SWITCHES,
+    ZAHLEN,
     URL_GRAFIKEN,
     URL_OBERFLAECHE,
     ALTE_URL_GRAFIKEN,
@@ -400,6 +401,8 @@ def entitaet_vorgesehen(
         )
     if key in SELECTS:
         return enable_switches and SELECTS[key]["component"] in aktiv
+    if key in ZAHLEN:
+        return enable_switches and ZAHLEN[key]["component"] in aktiv
     if key in ASCHEBOX_ENTITAETEN:
         return enable_switches and "kessel" in aktiv
     if key in _STOERUNG:

@@ -398,6 +398,11 @@
         "name": "Empty ash box at"
       }
     },
+    "number": {
+      "lager_maximum_stellen": {
+        "name": "Pellet store capacity"
+      }
+    },
     "select": {
       "heizkreis_betriebsart": {
         "name": "Heating circuit 1 mode",

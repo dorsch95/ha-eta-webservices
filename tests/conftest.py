@@ -147,6 +147,8 @@ class FakeSession:
         self.gesetzte_werte: list[tuple[str, str]] = []
         self.geschrieben: dict[str, str] = {}
         self.schreibbar = True
+        self.lager_schreibbar = True
+        """Meldet die Anlage "Maximaler Vorrat" als beschreibbar? So antwortet eine echte Anlage."""
         self.kessel_zustand = "Heizen"
         self.asche_roh = "2370"
         self.zeitfenster: dict[str, tuple[int, int, int | None]] = {}
@@ -297,6 +299,9 @@ class FakeSession:
             }
         if "12120" in uri:
             return {"value": "1000", "str_value": "1000", "unit": "kg"}
+        if uri.endswith("/12790"):
+            roh = self._gemeldet(uri, "64000")
+            return {"value": roh, "str_value": str(int(roh) // 10), "unit": "kg", "scale": "10"}
         if uri.endswith(("/12125", "/12126", "/12230")):
             vorgabe = "950" if uri.endswith("/12126") else "949"
             roh = self._gemeldet(uri, vorgabe)
@@ -390,6 +395,16 @@ class FakeSession:
                 f'scaleFactor="10" advTextOffset="0" isWritable="{1 if self.absenkwerte_schreibbar else 0}">'
                 '<type>DEFAULT</type><validValues><min strValue="0,0" unit="°C">0.0</min>'
                 '<def strValue="16,0" unit="°C">160.0</def><max strValue="80,0" unit="°C">800.0</max>'
+                "</validValues></variable></varInfo></eta>"
+            )
+        if url.endswith("/12790"):
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable advTextOffset="0" unit="kg" '
+                'fullName="Vorrat > Maximaler Vorrat" '
+                f'isWritable="{1 if self.lager_schreibbar else 0}" decPlaces="0" uri="/u" '
+                'scaleFactor="10" name="Maximaler Vorrat"><type>DEFAULT</type><validValues>'
+                '<min unit="kg" strValue="0">0</min><def unit="kg" strValue="0">0</def>'
+                '<max unit="kg" strValue="100000">1000000</max>'
                 "</validValues></variable></varInfo></eta>"
             )
         if url.endswith("/12000"):
