@@ -1,0 +1,592 @@
+<eta xmlns="http://www.eta.co.at/rest/v1" version="1.0">
+  <menu uri="/user/menu">
+    <fub name="Puffer " uri="/121/10251">
+      <object name="Puffer" uri="/121/10251/0/0/12207">
+        <object name="Puffer oben" uri="/121/10251/0/0/12242">
+          <object name="Ladezeiten" uri="/121/10251/12130/0/0">
+            <object name="Schaltzustand" uri="/121/10251/12130/0/1109" />
+            <object name="Temperatur" uri="/121/10251/12130/0/1110" />
+            <object name="Montag" uri="/121/10251/12130/0/1081">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1111" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1082" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1083" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1084" />
+            </object>
+            <object name="Dienstag" uri="/121/10251/12130/0/1085">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1112" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1086" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1087" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1088" />
+            </object>
+            <object name="Mittwoch" uri="/121/10251/12130/0/1089">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1113" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1090" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1091" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1092" />
+            </object>
+            <object name="Donnerstag" uri="/121/10251/12130/0/1093">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1114" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1094" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1095" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1096" />
+            </object>
+            <object name="Freitag" uri="/121/10251/12130/0/1097">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1115" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1098" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1099" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1100" />
+            </object>
+            <object name="Samstag" uri="/121/10251/12130/0/1101">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1116" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1102" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1103" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1104" />
+            </object>
+            <object name="Sonntag" uri="/121/10251/12130/0/1105">
+              <object name="Absenktemperatur" uri="/121/10251/12130/0/1117" />
+              <object name="Zeitfenster 1" uri="/121/10251/12130/0/1106" />
+              <object name="Zeitfenster 2" uri="/121/10251/12130/0/1107" />
+              <object name="Zeitfenster 3" uri="/121/10251/12130/0/1108" />
+            </object>
+          </object>
+          <object name="Puffer oben Min" uri="/121/10251/0/0/12211" />
+          <object name="Puffer Soll" uri="/121/10251/0/0/12209" />
+          <object name="Laden mit anderen Verbrauchern" uri="/121/10251/0/0/12667">
+            <object name="Einschaltdifferenz" uri="/121/10251/0/0/13535" />
+          </object>
+          <object name="Laden mit Erzeuger" uri="/121/10251/0/0/12932">
+            <object name="Einschaltdifferenz" uri="/121/10251/0/0/13535" />
+          </object>
+        </object>
+        <object name="Puffer unten" uri="/121/10251/0/0/12244">
+          <object name="Puffer unten Aus" uri="/121/10251/0/0/12212" />
+        </object>
+        <object name="geforderte Leistung" uri="/121/10251/0/0/12533" />
+        <object name="Kaskade" uri="/121/10251/0/0/12317" />
+        <object name="Freigabe Brenner" uri="/121/10251/0/0/12270">
+          <object name="Brenner starten unter" uri="/121/10251/0/0/12524" />
+        </object>
+        <object name="Puffer oben Solar" uri="/121/10251/0/0/12322">
+          <object name="Puffer Soll Solar" uri="/121/10251/0/0/12408">
+            <object name="Puffer oben min Solar" uri="/121/10251/0/0/12407" />
+            <object name="Puffer oben max Solar" uri="/121/10251/0/0/13507" />
+            <object name="Min. Außentemp. Solarvorrang" uri="/121/10251/0/0/12432" />
+          </object>
+          <object name="Priorität" uri="/121/10251/0/0/12778" />
+        </object>
+        <object name="Puffer unten Solar" uri="/121/10251/0/0/12245">
+          <object name="Puffer unten max." uri="/121/10251/0/0/12259" />
+          <object name="Solarvorrang" uri="/121/10251/0/0/12427">
+            <object name="Solarvorrang" uri="/121/10251/0/0/12428" />
+            <object name="Beginn Solarvorrang" uri="/121/10251/0/0/12429" />
+            <object name="Solarvorrang ändern ab" uri="/121/10251/0/0/12430" />
+            <object name="Ende Solarvorrang" uri="/121/10251/0/0/12431" />
+            <object name="Min. Außentemp. Solarvorrang" uri="/121/10251/0/0/12432" />
+          </object>
+          <object name="Solar Überschuss" uri="/121/10251/0/0/12653">
+            <object name="ab Außentemperatur" uri="/121/10251/0/0/12680" />
+            <object name="ab Puffer oben" uri="/121/10251/0/0/12654" />
+            <object name="ab Puffer unten Solar" uri="/121/10251/0/0/12655" />
+          </object>
+          <object name="Außentemperatur" uri="/121/10251/0/0/12197" />
+          <object name="Priorität" uri="/121/10251/0/0/12770" />
+        </object>
+        <object name="Extra laden" uri="/121/10251/0/0/13026">
+          <object name="Zeitprogramm aktivieren?" uri="/121/10251/0/0/13010">
+            <object name="Startzeitpunkt" uri="/121/10251/0/0/13029" />
+          </object>
+          <object name="Sofort laden" uri="/121/10251/0/0/13025" />
+          <object name="Puffer oben Min" uri="/121/10251/0/0/13028" />
+          <object name="Puffer unten Aus" uri="/121/10251/0/0/13027" />
+        </object>
+      </object>
+      <object name="Sonstiges" uri="/121/10251/0/0/12182" />
+    </fub>
+    <fub name="Boiler 2" uri="/121/10111">
+      <object name="Warmwasserspeicher" uri="/121/10111/0/0/12129">
+        <object name="Ladezeiten" uri="/121/10111/12130/0/0">
+          <object name="Schaltzustand" uri="/121/10111/12130/0/1109" />
+          <object name="Temperatur" uri="/121/10111/12130/0/1110" />
+          <object name="Montag" uri="/121/10111/12130/0/1081">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1111" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1082" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1083" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1084" />
+          </object>
+          <object name="Dienstag" uri="/121/10111/12130/0/1085">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1112" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1086" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1087" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1088" />
+          </object>
+          <object name="Mittwoch" uri="/121/10111/12130/0/1089">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1113" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1090" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1091" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1092" />
+          </object>
+          <object name="Donnerstag" uri="/121/10111/12130/0/1093">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1114" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1094" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1095" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1096" />
+          </object>
+          <object name="Freitag" uri="/121/10111/12130/0/1097">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1115" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1098" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1099" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1100" />
+          </object>
+          <object name="Samstag" uri="/121/10111/12130/0/1101">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1116" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1102" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1103" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1104" />
+          </object>
+          <object name="Sonntag" uri="/121/10111/12130/0/1105">
+            <object name="Absenktemperatur" uri="/121/10111/12130/0/1117" />
+            <object name="Zeitfenster 1" uri="/121/10111/12130/0/1106" />
+            <object name="Zeitfenster 2" uri="/121/10111/12130/0/1107" />
+            <object name="Zeitfenster 3" uri="/121/10111/12130/0/1108" />
+          </object>
+        </object>
+        <object name="Einschaltdifferenz" uri="/121/10111/0/0/12133" />
+        <object name="Warmwasserspeicher Soll" uri="/121/10111/0/0/12132" />
+        <object name="Warmwasserspeicher" uri="/121/10111/0/0/12271" />
+        <object name="Warmwasser Ladepumpe" uri="/121/10111/0/0/12274" />
+        <object name="Solar abschöpfen" uri="/121/10111/0/0/12652" />
+        <object name="Laden mit Erzeuger" uri="/121/10111/0/0/12932">
+          <object name="Einschaltdifferenz" uri="/121/10111/0/0/13535" />
+        </object>
+      </object>
+      <object name="Sonstiges" uri="/121/10111/0/0/12182">
+        <object name="Laden Taste" uri="/121/10111/0/0/12134" />
+      </object>
+    </fub>
+    <fub name="Boiler 1" uri="/121/10112">
+      <object name="Warmwasserspeicher" uri="/121/10112/0/0/12129">
+        <object name="Ladezeiten" uri="/121/10112/12130/0/0">
+          <object name="Schaltzustand" uri="/121/10112/12130/0/1109" />
+          <object name="Temperatur" uri="/121/10112/12130/0/1110" />
+          <object name="Montag" uri="/121/10112/12130/0/1081">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1111" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1082" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1083" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1084" />
+          </object>
+          <object name="Dienstag" uri="/121/10112/12130/0/1085">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1112" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1086" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1087" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1088" />
+          </object>
+          <object name="Mittwoch" uri="/121/10112/12130/0/1089">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1113" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1090" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1091" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1092" />
+          </object>
+          <object name="Donnerstag" uri="/121/10112/12130/0/1093">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1114" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1094" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1095" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1096" />
+          </object>
+          <object name="Freitag" uri="/121/10112/12130/0/1097">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1115" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1098" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1099" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1100" />
+          </object>
+          <object name="Samstag" uri="/121/10112/12130/0/1101">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1116" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1102" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1103" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1104" />
+          </object>
+          <object name="Sonntag" uri="/121/10112/12130/0/1105">
+            <object name="Absenktemperatur" uri="/121/10112/12130/0/1117" />
+            <object name="Zeitfenster 1" uri="/121/10112/12130/0/1106" />
+            <object name="Zeitfenster 2" uri="/121/10112/12130/0/1107" />
+            <object name="Zeitfenster 3" uri="/121/10112/12130/0/1108" />
+          </object>
+        </object>
+        <object name="Einschaltdifferenz" uri="/121/10112/0/0/12133" />
+        <object name="Warmwasserspeicher Soll" uri="/121/10112/0/0/12132" />
+        <object name="Warmwasserspeicher" uri="/121/10112/0/0/12271" />
+        <object name="Warmwasser Ladepumpe" uri="/121/10112/0/0/12274" />
+        <object name="Solar abschöpfen" uri="/121/10112/0/0/12652" />
+        <object name="Laden mit Erzeuger" uri="/121/10112/0/0/12932">
+          <object name="Einschaltdifferenz" uri="/121/10112/0/0/13535" />
+        </object>
+      </object>
+      <object name="Sonstiges" uri="/121/10112/0/0/12182">
+        <object name="Laden Taste" uri="/121/10112/0/0/12134" />
+      </object>
+    </fub>
+    <fub name="HK Wohnung 2" uri="/121/10101">
+      <object name="Heizkreis" uri="/121/10101/0/0/12090">
+        <object name="Betrieb" uri="/121/10101/0/0/12092" />
+        <object name="Heizzeiten" uri="/121/10101/12113/0/0">
+          <object name="Schaltzustand" uri="/121/10101/12113/0/1109" />
+          <object name="Temperatur" uri="/121/10101/12113/0/1110" />
+          <object name="Montag" uri="/121/10101/12113/0/1081">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1111" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1082" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1083" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1084" />
+          </object>
+          <object name="Dienstag" uri="/121/10101/12113/0/1085">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1112" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1086" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1087" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1088" />
+          </object>
+          <object name="Mittwoch" uri="/121/10101/12113/0/1089">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1113" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1090" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1091" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1092" />
+          </object>
+          <object name="Donnerstag" uri="/121/10101/12113/0/1093">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1114" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1094" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1095" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1096" />
+          </object>
+          <object name="Freitag" uri="/121/10101/12113/0/1097">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1115" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1098" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1099" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1100" />
+          </object>
+          <object name="Samstag" uri="/121/10101/12113/0/1101">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1116" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1102" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1103" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1104" />
+          </object>
+          <object name="Sonntag" uri="/121/10101/12113/0/1105">
+            <object name="Absenktemperatur" uri="/121/10101/12113/0/1117" />
+            <object name="Zeitfenster 1" uri="/121/10101/12113/0/1106" />
+            <object name="Zeitfenster 2" uri="/121/10101/12113/0/1107" />
+            <object name="Zeitfenster 3" uri="/121/10101/12113/0/1108" />
+          </object>
+        </object>
+        <object name="Raum" uri="/121/10101/0/0/12634">
+          <object name="Raum Soll" uri="/121/10101/0/0/12127" />
+        </object>
+        <object name="Vorlauf" uri="/121/10101/0/0/12241" />
+        <object name="Heizkurve" uri="/121/10101/0/0/12111">
+          <object name="Schieber Position" uri="/121/10101/0/0/12240" />
+          <object name="Vorlauf bei -10°C" uri="/121/10101/0/0/12104" />
+          <object name="Vorlauf bei +10°C" uri="/121/10101/0/0/12103" />
+          <object name="Vorlauf Absenkung" uri="/121/10101/0/0/12107" />
+        </object>
+        <object name="Außentemperatur verzögert" uri="/121/10101/12095/0/0">
+          <object name="Lag x" uri="/121/10101/12095/0/1071" />
+          <object name="Lag Tf" uri="/121/10101/12095/0/1072" />
+          <object name="Lag Tf" uri="/121/10101/12095/0/1074" />
+          <object name="Lag y" uri="/121/10101/12095/0/1073" />
+        </object>
+        <object name="Heizgrenze Tag" uri="/121/10101/0/0/12096" />
+        <object name="Heizgrenze Nacht" uri="/121/10101/0/0/12097" />
+        <object name="Freigabe Temperatur" uri="/121/10101/0/0/12100" />
+        <object name="Freigabe Temperatur" uri="/121/10101/0/0/12215" />
+        <object name="Heizkreispumpe" uri="/121/10101/0/11124/0">
+          <object name="Anforderung" uri="/121/10101/0/11124/2001" />
+        </object>
+        <object name="Solar abschöpfen" uri="/121/10101/0/0/12652" />
+      </object>
+      <object name="Sonstiges" uri="/121/10101/0/0/12182">
+        <object name="Tag Taste" uri="/121/10101/0/0/12125" />
+        <object name="Auto Taste" uri="/121/10101/0/0/12126" />
+        <object name="Nacht Taste" uri="/121/10101/0/0/12230" />
+        <object name="Ein/Aus Taste" uri="/121/10101/0/0/12080" />
+        <object name="Kommen Taste" uri="/121/10101/0/0/12218" />
+        <object name="Gehen Taste" uri="/121/10101/0/0/12231" />
+        <object name="Urlaub Beginn" uri="/121/10101/0/0/12232" />
+        <object name="Urlaub Ende" uri="/121/10101/0/0/12239" />
+      </object>
+    </fub>
+    <fub name="HK Wohnung 1" uri="/121/10102">
+      <object name="Heizkreis" uri="/121/10102/0/0/12090">
+        <object name="Betrieb" uri="/121/10102/0/0/12092" />
+        <object name="Heizzeiten" uri="/121/10102/12113/0/0">
+          <object name="Schaltzustand" uri="/121/10102/12113/0/1109" />
+          <object name="Temperatur" uri="/121/10102/12113/0/1110" />
+          <object name="Montag" uri="/121/10102/12113/0/1081">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1111" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1082" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1083" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1084" />
+          </object>
+          <object name="Dienstag" uri="/121/10102/12113/0/1085">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1112" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1086" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1087" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1088" />
+          </object>
+          <object name="Mittwoch" uri="/121/10102/12113/0/1089">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1113" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1090" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1091" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1092" />
+          </object>
+          <object name="Donnerstag" uri="/121/10102/12113/0/1093">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1114" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1094" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1095" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1096" />
+          </object>
+          <object name="Freitag" uri="/121/10102/12113/0/1097">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1115" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1098" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1099" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1100" />
+          </object>
+          <object name="Samstag" uri="/121/10102/12113/0/1101">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1116" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1102" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1103" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1104" />
+          </object>
+          <object name="Sonntag" uri="/121/10102/12113/0/1105">
+            <object name="Absenktemperatur" uri="/121/10102/12113/0/1117" />
+            <object name="Zeitfenster 1" uri="/121/10102/12113/0/1106" />
+            <object name="Zeitfenster 2" uri="/121/10102/12113/0/1107" />
+            <object name="Zeitfenster 3" uri="/121/10102/12113/0/1108" />
+          </object>
+        </object>
+        <object name="Raum" uri="/121/10102/0/0/12634">
+          <object name="Raum Soll" uri="/121/10102/0/0/12127" />
+        </object>
+        <object name="Vorlauf" uri="/121/10102/0/0/12241" />
+        <object name="Heizkurve" uri="/121/10102/0/0/12111">
+          <object name="Schieber Position" uri="/121/10102/0/0/12240" />
+          <object name="Vorlauf bei -10°C" uri="/121/10102/0/0/12104" />
+          <object name="Vorlauf bei +10°C" uri="/121/10102/0/0/12103" />
+          <object name="Vorlauf Absenkung" uri="/121/10102/0/0/12107" />
+        </object>
+        <object name="Außentemperatur verzögert" uri="/121/10102/12095/0/0">
+          <object name="Lag x" uri="/121/10102/12095/0/1071" />
+          <object name="Lag Tf" uri="/121/10102/12095/0/1072" />
+          <object name="Lag Tf" uri="/121/10102/12095/0/1074" />
+          <object name="Lag y" uri="/121/10102/12095/0/1073" />
+        </object>
+        <object name="Heizgrenze Tag" uri="/121/10102/0/0/12096" />
+        <object name="Heizgrenze Nacht" uri="/121/10102/0/0/12097" />
+        <object name="Freigabe Temperatur" uri="/121/10102/0/0/12100" />
+        <object name="Freigabe Temperatur" uri="/121/10102/0/0/12215" />
+        <object name="Heizkreispumpe" uri="/121/10102/0/11124/0">
+          <object name="Anforderung" uri="/121/10102/0/11124/2001" />
+        </object>
+        <object name="Solar abschöpfen" uri="/121/10102/0/0/12652" />
+      </object>
+      <object name="Sonstiges" uri="/121/10102/0/0/12182">
+        <object name="Tag Taste" uri="/121/10102/0/0/12125" />
+        <object name="Auto Taste" uri="/121/10102/0/0/12126" />
+        <object name="Nacht Taste" uri="/121/10102/0/0/12230" />
+        <object name="Ein/Aus Taste" uri="/121/10102/0/0/12080" />
+        <object name="Kommen Taste" uri="/121/10102/0/0/12218" />
+        <object name="Gehen Taste" uri="/121/10102/0/0/12231" />
+        <object name="Urlaub Beginn" uri="/121/10102/0/0/12232" />
+        <object name="Urlaub Ende" uri="/121/10102/0/0/12239" />
+      </object>
+    </fub>
+    <fub name="Fbh" uri="/121/10103">
+      <object name="Heizkreis" uri="/121/10103/0/0/12090">
+        <object name="Betrieb" uri="/121/10103/0/0/12092" />
+        <object name="Heizzeiten" uri="/121/10103/12113/0/0">
+          <object name="Schaltzustand" uri="/121/10103/12113/0/1109" />
+          <object name="Temperatur" uri="/121/10103/12113/0/1110" />
+          <object name="Montag" uri="/121/10103/12113/0/1081">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1111" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1082" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1083" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1084" />
+          </object>
+          <object name="Dienstag" uri="/121/10103/12113/0/1085">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1112" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1086" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1087" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1088" />
+          </object>
+          <object name="Mittwoch" uri="/121/10103/12113/0/1089">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1113" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1090" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1091" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1092" />
+          </object>
+          <object name="Donnerstag" uri="/121/10103/12113/0/1093">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1114" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1094" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1095" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1096" />
+          </object>
+          <object name="Freitag" uri="/121/10103/12113/0/1097">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1115" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1098" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1099" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1100" />
+          </object>
+          <object name="Samstag" uri="/121/10103/12113/0/1101">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1116" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1102" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1103" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1104" />
+          </object>
+          <object name="Sonntag" uri="/121/10103/12113/0/1105">
+            <object name="Absenktemperatur" uri="/121/10103/12113/0/1117" />
+            <object name="Zeitfenster 1" uri="/121/10103/12113/0/1106" />
+            <object name="Zeitfenster 2" uri="/121/10103/12113/0/1107" />
+            <object name="Zeitfenster 3" uri="/121/10103/12113/0/1108" />
+          </object>
+        </object>
+        <object name="Vorlauf" uri="/121/10103/0/0/12241" />
+        <object name="Heizkurve" uri="/121/10103/0/0/12111">
+          <object name="Schieber Position" uri="/121/10103/0/0/12240" />
+          <object name="Vorlauf bei -10°C" uri="/121/10103/0/0/12104" />
+          <object name="Vorlauf bei +10°C" uri="/121/10103/0/0/12103" />
+          <object name="Vorlauf Absenkung" uri="/121/10103/0/0/12107" />
+        </object>
+        <object name="Außentemperatur verzögert" uri="/121/10103/12095/0/0">
+          <object name="Lag x" uri="/121/10103/12095/0/1071" />
+          <object name="Lag Tf" uri="/121/10103/12095/0/1072" />
+          <object name="Lag Tf" uri="/121/10103/12095/0/1074" />
+          <object name="Lag y" uri="/121/10103/12095/0/1073" />
+        </object>
+        <object name="Heizgrenze Tag" uri="/121/10103/0/0/12096" />
+        <object name="Heizgrenze Nacht" uri="/121/10103/0/0/12097" />
+        <object name="Freigabe Temperatur" uri="/121/10103/0/0/12100" />
+        <object name="Freigabe Temperatur" uri="/121/10103/0/0/12215" />
+        <object name="Heizkreispumpe" uri="/121/10103/0/11124/0">
+          <object name="Anforderung" uri="/121/10103/0/11124/2001" />
+        </object>
+        <object name="Solar abschöpfen" uri="/121/10103/0/0/12652" />
+      </object>
+      <object name="Sonstiges" uri="/121/10103/0/0/12182">
+        <object name="Tag Taste" uri="/121/10103/0/0/12125" />
+        <object name="Auto Taste" uri="/121/10103/0/0/12126" />
+        <object name="Nacht Taste" uri="/121/10103/0/0/12230" />
+        <object name="Ein/Aus Taste" uri="/121/10103/0/0/12080" />
+        <object name="Kommen Taste" uri="/121/10103/0/0/12218" />
+        <object name="Gehen Taste" uri="/121/10103/0/0/12231" />
+        <object name="Urlaub Beginn" uri="/121/10103/0/0/12232" />
+        <object name="Urlaub Ende" uri="/121/10103/0/0/12239" />
+      </object>
+    </fub>
+    <fub name="Solar" uri="/121/10221">
+      <object name="Zustand" uri="/121/10221/0/0/12183">
+        <object name="Kollektor" uri="/121/10221/0/0/12275">
+          <object name="Kollektor Min" uri="/121/10221/0/0/12187" />
+          <object name="Außentemperatur" uri="/121/10221/0/0/12197" />
+        </object>
+        <object name="Startfunktion" uri="/121/10221/0/0/12641" />
+        <object name="Kollektorpumpe" uri="/121/10221/0/0/12278">
+          <object name="Kollektor" uri="/121/10221/0/0/12275" />
+          <object name="Speicher 1 unten" uri="/121/10221/0/0/12781" />
+          <object name="Soll Differenz Kollektor" uri="/121/10221/0/0/12186" />
+        </object>
+        <object name="Sekundärpumpe" uri="/121/10221/0/0/12281">
+          <object name="Kollektor" uri="/121/10221/0/0/12275" />
+          <object name="Sekundär Vorlauf" uri="/121/10221/0/0/12276" />
+          <object name="Solar Rücklauf" uri="/121/10221/0/0/12277" />
+          <object name="Speicher 1 unten" uri="/121/10221/0/0/12781" />
+        </object>
+        <object name="Schichtladeventil" uri="/121/10221/0/0/12282">
+          <object name="Speicher 1 oben" uri="/121/10221/0/0/12784" />
+          <object name="Speicher 1 oben Soll" uri="/121/10221/0/0/12681" />
+          <object name="Sekundär Vorlauf" uri="/121/10221/0/0/12276" />
+        </object>
+        <object name="aktueller Speicher" uri="/121/10221/0/0/12185" />
+      </object>
+    </fub>
+    <fub name="F.Wärme" uri="/121/10291">
+      <object name="Fremdwärme" uri="/121/10291/0/0/12386">
+        <object name="Kessel abschalten bei" uri="/121/10291/0/0/12384" />
+        <object name="Kessel" uri="/121/10291/0/0/12161" />
+        <object name="Fremdwärme" uri="/121/10291/0/0/12383" />
+      </object>
+      <object name="Ladepumpe" uri="/121/10291/0/11088/0">
+        <object name="Anforderung" uri="/121/10291/0/11088/2001" />
+        <object name="Fremdwärme" uri="/121/10291/0/0/12383" />
+        <object name="Speichertemperatur" uri="/121/10291/0/0/12491" />
+        <object name="Freigabe Temperatur" uri="/121/10291/0/0/12100" />
+        <object name="Thermostat Differenz" uri="/121/10291/0/0/12327" />
+      </object>
+    </fub>
+    <fub name="Sys " uri="/121/10241">
+      <object name="Eingänge" uri="/121/10241/0/0/10990">
+        <object name="Außentemperatur" uri="/121/10241/0/0/12197" />
+      </object>
+      <object name="System" uri="/121/10241/0/0/12256">
+        <object name="Außentemperatur" uri="/121/10241/0/0/12197" />
+      </object>
+    </fub>
+    <fub name="Kessel" uri="/40/10021">
+      <object name="Zählerstände" uri="/40/10021/0/0/12010">
+        <object name="Volllaststunden" uri="/40/10021/0/0/12153" />
+        <object name="Gesamtverbrauch" uri="/40/10021/0/0/12016" />
+        <object name="Verbrauch seit Wartung" uri="/40/10021/0/0/12014" />
+        <object name="Inhalt Pelletsbehälter" uri="/40/10021/0/0/12011" />
+        <object name="Verbrauch seit Entaschung" uri="/40/10021/0/0/12012" />
+        <object name="Verbrauch seit Aschebox leeren" uri="/40/10021/0/0/12013" />
+      </object>
+      <object name="Kessel" uri="/40/10021/0/0/12000">
+        <object name="Einstellungen" uri="/40/10021/0/0/12421" />
+        <object name="Kesseldruck" uri="/40/10021/0/0/12180" />
+        <object name="Kessel" uri="/40/10021/0/0/12161">
+          <object name="Kessel Soll" uri="/40/10021/0/0/12001" />
+          <object name="Kaskade" uri="/40/10021/0/0/12317" />
+        </object>
+        <object name="Vorlauf" uri="/40/10021/0/0/12241">
+          <object name="Umschaltventil" uri="/40/10021/0/11128/0">
+            <object name="Anforderung" uri="/40/10021/0/11128/2001" />
+          </object>
+          <object name="Angeforderte Leistung" uri="/40/10021/0/0/12077" />
+          <object name="Kesselpumpe" uri="/40/10021/0/11123/0">
+            <object name="Anforderung" uri="/40/10021/0/11123/2001" />
+          </object>
+        </object>
+        <object name="Rücklaufmischer" uri="/40/10021/0/0/12999" />
+        <object name="Abgas" uri="/40/10021/0/0/12162">
+          <object name="Emissionsmessung" uri="/40/10021/0/0/13266">
+            <object name="Art der Messung" uri="/40/10021/0/0/12116" />
+            <object name="Beginn der Messung" uri="/40/10021/0/0/13267" />
+            <object name="Verriegelungsdauer" uri="/40/10021/0/0/13268" />
+            <object name="Jetzt starten" uri="/40/10021/0/0/13269" />
+            <object name="Messung deaktivieren" uri="/40/10021/0/0/13277" />
+          </object>
+        </object>
+        <object name="Abgasgebläse" uri="/40/10021/0/0/12165" />
+        <object name="Restsauerstoff" uri="/40/10021/0/0/12164" />
+        <object name="Entaschung" uri="/40/10021/0/0/12050">
+          <object name="Beginn Ruhezeit" uri="/40/10021/0/0/12248" />
+          <object name="Dauer Ruhezeit" uri="/40/10021/0/0/12249" />
+          <object name="Verbrauch seit Entaschung" uri="/40/10021/0/0/12012" />
+          <object name="Verbrauch seit Aschebox leeren" uri="/40/10021/0/0/12013" />
+          <object name="Aschebox leeren nach" uri="/40/10021/0/0/12120" />
+          <object name="Verbrauch seit Wartung" uri="/40/10021/0/0/12014" />
+        </object>
+        <object name="Pelletsbehälter" uri="/40/10021/0/0/12005">
+          <object name="Pelletsbehälter auffüllen" uri="/40/10021/0/0/12071" />
+          <object name="Inhalt Pelletsbehälter" uri="/40/10021/0/0/12011" />
+          <object name="Saugzeitpunkt" uri="/40/10021/0/0/12152" />
+          <object name="Saugturbine" uri="/40/10021/0/11042/0">
+            <object name="Anforderung" uri="/40/10021/0/11042/2001" />
+          </object>
+        </object>
+      </object>
+      <object name="Sonstiges" uri="/40/10021/0/0/12182">
+        <object name="Ein/Aus Taste" uri="/40/10021/0/0/12080" />
+        <object name="Entaschentaste" uri="/40/10021/0/0/12112" />
+      </object>
+    </fub>
+    <fub name="Lager" uri="/40/10201">
+      <object name="Austragung" uri="/40/10201/0/0/12058" />
+      <object name="Vorrat" uri="/40/10201/0/0/12015" />
+      <object name="Vorrat Warngrenze" uri="/40/10201/0/0/12042" />
+    </fub>
+  </menu>
+</eta>

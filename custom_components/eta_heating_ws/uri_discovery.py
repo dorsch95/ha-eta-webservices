@@ -276,6 +276,40 @@ unter "ueber_kennung_gefunden". Nur Messwerte: Tasten und Schalter
 werden weiter ausschließlich über ihren Namen gefunden.
 """
 
+ANZEIGEWERTE = {
+    "kessel_temperatur": "0/0/12161",
+    "ruecklauf_temperatur": "0/0/12999",
+    "restsauerstoff": "0/0/12164",
+    "aussentemperatur": "0/0/12197",
+    **{f"{d['praefix']}_vorlauf": "0/0/12241" for d in THERMOSTATE.values()},
+    **{f"{d['praefix']}_raum": "0/0/12634" for d in THERMOSTATE.values()},
+    **{f"{k}_warmwasser": "0/0/12271" for k in WARMWASSER_SPEICHER},
+    **{f"{k}_zustand": "0/0/12129" for k in WARMWASSER_SPEICHER},
+    **{f"{k}_zustand": "0/0/12207" for k in PUFFER_SPEICHER},
+    "lager_zustand": "0/0/12058",
+}
+"""Dritter Weg zu einem Messwert: sein Anzeigewert auf der Funktionsebene.
+
+Ältere Regelungen führen in ihren Funktionsblöcken keinen Zweig
+"Eingänge" oder "Ausgänge". Belegt ist das am Menübaum einer Anlage mit
+Software 3.42.0 von 2017 und Webservices 1.1: Die Kesseltemperatur steht
+dort nur unter Kessel > Kessel > Kessel, der Vorlauf unter Heizkreis >
+Vorlauf, das Warmwasser unter Warmwasserspeicher > Warmwasserspeicher.
+Namenspfad und KENNUNGEN zeigen auf die Ein- und Ausgänge und finden an
+so einer Anlage nichts.
+
+Hier steht je Messwert die Kennung dieses Anzeigewerts, wie sie in jenem
+Menübaum steht. Wo neuere Menübäume dasselbe Objekt führen, trägt es
+dieselbe Kennung: "Kessel" 12161, "Außentemperatur" 12197, "Raum" 12634,
+"Warmwasserspeicher" 12271 und der Zustand des Warmwasserspeichers 12129.
+Den Zustand von Puffer, Warmwasserspeicher und Austragung meldet an der
+älteren Anlage der Knoten der Funktion selbst.
+
+Gesucht wird erst, wenn Namenspfad und KENNUNGEN nichts gefunden haben,
+und wie dort nur im eigenen Funktionsblock. Ein Treffer steht in der
+Diagnose ebenfalls unter "ueber_kennung_gefunden".
+"""
+
 PUFFER_VOLUMEN = ("Effektives Puffervolumen", "0/0/12499")
 """Name und Kennung des effektiven Puffervolumens in Litern.
 
@@ -299,6 +333,13 @@ ALTE_PUFFER_FUEHLER = (
 Er kennt kein "Fühler 1 … 9" wie PufferFlex. Gleich benannte Fühler mit
 Zusatz ("Puffer oben Solar", "Puffer oben Frischwasser") gehören zur
 Solar- bzw. Frischwasserregelung und zählen nicht mit.
+"""
+
+ALTE_PUFFER_FUNKTION = ["Puffer"]
+"""Wo die Fühler des älteren Puffers stehen, wenn der Zweig "Eingänge" fehlt.
+
+Siehe ANZEIGEWERTE: An einer älteren Regelung hängen "Puffer oben" und
+"Puffer unten" nur als Anzeigewerte unter Puffer > Puffer.
 """
 
 _FUEHLER_NAME_RE = re.compile(r"^F[uü]hler\s*(\d+)", re.IGNORECASE)
@@ -523,13 +564,22 @@ def _as_list(node):
     return [node]
 
 
+def _vergleichsname(name) -> str:
+    """Ein Name so, wie er verglichen wird: ohne Leerzeichen am Rand, ohne Groß und Klein.
+
+    Manche Anlagen melden Namen mit einem Leerzeichen am Ende, etwa "Sys "
+    oder "Puffer ". Am Display und im Formular ist das nicht zu sehen.
+    """
+    return (name or "").strip().casefold()
+
+
 def _find_path(node, names):
     """Sucht rekursiv den 'object'-Knoten entlang des angegebenen Namenspfads."""
     if not names:
         return node
-    target = names[0].casefold()
+    target = _vergleichsname(names[0])
     for child in _as_list(node.get("object")):
-        if child.get("@name", "").casefold() == target:
+        if _vergleichsname(child.get("@name")) == target:
             found = _find_path(child, names[1:])
             if found is not None:
                 return found
@@ -537,9 +587,9 @@ def _find_path(node, names):
 
 
 def _find_fub(fubs, fub_name):
-    target = fub_name.casefold()
+    target = _vergleichsname(fub_name)
     for fub in fubs:
-        if fub.get("@name", "").casefold() == target:
+        if _vergleichsname(fub.get("@name")) == target:
             return fub
     return None
 
@@ -575,7 +625,8 @@ def _resolve_fubs_by_role(fubs, fub_name_overrides):
     for role, default_names in FUB_ROLE_DEFAULT_NAMES.items():
         override = overrides.get(role)
         if role in resolved or (
-            override and override.casefold() not in {name.casefold() for name in default_names}
+            override
+            and _vergleichsname(override) not in {name.casefold() for name in default_names}
         ):
             continue
         for name in default_names:
@@ -614,8 +665,8 @@ def fub_namen_vorschlagen(rollen, namen_der_anlage, gespeichert=None):
     """
     gespeichert = gespeichert or {}
     vorschlag = {rolle: gespeichert[rolle] for rolle in rollen if gespeichert.get(rolle)}
-    vergeben = {name.casefold() for name in vorschlag.values()}
-    vorhanden = {name.casefold(): name for name in namen_der_anlage}
+    vergeben = {_vergleichsname(name) for name in vorschlag.values()}
+    vorhanden = {_vergleichsname(name): name for name in namen_der_anlage}
 
     for gruppe, anfaenge in FUB_GRUPPEN:
         offen = [rolle for rolle in rollen if rolle in gruppe and rolle not in vorschlag]
@@ -625,12 +676,12 @@ def fub_namen_vorschlagen(rollen, namen_der_anlage, gespeichert=None):
                 name
                 for name in namen_der_anlage
                 if next((a for a in anfaenge if name.casefold().startswith(a)), None) == anfang
-                and name.casefold() not in vergeben
+                and _vergleichsname(name) not in vergeben
             ]
             frei.extend(sorted(passend, key=_nummer))
         for rolle, name in zip(offen, frei):
             vorschlag[rolle] = name
-            vergeben.add(name.casefold())
+            vergeben.add(_vergleichsname(name))
 
     for rolle in rollen:
         if rolle in vorschlag:
@@ -644,7 +695,7 @@ def fub_namen_vorschlagen(rollen, namen_der_anlage, gespeichert=None):
             ),
             standard[0],
         )
-        vergeben.add(vorschlag[rolle].casefold())
+        vergeben.add(_vergleichsname(vorschlag[rolle]))
     return vorschlag
 
 
@@ -742,6 +793,23 @@ def _finde_nach_kennung(fub, kennung):
     return durchsuchen(fub)
 
 
+def _alte_puffer_fuehler(knoten):
+    """Die Fühler des älteren Puffers direkt unter diesem Knoten, von oben nach unten."""
+    if knoten is None:
+        return {}
+    nach_name = {
+        _vergleichsname(child.get("@name")): child.get("@uri")
+        for child in _as_list(knoten.get("object"))
+        if isinstance(child, dict) and child.get("@uri")
+    }
+    vorhanden = [
+        nach_name[name.casefold()]
+        for name in ALTE_PUFFER_FUEHLER
+        if name.casefold() in nach_name
+    ]
+    return {index: uri for index, uri in enumerate(vorhanden, start=1)}
+
+
 def _discover_puffer_fuehler(fub):
     """Ermittelt die tatsächlich vorhandenen Pufferfühler (1 bis N).
 
@@ -749,12 +817,16 @@ def _discover_puffer_fuehler(fub):
     haben - Fühler 1 ist immer oben, der zuletzt nummerierte immer unten.
     Da die Anzahl variiert, werden die "Eingänge" von PufferFlex nach allen
     Objekten durchsucht, deren Name mit "Fühler <Zahl>" beginnt.
+
+    Der ältere Funktionsblock "Puffer" nennt seine Fühler anders, siehe
+    ALTE_PUFFER_FUEHLER. Fehlt ihm der Zweig "Eingänge", stehen sie unter
+    ALTE_PUFFER_FUNKTION.
     """
     if fub is None:
         return {}
     eingaenge = _find_path(fub, ["Eingänge"])
     if eingaenge is None:
-        return {}
+        return _alte_puffer_fuehler(_find_path(fub, ALTE_PUFFER_FUNKTION))
 
     found = {}
     for child in _as_list(eingaenge.get("object")):
@@ -771,18 +843,9 @@ def _discover_puffer_fuehler(fub):
             found[index] = uri
     if found:
         return found
-
-    nach_name = {
-        (child.get("@name") or "").strip().casefold(): child.get("@uri")
-        for child in _as_list(eingaenge.get("object"))
-        if isinstance(child, dict) and child.get("@uri")
-    }
-    vorhanden = [
-        nach_name[name.casefold()]
-        for name in ALTE_PUFFER_FUEHLER
-        if name.casefold() in nach_name
-    ]
-    return {index: uri for index, uri in enumerate(vorhanden, start=1)}
+    return _alte_puffer_fuehler(eingaenge) or _alte_puffer_fuehler(
+        _find_path(fub, ALTE_PUFFER_FUNKTION)
+    )
 
 
 async def async_discover_uris(
@@ -832,8 +895,10 @@ async def async_discover_uris(
             uri = found.get("@uri") if found is not None else None
         if not uri and key in NAMENSSUCHE:
             uri = _finde_nach_namen(fub, NAMENSSUCHE[key])
-        if not uri and key in KENNUNGEN:
-            uri = _finde_nach_kennung(fub, KENNUNGEN[key])
+        for kennungen in (KENNUNGEN, ANZEIGEWERTE):
+            if uri or key not in kennungen:
+                continue
+            uri = _finde_nach_kennung(fub, kennungen[key])
             if uri and ueber_kennung is not None:
                 ueber_kennung.add(key)
         if uri:

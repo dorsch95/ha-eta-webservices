@@ -228,9 +228,17 @@ async def test_jede_uri_stammt_aus_dem_menuebaum(hass, entry, menu_xml):
             assert info["uri"] in coordinator.discovered_uris.values(), key
 
 
+KESSELTEMPERATUR = ("/264/10891/0/11109/0", "/264/10891/0/0/12161")
+"""Der Fühler unter "Eingänge" und der Anzeigewert unter Kessel > Kessel.
+
+Erst ohne beide gilt die Kesseltemperatur als nicht gefunden - fehlt nur
+der Fühler, nimmt die Suche den Anzeigewert.
+"""
+
+
 async def test_ohne_fund_zeigt_der_sensor_einen_strich(hass, entry, menu_xml):
     """Die Entität bleibt, nur eben ohne Adresse und ohne Wert."""
-    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
+    hass.session.menu = ohne_objekt(menu_xml, *KESSELTEMPERATUR)
     coordinator, by_name = await setup_integration(hass, entry)
 
     assert coordinator.sensor_defs["kessel_temperatur"]["uri"] is None
@@ -244,7 +252,7 @@ async def test_strich_sensor_meldet_keine_klassen(hass, entry, menu_xml):
     Eine numerische Geräteklasse verträgt keinen Text als Zustand - das
     stünde sonst in jedem Abfragezyklus im Protokoll.
     """
-    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
+    hass.session.menu = ohne_objekt(menu_xml, *KESSELTEMPERATUR)
     _, by_name = await setup_integration(hass, entry)
 
     sensor = by_name["Kesseltemperatur"]
@@ -321,7 +329,7 @@ async def test_diagnose_kommt_auch_ohne_menuebaum_zustande(hass, entry):
 async def test_diagnose_meldet_nicht_gefundene_werte(hass, entry, menu_xml):
     from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
-    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11109/0")
+    hass.session.menu = ohne_objekt(menu_xml, *KESSELTEMPERATUR)
     await setup_integration(hass, entry)
     bericht = await async_get_config_entry_diagnostics(hass, entry)
 
