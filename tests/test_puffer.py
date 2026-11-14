@@ -239,8 +239,8 @@ async def test_alter_puffer_nennt_seine_fuehler_oben_und_unten(hass, entry, menu
     assert "Puffer Fühler 3" not in by_name
 
 
-async def test_alter_puffer_als_zweiter_hat_keinen_ladezustand(hass, entry, menu_xml):
-    """Der ältere Funktionsblock führt keinen - dann entsteht auch kein "-"."""
+async def test_alter_puffer_als_zweiter_bekommt_berechneten_ladezustand(hass, entry, menu_xml):
+    """Der ältere Funktionsblock führt keinen - er wird aus den Fühlern gerechnet."""
     hass.session.menu = mit_fub(menu_xml, ALTER_PUFFER)
     entry.data["components"] = ["kessel", "puffer", "puffer2"]
     entry.data["fub_names"] = {"pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
@@ -248,9 +248,70 @@ async def test_alter_puffer_als_zweiter_hat_keinen_ladezustand(hass, entry, menu
     assert sorted(n for n in by_name if n.startswith("Puffer 2")) == [
         "Puffer 2 Fühler 1",
         "Puffer 2 Fühler 2",
+        "Puffer 2 Ladezustand",
         "Puffer 2 Zustand",
     ]
     assert coordinator.volumen("puffer2") is None
+    assert coordinator.puffer_mit_berechnetem_ladezustand == ["puffer2"]
+
+    ladezustand = by_name["Puffer 2 Ladezustand"]
+    assert ladezustand.native_value == pytest.approx(51.0), "beide Fühler 55,5 °C"
+    assert ladezustand.native_unit_of_measurement == "%"
+    assert ladezustand.unique_id.endswith("_puffer2_ladezustand")
+    assert ladezustand.extra_state_attributes == {
+        "berechnet": True,
+        "leer_bei": 30.0,
+        "voll_bei": 80.0,
+        "fuehler": 2,
+    }
+
+
+@pytest.mark.parametrize(
+    "temperaturen, erwartet",
+    [
+        ([30.0, 30.0], 0.0),
+        ([80.0, 80.0], 100.0),
+        ([55.0, 55.0], 50.0),
+        ([80.0, 30.0], 50.0),
+        ([95.0, 20.0], 50.0),
+        ([70.0, 60.0, 50.0, 40.0], 50.0),
+        ([], None),
+    ],
+)
+def test_ladezustand_aus_den_fuehlern(temperaturen, erwartet):
+    """0 % bis 30 °C, 100 % ab 80 °C, jeder Fühler für einen gleich großen Teil."""
+    from eta_heating_ws.prognose import puffer_ladezustand
+
+    assert puffer_ladezustand(temperaturen) == (
+        pytest.approx(erwartet) if erwartet is not None else None
+    )
+
+
+async def test_gemeldeter_ladezustand_bleibt_der_der_anlage(hass, entry):
+    """PufferFlex meldet ihn selbst - gerechnet wird dann nicht."""
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert coordinator.puffer_mit_berechnetem_ladezustand == []
+    assert "berechnet" not in by_name["Puffer Ladezustand"].extra_state_attributes
+
+
+async def test_berechneter_ladezustand_bleibt_leer_wenn_ein_fuehler_fehlt(hass, entry, menu_xml):
+    hass.session.menu = mit_fub(menu_xml, ALTER_PUFFER)
+    entry.data["components"] = ["kessel", "puffer", "puffer2"]
+    entry.data["fub_names"] = {"pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
+    coordinator, by_name = await setup_integration(hass, entry)
+    del coordinator.data["puffer2_fuehler_2"]
+
+    assert by_name["Puffer 2 Ladezustand"].native_value is None
+
+
+async def test_puffer_ohne_fuehler_behaelt_den_strich(hass, entry, menu_xml):
+    """Ohne Fühler gibt es nichts zu rechnen - der erste Puffer zeigt weiter "-"."""
+    hass.session.menu = ohne_objekt(menu_xml, "/120/10601/0/0/12528", "/120/10601/0/0/10990")
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert coordinator.puffer_mit_berechnetem_ladezustand == []
+    assert by_name["Puffer Ladezustand"].native_value == "-"
 
 
 def test_puffer_fuehler_bekommen_ihren_puffer_im_namen():

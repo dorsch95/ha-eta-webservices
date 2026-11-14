@@ -208,6 +208,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.components = normalize_components(components)
         self.pellet_kwh_per_kg = pellet_kwh_per_kg
         self.pellet_preis = 0.0
+        self.lager_maximum_eingetragen = 0.0
         self.prognose = None
         self.mit_prognose = True
         self.mit_zeitraeumen = True
@@ -1090,6 +1091,23 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         except (TypeError, ValueError):
             return None
 
+    def lager_fassungsvermoegen(self) -> float | None:
+        """Wie viel das Pelletlager fasst, in kg: eingetragen, sonst von der Anlage.
+
+        Der eingetragene Wert hat Vorrang, siehe CONF_LAGER_MAXIMUM. Ohne
+        beides, oder mit 0 an der Anlage, ist das Fassungsvermögen unbekannt.
+        """
+        if self.lager_maximum_eingetragen > 0:
+            return self.lager_maximum_eingetragen
+        von_der_anlage = self.zahl("lager_maximum")
+        return von_der_anlage if von_der_anlage and von_der_anlage > 0 else None
+
+    def lager_fassungsvermoegen_quelle(self) -> str | None:
+        """Woher das Fassungsvermögen stammt: "Einstellung", "Anlage" oder None."""
+        if self.lager_fassungsvermoegen() is None:
+            return None
+        return "Einstellung" if self.lager_maximum_eingetragen > 0 else "Anlage"
+
     def zustand(self, key: str) -> str | None:
         """Ein Textwert als einer der festen Zustände seiner Sensordefinition.
 
@@ -1234,6 +1252,23 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 or self.puffer_volumen_eingetragen.get(k, 0.0) > 0
             )
         }
+
+    @property
+    def puffer_mit_berechnetem_ladezustand(self) -> list[str]:
+        """Die angekreuzten Puffer, deren Ladezustand aus den Fühlern gerechnet wird.
+
+        Das sind Puffer, für die die Anlage keinen Ladezustand führt, aber
+        mindestens zwei Fühler: der ältere Funktionsblock "Puffer". PufferFlex
+        meldet seinen Ladezustand selbst. Mit nur einem Fühler wäre es
+        bloß dessen Temperatur in anderer Einheit.
+        """
+        return [
+            k
+            for k in PUFFER_SPEICHER
+            if k in self.components
+            and f"{k}_ladezustand" not in self.discovered_uris
+            and len(puffer_fuehler_schluessel(self.discovered_uris, k)) >= 2
+        ]
 
     async def _async_update_data(self) -> dict[str, ETAValue]:
         """Liest alle bekannten Messwerte und mischt sie in den Bestand.

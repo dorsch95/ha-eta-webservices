@@ -23,6 +23,7 @@ from .const import (
     CONF_ENABLE_ERRORS,
     CONF_ENABLE_SWITCHES,
     CONF_PELLET_KWH_PER_KG,
+    CONF_LAGER_MAXIMUM,
     CONF_PELLET_PREIS,
     ASCHEBOX_ENTITAETEN,
     CONF_PROGNOSE,
@@ -127,6 +128,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     )
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
+    coordinator.lager_maximum_eingetragen = float(config.get(CONF_LAGER_MAXIMUM) or 0)
     coordinator.schnell_intervall = config.get(
         CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL
     )

@@ -133,7 +133,7 @@ class ETALagerBinarySensor(ETABaseBinarySensor):
     @property
     def extra_state_attributes(self) -> dict:
         vorrat = self._zahl("lager_vorrat")
-        maximum = self._zahl("lager_maximum")
+        maximum = self.coordinator.lager_fassungsvermoegen()
         fuellstand = None
         if vorrat is not None and maximum:
             fuellstand = round(vorrat / maximum * 100, 1)

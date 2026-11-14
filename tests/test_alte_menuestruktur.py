@@ -50,6 +50,7 @@ ERWARTET = {
     "kessel_temperatur": f"{KESSEL}/0/0/12161",
     "ruecklauf_temperatur": f"{KESSEL}/0/0/12999",
     "restsauerstoff": f"{KESSEL}/0/0/12164",
+    "abgas_temperatur": f"{KESSEL}/0/0/12162",
     "kessel_druck": f"{KESSEL}/0/0/12180",
     "kessel_zustand": f"{KESSEL}/0/0/12000",
     "aussentemperatur": "/121/10241/0/0/12197",
@@ -210,6 +211,20 @@ async def test_sensoren_der_aelteren_anlage_bekommen_werte(hass, entry):
     ):
         assert by_name[name].native_value == pytest.approx(55.5), name
     assert "Heizkreis Raumtemperatur" in by_name and "Heizkreis 2 Raumtemperatur" in by_name
+
+
+async def test_ladezustand_des_puffers_wird_gerechnet(hass, entry):
+    """Die Anlage führt keinen Ladezustand, aber "Puffer oben" und "Puffer unten"."""
+    coordinator, by_name = await aufbauen(hass, entry)
+
+    assert coordinator.puffer_mit_berechnetem_ladezustand == ["puffer"]
+    assert by_name["Puffer Ladezustand"].native_value == pytest.approx(51.0)
+    assert by_name["Puffer Ladezustand"].extra_state_attributes["berechnet"] is True
+
+
+async def test_abgastemperatur_der_aelteren_anlage(hass, entry):
+    _, by_name = await aufbauen(hass, entry)
+    assert by_name["Abgastemperatur"].native_value == pytest.approx(55.5)
 
 
 async def test_keine_meldung_ueber_fehlende_warmwasserspeicher(hass, entry, reparaturen):

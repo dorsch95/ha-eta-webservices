@@ -119,6 +119,9 @@
 <object uri="/264/10891/0/11160/0" name="Rücklauf">
 <object uri="/264/10891/0/11160/2002" name="Zustand"/>
 </object>
+<object uri="/264/10891/0/11693/0" name="Abgas Wendekammer">
+<object uri="/264/10891/0/11693/2002" name="Zustand"/>
+</object>
 <object uri="/264/10891/0/0/12180" name="Kesseldruck">
 <object uri="/264/10891/0/11135/0" name="Kesseldruck">
 <object uri="/264/10891/0/11135/2400" name="Notbetrieb"/>
@@ -153,6 +156,10 @@
 <object uri="/264/10891/0/0/12006" name="Angeforderte Temperatur"/>
 </object>
 <object uri="/264/10891/0/0/12022" name="Kessel Min"/>
+</object>
+<object uri="/264/10891/0/0/14741" name="Abgas Wendekammer">
+<object uri="/264/10891/0/0/12024" name="Abgas Min"/>
+<object uri="/264/10891/0/0/12023" name="Abgas Max"/>
 </object>
 <object uri="/264/10891/0/0/12005" name="Pelletsbehälter">
 <object uri="/264/10891/0/0/12011" name="Inhalt Pelletsbehälter"/>

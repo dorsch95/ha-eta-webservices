@@ -51,6 +51,7 @@ DISCOVERY_PATHS = {
     ),
     "kessel_soll": ("kessel", ["Kessel", "Kessel", "Kessel Soll"]),
     "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
+    "abgas_temperatur": ("kessel", ["Eingänge", "Abgas"]),
     "pellet_gesamtverbrauch": ("kessel", ["Zählerstände", "Gesamtverbrauch"]),
     "aschebox_verbrauch": (
         "kessel",
@@ -182,6 +183,7 @@ Formular gespeichert wurde.
 """
 
 AUSWEICHPFADE = {
+    "abgas_temperatur": [["Eingänge", "Abgas Wendekammer"]],
     **{f"{k}_warmwasser": [["Eingänge", "Warmwasserspeicher"]] for k in WARMWASSER_SPEICHER},
     **{
         f"{k}_zustand": [["Warmwasserspeicher", "Warmwasser-Zustand detailliert"]]
@@ -203,6 +205,11 @@ Das Warmwasser im Kombispeicher steht beim PufferFlex unter "Puffer >
 Warmwasserbereich", beim älteren Funktionsblock "Puffer" unter
 "Warmwasser-Zustand detailliert" - dieser Knoten ist dort zugleich der
 Zustand.
+
+Den Abgasfühler nennt ein Kessel "Abgas Wendekammer", so steht er im
+Menübaum einer echten Anlage unter "Eingänge". Der Name "Abgas" ist dort
+unbelegt: Unter ihm führt eine ältere Regelung den Wert auf der
+Funktionsebene, siehe ANZEIGEWERTE.
 """
 
 KENNUNGEN = {
@@ -212,6 +219,7 @@ KENNUNGEN = {
     "pellet_tagesbehälter": "0/0/12011",
     "kessel_soll": "0/0/13953",
     "restsauerstoff": "0/11108/2060",
+    "abgas_temperatur": "0/11693/0",
     "pellet_gesamtverbrauch": "0/0/12016",
     "aschebox_verbrauch": "0/0/12013",
     "entaschung_verbrauch": "0/0/12012",
@@ -280,6 +288,7 @@ ANZEIGEWERTE = {
     "kessel_temperatur": "0/0/12161",
     "ruecklauf_temperatur": "0/0/12999",
     "restsauerstoff": "0/0/12164",
+    "abgas_temperatur": "0/0/12162",
     "aussentemperatur": "0/0/12197",
     **{f"{d['praefix']}_vorlauf": "0/0/12241" for d in THERMOSTATE.values()},
     **{f"{d['praefix']}_raum": "0/0/12634" for d in THERMOSTATE.values()},

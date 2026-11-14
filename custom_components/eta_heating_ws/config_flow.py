@@ -39,6 +39,7 @@ from .const import (
     CONF_ENABLE_ERRORS,
     CONF_ENABLE_SWITCHES,
     CONF_FUB_NAMES,
+    CONF_LAGER_MAXIMUM,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
     CONF_PROGNOSE,
@@ -50,6 +51,7 @@ from .const import (
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
+    DEFAULT_LAGER_MAXIMUM,
     DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
     DEFAULT_PROGNOSE,
@@ -58,6 +60,7 @@ from .const import (
     DEFAULT_SCHNELL_INTERVALL,
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
+    MAX_LAGER_MAXIMUM,
     MAX_PELLET_PREIS,
     MAX_PUFFER_VOLUMEN,
     MAX_SCAN_INTERVAL,
@@ -336,7 +339,7 @@ def wetter_vorschlag(hass: HomeAssistant, current: dict[str, Any]) -> str | None
 
 
 def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> dict:
-    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Wetter.
+    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Lager, Wetter.
 
     Verbrauch je Zeitraum und Prognose sind abwählbar - wer nur die
     Messwerte will, bekommt dann auch nur die.
@@ -414,6 +417,10 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
             CONF_PELLET_PREIS,
             default=current.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS),
         ): vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_PELLET_PREIS)),
+        vol.Required(
+            CONF_LAGER_MAXIMUM,
+            default=int(current.get(CONF_LAGER_MAXIMUM) or DEFAULT_LAGER_MAXIMUM),
+        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_LAGER_MAXIMUM)),
         vol.Optional(
             CONF_WETTER, description={"suggested_value": wetter}
         ): EntitySelector(EntitySelectorConfig(domain="weather")),

@@ -8,6 +8,8 @@ from eta_heating_ws.api import ETAApiClient
 from eta_heating_ws.const import fub_role_default
 from eta_heating_ws.uri_discovery import async_discover_uris
 
+from .conftest import ohne_objekt
+
 
 async def discover(hass, overrides=None):
     client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
@@ -137,6 +139,32 @@ SOLAR_ERTRAG = """<object uri="/120/10221/0/0/12379" name="Leistung">
 </object>
 """
 """Der Zweig, den nur eine Solaranlage mit Wärmemengenmessung hat."""
+
+
+async def test_abgastemperatur_heisst_am_kessel_abgas_wendekammer(hass):
+    """So steht der Fühler im Menübaum der echten Anlage unter "Eingänge"."""
+    uris, _ = await discover(hass)
+    assert uris["abgas_temperatur"] == "/264/10891/0/11693/0"
+
+
+async def test_abgastemperatur_auch_unter_dem_namen_abgas(hass, menu_xml):
+    hass.session.menu = menu_xml.replace(
+        '<object uri="/264/10891/0/11693/0" name="Abgas Wendekammer">',
+        '<object uri="/264/10891/0/11693/0" name="Abgas">',
+    )
+    uris, _ = await discover(hass)
+    assert uris["abgas_temperatur"] == "/264/10891/0/11693/0"
+
+
+async def test_kessel_ohne_abgasfuehler_bekommt_keinen_sensor(hass, entry, menu_xml):
+    """Kein Platzhalter mit "-": Der Wert gehört nicht zu den Karten."""
+    from eta_heating_ws.coordinator import build_sensor_defs
+
+    hass.session.menu = ohne_objekt(menu_xml, "/264/10891/0/11693/0", "/264/10891/0/0/14741")
+    uris, fuehler = await discover(hass)
+
+    assert "abgas_temperatur" not in uris
+    assert "abgas_temperatur" not in build_sensor_defs(uris, fuehler, ["kessel"])
 
 
 async def test_solarwerte_werden_gefunden(hass):

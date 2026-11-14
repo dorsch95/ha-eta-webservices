@@ -19,6 +19,7 @@ from .conftest import UEBERSETZUNGEN
 GERAET = "ETA Heizung"
 
 ERWARTETE_IDS = {
+    "abgas_temperatur": "sensor.eta_heizung_abgastemperatur",
     "aktive_fehler": "sensor.eta_heizung_aktive_fehler",
     "aschebox_schwelle": "sensor.eta_heizung_aschebox_leeren_nach",
     "aschebox_status": "sensor.eta_heizung_aschebox_status",

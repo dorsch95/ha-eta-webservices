@@ -33,13 +33,15 @@ async def async_setup_entry(
     """Registriert alle Sensoren dieser Anlage."""
     coordinator = entry.runtime_data
 
+    berechnet = {f"{k}_ladezustand": k for k in coordinator.puffer_mit_berechnetem_ladezustand}
     entities: list[SensorEntity] = [
-        (ETAMeasurementSensor if info.get("uri") else ETAPlaceholderSensor)(
-            coordinator, key, info
-        )
+        _messwert(coordinator, key, info)
         for key, info in coordinator.sensor_defs.items()
-        if "platform" not in info
+        if "platform" not in info and key not in berechnet
     ]
+    entities.extend(
+        ETAPufferLadezustandSensor(coordinator, komponente) for komponente in berechnet.values()
+    )
 
     entities.append(ETAAscheboxStatusSensor(coordinator))
     if coordinator.mit_zeitraeumen and coordinator.sensor_defs.get(
@@ -71,6 +73,19 @@ async def async_setup_entry(
 
     ids_vorschlagen(coordinator.deutsche_namen, "sensor", entities)
     async_add_entities(entities)
+
+
+def _messwert(coordinator: ETADataUpdateCoordinator, key: str, info: dict) -> SensorEntity:
+    """Der Sensor zu einem Messwert der Anlage - oder sein Platzhalter mit "-".
+
+    Ausnahme ist das Fassungsvermögen des Lagers, wenn es in den
+    Einstellungen eingetragen ist: Dann zeigt der Sensor diesen Wert.
+    """
+    if key == "lager_maximum" and coordinator.lager_maximum_eingetragen > 0:
+        return ETALagerMaximumSensor(coordinator, info)
+    return (ETAMeasurementSensor if info.get("uri") else ETAPlaceholderSensor)(
+        coordinator, key, info
+    )
 
 
 def _pellet_energie(coordinator: ETADataUpdateCoordinator) -> SensorEntity:
@@ -313,12 +328,42 @@ class ETAAscheboxPlanSensor(SensorEntity):
         self.async_write_ha_state()
 
 
-class ETALagerFuellstandSensor(ETABaseSensor):
-    """Wie voll das Pelletlager ist, in Prozent vom maximalen Vorrat.
+class ETALagerMaximumSensor(ETABaseSensor):
+    """Das Fassungsvermögen des Pelletlagers, wie es in den Einstellungen eingetragen ist.
 
-    Beide Werte stammen aus der Anlage: "Vorrat" und "Maximaler Vorrat",
-    den der Nutzer dort für seinen Lagerraum eingestellt hat. Die
-    Lager-Kachel wählt danach ihr Bild.
+    Steht dort ein Wert, zeigt der Sensor ihn statt des Werts der Anlage -
+    mit ihm rechnet der Füllstand. Ältere Regelungen melden gar kein
+    Fassungsvermögen; ohne Eintrag stünde hier "-". Was die Anlage selbst
+    meldet, steht als Attribut dabei.
+    """
+
+    _attr_device_class = SensorDeviceClass.WEIGHT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "kg"
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator, info: dict) -> None:
+        super().__init__(coordinator, "lager_maximum")
+        self._attr_translation_key = info["translation_key"]
+        self._attr_icon = info["icon"]
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.lager_maximum_eingetragen
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"quelle": "Einstellung", "wert_der_anlage": self.coordinator.zahl("lager_maximum")}
+
+
+class ETALagerFuellstandSensor(ETABaseSensor):
+    """Wie voll das Pelletlager ist, in Prozent vom Fassungsvermögen.
+
+    Der Vorrat stammt aus der Anlage. Das Fassungsvermögen auch - "Maximaler
+    Vorrat", den der Nutzer dort für seinen Lagerraum eingestellt hat -,
+    außer es ist in den Einstellungen eingetragen, siehe
+    ETADataUpdateCoordinator.lager_fassungsvermoegen. Die Lager-Kachel
+    wählt nach dem Füllstand ihr Bild.
     """
 
     _attr_icon = "mdi:silo"
@@ -332,17 +377,55 @@ class ETALagerFuellstandSensor(ETABaseSensor):
 
     @property
     def native_value(self):
-        vorrat = self.coordinator.data.get("lager_vorrat")
-        maximum = self.coordinator.data.get("lager_maximum")
-        if vorrat is None or maximum is None:
-            return None
-        try:
-            vorrat_kg, maximum_kg = float(vorrat.value), float(maximum.value)
-        except (TypeError, ValueError):
-            return None
-        if maximum_kg <= 0:
+        vorrat_kg = self.coordinator.zahl("lager_vorrat")
+        maximum_kg = self.coordinator.lager_fassungsvermoegen()
+        if vorrat_kg is None or maximum_kg is None:
             return None
         return round(max(0.0, vorrat_kg / maximum_kg * 100))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "fassungsvermoegen": self.coordinator.lager_fassungsvermoegen(),
+            "fassungsvermoegen_quelle": self.coordinator.lager_fassungsvermoegen_quelle(),
+        }
+
+
+class ETAPufferLadezustandSensor(ETABaseSensor):
+    """Ladezustand eines Puffers in Prozent, gerechnet aus seinen Fühlern.
+
+    Für Puffer, deren Ladezustand die Anlage nicht führt, siehe
+    ETADataUpdateCoordinator.puffer_mit_berechnetem_ladezustand. Gerechnet
+    wird nach prognose.puffer_ladezustand; die Spanne steht in den
+    Attributen. Fehlt ein Fühler, bleibt der Wert leer, statt schief zu
+    sein. Der Sensor trägt Schlüssel und Namen des gelesenen Ladezustands -
+    Karten und Automatisierungen finden ihn an derselben Stelle.
+    """
+
+    _attr_icon = "mdi:battery-charging-60"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "%"
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator, komponente: str) -> None:
+        super().__init__(coordinator, f"{komponente}_ladezustand")
+        self._attr_translation_key = f"{komponente}_ladezustand"
+        self._fuehler = puffer_fuehler_schluessel(coordinator.discovered_uris, komponente)
+
+    @property
+    def native_value(self) -> float | None:
+        werte = prognose.puffer_temperaturen(self.coordinator.data, self._fuehler)
+        ladezustand = prognose.puffer_ladezustand(werte)
+        return round(ladezustand, 1) if ladezustand is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "berechnet": True,
+            "leer_bei": prognose.PUFFER_BEZUG,
+            "voll_bei": prognose.PUFFER_VOLL,
+            "fuehler": len(self._fuehler),
+        }
 
 
 class ETAPufferEnergieSensor(ETABaseSensor):

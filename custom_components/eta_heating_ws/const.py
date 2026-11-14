@@ -103,6 +103,17 @@ CONF_PELLET_PREIS = "pellet_preis"
 DEFAULT_PELLET_PREIS = 0.0
 MAX_PELLET_PREIS = 2000.0
 
+CONF_LAGER_MAXIMUM = "lager_fassungsvermoegen"
+"""Fassungsvermögen des Pelletlagers in kg, von Hand eingetragen. 0 heißt: Es gilt der Wert der Anlage.
+
+Ältere Regelungen führen "Maximaler Vorrat" nicht im Menübaum - ohne ihn
+bliebe der Füllstand des Lagers leer. Ein eingetragener Wert gilt auch
+an einer Anlage, die selbst einen meldet: Der Füllstand in Home
+Assistant rechnet dann mit ihm, an der Anlage ändert er nichts.
+"""
+DEFAULT_LAGER_MAXIMUM = 0
+MAX_LAGER_MAXIMUM = 100000
+
 CONF_PROGNOSE = "prognose"
 """Selbstlernende Pelletprognose und Reichweite des Lagers anlegen."""
 DEFAULT_PROGNOSE = True
@@ -820,6 +831,16 @@ SENSORS = {
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
         "default_unit": "%",
+    },
+    "abgas_temperatur": {
+        "component": "kessel",
+        "name": "Abgastemperatur",
+        "translation_key": "abgas_temperatur",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:smoke",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
     },
     "pellet_gesamtverbrauch": {
         "component": "kessel",

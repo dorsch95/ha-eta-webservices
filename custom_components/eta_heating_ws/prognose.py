@@ -592,6 +592,30 @@ def puffer_energieinhalt(temperaturen: list[float], volumen: float) -> float | N
     return ueber * volumen * WASSER_KWH_JE_LITER_KELVIN
 
 
+PUFFER_VOLL = 80.0
+"""Bei dieser Temperatur gilt Pufferwasser als voll geladen.
+
+Zusammen mit PUFFER_BEZUG die Spanne, über die der Ladezustand gerechnet
+wird, wenn die Anlage selbst keinen meldet.
+"""
+
+
+def puffer_ladezustand(temperaturen: list[float]) -> float | None:
+    """Ladezustand eines Puffers in Prozent, gerechnet aus seinen Fühlern.
+
+    Jeder Fühler steht für einen gleich großen Teil des Speichers. Ein
+    Teil zählt mit 0 %, solange er nicht wärmer ist als PUFFER_BEZUG, mit
+    100 % ab PUFFER_VOLL, dazwischen anteilig. Das Ergebnis ist das Mittel
+    über alle Teile - derselbe Maßstab wie beim Energieinhalt, nur ohne
+    Volumen. Ohne Temperaturen gibt es keinen Wert.
+    """
+    if not temperaturen:
+        return None
+    spanne = PUFFER_VOLL - PUFFER_BEZUG
+    anteile = [min(max(t - PUFFER_BEZUG, 0.0), spanne) / spanne for t in temperaturen]
+    return sum(anteile) / len(anteile) * 100
+
+
 def puffer_tagesenden(
     fuehler: list[list[tuple[float, float]]],
     lokale_stunde: Callable[[float], tuple[date, int]],
