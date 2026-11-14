@@ -51,7 +51,6 @@ from .const import (
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
-    DEFAULT_LAGER_MAXIMUM,
     DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
     DEFAULT_PROGNOSE,
@@ -60,7 +59,6 @@ from .const import (
     DEFAULT_SCHNELL_INTERVALL,
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
-    MAX_LAGER_MAXIMUM,
     MAX_PELLET_PREIS,
     MAX_PUFFER_VOLUMEN,
     MAX_SCAN_INTERVAL,
@@ -339,7 +337,7 @@ def wetter_vorschlag(hass: HomeAssistant, current: dict[str, Any]) -> str | None
 
 
 def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> dict:
-    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Lager, Wetter.
+    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Wetter.
 
     Verbrauch je Zeitraum und Prognose sind abwählbar - wer nur die
     Messwerte will, bekommt dann auch nur die.
@@ -417,10 +415,6 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
             CONF_PELLET_PREIS,
             default=current.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS),
         ): vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_PELLET_PREIS)),
-        vol.Required(
-            CONF_LAGER_MAXIMUM,
-            default=int(current.get(CONF_LAGER_MAXIMUM) or DEFAULT_LAGER_MAXIMUM),
-        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_LAGER_MAXIMUM)),
         vol.Optional(
             CONF_WETTER, description={"suggested_value": wetter}
         ): EntitySelector(EntitySelectorConfig(domain="weather")),
@@ -828,6 +822,13 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         return self._current.get(CONF_HOST), self._current.get(CONF_PORT, DEFAULT_PORT)
 
     def _fertig(self, daten: dict[str, Any]) -> ConfigFlowResult:
+        """Speichert die Einstellungen als Optionen.
+
+        Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
+        in keinem Formular und bleibt deshalb ausdrücklich erhalten.
+        """
+        if self._current.get(CONF_LAGER_MAXIMUM):
+            daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         return self.async_create_entry(title="", data=daten)
 
     async def async_step_init(

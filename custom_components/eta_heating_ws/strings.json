@@ -26,7 +26,6 @@
           "schnell_intervall": "Fast polling (seconds, 0 = off)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
-          "lager_fassungsvermoegen": "Pellet store capacity (kg, 0 = value from the heater)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
@@ -38,8 +37,7 @@
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
-          "lager_fassungsvermoegen": "Only with a pellet store. With 0 the value reported by the heater is used. A value entered here counts for the fill level in Home Assistant and changes nothing on the heater. Older controls do not report the capacity; without an entry the fill level stays empty there."
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
         }
       },
       "fub_names": {
@@ -181,7 +179,6 @@
           "schnell_intervall": "Fast polling (seconds, 0 = off)",
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
-          "lager_fassungsvermoegen": "Pellet store capacity (kg, 0 = value from the heater)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
@@ -193,8 +190,7 @@
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
-          "lager_fassungsvermoegen": "Only with a pellet store. With 0 the value reported by the heater is used. A value entered here counts for the fill level in Home Assistant and changes nothing on the heater. Older controls do not report the capacity; without an entry the fill level stays empty there."
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
         }
       },
       "fub_names": {

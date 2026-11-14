@@ -2,9 +2,10 @@
 
 "Lager > Vorrat > Maximaler Vorrat" steht an der Anlage. Eine echte Anlage
 meldet den Wert als beschreibbar, in kg mit Skalierung 10, von 0 bis
-100000 kg - so antwortet hier auch die Testanlage. Das Zahlenfeld gibt es
-nur mit freigegebenem Schreibzugriff und nur, wenn die Anlage das
-Schreiben zulässt.
+100000 kg - so antwortet hier auch die Testanlage. An die Anlage schreibt
+das Zahlenfeld nur mit freigegebenem Schreibzugriff und nur, wenn sie das
+Schreiben zulässt. Sonst merkt es sich seinen Wert in Home Assistant,
+siehe test_lager_fassungsvermoegen.py.
 """
 
 from __future__ import annotations
@@ -12,7 +13,6 @@ from __future__ import annotations
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 
-from eta_heating_ws import entitaet_vorgesehen
 from eta_heating_ws import number as number_platform
 
 from .test_sensors import setup_integration
@@ -106,30 +106,32 @@ async def test_ablehnung_der_anlage_wird_gemeldet(hass, entry):
     assert zahl._erwartet is None
 
 
-async def test_ohne_schreibzugriff_kein_zahlenfeld(hass, entry):
+async def test_ohne_schreibzugriff_schreibt_das_zahlenfeld_nicht_an_die_anlage(hass, entry):
     coordinator, zahlen = await zahlen_von(hass, entry, enable_switches=False)
+    hass.session.gesetzte_werte.clear()
 
-    assert zahlen == {}
+    await zahlen["lager_maximum_stellen"].async_set_native_value(8000)
+
     assert coordinator.zahl_defs == {}
-    assert "lager_maximum" in coordinator.sensor_defs, "der Sensor bleibt"
+    assert isinstance(zahlen["lager_maximum_stellen"], number_platform.ETALagerMaximumEigen)
+    assert hass.session.gesetzte_werte == []
 
 
-async def test_kein_zahlenfeld_wenn_die_anlage_das_schreiben_nicht_zulaesst(hass, entry):
+async def test_laesst_die_anlage_das_schreiben_nicht_zu_bleibt_der_wert_in_home_assistant(
+    hass, entry
+):
     hass.session.lager_schreibbar = False
 
-    _, zahlen = await zahlen_von(hass, entry)
+    coordinator, zahlen = await zahlen_von(hass, entry)
 
-    assert zahlen == {}
+    assert coordinator.zahl_defs == {}
+    assert isinstance(zahlen["lager_maximum_stellen"], number_platform.ETALagerMaximumEigen)
 
 
 async def test_ohne_pelletlager_kein_zahlenfeld(hass, entry):
     coordinator, _ = await setup_integration(hass, entry)
+    gesammelt: list = []
+    await number_platform.async_setup_entry(hass, entry, gesammelt.extend)
 
     assert coordinator.zahl_defs == {}
-
-
-def test_zahlenfeld_gehoert_zu_schreibzugriff_und_pelletlager():
-    """Danach räumt die Integration auf, wenn eine Freigabe oder Komponente wegfällt."""
-    assert entitaet_vorgesehen("lager_maximum_stellen", ["kessel", "lager"], True, True) is True
-    assert entitaet_vorgesehen("lager_maximum_stellen", ["kessel", "lager"], False, True) is False
-    assert entitaet_vorgesehen("lager_maximum_stellen", ["kessel"], True, True) is False
+    assert gesammelt == []

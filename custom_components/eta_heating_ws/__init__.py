@@ -404,7 +404,10 @@ def entitaet_vorgesehen(
     if key in SELECTS:
         return enable_switches and SELECTS[key]["component"] in aktiv
     if key in ZAHLEN:
-        return enable_switches and ZAHLEN[key]["component"] in aktiv
+        definition = ZAHLEN[key]
+        return (
+            enable_switches or bool(definition.get("sonst_in_home_assistant"))
+        ) and definition["component"] in aktiv
     if key in ASCHEBOX_ENTITAETEN:
         return enable_switches and "kessel" in aktiv
     if key in _STOERUNG:

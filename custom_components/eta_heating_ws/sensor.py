@@ -78,10 +78,10 @@ async def async_setup_entry(
 def _messwert(coordinator: ETADataUpdateCoordinator, key: str, info: dict) -> SensorEntity:
     """Der Sensor zu einem Messwert der Anlage - oder sein Platzhalter mit "-".
 
-    Ausnahme ist das Fassungsvermögen des Lagers, wenn es in den
-    Einstellungen eingetragen ist: Dann zeigt der Sensor diesen Wert.
+    Ausnahme ist das Fassungsvermögen des Lagers: Es kann auch aus Home
+    Assistant stammen und sich dort jederzeit ändern.
     """
-    if key == "lager_maximum" and coordinator.lager_maximum_eingetragen > 0:
+    if key == "lager_maximum":
         return ETALagerMaximumSensor(coordinator, info)
     return (ETAMeasurementSensor if info.get("uri") else ETAPlaceholderSensor)(
         coordinator, key, info
@@ -328,32 +328,39 @@ class ETAAscheboxPlanSensor(SensorEntity):
         self.async_write_ha_state()
 
 
-class ETALagerMaximumSensor(ETABaseSensor):
-    """Das Fassungsvermögen des Pelletlagers, wie es in den Einstellungen eingetragen ist.
+class ETALagerMaximumSensor(ETAMeasurementSensor):
+    """Das Fassungsvermögen des Pelletlagers, mit dem der Füllstand rechnet.
 
-    Steht dort ein Wert, zeigt der Sensor ihn statt des Werts der Anlage -
-    mit ihm rechnet der Füllstand. Ältere Regelungen melden gar kein
-    Fassungsvermögen; ohne Eintrag stünde hier "-". Was die Anlage selbst
-    meldet, steht als Attribut dabei.
+    Der Wert der Anlage - außer das Zahlenfeld "Lager Fassungsvermögen" hat
+    sich einen in Home Assistant gemerkt, siehe
+    ETADataUpdateCoordinator.lager_maximum_eigen. Ältere Regelungen melden
+    gar kein Fassungsvermögen: Dort bleibt der Sensor unbekannt, bis im
+    Zahlenfeld eines steht. Woher der Wert stammt und was die Anlage
+    meldet, steht in den Attributen.
     """
 
-    _attr_device_class = SensorDeviceClass.WEIGHT
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "kg"
-    _attr_suggested_display_precision = 0
-
     def __init__(self, coordinator: ETADataUpdateCoordinator, info: dict) -> None:
-        super().__init__(coordinator, "lager_maximum")
-        self._attr_translation_key = info["translation_key"]
-        self._attr_icon = info["icon"]
+        super().__init__(coordinator, "lager_maximum", info)
+        if not info.get("uri"):
+            self._attr_suggested_display_precision = 0
 
     @property
-    def native_value(self) -> float:
-        return self.coordinator.lager_maximum_eingetragen
+    def native_value(self):
+        eigen = self.coordinator.lager_maximum_eigen
+        return eigen if eigen is not None else super().native_value
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        return {"quelle": "Einstellung", "wert_der_anlage": self.coordinator.zahl("lager_maximum")}
+    def extra_state_attributes(self) -> dict:
+        attribute = {
+            **super().extra_state_attributes,
+            "quelle": self.coordinator.lager_fassungsvermoegen_quelle(),
+            "wert_der_anlage": self.coordinator.zahl("lager_maximum"),
+        }
+        if self.native_value is None:
+            attribute["anzeige"] = "-"
+        elif self.coordinator.lager_maximum_eigen is not None:
+            attribute.pop("anzeige", None)
+        return attribute
 
 
 class ETALagerFuellstandSensor(ETABaseSensor):

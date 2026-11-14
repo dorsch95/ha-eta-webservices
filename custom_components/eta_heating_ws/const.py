@@ -104,14 +104,15 @@ DEFAULT_PELLET_PREIS = 0.0
 MAX_PELLET_PREIS = 2000.0
 
 CONF_LAGER_MAXIMUM = "lager_fassungsvermoegen"
-"""Fassungsvermögen des Pelletlagers in kg, von Hand eingetragen. 0 heißt: Es gilt der Wert der Anlage.
+"""Fassungsvermögen des Pelletlagers in kg, das nur Home Assistant kennt. 0 heißt: keines.
 
-Ältere Regelungen führen "Maximaler Vorrat" nicht im Menübaum - ohne ihn
-bliebe der Füllstand des Lagers leer. Ein eingetragener Wert gilt auch
-an einer Anlage, die selbst einen meldet: Der Füllstand in Home
-Assistant rechnet dann mit ihm, an der Anlage ändert er nichts.
+Hier merkt sich das Zahlenfeld "Lager Fassungsvermögen" seinen Wert, wenn
+es ihn nicht an die Anlage schreiben kann: ohne Schreibzugriff, oder
+weil die Anlage "Maximaler Vorrat" nicht führt oder nicht beschreibbar
+meldet. Ältere Regelungen führen ihn nicht im Menübaum - ohne diesen
+Wert bliebe der Füllstand des Lagers dort leer. Der Wert steht in den
+Optionen der Einrichtung, in keinem Formular.
 """
-DEFAULT_LAGER_MAXIMUM = 0
 MAX_LAGER_MAXIMUM = 100000
 
 CONF_PROGNOSE = "prognose"
@@ -449,21 +450,25 @@ ZAHLEN = {
         "quelle": "lager_maximum",
         "einheit": "kg",
         "schritt": 1,
-        "grenzen": (0, 100000),
+        "grenzen": (0, MAX_LAGER_MAXIMUM),
+        "sonst_in_home_assistant": True,
     },
 }
 """Zahlen, die sich an der Anlage einstellen lassen.
 
-Jede nur mit freigegebenem Schreibzugriff und nur, wenn die Anlage sie in
-/user/varinfo als beschreibbar meldet. quelle: der Messwert, dessen Objekt
-geschrieben wird - die Zahl zeigt denselben Wert wie sein Sensor. grenzen:
-der Bereich, falls die Anlage keinen nennt; nennt sie einen, gilt der
-engere.
+An die Anlage geschrieben wird nur mit freigegebenem Schreibzugriff und
+nur, wenn sie die Zahl in /user/varinfo als beschreibbar meldet. quelle:
+der Messwert, dessen Objekt geschrieben wird - die Zahl zeigt denselben
+Wert wie sein Sensor. grenzen: der Bereich, falls die Anlage keinen
+nennt; nennt sie einen, gilt der engere. sonst_in_home_assistant: Das
+Zahlenfeld gibt es auch, wenn nicht an die Anlage geschrieben werden
+kann - es merkt sich seinen Wert dann in Home Assistant, siehe
+CONF_LAGER_MAXIMUM.
 
 Das Fassungsvermögen des Pelletlagers ("Lager > Vorrat > Maximaler
-Vorrat") steht an der Anlage, nicht in der Integration. Eine Anlage meldet
-es als beschreibbar, von 0 bis 100000 kg. Der Füllstand in Prozent rechnet
-mit ihm.
+Vorrat") steht an der Anlage. Eine Anlage meldet es als beschreibbar, von
+0 bis 100000 kg. Der Füllstand in Prozent rechnet mit ihm - oder mit dem
+Wert, den sich das Zahlenfeld in Home Assistant gemerkt hat.
 """
 
 THERMOSTATE = {

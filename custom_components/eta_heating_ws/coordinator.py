@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -18,6 +18,7 @@ from .const import (
     BETRIEBSART_AUS,
     BETRIEBSART_TASTEN,
     COMPONENTS,
+    CONF_LAGER_MAXIMUM,
     SELECTS,
     SWITCHES,
     ZAHLEN,
@@ -1091,22 +1092,61 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         except (TypeError, ValueError):
             return None
 
-    def lager_fassungsvermoegen(self) -> float | None:
-        """Wie viel das Pelletlager fasst, in kg: eingetragen, sonst von der Anlage.
+    @property
+    def lager_maximum_an_der_anlage(self) -> bool:
+        """Schreibt das Zahlenfeld "Lager Fassungsvermögen" an die Anlage?
 
-        Der eingetragene Wert hat Vorrang, siehe CONF_LAGER_MAXIMUM. Ohne
-        beides, oder mit 0 an der Anlage, ist das Fassungsvermögen unbekannt.
+        Nur mit Schreibzugriff und wenn sie den Wert als beschreibbar
+        meldet, siehe _zahlen_pruefen. Sonst merkt es sich seinen Wert in
+        Home Assistant.
         """
-        if self.lager_maximum_eingetragen > 0:
-            return self.lager_maximum_eingetragen
+        return "lager_maximum_stellen" in self.zahl_defs
+
+    @property
+    def lager_maximum_eigen(self) -> float | None:
+        """Das Fassungsvermögen, das nur Home Assistant kennt, in kg - None, wenn keines gilt.
+
+        Es gilt nicht, solange das Zahlenfeld an die Anlage schreibt: Dann
+        zählt allein, was dort steht.
+        """
+        if self.lager_maximum_an_der_anlage or self.lager_maximum_eingetragen <= 0:
+            return None
+        return self.lager_maximum_eingetragen
+
+    def lager_fassungsvermoegen(self) -> float | None:
+        """Wie viel das Pelletlager fasst, in kg: der eigene Wert, sonst der der Anlage.
+
+        Siehe lager_maximum_eigen. Ohne beides, oder mit 0 an der Anlage,
+        ist das Fassungsvermögen unbekannt.
+        """
+        eigen = self.lager_maximum_eigen
+        if eigen is not None:
+            return eigen
         von_der_anlage = self.zahl("lager_maximum")
         return von_der_anlage if von_der_anlage and von_der_anlage > 0 else None
 
     def lager_fassungsvermoegen_quelle(self) -> str | None:
-        """Woher das Fassungsvermögen stammt: "Einstellung", "Anlage" oder None."""
+        """Woher das Fassungsvermögen stammt: "Home Assistant", "Anlage" oder None."""
         if self.lager_fassungsvermoegen() is None:
             return None
-        return "Einstellung" if self.lager_maximum_eingetragen > 0 else "Anlage"
+        return "Home Assistant" if self.lager_maximum_eigen is not None else "Anlage"
+
+    @callback
+    def lager_maximum_merken(self, kilogramm: float) -> None:
+        """Merkt sich das Fassungsvermögen in Home Assistant, 0 verwirft es.
+
+        Der Wert steht in den Optionen der Einrichtung und übersteht so
+        Neustart und Sicherung. Neu geladen wird dafür nichts - Füllstand
+        und Sensor rechnen sofort mit dem neuen Wert.
+        """
+        self.lager_maximum_eingetragen = max(0.0, float(kilogramm))
+        optionen = dict(self.config_entry.options)
+        if self.lager_maximum_eingetragen > 0:
+            optionen[CONF_LAGER_MAXIMUM] = self.lager_maximum_eingetragen
+        else:
+            optionen.pop(CONF_LAGER_MAXIMUM, None)
+        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+        self.async_update_listeners()
 
     def zustand(self, key: str) -> str | None:
         """Ein Textwert als einer der festen Zustände seiner Sensordefinition.

@@ -637,6 +637,12 @@ class FakeHass:
         async def async_reload(self, entry_id):
             return True
 
+        def async_update_entry(self, entry, **geaendert):
+            """Übernimmt geänderte Daten oder Optionen in die Einrichtung, wie Home Assistant."""
+            for feld, wert in geaendert.items():
+                setattr(entry, feld, wert)
+            return True
+
     def __init__(self, menu: str, root: str) -> None:
         self.config = self.Config(root)
         self.config_entries = self.ConfigEntries()
