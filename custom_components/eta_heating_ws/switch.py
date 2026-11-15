@@ -26,6 +26,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
 from .const import (
+    FREMDERZEUGER_SCHALTER,
     KESSEL_GESPERRT_AUSGESCHALTET,
     KESSEL_GESPERRT_WAR_AUS,
     KESSEL_SPERRE,
@@ -92,6 +93,8 @@ async def async_setup_entry(
     ]
     if coordinator.kesselsperre is not None:
         entities.append(ETAKesselSperre(coordinator, coordinator.kesselsperre))
+    if coordinator.fremderzeuger is not None and coordinator.fremderzeuger.eigener_schalter:
+        entities.append(ETAFremderzeugerSchalter(coordinator))
     entities.append(ETAAnimationenSwitch(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "switch", entities)
     async_add_entities(entities)
@@ -409,4 +412,44 @@ class ETAAnimationenSwitch(SwitchEntity, RestoreEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         self._attr_is_on = False
+        self.async_write_ha_state()
+
+
+class ETAFremderzeugerSchalter(SwitchEntity, RestoreEntity):
+    """Der eigene Ein/Aus-Schalter des Fremderzeugers, siehe const.FREMDERZEUGER_SCHALTER.
+
+    Nur, wenn für den Fremderzeuger allein ein Temperaturfühler gewählt
+    ist. Aus heißt: Er wird nicht beachtet, der Kessel bleibt frei. An die
+    Anlage schreibt der Schalter nichts. Nach einem Neustart gilt die
+    letzte Einstellung, anfangs ein.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = FREMDERZEUGER_SCHALTER
+    _attr_should_poll = False
+    _attr_icon = "mdi:fireplace"
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        self._fremderzeuger = coordinator.fremderzeuger
+        self._attr_unique_id = (
+            f"eta_switch_{coordinator.config_entry.entry_id}_{FREMDERZEUGER_SCHALTER}"
+        )
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def is_on(self) -> bool:
+        return self._fremderzeuger.eingeschaltet
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        letzter = await self.async_get_last_state()
+        if letzter is not None and letzter.state == STATE_OFF:
+            self._fremderzeuger.einschalten(False)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        self._fremderzeuger.einschalten(True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        self._fremderzeuger.einschalten(False)
         self.async_write_ha_state()

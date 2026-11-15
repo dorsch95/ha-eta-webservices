@@ -156,7 +156,42 @@ CONF_FREMDERZEUGER_NAME = "fremderzeuger_name"
 """Wie der Fremderzeuger in der Karte heißt, siehe COMPONENTS["fremderzeuger"]."""
 DEFAULT_FREMDERZEUGER_NAME = "Ofen"
 CONF_FREMDERZEUGER_ENTITAET = "fremderzeuger_entitaet"
-"""Die Entität, die an ist, solange der Fremderzeuger heizt."""
+"""Die Entität, die an ist, solange der Fremderzeuger heizt - freiwillig.
+
+Sie oder der Temperaturfühler (CONF_FREMDERZEUGER_FUEHLER) muss angegeben
+sein, siehe fremderzeuger.py.
+"""
+FREMDERZEUGER_SCHALTER = "fremderzeuger_schalter"
+"""Schlüssel des eigenen Ein/Aus-Schalters des Fremderzeugers.
+
+Es gibt ihn nur, wenn keine Entität gewählt ist, sondern allein ein
+Temperaturfühler: Aus heißt dann, der Fremderzeuger wird nicht beachtet -
+gleich, was der Fühler meldet. Mit gewählter Entität übernimmt sie diese
+Rolle, und die Karte zeigt nur ihren Zustand.
+"""
+FREMDERZEUGER_HEIZT = "fremderzeuger_heizt"
+"""Schlüssel des Binärsensors "Fremderzeuger heizt" - so bewertet es die Integration."""
+CONF_FREMDERZEUGER_FUEHLER = "fremderzeuger_fuehler"
+"""Ein Temperaturfühler am Fremderzeuger - freiwillig.
+
+Mit ihm gilt der Fremderzeuger erst als heizend, wenn der Fühler die
+Sperrtemperatur erreicht hat (CONF_FREMDERZEUGER_SCHWELLE) - allein oder
+zusammen mit der Entität. Die Temperatur ersetzt dann die Wartezeit
+"Sperren nach".
+"""
+CONF_FREMDERZEUGER_SCHWELLE = "fremderzeuger_schwelle"
+"""Die Sperrtemperatur in °C, siehe CONF_FREMDERZEUGER_FUEHLER.
+
+Sie steht in den Optionen der Einrichtung, in keinem Formular: Gestellt
+wird sie mit dem Zahlenfeld "Fremderzeuger Sperrtemperatur" oder aus der
+Karte. FREMDERZEUGER_SCHWELLE_ZAHL ist der Schlüssel dieses Zahlenfelds.
+"""
+FREMDERZEUGER_SCHWELLE_ZAHL = "fremderzeuger_schwelle"
+DEFAULT_FREMDERZEUGER_SCHWELLE = 60.0
+MAX_FREMDERZEUGER_SCHWELLE = 500
+"""Der Fühler kann auch am Rauchrohr sitzen - deshalb reicht der Bereich weit."""
+FREMDERZEUGER_HYSTERESE = 5.0
+"""Um so viel Grad muss der Fühler unter die Sperrtemperatur fallen, bevor freigegeben wird."""
 CONF_FREMDERZEUGER_SPERRT = "fremderzeuger_sperrt"
 """Welche Kessel gesperrt werden, solange der Fremderzeuger heizt - eine Liste aus SPERRBARE_KESSEL.
 
@@ -167,7 +202,7 @@ CONF_KESSEL_SPERRE.
 SPERRBARE_KESSEL = ["kessel"]
 """Die Kessel, die ein Fremderzeuger sperren kann. Bisher kennt die Integration einen."""
 CONF_FREMDERZEUGER_SPERREN_NACH = "fremderzeuger_sperren_nach"
-"""So viele Minuten muss der Fremderzeuger heizen, bevor gesperrt wird."""
+"""So viele Minuten muss der Fremderzeuger heizen, bevor gesperrt wird - ohne Temperaturfühler."""
 DEFAULT_FREMDERZEUGER_SPERREN_NACH = 1
 CONF_FREMDERZEUGER_FREIGEBEN_NACH = "fremderzeuger_freigeben_nach"
 """So viele Minuten muss der Fremderzeuger aus sein, bevor der Kessel wieder frei ist."""
@@ -176,6 +211,7 @@ MAX_FREMDERZEUGER_WARTEZEIT = 240
 FREMDERZEUGER_FELDER = (
     CONF_FREMDERZEUGER_NAME,
     CONF_FREMDERZEUGER_ENTITAET,
+    CONF_FREMDERZEUGER_FUEHLER,
     CONF_FREMDERZEUGER_SPERRT,
     CONF_FREMDERZEUGER_SPERREN_NACH,
     CONF_FREMDERZEUGER_FREIGEBEN_NACH,
@@ -183,9 +219,17 @@ FREMDERZEUGER_FELDER = (
 """Die Felder des Einrichtungsschritts "Fremderzeuger"."""
 
 
+def fremderzeuger_eingerichtet(einstellungen, komponenten) -> bool:
+    """Ob es einen Fremderzeuger gibt: gewählt und mit Entität oder Temperaturfühler."""
+    return "fremderzeuger" in komponenten and bool(
+        einstellungen.get(CONF_FREMDERZEUGER_ENTITAET)
+        or einstellungen.get(CONF_FREMDERZEUGER_FUEHLER)
+    )
+
+
 def fremderzeuger_sperrt(einstellungen, komponenten) -> list[str]:
     """Die Kessel, die der Fremderzeuger dieser Einrichtung sperrt - leer ohne ihn."""
-    if "fremderzeuger" not in komponenten or not einstellungen.get(CONF_FREMDERZEUGER_ENTITAET):
+    if not fremderzeuger_eingerichtet(einstellungen, komponenten):
         return []
     gewaehlt = einstellungen.get(CONF_FREMDERZEUGER_SPERRT) or []
     return [kessel for kessel in SPERRBARE_KESSEL if kessel in gewaehlt and kessel in komponenten]

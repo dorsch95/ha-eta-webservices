@@ -121,6 +121,13 @@ const TEXTE = {
     frei: "Frei",
     unbekannt: "Unbekannt",
     kessel_sperre: "Kesselsperre",
+    heizt_an: "Heizt an",
+    ab: "ab",
+    schalter: "Schalter",
+    bild: "Bild",
+    sperrtemperatur: "Sperrtemperatur",
+    sperrtemperatur_hinweis: "ab dieser Temperatur gilt er als heizend",
+    einstellen: "einstellen",
     zustand: "Zustand",
     temperatur: "Temperatur",
     leistung_soll: "Leistung Soll",
@@ -247,6 +254,13 @@ const TEXTE = {
     frei: "Free",
     unbekannt: "Unknown",
     kessel_sperre: "Boiler lock",
+    heizt_an: "Warming up",
+    ab: "from",
+    schalter: "Switch",
+    bild: "Picture",
+    sperrtemperatur: "Lock temperature",
+    sperrtemperatur_hinweis: "from this temperature it counts as heating",
+    einstellen: "settings",
     zustand: "State",
     temperatur: "Temperature",
     leistung_soll: "Target power",
@@ -402,6 +416,8 @@ const STIL = `
   .eta-eingabe input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; color-scheme: light; }
   :host([dunkel]) .eta-eingabe input { color-scheme: dark; }
   .eta-eingabe small { font-size: 13px; color: var(--text-2); }
+  .eta-eingabe select { flex: 1; min-width: 0; min-height: 48px; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; }
+  .eta-eingabe select option { color: var(--primary-text-color, #111); background: var(--card-background-color, #fff); }
   .eta-neben { font-size: 12px; color: var(--text-2); }
   .eta-hinweis { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--flaeche); color: var(--text); font-size: 13px; line-height: 1.45; }
   .eta-hinweis b { font-weight: 600; }
@@ -1061,8 +1077,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
     const id = struktur.entitaeten[schluessel];
     return id ? hass.states[id] : undefined;
   };
-  const wert = (schluessel) => {
-    const s = stand(schluessel);
+  const wertAus = (s) => {
     if (!s) return null;
     if (s.state === "-") return null;
     const fehlt = s.state === "unavailable" || s.state === "unknown";
@@ -1072,6 +1087,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
     const n = fehlt || s.state === "" || Number.isNaN(Number(s.state)) ? null : Number(s.state);
     return { id: s.entity_id, text, zahl, einheit, roh: fehlt ? "" : s.state, n };
   };
+  const wert = (schluessel) => wertAus(stand(schluessel));
   const an = (w) => Boolean(w) && (w.n === null ? !OHNE_FLUSS.includes(w.roh) : w.n > 0);
   /** Das gewählte Bild eines Erzeugers - ohne gültige Auswahl seine Vorgabe. */
   const erzeuger = (komponente) => ERZEUGER_BILDER[stand(`${komponente}_bild`)?.state] || ERZEUGER_BILDER[ERZEUGER_VORGABE[komponente]];
@@ -1212,21 +1228,32 @@ function anlageLesen(hass, struktur, t, fussboden) {
       };
     },
     /**
-     * Der Fremderzeuger hängt nicht an der Anlage. Ob er heizt, sagt die
-     * Entität, die beim Einrichten gewählt wurde; ob er den Kessel gerade
-     * sperrt, sagt der Schalter "Kessel sperren".
+     * Der Fremderzeuger hängt nicht an der Anlage. Ob er heizt, bewertet
+     * die Integration - aus einer Entität, einem Temperaturfühler oder
+     * beidem - und meldet es über "Fremderzeuger heizt". Ob er den Kessel
+     * gerade sperrt, sagt der Schalter "Kessel sperren". Eine gewählte
+     * Entität zeigt die Karte nur an; den Ein/Aus-Schalter gibt es nur,
+     * wo die Integration ihn selbst mitbringt, also allein mit Fühler.
      */
     fremderzeuger(teil) {
+      const melder = stand("fremderzeuger_heizt");
       const quelle = teil.entitaet ? hass.states[teil.entitaet] : undefined;
-      const fehlt = !quelle || quelle.state === "unavailable" || quelle.state === "unknown";
-      const heizt = quelle?.state === "on";
+      const schalter = stand("fremderzeuger_schalter");
+      const temperatur = teil.fuehler ? wertAus(hass.states[teil.fuehler]) : null;
+      const fehlt = !melder || melder.state === "unavailable" || melder.state === "unknown";
+      const heizt = melder?.state === "on";
+      const waermtAuf = !heizt && !fehlt && Boolean(temperatur) && quelle?.state === "on";
       const sperre = (teil.sperrt || []).includes("kessel") ? stand("kessel_sperre") : undefined;
       return {
-        quelle: quelle ? { id: quelle.entity_id } : null,
+        melder: melder ? { id: melder.entity_id } : null,
         heizt,
         aktiv: heizt,
-        schaltbar: !fehlt && ["switch", "input_boolean"].includes(quelle.entity_id.split(".")[0]),
-        zustand: { id: quelle?.entity_id, text: fehlt ? t.unbekannt : heizt ? t.heizt : t.aus },
+        brennt: heizt || waermtAuf,
+        temperatur,
+        schwelle: temperatur ? wert("fremderzeuger_schwelle") : null,
+        quelle: quelle ? { id: quelle.entity_id, text: quelle.state === "on" ? t.ein : quelle.state === "off" ? t.aus : t.unbekannt } : null,
+        schalter: schalter ? { id: schalter.entity_id, an: schalter.state === "on" } : null,
+        zustand: { id: melder?.entity_id, text: fehlt ? t.unbekannt : heizt ? t.heizt : waermtAuf ? t.heizt_an : t.aus },
         sperre: sperre ? { id: sperre.entity_id, text: sperre.state === "on" ? t.gesperrt : t.frei, an: sperre.state === "on" } : null,
         erzeuger: erzeuger("fremderzeuger"),
       };
@@ -1501,9 +1528,22 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<button type="button" class="eta-rund eta-zeit" data-aktion="zeiten" data-teil="${e(teil.id)}" title="${e(this._t.zeiten)}" aria-label="${e(this._t.zeiten)}: ${e(teil.name)}">${ICON.uhr}</button>`;
   }
 
-  /** Die Knöpfe am Namen eines Teils: die Uhr für seine Zeiten, am Pelletlager Plus und Stift. */
+  /** Die Knöpfe am Namen eines Teils: die Uhr für seine Zeiten, am Pelletlager Plus und Stift, an den Erzeugern der Stift. */
   _knoepfe(teil) {
-    return this._zeitKnopf(teil) + this._lagerKnoepfe(teil);
+    return this._zeitKnopf(teil) + this._lagerKnoepfe(teil) + this._erzeugerKnopf(teil);
+  }
+
+  /**
+   * An Brenner, Fremdwärme und Fremderzeuger: Der Stift wählt das Bild,
+   * beim Fremderzeuger mit Temperaturfühler stellt er auch die
+   * Sperrtemperatur. Nur, wo es die Auswahl oder das Zahlenfeld gibt.
+   */
+  _erzeugerKnopf(teil) {
+    if (!["brenner", "fremdwaerme", "fremderzeuger"].includes(teil.art)) return "";
+    const entitaeten = this._struktur?.entitaeten || {};
+    if (!entitaeten[`${teil.id}_bild`] && !(teil.art === "fremderzeuger" && entitaeten.fremderzeuger_schwelle)) return "";
+    const name = `${teil.name} ${this._t.einstellen}`;
+    return `<button type="button" class="eta-rund eta-zeit" data-aktion="erzeuger-einstellen" data-teil="${e(teil.id)}" title="${e(name)}" aria-label="${e(name)}">${ICON.stift}</button>`;
   }
 
   /**
@@ -1678,10 +1718,10 @@ class EtaUebersichtKarte extends HTMLElement {
       fremdwaerme: (w) => kachel(w, w.heizt ? "data-aktiv" : "", this._chip(w.stoerung ? w.zustand.text : w.heizt ? t.heizt : t.ruht, w.heizt, w.stoerung ? "stoer" : ""), `
         <div class="eta-buehne" ${this._info(w.temperatur || w.zustand)}>${this._figur(w.erzeuger.bild(), 96)}${this._haupt(t.temperatur, w.temperatur)}</div>
         ${this._zeilen([[t.zustand, w.zustand], [t.ladepumpe, w.ladepumpe], [t.speichertemperatur, w.speicher]])}`),
-      fremderzeuger: (w) => kachel(w, w.heizt ? "data-aktiv" : "", this._chip(w.zustand.text, w.heizt), `
-        <div class="eta-buehne" ${this._info(w.quelle)}>${this._figur(w.erzeuger.bild(), 96)}${this._haupt(t.zustand, { zahl: w.zustand.text, einheit: "" })}</div>
-        ${this._zeilen([[t.kessel, w.sperre]])}
-        ${w.schaltbar ? `<div class="eta-knoepfe"><button type="button" class="eta-knopf" data-aktion="umschalten" data-ziel="${e(w.quelle.id)}" aria-pressed="${w.heizt}">${ICON.flamme}<span>${e(`${w.name} ${w.heizt ? t.ein : t.aus}`)}</span></button></div>` : ""}`),
+      fremderzeuger: (w) => kachel(w, w.brennt ? "data-aktiv" : "", this._chip(w.zustand.text, w.brennt), `
+        <div class="eta-buehne" ${this._info(w.temperatur || w.melder)}>${this._figur(w.erzeuger.bild(), 96)}${w.temperatur ? this._haupt(t.temperatur, w.temperatur, w.schwelle ? `${t.ab} ${w.schwelle.text}` : "") : this._haupt(t.zustand, { zahl: w.zustand.text, einheit: "" })}</div>
+        ${this._zeilen([[t.schalter, w.temperatur ? w.quelle : null], [t.kessel, w.sperre]])}
+        ${w.schalter ? `<div class="eta-knoepfe"><button type="button" class="eta-knopf" data-aktion="ofen" data-ziel="${e(w.schalter.id)}" aria-pressed="${w.schalter.an}">${ICON.aus}<span>${e(`${w.name} ${w.schalter.an ? t.ein : t.aus}`)}</span></button></div>` : ""}`),
       fernleitung: (f) => kachel(f, f.pumpt ? "data-pumpt" : "", this._chip(f.pumpt ? t.laeuft : t.ruht, f.pumpt), `
         <div class="eta-buehne" ${this._info(f.pumpe)}>${this._figur(fernBild(), 132)}${this._haupt(t.fernpumpe, f.pumpe)}</div>`),
     };
@@ -1735,7 +1775,7 @@ class EtaUebersichtKarte extends HTMLElement {
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
-      fremderzeuger: (w) => station(w, "quer links", w.heizt ? "data-aktiv data-fluss" : "", this._info(w.quelle), this._figur(w.erzeuger.bild(), 72), schild(w, null, w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : "", w.zustand.text)),
+      fremderzeuger: (w) => station(w, "quer links", `${w.brennt ? "data-aktiv" : ""} ${w.heizt ? "data-fluss" : ""}`, this._info(w.temperatur || w.melder), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, [w.temperatur ? w.zustand.text : "", w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : ""].filter(Boolean).join(" · "), w.temperatur ? null : w.zustand.text)),
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
       heizkreis: (h) => {
@@ -1887,9 +1927,9 @@ class EtaUebersichtKarte extends HTMLElement {
       lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet"), this._knoepfe(l)),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
-      brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur),
-      fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur),
-      fremderzeuger: (w) => zeile("flamme", w.heizt, w.name, w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : "", w.zustand),
+      brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur, "", this._knoepfe(b)),
+      fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur, "", this._knoepfe(w)),
+      fremderzeuger: (w) => zeile("flamme", w.brennt, w.name, [w.temperatur ? w.zustand.text : "", w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : ""].filter(Boolean).join(" · "), w.temperatur || w.zustand, "", this._knoepfe(w)),
       fernleitung: (f) => zeile("rohr", f.pumpt, f.name, f.pumpt ? t.laeuft : t.ruht, f.pumpe),
     };
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
@@ -1995,13 +2035,15 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
-   * Die beiden Fenster des Pelletlagers. "lager-einstellen" zeigt Vorrat,
+   * Die kleinen Fenster zum Einstellen. "lager-einstellen" zeigt Vorrat,
    * Fassungsvermögen und Pelletpreis als Zahlenfelder und schreibt, was
    * geändert wurde. "lieferung" nimmt Datum, Menge und Preis und ruft die
    * Aktion "Pelletlieferung eintragen" auf - vor dem OK steht, ob dabei
-   * auch der Vorrat an der Heizung geändert wird.
+   * auch der Vorrat an der Heizung geändert wird. "erzeuger-einstellen"
+   * wählt das Bild von Brenner, Fremdwärme oder Fremderzeuger und stellt
+   * beim Fremderzeuger mit Fühler die Sperrtemperatur.
    */
-  _lagerFenster(aktion) {
+  _lagerFenster(aktion, teilId = null) {
     if (this._fensterOffen || !this._struktur || !this._hass) return;
     const t = this._t;
     const entitaeten = this._struktur.entitaeten || {};
@@ -2026,6 +2068,28 @@ class EtaUebersichtKarte extends HTMLElement {
         knopf.disabled = false;
       }
     };
+
+    if (aktion === "erzeuger-einstellen") {
+      const teil = this._struktur.teile.find((x) => x.id === teilId);
+      const bild = stand(`${teilId}_bild`), schwelle = teil?.art === "fremderzeuger" ? stand("fremderzeuger_schwelle") : undefined;
+      if (!teil || (!bild && !schwelle)) return;
+      const beschriftung = (option) => (this._hass.formatEntityState ? this._hass.formatEntityState(bild, option) : option);
+      formular.innerHTML =
+        (bild ? `<label><span>${e(t.bild)}</span><span class="eta-eingabe"><select name="bild" data-ziel="${e(bild.entity_id)}" data-vorher="${e(bild.state)}">${(bild.attributes.options || []).map((option) => `<option value="${e(option)}" ${option === bild.state ? "selected" : ""}>${e(beschriftung(option))}</option>`).join("")}</select></span></label>` : "") +
+        (schwelle ? feld("schwelle", t.sperrtemperatur, schwelle, zahl(schwelle), "°C", t.sperrtemperatur_hinweis) : "") +
+        knoepfe(t.speichern);
+      formular.addEventListener("submit", (ereignis) => {
+        ereignis.preventDefault();
+        ausfuehren(async () => {
+          const wahl = formular.elements.bild;
+          if (wahl && wahl.value !== wahl.dataset.vorher) await this._hass.callService("select", "select_option", { entity_id: wahl.dataset.ziel, option: wahl.value });
+          const grad = formular.elements.schwelle;
+          if (grad && grad.value !== "" && grad.value !== grad.dataset.vorher) await this._hass.callService("number", "set_value", { entity_id: grad.dataset.ziel, value: Number(grad.value) });
+        });
+      });
+      this._fensterOeffnen(`${teilName(teil, this._struktur.teile, t)} ${t.einstellen}`, formular);
+      return;
+    }
 
     if (aktion === "lager-einstellen") {
       const vorratJetzt = zahl(vorrat), maximumJetzt = zahl(maximum), preisJetzt = zahl(preis);
@@ -2111,16 +2175,16 @@ class EtaUebersichtKarte extends HTMLElement {
       this._zeitenSchliessen();
       return;
     }
-    if (aktion === "lieferung" || aktion === "lager-einstellen") {
-      this._lagerFenster(aktion);
+    if (aktion === "lieferung" || aktion === "lager-einstellen" || aktion === "erzeuger-einstellen") {
+      this._lagerFenster(aktion, knopf.dataset.teil);
       return;
     }
     const entitaeten = this._struktur?.entitaeten || {};
     const dienst = (bereich, name, daten) => this._hass.callService(bereich, name, daten);
     if (aktion === "kessel" && entitaeten.kessel_schalter) {
       dienst("switch", knopf.getAttribute("aria-pressed") === "true" ? "turn_off" : "turn_on", { entity_id: entitaeten.kessel_schalter });
-    } else if (aktion === "umschalten") {
-      dienst("homeassistant", "toggle", { entity_id: knopf.dataset.ziel });
+    } else if (aktion === "ofen") {
+      dienst("switch", knopf.getAttribute("aria-pressed") === "true" ? "turn_off" : "turn_on", { entity_id: knopf.dataset.ziel });
     } else if (aktion === "modus") {
       dienst("select", "select_option", { entity_id: knopf.dataset.ziel, option: knopf.dataset.modus });
     } else if (aktion === "aufklappen") {

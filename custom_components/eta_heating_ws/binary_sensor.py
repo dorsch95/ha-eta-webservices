@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .const import FREMDERZEUGER_HEIZT
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
 
@@ -28,6 +29,8 @@ async def async_setup_entry(
         entities.append(ETAAscheboxBinarySensor(coordinator))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerBinarySensor(coordinator))
+    if coordinator.fremderzeuger is not None:
+        entities.append(ETAFremderzeugerHeizt(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "binary_sensor", entities)
     async_add_entities(entities)
 
@@ -142,3 +145,41 @@ class ETALagerBinarySensor(ETABaseBinarySensor):
             "warngrenze": self._zahl("lager_warngrenze"),
             "fuellstand_prozent": fuellstand,
         }
+
+
+class ETAFremderzeugerHeizt(BinarySensorEntity):
+    """Ob der Fremderzeuger heizt - so, wie die Integration es bewertet.
+
+    Aus seiner Entität, seinem Temperaturfühler oder beiden, siehe
+    fremderzeuger.py. Danach richtet sich die Kesselsperre, und die Karte
+    "ETA Übersicht" zeigt es an. Der Binärsensor hängt nicht an der
+    Anlage und bleibt verfügbar, wenn sie fehlt. Die Attribute nennen,
+    worauf die Bewertung beruht.
+    """
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_device_class = BinarySensorDeviceClass.HEAT
+    _attr_translation_key = FREMDERZEUGER_HEIZT
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        self._fremderzeuger = coordinator.fremderzeuger
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{FREMDERZEUGER_HEIZT}"
+        self._attr_device_info = coordinator.device_info
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self._fremderzeuger.beobachten(self.async_write_ha_state))
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._fremderzeuger.heizt
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        attribute: dict = {}
+        if self._fremderzeuger.entitaet:
+            attribute["entitaet"] = self._fremderzeuger.entitaet
+        if self._fremderzeuger.fuehler:
+            attribute["temperaturfuehler"] = self._fremderzeuger.fuehler
+            attribute["sperrtemperatur"] = self._fremderzeuger.schwelle
+        return attribute

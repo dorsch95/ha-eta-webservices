@@ -6,7 +6,8 @@ wenn sie die Zahl als beschreibbar meldet, siehe
 ETADataUpdateCoordinator._zahlen_pruefen. Das Fassungsvermögen gibt es
 auch sonst: Dann merkt es sich seinen Wert in Home Assistant.
 
-Der Pelletpreis gehört allein zu Home Assistant, siehe ETAPelletPreis.
+Der Pelletpreis und die Sperrtemperatur des Fremderzeugers gehören allein
+zu Home Assistant, siehe ETAPelletPreis und ETAFremderzeugerSchwelle.
 """
 
 from __future__ import annotations
@@ -20,7 +21,13 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import MAX_PELLET_PREIS, PELLET_PREIS_ZAHL, ZAHLEN
+from .const import (
+    FREMDERZEUGER_SCHWELLE_ZAHL,
+    MAX_FREMDERZEUGER_SCHWELLE,
+    MAX_PELLET_PREIS,
+    PELLET_PREIS_ZAHL,
+    ZAHLEN,
+)
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
 from .switch import vorwegnahme_pruefen
@@ -56,6 +63,8 @@ async def async_setup_entry(
     )
     if pelletpreis_vorgesehen(coordinator):
         entities.append(ETAPelletPreis(coordinator))
+    if coordinator.fremderzeuger is not None and coordinator.fremderzeuger.fuehler:
+        entities.append(ETAFremderzeugerSchwelle(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "number", entities)
     async_add_entities(entities)
 
@@ -229,4 +238,49 @@ class ETAPelletPreis(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
                 f"Nur zwischen {self.native_min_value:g} und {self.native_max_value:g} Euro je Tonne"
             )
         self.coordinator.pellet_preis_merken(value)
+        self.async_write_ha_state()
+
+
+class ETAFremderzeugerSchwelle(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
+    """Ab welcher Temperatur seines Fühlers der Fremderzeuger den Kessel sperrt.
+
+    Nur mit einem Temperaturfühler am Fremderzeuger, siehe
+    const.CONF_FREMDERZEUGER_FUEHLER. Der Wert steht in Home Assistant; an
+    die Anlage wird nichts geschrieben.
+    """
+
+    _attr_has_entity_name = True
+    _attr_mode = NumberMode.BOX
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _attr_native_min_value = 0
+    _attr_native_max_value = MAX_FREMDERZEUGER_SCHWELLE
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = "°C"
+    _attr_translation_key = FREMDERZEUGER_SCHWELLE_ZAHL
+    _attr_icon = "mdi:thermometer-lock"
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"eta_static_{coordinator.config_entry.entry_id}_{FREMDERZEUGER_SCHWELLE_ZAHL}"
+        )
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def available(self) -> bool:
+        """Die Sperrtemperatur steht in Home Assistant - sie bleibt auch stellbar, wenn die Anlage fehlt."""
+        return True
+
+    @property
+    def native_value(self) -> float | None:
+        fremderzeuger = self.coordinator.fremderzeuger
+        return fremderzeuger.schwelle if fremderzeuger is not None else None
+
+    async def async_set_native_value(self, value: float) -> None:
+        if not self.native_min_value <= value <= self.native_max_value:
+            raise HomeAssistantError(
+                f"Nur zwischen {self.native_min_value:g} und {self.native_max_value:g} °C"
+            )
+        self.coordinator.fremderzeuger_schwelle_merken(value)
         self.async_write_ha_state()

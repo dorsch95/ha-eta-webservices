@@ -24,6 +24,7 @@ from homeassistant.helpers import entity_registry as er
 from .const import (
     COMPONENTS,
     CONF_FREMDERZEUGER_ENTITAET,
+    CONF_FREMDERZEUGER_FUEHLER,
     CONF_FREMDERZEUGER_NAME,
     CONF_VERBINDUNGEN,
     DEFAULT_FREMDERZEUGER_NAME,
@@ -84,8 +85,8 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     zeigt die Karte einen Knopf, der die Zeiten zum Einstellen öffnet.
 
     Der Fremderzeuger steht nicht im Menübaum: Statt Messwerten bekommt
-    die Karte seinen Namen, die Entität, die sagt, ob er heizt, und welche
-    Kessel er sperrt.
+    die Karte seinen Namen, die Entität, die sagt, ob er heizt, seinen
+    Temperaturfühler, falls er einen hat, und welche Kessel er sperrt.
     """
     block = coordinator.funktionsblock(komponente)
     teil = {
@@ -104,6 +105,7 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
             einstellungen.get(CONF_FREMDERZEUGER_NAME) or DEFAULT_FREMDERZEUGER_NAME
         )
         teil["entitaet"] = einstellungen.get(CONF_FREMDERZEUGER_ENTITAET)
+        teil["fuehler"] = einstellungen.get(CONF_FREMDERZEUGER_FUEHLER) or None
         teil["sperrt"] = (
             fremderzeuger_sperrt(einstellungen, coordinator.components)
             if coordinator.kesselsperre is not None

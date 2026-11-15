@@ -80,19 +80,21 @@
       },
       "fremderzeuger": {
         "title": "Fremderzeuger",
-        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nOb der Fremderzeuger heizt, erfährt Home Assistant über eine Entität, die du hier wählst. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nWoran Home Assistant erkennt, dass er heizt, bestimmst du hier - mit einer Entität, einem Temperaturfühler oder beidem:\n- **Nur Entität:** Er heizt, solange sie an ist.\n- **Nur Temperaturfühler:** Er heizt, sobald die Sperrtemperatur erreicht ist. Die Karte bekommt dann einen eigenen Ein/Aus-Schalter.\n- **Beides:** Er heizt, wenn die Entität an ist und die Sperrtemperatur erreicht ist.\n\nSolange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
         "data": {
           "fremderzeuger_name": "Name in der Karte",
-          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
+          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt (freiwillig)",
+          "fremderzeuger_fuehler": "Temperaturfühler des Ofens (freiwillig)",
           "fremderzeuger_sperrt": "Sperren, solange er heizt",
           "fremderzeuger_sperren_nach": "Sperren nach (Minuten)",
           "fremderzeuger_freigeben_nach": "Freigeben nach (Minuten)"
         },
         "data_description": {
-          "fremderzeuger_entitaet": "Ein Schalter, ein Helfer oder ein Binärsensor. Ohne Fühler am Ofen: unter Einstellungen → Geräte & Dienste → Helfer einen Schalter anlegen und ihn in der Karte antippen. Mit Temperaturfühler: der Helfer „Schwellenwertsensor“ macht daraus an und aus.",
+          "fremderzeuger_entitaet": "Ein Schalter, ein Helfer oder ein Binärsensor. Die Karte zeigt ihren Zustand nur an.",
+          "fremderzeuger_fuehler": "Mit Fühler zählt die Sperrtemperatur: Du stellst sie in der Karte oder mit dem Zahlenfeld „Fremderzeuger Sperrtemperatur“ (ab Werk 60 °C). Sie ersetzt die Wartezeit „Sperren nach“.",
           "fremderzeuger_sperrt": "Der Kessel wird über seine Ein/Aus-Taste ausgeschaltet und danach wieder eingeschaltet - nie, wenn er vorher von Hand aus war. Im Notfall schaltest du ihn am Display der Heizung wieder ein. Ohne Auswahl wird nichts gesperrt.",
-          "fremderzeuger_sperren_nach": "So lange muss er heizen, bevor gesperrt wird.",
-          "fremderzeuger_freigeben_nach": "So lange muss er aus sein, bevor der Kessel wieder frei ist."
+          "fremderzeuger_sperren_nach": "Ohne Temperaturfühler: So lange muss er an sein, bevor gesperrt wird.",
+          "fremderzeuger_freigeben_nach": "So lange muss er aus sein - oder mit Fühler 5 °C unter die Sperrtemperatur gefallen -, bevor der Kessel wieder frei ist."
         }
       },
       "puffer": {
@@ -180,7 +182,8 @@
     "error": {
       "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind.",
       "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden.",
-      "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt."
+      "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt.",
+      "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt."
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
@@ -255,19 +258,21 @@
       },
       "fremderzeuger": {
         "title": "Fremderzeuger",
-        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nOb der Fremderzeuger heizt, erfährt Home Assistant über eine Entität, die du hier wählst. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nWoran Home Assistant erkennt, dass er heizt, bestimmst du hier - mit einer Entität, einem Temperaturfühler oder beidem:\n- **Nur Entität:** Er heizt, solange sie an ist.\n- **Nur Temperaturfühler:** Er heizt, sobald die Sperrtemperatur erreicht ist. Die Karte bekommt dann einen eigenen Ein/Aus-Schalter.\n- **Beides:** Er heizt, wenn die Entität an ist und die Sperrtemperatur erreicht ist.\n\nSolange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
         "data": {
           "fremderzeuger_name": "Name in der Karte",
-          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
+          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt (freiwillig)",
+          "fremderzeuger_fuehler": "Temperaturfühler des Ofens (freiwillig)",
           "fremderzeuger_sperrt": "Sperren, solange er heizt",
           "fremderzeuger_sperren_nach": "Sperren nach (Minuten)",
           "fremderzeuger_freigeben_nach": "Freigeben nach (Minuten)"
         },
         "data_description": {
-          "fremderzeuger_entitaet": "Ein Schalter, ein Helfer oder ein Binärsensor. Ohne Fühler am Ofen: unter Einstellungen → Geräte & Dienste → Helfer einen Schalter anlegen und ihn in der Karte antippen. Mit Temperaturfühler: der Helfer „Schwellenwertsensor“ macht daraus an und aus.",
+          "fremderzeuger_entitaet": "Ein Schalter, ein Helfer oder ein Binärsensor. Die Karte zeigt ihren Zustand nur an.",
+          "fremderzeuger_fuehler": "Mit Fühler zählt die Sperrtemperatur: Du stellst sie in der Karte oder mit dem Zahlenfeld „Fremderzeuger Sperrtemperatur“ (ab Werk 60 °C). Sie ersetzt die Wartezeit „Sperren nach“.",
           "fremderzeuger_sperrt": "Der Kessel wird über seine Ein/Aus-Taste ausgeschaltet und danach wieder eingeschaltet - nie, wenn er vorher von Hand aus war. Im Notfall schaltest du ihn am Display der Heizung wieder ein. Ohne Auswahl wird nichts gesperrt.",
-          "fremderzeuger_sperren_nach": "So lange muss er heizen, bevor gesperrt wird.",
-          "fremderzeuger_freigeben_nach": "So lange muss er aus sein, bevor der Kessel wieder frei ist."
+          "fremderzeuger_sperren_nach": "Ohne Temperaturfühler: So lange muss er an sein, bevor gesperrt wird.",
+          "fremderzeuger_freigeben_nach": "So lange muss er aus sein - oder mit Fühler 5 °C unter die Sperrtemperatur gefallen -, bevor der Kessel wieder frei ist."
         }
       },
       "puffer": {
@@ -346,7 +351,8 @@
     },
     "error": {
       "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden.",
-      "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt."
+      "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt.",
+      "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt."
     }
   },
   "selector": {
@@ -420,6 +426,9 @@
       },
       "stoerung": {
         "name": "Störung"
+      },
+      "fremderzeuger_heizt": {
+        "name": "Fremderzeuger heizt"
       }
     },
     "button": {
@@ -458,6 +467,9 @@
       },
       "pellet_preis": {
         "name": "Pelletpreis"
+      },
+      "fremderzeuger_schwelle": {
+        "name": "Fremderzeuger Sperrtemperatur"
       }
     },
     "select": {
@@ -1405,6 +1417,9 @@
       },
       "kessel_sperre": {
         "name": "Kessel sperren"
+      },
+      "fremderzeuger_schalter": {
+        "name": "Fremderzeuger"
       }
     }
   },

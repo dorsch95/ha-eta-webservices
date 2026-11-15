@@ -80,19 +80,21 @@
       },
       "fremderzeuger": {
         "title": "External heat source",
-        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHome Assistant learns from an entity you choose here whether the heat source is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHere you decide how Home Assistant recognises that it is heating - with an entity, a temperature sensor or both:\n- **Entity only:** it heats while the entity is on.\n- **Temperature sensor only:** it heats once the lock temperature is reached. The card then gets its own on/off switch.\n- **Both:** it heats when the entity is on and the lock temperature is reached.\n\nWhile it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
         "data": {
           "fremderzeuger_name": "Name in the card",
-          "fremderzeuger_entitaet": "Entity that is on while it heats",
+          "fremderzeuger_entitaet": "Entity that is on while it heats (optional)",
+          "fremderzeuger_fuehler": "Temperature sensor of the stove (optional)",
           "fremderzeuger_sperrt": "Lock while it heats",
           "fremderzeuger_sperren_nach": "Lock after (minutes)",
           "fremderzeuger_freigeben_nach": "Release after (minutes)"
         },
         "data_description": {
-          "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. Without a sensor at the stove: create a toggle helper under Settings → Devices & services → Helpers and tap it in the card. With a temperature sensor: the Threshold helper turns it into on and off.",
+          "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. The card only shows its state.",
+          "fremderzeuger_fuehler": "With a sensor, the lock temperature counts: set it in the card or with the number entity \"External heat source lock temperature\" (60 °C by default). It replaces the \"Lock after\" waiting time.",
           "fremderzeuger_sperrt": "The boiler is switched off via its on/off key and on again afterwards - never if you had switched it off yourself. In an emergency, switch it back on at the heater's display. Without a selection nothing is locked.",
-          "fremderzeuger_sperren_nach": "How long it must heat before the boiler is locked.",
-          "fremderzeuger_freigeben_nach": "How long it must be off before the boiler is released."
+          "fremderzeuger_sperren_nach": "Without a temperature sensor: how long it must be on before the boiler is locked.",
+          "fremderzeuger_freigeben_nach": "How long it must be off - or, with a sensor, 5 °C below the lock temperature - before the boiler is released."
         }
       },
       "puffer": {
@@ -180,7 +182,8 @@
     "error": {
       "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler.",
       "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written.",
-      "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round."
+      "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round.",
+      "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating."
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
@@ -255,19 +258,21 @@
       },
       "fremderzeuger": {
         "title": "External heat source",
-        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHome Assistant learns from an entity you choose here whether the heat source is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHere you decide how Home Assistant recognises that it is heating - with an entity, a temperature sensor or both:\n- **Entity only:** it heats while the entity is on.\n- **Temperature sensor only:** it heats once the lock temperature is reached. The card then gets its own on/off switch.\n- **Both:** it heats when the entity is on and the lock temperature is reached.\n\nWhile it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
         "data": {
           "fremderzeuger_name": "Name in the card",
-          "fremderzeuger_entitaet": "Entity that is on while it heats",
+          "fremderzeuger_entitaet": "Entity that is on while it heats (optional)",
+          "fremderzeuger_fuehler": "Temperature sensor of the stove (optional)",
           "fremderzeuger_sperrt": "Lock while it heats",
           "fremderzeuger_sperren_nach": "Lock after (minutes)",
           "fremderzeuger_freigeben_nach": "Release after (minutes)"
         },
         "data_description": {
-          "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. Without a sensor at the stove: create a toggle helper under Settings → Devices & services → Helpers and tap it in the card. With a temperature sensor: the Threshold helper turns it into on and off.",
+          "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. The card only shows its state.",
+          "fremderzeuger_fuehler": "With a sensor, the lock temperature counts: set it in the card or with the number entity \"External heat source lock temperature\" (60 °C by default). It replaces the \"Lock after\" waiting time.",
           "fremderzeuger_sperrt": "The boiler is switched off via its on/off key and on again afterwards - never if you had switched it off yourself. In an emergency, switch it back on at the heater's display. Without a selection nothing is locked.",
-          "fremderzeuger_sperren_nach": "How long it must heat before the boiler is locked.",
-          "fremderzeuger_freigeben_nach": "How long it must be off before the boiler is released."
+          "fremderzeuger_sperren_nach": "Without a temperature sensor: how long it must be on before the boiler is locked.",
+          "fremderzeuger_freigeben_nach": "How long it must be off - or, with a sensor, 5 °C below the lock temperature - before the boiler is released."
         }
       },
       "puffer": {
@@ -346,7 +351,8 @@
     },
     "error": {
       "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written.",
-      "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round."
+      "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round.",
+      "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating."
     }
   },
   "selector": {
@@ -420,6 +426,9 @@
       },
       "stoerung": {
         "name": "Fault"
+      },
+      "fremderzeuger_heizt": {
+        "name": "External heat source heating"
       }
     },
     "button": {
@@ -458,6 +467,9 @@
       },
       "pellet_preis": {
         "name": "Pellet price"
+      },
+      "fremderzeuger_schwelle": {
+        "name": "External heat source lock temperature"
       }
     },
     "select": {
@@ -1405,6 +1417,9 @@
       },
       "kessel_sperre": {
         "name": "Lock boiler"
+      },
+      "fremderzeuger_schalter": {
+        "name": "External heat source"
       }
     }
   },

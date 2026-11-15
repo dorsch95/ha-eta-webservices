@@ -29,9 +29,14 @@ from .const import (
     BILD_AUSWAHLEN,
     CONF_FREMDERZEUGER_ENTITAET,
     CONF_FREMDERZEUGER_FREIGEBEN_NACH,
+    CONF_FREMDERZEUGER_FUEHLER,
+    CONF_FREMDERZEUGER_SCHWELLE,
     CONF_FREMDERZEUGER_SPERREN_NACH,
     DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH,
+    DEFAULT_FREMDERZEUGER_SCHWELLE,
     DEFAULT_FREMDERZEUGER_SPERREN_NACH,
+    FREMDERZEUGER_SCHALTER,
+    FREMDERZEUGER_SCHWELLE_ZAHL,
     KESSEL_SPERRE,
     PELLET_PREIS_ZAHL,
     CONF_PROGNOSE,
@@ -59,6 +64,7 @@ from .const import (
     ALTE_URL_GRAFIKEN,
     THERMOSTATE,
     components_from_config,
+    fremderzeuger_eingerichtet,
     fremderzeuger_sperrt,
     kessel_sperre_gewaehlt,
     puffer_volumen_schluessel,
@@ -177,14 +183,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     coordinator.kesselsperre = kesselsperre_anlegen(coordinator)
     if coordinator.kesselsperre is not None:
         entry.async_on_unload(coordinator.async_add_listener(coordinator.kesselsperre.abgleichen))
-    if "fremderzeuger" in components and config.get(CONF_FREMDERZEUGER_ENTITAET):
+    if fremderzeuger_eingerichtet(config, components):
         coordinator.fremderzeuger = Fremderzeuger(
             hass,
             coordinator,
-            config[CONF_FREMDERZEUGER_ENTITAET],
+            config.get(CONF_FREMDERZEUGER_ENTITAET),
             sperrt,
             config.get(CONF_FREMDERZEUGER_SPERREN_NACH, DEFAULT_FREMDERZEUGER_SPERREN_NACH),
             config.get(CONF_FREMDERZEUGER_FREIGEBEN_NACH, DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH),
+            config.get(CONF_FREMDERZEUGER_FUEHLER),
+            config.get(CONF_FREMDERZEUGER_SCHWELLE, DEFAULT_FREMDERZEUGER_SCHWELLE),
         )
 
     entry.runtime_data = coordinator
@@ -389,6 +397,7 @@ _EIGENE_ENTITAETEN = {
     "pellet_energie_gesamt": "kessel",
     "lager_niedrig": "lager",
     "lager_fuellstand": "lager",
+    "fremderzeuger_heizt": "fremderzeuger",
     **{key: definition["component"] for key, definition in BILD_AUSWAHLEN.items()},
 }
 _PROGNOSE = {
@@ -415,6 +424,8 @@ def entitaet_vorgesehen(
     mit_prognose: bool = True,
     mit_zeitraeumen: bool = True,
     kessel_sperre: bool = False,
+    ofenfuehler: bool = False,
+    ofenschalter: bool = False,
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -454,6 +465,10 @@ def entitaet_vorgesehen(
         return mit_prognose and _PROGNOSE[key] in aktiv
     if key in _MIT_PUFFERVOLUMEN:
         return "puffer" in aktiv and "puffer" in puffer_mit_volumen
+    if key == FREMDERZEUGER_SCHWELLE_ZAHL:
+        return ofenfuehler and "fremderzeuger" in aktiv
+    if key == FREMDERZEUGER_SCHALTER:
+        return ofenschalter and "fremderzeuger" in aktiv
     if key == PELLET_PREIS_ZAHL:
         return "kessel" in aktiv or "lager" in aktiv
     if key in _EIGENE_ENTITAETEN:
@@ -496,6 +511,8 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.mit_prognose,
             coordinator.mit_zeitraeumen,
             coordinator.kessel_sperre,
+            coordinator.fremderzeuger is not None and bool(coordinator.fremderzeuger.fuehler),
+            coordinator.fremderzeuger is not None and coordinator.fremderzeuger.eigener_schalter,
         )
         if vorgesehen is False:
             _LOGGER.info(

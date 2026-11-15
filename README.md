@@ -286,6 +286,9 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_fremdwarme_ladepumpe` | Fremdwärme Ladepumpe | Text |
 | `select.eta_heizung_fremdwarme_bild` | Fremdwärme Bild auf den Dashboard-Karten, dieselbe Auswahl | Auswahl |
 | **Fremderzeuger** | | |
+| `binary_sensor.eta_heizung_fremderzeuger_heizt` | Fremderzeuger heizt, so wie die Integration es aus Entität und Fühler bewertet | an/aus |
+| `number.eta_heizung_fremderzeuger_sperrtemperatur` | Sperrtemperatur, nur mit Temperaturfühler | °C |
+| `switch.eta_heizung_fremderzeuger` | eigener Ein/Aus-Schalter, nur wenn allein ein Temperaturfühler gewählt ist | Schalter |
 | `select.eta_heizung_fremderzeuger_bild` | Fremderzeuger Bild in der Karte „ETA Übersicht“, dieselbe Auswahl | Auswahl |
 | **Fernleitung** | | |
 | `sensor.eta_heizung_fernleitung_pumpe` | Fernleitung Pumpe | Text |
@@ -366,7 +369,7 @@ Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Nam
 | Kaminofen | Ofen mit Rauchrohr und Holzfach | Holzfeuer |
 | Allgemein | Gehäuse mit drei Wärmewellen | die Wellen glühen und steigen auf |
 
-Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Dieselbe Auswahl hat der [Fremderzeuger](#fremderzeuger) mit `select.eta_heizung_fremderzeuger_bild`. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts.
+Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Dieselbe Auswahl hat der [Fremderzeuger](#fremderzeuger) mit `select.eta_heizung_fremderzeuger_bild`. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts. In der Karte „ETA Übersicht“ geht es am schnellsten: Der kleine Stift an der Kachel von Brenner, Fremdwärme und Fremderzeuger öffnet dieselbe Auswahl.
 
 ### Anpassen
 
@@ -431,10 +434,10 @@ Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübau
 | | Fremdwärme | Fremderzeuger |
 |---|---|---|
 | Am Display der Heizung | eigener Block `F.Wärme` | steht dort nicht |
-| Wer merkt, dass der Ofen heizt | die ETA-Regelung, über ihren Fühler | Home Assistant, über eine Entität, die du wählst |
+| Wer merkt, dass der Ofen heizt | die ETA-Regelung, über ihren Fühler | Home Assistant, über eine Entität oder einen Temperaturfühler, die du wählst |
 | Was dann passiert | die Regelung lädt selbst in den Puffer | Home Assistant kann den Kessel sperren |
 | Was Home Assistant tut | zeigt Temperatur, Zustand und Ladepumpe an | zeigt an, ob er heizt, und sperrt auf Wunsch den Kessel |
-| Einrichten | Komponente ankreuzen, Name des Blocks bestätigen | Komponente ankreuzen, Entität und Kessel wählen |
+| Einrichten | Komponente ankreuzen, Name des Blocks bestätigen | Komponente ankreuzen, Entität oder Temperaturfühler und die Kessel wählen |
 
 - **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe`).
 
@@ -519,27 +522,37 @@ Heizkreise bekommen keinen eigenen Schalter. Dort ist „Aus“ einer der Eintr�
 
 ### Fremderzeuger
 
-Ein Fremderzeuger ist ein Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung** - etwa ein Kaminofen mit eigener Regelung. Am Display der Heizung steht er nicht, die Anlage weiß nichts von ihm. Home Assistant erfährt über eine Entität, ob er heizt, und kann solange den Kessel sperren.
+Ein Fremderzeuger ist ein Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung** - etwa ein Kaminofen mit eigener Regelung. Am Display der Heizung steht er nicht, die Anlage weiß nichts von ihm. Home Assistant erkennt selbst, ob er heizt, und kann solange den Kessel sperren.
 
 Steht dein Ofen dagegen am Display als Block `F.Wärme`, ist er an der Regelung angeschlossen: Dann ist die Komponente **Fremdwärme** richtig, siehe [Fremdwärme oder Fremderzeuger?](#-was-deine-anlage-liefert).
 
-So richtest du ihn ein:
+**Einrichten:** Unter **Konfigurieren** bei **Weitere Komponenten** den **Fremderzeuger** ankreuzen. Im Schritt **Fremderzeuger** gibst du einen Namen an und woran Home Assistant erkennt, dass er heizt - mit einer Entität, einem Temperaturfühler oder beidem. Eines von beiden muss angegeben sein.
 
-1. Unter **Konfigurieren** bei **Weitere Komponenten** den **Fremderzeuger** ankreuzen.
-2. Im Schritt **Fremderzeuger** einen Namen vergeben und die Entität wählen, die an ist, solange er heizt: einen Schalter, einen Helfer oder einen Binärsensor.
-   - Ohne Fühler am Ofen: unter *Einstellungen → Geräte & Dienste → Helfer* einen **Schalter** anlegen. In der Karte schaltest du ihn mit einem Tipp um.
-   - Mit Temperaturfühler: Der Helfer **Schwellenwertsensor** macht aus der Temperatur an und aus.
-3. Mit Schreibzugriff wählst du dort auch, **welche Kessel** er sperrt, und wie lange er heizen oder aus sein muss, bevor gesperrt (ab Werk 1 Minute) und wieder freigegeben wird (ab Werk 5 Minuten). Ab Werk sperrt er nichts.
+| Du gibst an | Er gilt als heizend | Gesperrt wird |
+|---|---|---|
+| nur eine **Entität** (Schalter, Helfer oder Binärsensor) | solange sie an ist | nach der Wartezeit „Sperren nach“ (ab Werk 1 Minute) |
+| nur einen **Temperaturfühler** | sobald die Sperrtemperatur erreicht ist | sofort |
+| **beides** | wenn die Entität an ist und die Sperrtemperatur erreicht ist | sofort |
 
-Was dann passiert:
+Mit Schreibzugriff wählst du im selben Schritt, **welche Kessel** er sperrt. Ab Werk sperrt er nichts und wird nur angezeigt.
 
-- Heizt der Fremderzeuger, schaltet Home Assistant den gewählten Kessel über dessen Ein/Aus-Taste aus; ist er aus, schaltet es ihn wieder ein. Das läuft über dieselbe Sperre wie [Kessel sperren](#kessel-sperren): Ein Kessel, den du selbst ausgeschaltet hattest, bleibt aus.
-- Abgeglichen wird nach den beiden Wartezeiten, nach dem Start von Home Assistant und sobald die Heizung nach einer Unterbrechung wieder erreichbar ist. Ist der Zustand der Entität unbekannt, bleibt alles, wie es ist.
+**Sperrtemperatur:** Ab Werk 60 °C. Du stellst sie in der Karte über den Stift an seiner Kachel oder mit `number.eta_heizung_fremderzeuger_sperrtemperatur`. Damit der Zustand nicht flattert, gilt er erst wieder als aus, wenn der Fühler 5 °C unter die Sperrtemperatur gefallen ist.
+
+**Was dann passiert:**
+
+- Heizt der Fremderzeuger, schaltet Home Assistant den gewählten Kessel über dessen Ein/Aus-Taste aus. Heizt er die Wartezeit „Freigeben nach“ lang nicht mehr (ab Werk 5 Minuten), schaltet es ihn wieder ein. Das läuft über dieselbe Sperre wie [Kessel sperren](#kessel-sperren): Ein Kessel, den du selbst ausgeschaltet hattest, bleibt aus.
+- Abgeglichen wird außerdem nach dem Start von Home Assistant und sobald die Heizung nach einer Unterbrechung wieder erreichbar ist.
+- **Fällt die Entität oder der Fühler aus**, etwa weil eine Batterie leer ist, wird der Kessel nach der Wartezeit „Freigeben nach“ freigegeben. Von sich aus gesperrt wird in dieser Lage nie.
 - Den Schalter `switch.eta_heizung_kessel_sperren` gibt es dann von selbst. Schaltest du den gesperrten Kessel von Hand wieder ein, bleibt er an, bis der Fremderzeuger das nächste Mal anfängt zu heizen.
 
-In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) bekommt der Fremderzeuger eine eigene Kachel mit wählbarem Bild (`select.eta_heizung_fremderzeuger_bild`), im Anlagenbild lädt er wie Brenner und Fremdwärme in den ersten Pufferspeicher. Die Kachel zeigt, ob er heizt und ob der Kessel gesperrt ist; am Kessel steht dann **Kesselsperre: Gesperrt**. Die ältere fertige Karte zeigt ihn nicht.
+**In der Karte** [ETA Übersicht](#neue-karte-eta-übersicht) bekommt der Fremderzeuger eine eigene Kachel, im Anlagenbild lädt er wie Brenner und Fremdwärme in den ersten Pufferspeicher. Die ältere fertige Karte zeigt ihn nicht.
 
-Ohne Karte und ohne diese Komponente geht es auch: mit `switch.eta_heizung_kessel_sperren` in einer eigenen Automation oder mit dem Blueprint [Kessel sperren](#-blueprints).
+- Die Kachel zeigt, ob er heizt, mit Fühler auch seine Temperatur, und ob der Kessel gesperrt ist. Am Kessel steht dann **Kesselsperre: Gesperrt**.
+- Eine gewählte Entität zeigt die Kachel nur an. Schalten lässt sie sich dort nicht.
+- Hast du nur einen Temperaturfühler angegeben, bringt die Integration einen eigenen Ein/Aus-Schalter mit (`switch.eta_heizung_fremderzeuger`), auch als Knopf in der Kachel. Aus heißt: Der Fremderzeuger wird nicht beachtet, der Kessel bleibt frei.
+- Der Stift an der Kachel wählt das Bild und stellt die Sperrtemperatur.
+
+**Ohne Karte:** `binary_sensor.eta_heizung_fremderzeuger_heizt` sagt, ob er nach diesen Regeln heizt - etwa für eigene Automationen. Wer die Komponente gar nicht will, nimmt `switch.eta_heizung_kessel_sperren` in einer eigenen Automation oder den Blueprint [Kessel sperren](#-blueprints).
 
 > ⚠️ Fällt Home Assistant aus, während der Kessel gesperrt ist, bleibt er aus. Im Notfall schaltest du ihn am Display der Heizung wieder ein.
 

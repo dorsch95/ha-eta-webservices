@@ -18,6 +18,7 @@ from .const import (
     BETRIEBSART_AUS,
     BETRIEBSART_TASTEN,
     COMPONENTS,
+    CONF_FREMDERZEUGER_SCHWELLE,
     CONF_KESSEL_GESPERRT,
     CONF_LAGER_MAXIMUM,
     CONF_LIEFERUNGEN,
@@ -1252,6 +1253,19 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.async_update_listeners()
         await self.async_request_refresh()
         return neu
+
+    @callback
+    def fremderzeuger_schwelle_merken(self, grad: float) -> None:
+        """Übernimmt die Sperrtemperatur des Fremderzeugers, siehe CONF_FREMDERZEUGER_SCHWELLE.
+
+        Sie steht in den Optionen der Einrichtung. Neu geladen wird dafür
+        nichts - der Fremderzeuger bewertet sofort mit dem neuen Wert.
+        """
+        optionen = dict(self.config_entry.options)
+        optionen[CONF_FREMDERZEUGER_SCHWELLE] = float(grad)
+        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+        if self.fremderzeuger is not None:
+            self.fremderzeuger.schwelle_setzen(grad)
 
     @property
     def kessel_gesperrt(self) -> str | None:

@@ -40,7 +40,9 @@ from .const import (
     CONF_ENABLE_SWITCHES,
     CONF_FREMDERZEUGER_ENTITAET,
     CONF_FREMDERZEUGER_FREIGEBEN_NACH,
+    CONF_FREMDERZEUGER_FUEHLER,
     CONF_FREMDERZEUGER_NAME,
+    CONF_FREMDERZEUGER_SCHWELLE,
     CONF_FREMDERZEUGER_SPERREN_NACH,
     CONF_FREMDERZEUGER_SPERRT,
     CONF_FUB_NAMES,
@@ -308,10 +310,12 @@ def _verbindungen_schema(komponenten: list[str], wege: dict[str, str | None]) ->
 
 
 def _fremderzeuger_schema(current: dict[str, Any], schreiben: bool) -> vol.Schema:
-    """Name und Entität des Fremderzeugers, mit Schreibzugriff auch, welche Kessel er sperrt.
+    """Name, Entität und Temperaturfühler des Fremderzeugers, mit Schreibzugriff auch, welche Kessel er sperrt.
 
-    Die Auswahl der Kessel und die Wartezeiten fehlen ohne Schreibzugriff -
-    dann zeigt die Karte den Fremderzeuger nur an.
+    Entität und Fühler sind beide freiwillig - eines von beiden muss
+    angegeben sein, das prüft der Schritt selbst. Die Auswahl der Kessel
+    und die Wartezeiten fehlen ohne Schreibzugriff: Dann zeigt die Karte
+    den Fremderzeuger nur an.
     """
     wartezeit = vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_FREMDERZEUGER_WARTEZEIT))
     felder: dict = {
@@ -319,12 +323,16 @@ def _fremderzeuger_schema(current: dict[str, Any], schreiben: bool) -> vol.Schem
             CONF_FREMDERZEUGER_NAME,
             default=current.get(CONF_FREMDERZEUGER_NAME) or DEFAULT_FREMDERZEUGER_NAME,
         ): cv.string,
-        vol.Required(
+        vol.Optional(
             CONF_FREMDERZEUGER_ENTITAET,
             description={"suggested_value": current.get(CONF_FREMDERZEUGER_ENTITAET)},
         ): EntitySelector(
             EntitySelectorConfig(domain=["binary_sensor", "switch", "input_boolean"])
         ),
+        vol.Optional(
+            CONF_FREMDERZEUGER_FUEHLER,
+            description={"suggested_value": current.get(CONF_FREMDERZEUGER_FUEHLER)},
+        ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature")),
     }
     if schreiben:
         felder.update(
@@ -546,17 +554,26 @@ class _Anlagenschritte:
     async def async_step_fremderzeuger(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Wie der Fremderzeuger heißt, welche Entität sagt, ob er heizt, und welche Kessel er sperrt."""
+        """Wie der Fremderzeuger heißt, woran man erkennt, dass er heizt, und welche Kessel er sperrt.
+
+        Ohne Entität und ohne Temperaturfühler geht es nicht weiter.
+        """
+        errors: dict[str, str] = {}
         if user_input is not None:
-            self._data.update(
-                {feld: user_input[feld] for feld in FREMDERZEUGER_FELDER if feld in user_input}
-            )
-            return await self._nach_fub_namen()
+            if user_input.get(CONF_FREMDERZEUGER_ENTITAET) or user_input.get(
+                CONF_FREMDERZEUGER_FUEHLER
+            ):
+                self._data.update(
+                    {feld: user_input[feld] for feld in FREMDERZEUGER_FELDER if user_input.get(feld) is not None}
+                )
+                return await self._nach_fub_namen()
+            errors["base"] = "fremderzeuger_ohne_quelle"
         return self.async_show_form(
             step_id="fremderzeuger",
             data_schema=_fremderzeuger_schema(
-                self._bisher, bool(self._data.get(CONF_ENABLE_SWITCHES))
+                user_input or self._bisher, bool(self._data.get(CONF_ENABLE_SWITCHES))
             ),
+            errors=errors,
         )
 
     async def _nach_fub_namen(self) -> ConfigFlowResult:
@@ -925,13 +942,21 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
 
         Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
         in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso
-        die eingetragenen Pelletlieferungen und dass "Kessel sperren" den
-        Kessel gesperrt hält - solange es diesen Schalter weiter gibt.
+        die eingetragenen Pelletlieferungen, die Sperrtemperatur des
+        Fremderzeugers - solange er einen Fühler hat - und dass "Kessel
+        sperren" den Kessel gesperrt hält, solange es diesen Schalter gibt.
         """
         if self._current.get(CONF_LAGER_MAXIMUM):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         if self._current.get(CONF_LIEFERUNGEN):
             daten = {CONF_LIEFERUNGEN: self._current[CONF_LIEFERUNGEN], **daten}
+        if self._current.get(CONF_FREMDERZEUGER_SCHWELLE) is not None and daten.get(
+            CONF_FREMDERZEUGER_FUEHLER
+        ):
+            daten = {
+                CONF_FREMDERZEUGER_SCHWELLE: self._current[CONF_FREMDERZEUGER_SCHWELLE],
+                **daten,
+            }
         if (
             self._current.get(CONF_KESSEL_GESPERRT)
             and daten.get(CONF_ENABLE_SWITCHES)
