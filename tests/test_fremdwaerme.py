@@ -4,6 +4,12 @@ Ein Kaminofen mit Wassertasche speist dort über eine Ladepumpe in den
 Puffer. Die ETA-Regelung steuert ihn nicht, sie misst nur seine
 Temperatur und gibt die Ladepumpe frei. Der Block steht in
 fixtures/fub_ofen.xml so, wie die Anlage ihn unter /user/menu meldet.
+
+"Ofen" hat der Betreiber jener Anlage vergeben. Ab Werk heißt der Block
+"F.Wärme": So legt ihn der Konfigurations-Assistent an einer zweiten
+Anlage an, mit demselben Menübaum Objekt für Objekt, und so heißt er an
+einer älteren Regelung (fixtures/menu_alt.xml), die seine Werte nur auf
+der Funktionsebene führt.
 """
 
 from __future__ import annotations
@@ -77,6 +83,44 @@ async def test_formular_schlaegt_den_ofen_vor(hass):
     namen = fub_namen_im_menue(await client.async_get_menu())
 
     assert fub_namen_vorschlagen(["fremdwaerme"], namen) == {"fremdwaerme": "Ofen"}
+
+
+async def test_block_heisst_ab_werk_f_waerme(hass):
+    """Der Werksname wird ohne Eintrag gefunden und im Formular vorgeschlagen."""
+    ab_werk = OFEN.replace('name="Ofen"', 'name="F.Wärme"')
+    uris = await suchen(hass, menu_mit_ofen(ab_werk))
+    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
+    namen = fub_namen_im_menue(await client.async_get_menu())
+
+    assert {key: uris.get(key) for key in ERWARTET} == ERWARTET
+    assert fub_namen_vorschlagen(["fremdwaerme"], namen) == {"fremdwaerme": "F.Wärme"}
+
+
+async def test_aeltere_regelung_fuehrt_die_werte_auf_der_funktionsebene(hass):
+    """Dort gibt es weder "Eingänge" noch "Ausgänge" - die Kennungen sind dieselben."""
+    block = "/121/10291"
+    ueber_kennung: set = set()
+    uris = await suchen(
+        hass, (FIXTURES / "menu_alt.xml").read_text(encoding="utf-8"), ueber_kennung
+    )
+
+    assert {key: uris.get(key) for key in ERWARTET} == {
+        "fremdwaerme_temperatur": f"{block}/0/0/12383",
+        "fremdwaerme_speicher": f"{block}/0/0/12491",
+        "fremdwaerme_zustand": f"{block}/0/0/12386",
+        "fremdwaerme_ladepumpe": f"{block}/0/11088/2001",
+    }
+    assert set(ERWARTET) <= ueber_kennung
+
+
+def test_kachel_hat_ein_eigenes_bild_mit_feuer():
+    """Ofen statt Brenner: Grundbild, bewegtes Feuer und sein Standbild."""
+    from eta_heating_ws import GRAFIKEN
+    from eta_heating_ws.const import COMPONENTS
+
+    assert COMPONENTS["fremdwaerme"]["image"] == "fremdwaerme"
+    for datei in ("fremdwaerme.png", "fremdwaerme_aktiv.webp", "fremdwaerme_aktiv.png"):
+        assert (GRAFIKEN / datei).is_file(), datei
 
 
 def test_fremdwaerme_laedt_in_den_ersten_puffer():

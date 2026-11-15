@@ -927,9 +927,14 @@ Anforderung ist alles, was sie weiß.
 """
 
 FREMDWAERME_ZUSTAND = "sensor.eta_heizung_fremdwarme_zustand"
-"""Heizt die Fremdwärme ("Heizen"), brennt die Flamme.
+"""Gibt die Fremdwärme Wärme ab, brennt im Ofen der Kachel das Feuer."""
 
-Die Kachel nimmt die Grafik des Brenners, eine eigene gibt es noch nicht.
+FREMDWAERME_HEIZT = ("Heizen", "Übertemperatur")
+"""Die Zustände, in denen die Fremdwärme Wärme abgibt - auch zu heiß gibt sie noch ab.
+
+So meldet es "Fremdwärme-Zustand detailliert" an einer Anlage: Aus,
+Heizen, Übertemperatur, Störung. Bei "Störung" kann die Ladepumpe
+trotzdem laufen - ein Feuer zeigt die Kachel dann nicht.
 """
 
 FERNLEITUNG_PUMPE = "sensor.eta_heizung_fernleitung_pumpe"
@@ -1137,13 +1142,23 @@ def grid(spalten, schrift, kurz, puffer=PUFFER_KACHELN, warmwasser=WARMWASSER_KA
             komponente(
                 "fremdwarme",
                 "fremdwaerme",
-                "brenner",
+                "fremdwaerme",
                 [
-                    *bewegt_oder_still(
-                        "brenner_aktiv",
-                        FREMDWAERME_ZUSTAND,
-                        [{"condition": "state", "entity": FREMDWAERME_ZUSTAND, "state": "Heizen"}],
-                    ),
+                    *[
+                        bild
+                        for zustand in FREMDWAERME_HEIZT
+                        for bild in bewegt_oder_still(
+                            "fremdwaerme_aktiv",
+                            FREMDWAERME_ZUSTAND,
+                            [
+                                {
+                                    "condition": "state",
+                                    "entity": FREMDWAERME_ZUSTAND,
+                                    "state": zustand,
+                                }
+                            ],
+                        )
+                    ],
                     label("fremdwarme_temperatur", "Temp.: " if kurz else "Temperatur: ",
                           "kessel", 8, 50, schrift),
                     label("fremdwarme_zustand", "Zust.: " if kurz else "Zustand: ",

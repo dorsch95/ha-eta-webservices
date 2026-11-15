@@ -71,7 +71,7 @@
           "pufferflex7": "FUB name: buffer tank 7 (PufferFlex 7 or Puffer 7)",
           "pufferflex8": "FUB name: buffer tank 8 (PufferFlex 8 or Puffer 8)",
           "brenner": "FUB name: burner (Brenner)",
-          "fremdwaerme": "FUB name: external heat (Ofen)",
+          "fremdwaerme": "FUB name: external heat (F.Wärme)",
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
@@ -226,7 +226,7 @@
           "pufferflex7": "FUB name: buffer tank 7 (PufferFlex 7 or Puffer 7)",
           "pufferflex8": "FUB name: buffer tank 8 (PufferFlex 8 or Puffer 8)",
           "brenner": "FUB name: burner (Brenner)",
-          "fremdwaerme": "FUB name: external heat (Ofen)",
+          "fremdwaerme": "FUB name: external heat (F.Wärme)",
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },

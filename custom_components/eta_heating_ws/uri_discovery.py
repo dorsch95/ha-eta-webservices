@@ -304,6 +304,8 @@ ANZEIGEWERTE = {
     **{f"{k}_zustand": "0/0/12129" for k in WARMWASSER_SPEICHER},
     **{f"{k}_zustand": "0/0/12207" for k in PUFFER_SPEICHER},
     "lager_zustand": "0/0/12058",
+    "fremdwaerme_temperatur": "0/0/12383",
+    "fremdwaerme_speicher": "0/0/12491",
 }
 """Dritter Weg zu einem Messwert: sein Anzeigewert auf der Funktionsebene.
 
@@ -321,6 +323,12 @@ dieselbe Kennung: "Kessel" 12161, "Außentemperatur" 12197, "Raum" 12634,
 "Warmwasserspeicher" 12271 und der Zustand des Warmwasserspeichers 12129.
 Den Zustand von Puffer, Warmwasserspeicher und Austragung meldet an der
 älteren Anlage der Knoten der Funktion selbst.
+
+Die Fremdwärme führt ihre beiden Temperaturen an jener Anlage nur unter
+"Ladepumpe": "Fremdwärme" 12383 und "Speichertemperatur" 12491. Dieselben
+Objekte stehen mit denselben Kennungen auch im Menübaum zweier neuerer
+Anlagen, dort neben den Fühlern unter "Eingänge". Zustand und Ladepumpe
+findet schon KENNUNGEN.
 
 Gesucht wird erst, wenn Namenspfad und KENNUNGEN nichts gefunden haben,
 und wie dort nur im eigenen Funktionsblock. Ein Treffer steht in der

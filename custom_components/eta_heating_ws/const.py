@@ -288,7 +288,7 @@ COMPONENTS = {
     },
     "fremdwaerme": {
         "name": "Fremdwärme",
-        "image": "brenner",
+        "image": "fremdwaerme",
         "roles": ["fremdwaerme"],
         "discovery_prefixes": ["fremdwaerme_"],
     },
@@ -327,9 +327,9 @@ meisten Anlagen nur errechnet sind. Beide nur lesend.
 
 "fremdwaerme" ist eine Wärmequelle, die die ETA-Regelung nicht steuert,
 etwa ein Kaminofen mit Wassertasche: Sie misst ihre Temperatur und lädt
-mit der Ladepumpe in den Puffer, sobald sie warm genug ist. An der Anlage
-heißt ihr Funktionsblock oft "Ofen". Nur lesend. Eine eigene Kachelgrafik
-hat sie noch nicht, sie nimmt die des Brenners.
+mit der Ladepumpe in den Puffer, sobald sie warm genug ist. Ihr
+Funktionsblock heißt ab Werk "F.Wärme"; an einer Anlage hat ihn der
+Betreiber "Ofen" genannt. Nur lesend.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -1389,7 +1389,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "solar": ["Solar"],
     "pvm": ["PVM"],
     "brenner": ["Brenner"],
-    "fremdwaerme": ["Ofen", "Fremdwärme", "Fremdw"],
+    "fremdwaerme": ["F.Wärme", "Fremdwärme", "Fremdw", "Ofen"],
     "fernleitung": ["Fernl", "Fernleitung"],
 }
 

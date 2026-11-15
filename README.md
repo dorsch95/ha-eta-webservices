@@ -122,7 +122,7 @@ Jeder Funktionsblock (FUB) lässt sich an der Steuerung umbenennen und heißt da
 | Solaranlage | `Solar` |
 | PV-Heizmodul | `PVM` |
 | Brenner | `Brenner` |
-| Fremdwärme | `Ofen` oder `Fremdwärme` |
+| Fremdwärme | `F.Wärme`, auch `Fremdwärme` oder `Ofen` |
 | Fernleitung | `Fernl` |
 | Außentemperatur | `Sys` |
 
@@ -342,7 +342,7 @@ Alternativ gibt es die **universelle Karte** [dashboard/eta-karte.yaml](dashboar
 | Heizkreis | Vorlauf und Anforderung, das Symbol der geltenden Betriebsart leuchtet, bei Anforderung fließt Wasser durch Heizkörper und Fußbodenschlange. Mit Thermostat die Zeile „Raum · Soll“, Antippen öffnet ihn |
 | Pelletlager | Füllstand in fünf Stufen, drehende Schnecke bei laufender Austragung, Warndreieck unter der Warngrenze, im Dach das Datum, bis wann der Vorrat reicht |
 | Solar, PV-Heizmodul | Sonne und Blitz leuchten, solange Leistung anliegt |
-| Brenner, Fremdwärme, Fernleitung | Flammen bei Anforderung bzw. solange die Fremdwärme heizt, wandernde Pulse bei laufender Fernpumpe. Die Fremdwärme nutzt die Grafik des Brenners |
+| Brenner, Fremdwärme, Fernleitung | blaue Flammen bei Anforderung des Brenners, ein Holzfeuer im Ofen, solange die Fremdwärme heizt, wandernde Pulse bei laufender Fernpumpe |
 
 Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Name ihres Funktionsblocks, etwa „PufferFlex 2“ oder „WW“. Werte, die die Anlage nicht führt, lässt die Karte weg.
 
@@ -403,7 +403,7 @@ Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübau
 - **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und die Erträge von heute und gestern nur mit Wärmemengenmessung. `sensor.eta_heizung_solar_warmemenge` eignet sich für eine Statistik-Karte, aber nicht fürs Energie-Dashboard: Dessen Bereich *Solarpanel* ist für Strom gedacht.
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom über einen Heizstab ins Wasser. Gelesen werden Leistung, drei Temperaturen, Zustand, Gesamtenergie und die Erträge. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist verbrauchter Strom und gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 - **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Gelesen werden Anforderung, Temperatur, geforderte Leistung und Volllaststunden. Ob er wirklich brennt, meldet er der Regelung nicht zurück.
-- **Fremdwärme:** eine Wärmequelle, die die ETA-Regelung nicht steuert, etwa ein Kaminofen mit Wassertasche. Die Regelung misst ihre Temperatur und startet die Ladepumpe in den Puffer, sobald sie warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Der Funktionsblock heißt an der Anlage oft `Ofen`.
+- **Fremdwärme:** eine Wärmequelle, die die ETA-Regelung nicht steuert, etwa ein Kaminofen mit Wassertasche. Die Regelung misst ihre Temperatur und startet die Ladepumpe in den Puffer, sobald sie warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Der Funktionsblock heißt ab Werk `F.Wärme`. Geprüft ist die Variante mit Temperaturfühler und Ladepumpe; mit Umschaltventil oder Digitaleingang zeigen die fehlenden Werte `-`. An älteren Regelungen findet die Integration die Werte ebenfalls.
 - **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe`).
 
 ---
