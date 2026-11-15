@@ -63,6 +63,10 @@ def test_eingaben_lassen_sich_einsetzen(pfad):
         "wartezeit": {"minutes": 5},
         "offen_seit": {"minutes": 1},
         "zurueck_auf": "automatik",
+        "sperre": "switch.eta_heizung_kessel_sperren",
+        "waermequelle": "input_boolean.kaminofen",
+        "sperren_nach": {"minutes": 1},
+        "freigeben_nach": {"minutes": 5},
     }
     eingaben = {name: beispiele[name] for name in bp.inputs}
     ergebnis = BlueprintInputs(
@@ -82,3 +86,27 @@ def test_readme_bietet_den_import_mit_einem_klick(pfad):
     readme = (ORDNER.parents[2] / "README.md").read_text(encoding="utf-8")
     ziel = laden(pfad).metadata["source_url"]
     assert "blueprint_import/?blueprint_url=" + quote(ziel, safe="") in readme
+
+
+def test_kesselsperre_schreibt_nur_bei_bedarf_und_holt_nach():
+    """Der Blueprint zum Sperren des Kessels schont die Anlage und vergisst nichts.
+
+    Der Eingang der Verriegelung ist eine dauerhaft gespeicherte Einstellung:
+    Geschrieben wird nur, wenn der Schalter anders steht als verlangt. War
+    die Heizung nicht erreichbar, als die Wärmequelle ausging, bliebe der
+    Kessel sonst gesperrt - deshalb löst auch die Rückkehr des Schalters aus.
+    """
+    roh = ha_yaml.load_yaml(str(ORDNER / "kessel_sperren.yaml"))
+
+    rueckkehr = [
+        t for t in roh["triggers"] if t.get("not_from") == ["on", "off"] and t.get("to") == ["on", "off"]
+    ]
+    assert len(rueckkehr) == 1
+    assert any(t.get("trigger") == "homeassistant" and t.get("event") == "start" for t in roh["triggers"])
+
+    faelle = roh["actions"][0]["choose"]
+    bedingung = {
+        fall["sequence"][0]["action"]: fall["conditions"][0]["value_template"] for fall in faelle
+    }
+    assert "is_state(waermequelle, 'on') and is_state(sperre, 'off')" in bedingung["switch.turn_on"]
+    assert "is_state(waermequelle, 'off') and is_state(sperre, 'on')" in bedingung["switch.turn_off"]

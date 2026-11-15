@@ -18,7 +18,13 @@ from .const import (
     BETRIEBSART_AUS,
     BETRIEBSART_TASTEN,
     COMPONENTS,
+    CONF_KESSEL_GESPERRT,
     CONF_LAGER_MAXIMUM,
+    KESSEL_GESPERRT_AUSGESCHALTET,
+    KESSEL_GESPERRT_WAR_AUS,
+    KESSEL_SPERRE,
+    KESSEL_SPERRE_AUS,
+    KESSEL_SPERRE_VERRIEGELUNG,
     SELECTS,
     SWITCHES,
     ZAHLEN,
@@ -40,7 +46,7 @@ from .const import (
 )
 from .entitaets_ids import Namen
 from .repairs import async_check_components
-from .uri_discovery import async_discover_uris
+from .uri_discovery import KESSEL_SPERRE_KANDIDAT, async_discover_uris
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -159,6 +165,13 @@ def puffer_fuehler_schluessel(sensor_defs, komponente="puffer"):
     )
 
 
+KESSEL_SPERRE_ZUSTAENDE = ("nicht invertiert", "invertiert")
+"""Die beiden Zustände des Eingangs der externen Verriegelung: gesperrt, frei.
+
+So meldet sie eine Anlage, an deren Kontakt nichts hängt. Verglichen wird
+ohne Groß und Klein.
+"""
+
 KEINE_ANTWORT = "keine verwertbare Antwort auf /user/varinfo"
 """Die Anlage hat nicht geantwortet, nicht verständlich, oder kennt /user/varinfo nicht."""
 
@@ -210,6 +223,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.pellet_kwh_per_kg = pellet_kwh_per_kg
         self.pellet_preis = 0.0
         self.lager_maximum_eingetragen = 0.0
+        self.kessel_sperre_art = KESSEL_SPERRE_AUS
         self.prognose = None
         self.mit_prognose = True
         self.mit_zeitraeumen = True
@@ -539,6 +553,76 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 geprueft["aus_text"],
                 geprueft["aus_roh"],
             )
+
+    async def _kessel_sperre_pruefen(self) -> None:
+        """Prüft, ob sich der Kessel über seine externe Verriegelung sperren lässt.
+
+        Nur mit Schreibzugriff und wenn diese Art der Sperre gewählt ist,
+        siehe const.CONF_KESSEL_SPERRE. Unter den Kandidaten aus dem Menübaum
+        zählt allein, was die Anlage selbst so beschreibt: beschreibbar,
+        ein Textwert mit genau den beiden Zuständen "Nicht invertiert" und
+        "Invertiert". Passt keiner oder passen mehrere, entsteht kein
+        Schalter - geraten wird hier nicht.
+
+        Der Schalter ist ein, wenn der Eingang auf "Nicht invertiert" steht:
+        Ohne Kontakt am Eingang ist der Kessel dann gesperrt.
+        """
+        key = "kessel_sperre"
+        definition = KESSEL_SPERRE
+        if not self.enable_switches or self.kessel_sperre_art != KESSEL_SPERRE_VERRIEGELUNG:
+            return
+        if definition["component"] not in self.components:
+            return
+        kandidaten = [
+            uri
+            for name, uri in sorted(self.discovered_uris.items())
+            if name.startswith(KESSEL_SPERRE_KANDIDAT)
+        ]
+        passend = []
+        for uri, info in zip(kandidaten, await self._varinfos(kandidaten)):
+            roh = (info or {}).get("raw_values") or {}
+            texte = {text.strip().casefold(): text for text in roh}
+            if (
+                info
+                and info.get("writable")
+                and info.get("type") == "TEXT"
+                and set(texte) == set(KESSEL_SPERRE_ZUSTAENDE)
+            ):
+                passend.append((uri, roh, texte))
+        if len(passend) != 1:
+            _LOGGER.debug(
+                "ETA: Kessel sperren nicht möglich - %d von %d Eingängen der externen "
+                "Verriegelung lassen sich zwischen Invertiert und Nicht invertiert umstellen",
+                len(passend),
+                len(kandidaten),
+            )
+            return
+        uri, roh, texte = passend[0]
+        gesperrt, frei = (texte[zustand] for zustand in KESSEL_SPERRE_ZUSTAENDE)
+        self.switch_defs[key] = {
+            **definition,
+            "uri": uri,
+            "ein_text": gesperrt,
+            "ein_roh": roh[gesperrt],
+            "aus_text": frei,
+            "aus_roh": roh[frei],
+        }
+        self.sensor_defs[key] = {
+            "component": definition["component"],
+            "translation_key": definition["translation_key"],
+            "icon": definition["icon"],
+            "is_string": True,
+            "uri": uri,
+            "platform": "switch",
+        }
+        _LOGGER.info(
+            "ETA: Kessel lässt sich über die externe Verriegelung sperren (%s, %s -> %s / %s -> %s)",
+            uri,
+            gesperrt,
+            roh[gesperrt],
+            frei,
+            roh[frei],
+        )
 
     async def _entaschen_pruefen(self) -> None:
         """Prüft die Entaschentaste des Kessels - wie einen Schalter.
@@ -1148,6 +1232,31 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
         self.async_update_listeners()
 
+    @property
+    def kessel_gesperrt(self) -> str | None:
+        """Was sich "Kessel sperren" über die Ein/Aus-Taste gemerkt hat, siehe CONF_KESSEL_GESPERRT."""
+        gemerkt = self.config_entry.options.get(CONF_KESSEL_GESPERRT)
+        if gemerkt in (KESSEL_GESPERRT_AUSGESCHALTET, KESSEL_GESPERRT_WAR_AUS):
+            return gemerkt
+        return None
+
+    @callback
+    def kessel_gesperrt_merken(self, gemerkt: str | None) -> None:
+        """Hält fest, ob und wie Home Assistant den Kessel gesperrt hat - None hebt es auf.
+
+        Wie das Fassungsvermögen des Lagers steht das in den Optionen der
+        Einrichtung. Neu geladen wird dafür nichts; seinen Zustand schreibt
+        der Schalter selbst.
+        """
+        if gemerkt == self.kessel_gesperrt:
+            return
+        optionen = dict(self.config_entry.options)
+        if gemerkt:
+            optionen[CONF_KESSEL_GESPERRT] = gemerkt
+        else:
+            optionen.pop(CONF_KESSEL_GESPERRT, None)
+        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+
     def zustand(self, key: str) -> str | None:
         """Ein Textwert als einer der festen Zustände seiner Sensordefinition.
 
@@ -1193,6 +1302,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         )
         self.api_version = await self.client.async_get_api_version()
         await self._schalter_pruefen()
+        await self._kessel_sperre_pruefen()
         await self._entaschen_pruefen()
         await self._betriebsarten_pruefen()
         await self._thermostate_pruefen()

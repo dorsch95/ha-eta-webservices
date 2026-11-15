@@ -27,6 +27,9 @@ from .const import (
     CONF_PELLET_PREIS,
     ASCHEBOX_ENTITAETEN,
     BILD_AUSWAHLEN,
+    KESSEL_SPERRE,
+    KESSEL_SPERRE_AUS,
+    kessel_sperre_art,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
@@ -130,6 +133,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
     coordinator.lager_maximum_eingetragen = float(config.get(CONF_LAGER_MAXIMUM) or 0)
+    coordinator.kessel_sperre_art = kessel_sperre_art(config)
     coordinator.schnell_intervall = config.get(
         CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL
     )
@@ -385,6 +389,7 @@ def entitaet_vorgesehen(
     puffer_mit_volumen: frozenset[str] | set[str] = frozenset(),
     mit_prognose: bool = True,
     mit_zeitraeumen: bool = True,
+    kessel_sperre: bool = False,
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -403,6 +408,8 @@ def entitaet_vorgesehen(
             and definition["component"] in aktiv
             and not definition.get("nur_fuer_auswahl")
         )
+    if key == KESSEL_SPERRE["translation_key"]:
+        return enable_switches and kessel_sperre and KESSEL_SPERRE["component"] in aktiv
     if key in SELECTS:
         return enable_switches and SELECTS[key]["component"] in aktiv
     if key in ZAHLEN:
@@ -461,6 +468,7 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.puffer_mit_volumen,
             coordinator.mit_prognose,
             coordinator.mit_zeitraeumen,
+            coordinator.kessel_sperre_art != KESSEL_SPERRE_AUS,
         )
         if vorgesehen is False:
             _LOGGER.info(

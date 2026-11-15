@@ -28,6 +28,7 @@
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "kessel_sperre": "Schalter „Kessel sperren“",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
           "prognose": "Pelletprognose und Reichweite des Lagers",
           "wetter": "Wettervorhersage für die Pelletprognose"
@@ -37,7 +38,8 @@
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
-          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall.",
+          "kessel_sperre": "Für einen Ofen oder eine andere Wärmequelle, die die ETA-Regelung nicht kennt: Solange der Schalter ein ist, pausiert der Kessel. Über die Ein/Aus-Taste schaltet Home Assistant den Kessel aus und später wieder ein; an der Heizung ist dafür nichts einzurichten. Über die externe Verriegelung zeigt der Kessel „Verriegelt“; das muss an der Heizung eingerichtet sein und ist nur etwas für Anlagen, an deren Eingang „Externe Verriegelung“ nichts angeschlossen ist. Beides braucht den Schreibzugriff."
         }
       },
       "fub_names": {
@@ -115,6 +117,10 @@
         "title": "Schalten schreibt in deine Heizung",
         "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
       },
+      "sperre_warnung": {
+        "title": "Kessel sperren stellt einen Eingang der Heizung um",
+        "description": "Du hast gewählt, den Kessel über die externe Verriegelung zu sperren. Dafür muss am Kessel im Konfigurations-Assistenten der Heizung „Verriegelung durch externen Schaltkontakt“ eingerichtet sein. Der Schalter **Kessel sperren** stellt dann unter *Kessel → Eingänge → Externe Verriegelung* den Wert **Eingang** um: „Nicht invertiert“ sperrt den Kessel, „Invertiert“ gibt ihn frei.\n\nBitte bedenke:\n- **Nur verwenden, wenn an diesem Eingang nichts angeschlossen ist.** Hängt dort ein Kontakt, etwa eine Sicherheitseinrichtung, kehrt das Umstellen ihn um - eine echte Sperre wäre aufgehoben.\n- Der Kessel bleibt gesperrt, bis der Schalter wieder aus ist. Fällt Home Assistant in der Zeit aus, sperrt er weiter. Für Frostschutz und warme Räume bleibt die Anlage zuständig, nicht Home Assistant.\n- Der Schalter entsteht nur, wenn deine Anlage genau diesen Wert als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder ändern. Gib den Kessel vorher frei."
+      },
       "zeitplaene": {
         "title": "Zeitprogramm aus Home Assistant",
         "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nIm Moment steht an der Heizung:\n\n{programm}\n\nZeichne den Zeitplan am besten genau so, dann ändert sich beim Einschalten nichts. Weicht er ab, fragt die Integration unter **Einstellungen → Reparaturen** nach, bevor sie zum ersten Mal etwas schreibt.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
@@ -183,6 +189,7 @@
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "kessel_sperre": "Schalter „Kessel sperren“",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
           "prognose": "Pelletprognose und Reichweite des Lagers",
           "wetter": "Wettervorhersage für die Pelletprognose"
@@ -192,7 +199,8 @@
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
-          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall.",
+          "kessel_sperre": "Für einen Ofen oder eine andere Wärmequelle, die die ETA-Regelung nicht kennt: Solange der Schalter ein ist, pausiert der Kessel. Über die Ein/Aus-Taste schaltet Home Assistant den Kessel aus und später wieder ein; an der Heizung ist dafür nichts einzurichten. Über die externe Verriegelung zeigt der Kessel „Verriegelt“; das muss an der Heizung eingerichtet sein und ist nur etwas für Anlagen, an deren Eingang „Externe Verriegelung“ nichts angeschlossen ist. Beides braucht den Schreibzugriff."
         }
       },
       "fub_names": {
@@ -262,6 +270,10 @@
         "title": "Schalten schreibt in deine Heizung",
         "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
       },
+      "sperre_warnung": {
+        "title": "Kessel sperren stellt einen Eingang der Heizung um",
+        "description": "Du hast gewählt, den Kessel über die externe Verriegelung zu sperren. Dafür muss am Kessel im Konfigurations-Assistenten der Heizung „Verriegelung durch externen Schaltkontakt“ eingerichtet sein. Der Schalter **Kessel sperren** stellt dann unter *Kessel → Eingänge → Externe Verriegelung* den Wert **Eingang** um: „Nicht invertiert“ sperrt den Kessel, „Invertiert“ gibt ihn frei.\n\nBitte bedenke:\n- **Nur verwenden, wenn an diesem Eingang nichts angeschlossen ist.** Hängt dort ein Kontakt, etwa eine Sicherheitseinrichtung, kehrt das Umstellen ihn um - eine echte Sperre wäre aufgehoben.\n- Der Kessel bleibt gesperrt, bis der Schalter wieder aus ist. Fällt Home Assistant in der Zeit aus, sperrt er weiter. Für Frostschutz und warme Räume bleibt die Anlage zuständig, nicht Home Assistant.\n- Der Schalter entsteht nur, wenn deine Anlage genau diesen Wert als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder ändern. Gib den Kessel vorher frei."
+      },
       "zeitplaene": {
         "title": "Zeitprogramm aus Home Assistant",
         "description": "Wähle je Heizkreis einen **Zeitplan-Helfer** (Einstellungen → Geräte & Dienste → Helfer → Zeitplan). Jeder Block darin wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Ändert sich der Zeitplan, schreibt die Integration die geänderten Zeitfenster in die Anlage, ebenso beim Start. Was am Display geändert wird, gilt bis dahin.\n\nIm Moment steht an der Heizung:\n\n{programm}\n\nZeichne den Zeitplan am besten genau so, dann ändert sich beim Einschalten nichts. Weicht er ab, fragt die Integration unter **Einstellungen → Reparaturen** nach, bevor sie zum ersten Mal etwas schreibt.\n\nDie Anlage kennt **höchstens 3 Zeitfenster je Tag** und Zeiten in Viertelstunden. Eine Temperatur kommt nur in die Anlage, wenn ein Block sie unter den zusätzlichen Daten mitbringt (`temperatur: 21`) - sonst bleiben die Temperaturen der Heizung, wie sie sind. Ohne Auswahl bleibt das Zeitprogramm unangetastet.",
@@ -310,6 +322,13 @@
     }
   },
   "selector": {
+    "kessel_sperre": {
+      "options": {
+        "aus": "Nicht anlegen",
+        "taste": "Über die Ein/Aus-Taste des Kessels",
+        "verriegelung": "Über die externe Verriegelung"
+      }
+    },
     "components": {
       "options": {
         "twin": "TWIN (Pelletteil am Stückholzkessel)",
@@ -1338,6 +1357,9 @@
       },
       "kessel_schalter": {
         "name": "Kessel"
+      },
+      "kessel_sperre": {
+        "name": "Kessel sperren"
       }
     }
   },

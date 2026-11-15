@@ -122,6 +122,12 @@
 <object uri="/264/10891/0/11693/0" name="Abgas Wendekammer">
 <object uri="/264/10891/0/11693/2002" name="Zustand"/>
 </object>
+<object uri="/264/10891/0/11039/0" name="Externe Verriegelung">
+<object uri="/264/10891/0/11039/2012" name="Einschalt Verzögerung"/>
+<object uri="/264/10891/0/11039/2013" name="Ausschalt Verzögerung"/>
+<object uri="/264/10891/0/11039/2016" name="Eingang"/>
+<object uri="/264/10891/0/11039/2017" name="Eingang"/>
+</object>
 <object uri="/264/10891/0/0/12180" name="Kesseldruck">
 <object uri="/264/10891/0/11135/0" name="Kesseldruck">
 <object uri="/264/10891/0/11135/2400" name="Notbetrieb"/>

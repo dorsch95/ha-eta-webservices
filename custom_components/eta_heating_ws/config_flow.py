@@ -39,6 +39,8 @@ from .const import (
     CONF_ENABLE_ERRORS,
     CONF_ENABLE_SWITCHES,
     CONF_FUB_NAMES,
+    CONF_KESSEL_GESPERRT,
+    CONF_KESSEL_SPERRE,
     CONF_LAGER_MAXIMUM,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
@@ -51,6 +53,10 @@ from .const import (
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
+    KESSEL_SPERRE_ARTEN,
+    KESSEL_SPERRE_TASTE,
+    KESSEL_SPERRE_VERRIEGELUNG,
+    kessel_sperre_art,
     DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
     DEFAULT_PROGNOSE,
@@ -397,6 +403,16 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
             default=current.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
         ): cv.boolean,
         vol.Required(
+            CONF_KESSEL_SPERRE,
+            default=kessel_sperre_art(current),
+        ): SelectSelector(
+            SelectSelectorConfig(
+                options=KESSEL_SPERRE_ARTEN,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="kessel_sperre",
+            )
+        ),
+        vol.Required(
             CONF_ZEITRAEUME,
             default=current.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME),
         ): cv.boolean,
@@ -457,8 +473,25 @@ def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
 class _Anlagenschritte:
     """Die Schritte nach den Funktionsblock-Namen, gleich für Einrichten und Konfigurieren.
 
-    Liefert die Unterklasse _adresse(), _bisher und _fertig(daten).
+    Liefert die Unterklasse _adresse(), _bisher, _sperre_neu() und _fertig(daten).
     """
+
+    async def _nach_schreibwarnung(self) -> ConfigFlowResult:
+        """Vor den Funktionsblock-Namen: die Sperre über die externe Verriegelung bestätigen lassen.
+
+        Gefragt wird, wenn diese Art neu gewählt ist.
+        """
+        if self._sperre_neu():
+            return await self.async_step_sperre_warnung()
+        return await self.async_step_fub_names()
+
+    async def async_step_sperre_warnung(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Lässt die Sperre über die externe Verriegelung bestätigen, siehe CONF_KESSEL_SPERRE."""
+        if user_input is not None:
+            return await self.async_step_fub_names()
+        return self.async_show_form(step_id="sperre_warnung")
 
     async def _nach_fub_namen(self) -> ConfigFlowResult:
         host, port = self._adresse()
@@ -754,7 +787,7 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
                 self._data = _einstellungen(user_input, [])
                 if self._data.get(CONF_ENABLE_SWITCHES):
                     return await self.async_step_switch_warning()
-                return await self.async_step_fub_names()
+                return await self._nach_schreibwarnung()
             errors["base"] = "cannot_connect"
 
         eingabe = user_input or {}
@@ -774,8 +807,11 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         Erscheint nur, wenn Schalter eingeschaltet werden.
         """
         if user_input is not None:
-            return await self.async_step_fub_names()
+            return await self._nach_schreibwarnung()
         return self.async_show_form(step_id="switch_warning")
+
+    def _sperre_neu(self) -> bool:
+        return kessel_sperre_art(self._data) == KESSEL_SPERRE_VERRIEGELUNG
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None
@@ -825,10 +861,18 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         """Speichert die Einstellungen als Optionen.
 
         Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
-        in keinem Formular und bleibt deshalb ausdrücklich erhalten.
+        in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso,
+        dass "Kessel sperren" den Kessel über die Ein/Aus-Taste gesperrt
+        hält - solange es diesen Schalter weiter gibt.
         """
         if self._current.get(CONF_LAGER_MAXIMUM):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
+        if (
+            self._current.get(CONF_KESSEL_GESPERRT)
+            and daten.get(CONF_ENABLE_SWITCHES)
+            and kessel_sperre_art(daten) == KESSEL_SPERRE_TASTE
+        ):
+            daten = {CONF_KESSEL_GESPERRT: self._current[CONF_KESSEL_GESPERRT], **daten}
         return self.async_create_entry(title="", data=daten)
 
     async def async_step_init(
@@ -843,7 +887,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
                 CONF_ENABLE_SWITCHES
             ):
                 return await self.async_step_switch_warning()
-            return await self.async_step_fub_names()
+            return await self._nach_schreibwarnung()
 
         return self.async_show_form(
             step_id="init",
@@ -857,8 +901,14 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     ) -> ConfigFlowResult:
         """Wie im Einrichtungsdialog: Schreibzugriff bestätigen lassen."""
         if user_input is not None:
-            return await self.async_step_fub_names()
+            return await self._nach_schreibwarnung()
         return self.async_show_form(step_id="switch_warning")
+
+    def _sperre_neu(self) -> bool:
+        return (
+            kessel_sperre_art(self._data) == KESSEL_SPERRE_VERRIEGELUNG
+            and kessel_sperre_art(self._current) != KESSEL_SPERRE_VERRIEGELUNG
+        )
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None

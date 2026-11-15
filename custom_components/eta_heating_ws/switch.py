@@ -1,8 +1,12 @@
-"""Schalter für Kessel und Heizkreise, dazu der Schalter für die Animationen.
+"""Schalter für Kessel und Heizkreise, dazu Kesselsperre und Animationen.
 
 Ein Schalter der Anlage entsteht nur, wenn die Anlage die Variable als
 beschreibbar meldet und genau zwei Zustände kennt. Die Rohwerte für Ein
 und Aus stammen aus /user/varinfo.
+
+"Kessel sperren" gibt es in zwei Arten, siehe const.CONF_KESSEL_SPERRE:
+über die externe Verriegelung als gewöhnlichen Schalter der Anlage, über
+die Ein/Aus-Taste als ETAKesselSperreTaste.
 
 Der Schalter "Animationen" gehört allein zu Home Assistant: Er schreibt
 nichts in die Anlage und entsteht deshalb auch ohne Schreibzugriff.
@@ -22,6 +26,13 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
+from .const import (
+    KESSEL_GESPERRT_AUSGESCHALTET,
+    KESSEL_GESPERRT_WAR_AUS,
+    KESSEL_SPERRE,
+    KESSEL_SPERRE_TASTE,
+    KESSEL_TASTE,
+)
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
 
@@ -71,6 +82,9 @@ async def async_setup_entry(
     Ausgenommen sind die Ein/Aus-Tasten der Heizkreise: Dort gibt es
     stattdessen die Betriebsart-Auswahl, in der "Aus" einer von vier
     Einträgen ist.
+
+    "Kessel sperren" über die Ein/Aus-Taste entsteht, wenn diese Art
+    gewählt ist und die Taste des Kessels sich schalten lässt.
     """
     coordinator = entry.runtime_data
     entities: list[SwitchEntity] = [
@@ -78,6 +92,9 @@ async def async_setup_entry(
         for key, definition in coordinator.switch_defs.items()
         if not definition.get("nur_fuer_auswahl")
     ]
+    taste = coordinator.switch_defs.get(KESSEL_TASTE)
+    if coordinator.kessel_sperre_art == KESSEL_SPERRE_TASTE and taste:
+        entities.append(ETAKesselSperreTaste(coordinator, taste))
     entities.append(ETAAnimationenSwitch(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "switch", entities)
     async_add_entities(entities)
@@ -166,6 +183,134 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
         self._widerspruch = 0
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
+
+
+class ETAKesselSperreTaste(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
+    """Sperrt den Kessel über seine Ein/Aus-Taste, siehe const.CONF_KESSEL_SPERRE.
+
+    Ein schaltet den Kessel aus. Aus schaltet ihn wieder ein - aber nur,
+    wenn dieser Schalter ihn ausgeschaltet hat: War der Kessel beim Sperren
+    schon aus, bleibt er es beim Freigeben, und ohne Sperre schreibt Aus
+    gar nichts. So schaltet eine Automatisierung nie einen Kessel ein, den
+    jemand von Hand ausgeschaltet hat.
+
+    Was gilt, steht in den Optionen der Einrichtung
+    (const.CONF_KESSEL_GESPERRT) und übersteht einen Neustart. Schaltet
+    jemand den gesperrten Kessel an der Heizung oder über den Schalter
+    "Kessel" wieder ein, ist die Sperre damit aufgehoben; geschrieben wird
+    dann nichts.
+    """
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator, taste: dict) -> None:
+        super().__init__(coordinator)
+        self._uri = taste["uri"]
+        self._ein_roh = taste["ein_roh"]
+        self._aus_roh = taste["aus_roh"]
+        self._ein_text = taste["ein_text"]
+        self._attr_translation_key = KESSEL_SPERRE["translation_key"]
+        self._attr_icon = KESSEL_SPERRE["icon"]
+        self._attr_unique_id = (
+            f"eta_switch_{coordinator.config_entry.entry_id}_{KESSEL_SPERRE['translation_key']}"
+        )
+        self._attr_device_info = coordinator.device_info
+        self._erwartet: bool | None = None
+        self._erwartet_seit = 0.0
+        self._widerspruch = 0
+
+    def _gemeldet(self) -> bool | None:
+        """Ob die Anlage den Kessel zuletzt als eingeschaltet gemeldet hat."""
+        reading = (self.coordinator.data or {}).get(KESSEL_TASTE)
+        if reading is None:
+            return None
+        return reading.text == self._ein_text
+
+    def _kessel_ein(self) -> bool | None:
+        """Ob der Kessel eingeschaltet ist.
+
+        Kurz nach dem eigenen Schalten gilt der Befehl, bis die Anlage ihn
+        in ihre Antworten übernommen hat - wie bei ETASwitch.
+        """
+        if self._erwartet is not None:
+            return self._erwartet
+        return self._gemeldet()
+
+    @property
+    def is_on(self) -> bool:
+        """Ein, solange Home Assistant den Kessel gesperrt hält."""
+        return self.coordinator.kessel_gesperrt is not None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Sagt, ob das Freigeben den Kessel wieder einschaltet."""
+        return {
+            "schaltet_kessel_wieder_ein": (
+                self.coordinator.kessel_gesperrt == KESSEL_GESPERRT_AUSGESCHALTET
+            )
+        }
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Hebt die Sperre auf, wenn der Kessel trotz Sperre eingeschaltet ist.
+
+        Dann hat ihn jemand eingeschaltet - oder die Anlage hat das
+        Ausschalten nicht ausgeführt. Wie lange ihr dafür Zeit bleibt,
+        bestimmt vorwegnahme_pruefen.
+        """
+        if self._erwartet is not None:
+            if self._gemeldet() == self._erwartet:
+                self._erwartet = None
+            else:
+                self._widerspruch, vorbei = vorwegnahme_pruefen(
+                    self.coordinator, self._widerspruch, self._erwartet_seit
+                )
+                if vorbei:
+                    self._erwartet = None
+        if self.coordinator.kessel_gesperrt and self._kessel_ein():
+            self.coordinator.kessel_gesperrt_merken(None)
+        super()._handle_coordinator_update()
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Sperrt den Kessel und merkt sich, ob er dafür ausgeschaltet wurde."""
+        if self.coordinator.kessel_gesperrt:
+            return
+        ein = self._kessel_ein()
+        if ein is None:
+            raise HomeAssistantError(
+                "Die Anlage meldet gerade nicht, ob der Kessel ein- oder ausgeschaltet ist. "
+                "Gesperrt wurde nichts."
+            )
+        if ein:
+            await self._schalten(self._aus_roh, False)
+            self.coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_AUSGESCHALTET)
+        else:
+            self.coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_WAR_AUS)
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Gibt den Kessel frei und schaltet ihn ein, wenn die Sperre ihn ausgeschaltet hat."""
+        gemerkt = self.coordinator.kessel_gesperrt
+        if gemerkt is None:
+            return
+        if gemerkt == KESSEL_GESPERRT_AUSGESCHALTET:
+            await self._schalten(self._ein_roh, True)
+        self.coordinator.kessel_gesperrt_merken(None)
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    async def _schalten(self, roh_wert: str, erwartet: bool) -> None:
+        """Schreibt die Ein/Aus-Taste des Kessels."""
+        try:
+            await self.coordinator.client.async_set_value(self._uri, roh_wert)
+        except ETAApiError as err:
+            raise HomeAssistantError(
+                f"Die Anlage hat den Schaltbefehl nicht angenommen: {err}"
+            ) from err
+        self._erwartet = erwartet
+        self._erwartet_seit = time.monotonic()
+        self._widerspruch = 0
 
 
 class ETAAnimationenSwitch(SwitchEntity, RestoreEntity):

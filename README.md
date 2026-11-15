@@ -87,6 +87,7 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Pelletpreis | 0 | in Euro je Tonne. Mit einem Preis rechnet die Integration auch die Kosten aus |
 | Störungsmeldungen auslesen | an | siehe [Störungen](#-störungen) |
 | Kessel und Heizkreise schalten dürfen | aus | der Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen) |
+| Schalter „Kessel sperren“ | nicht anlegen | lässt den Kessel pausieren, solange eine andere Wärmequelle heizt - über die Ein/Aus-Taste des Kessels oder über die externe Verriegelung, siehe [Kessel sperren](#kessel-sperren) |
 | Pelletverbrauch je Zeitraum | an | heute, Woche und Jahr |
 | Pelletprognose und Reichweite des Lagers | an | siehe [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) |
 | Wettervorhersage | automatisch | für die Prognose. Gibt es genau eine Wetter-Entität, ist sie vorausgewählt |
@@ -178,6 +179,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_abgastemperatur` | Abgastemperatur | °C |
 | `sensor.eta_heizung_verbrauch_seit_entaschung` | Verbrauch seit Entaschung | kg |
 | `switch.eta_heizung_kessel` | Kessel | Schalter |
+| `switch.eta_heizung_kessel_sperren` | Kessel sperren, nur wenn in den Einstellungen gewählt | Schalter |
 | `button.eta_heizung_kessel_entaschen` | Kessel entaschen | Knopf |
 | `datetime.eta_heizung_aschebox_leeren_um` | Aschebox leeren um, startet den Aschebox-Plan | Datum/Uhrzeit |
 | `sensor.eta_heizung_aschebox_plan` | Schritt des Aschebox-Plans | Text |
@@ -498,6 +500,37 @@ Findet die Integration am Kessel die **Ein/Aus-Taste**, entsteht `switch.eta_hei
 
 Heizkreise bekommen keinen eigenen Schalter. Dort ist „Aus“ einer der Einträge der Betriebsart.
 
+### Kessel sperren
+
+Soll der Kessel pausieren, solange eine andere Wärmequelle heizt - etwa ein Kaminofen, den die ETA-Regelung nicht kennt -, gibt es dafür `switch.eta_heizung_kessel_sperren`. Unter **Konfigurieren** wählst du bei **Schalter „Kessel sperren“**, womit er arbeitet. Beides braucht den Schreibzugriff.
+
+| | Über die Ein/Aus-Taste des Kessels | Über die externe Verriegelung |
+|---|---|---|
+| Was passiert | Home Assistant schaltet den Kessel aus und später wieder ein | Der Kessel sperrt wie über einen Schaltkontakt |
+| An der Heizung zu sehen | Der Kessel ist ausgeschaltet, ohne Grund | Zustand „Verriegelt“ |
+| Vorher einzurichten | nichts | die Verriegelung am Display der Heizung |
+| Geeignet für | jede Anlage | Anlagen, an deren Eingang der Verriegelung nichts angeschlossen ist |
+
+#### Über die Ein/Aus-Taste
+
+Ein schaltet den Kessel aus. Aus schaltet ihn wieder ein - aber nur, wenn der Schalter ihn auch ausgeschaltet hat: War der Kessel beim Sperren schon aus, etwa über den Sommer, bleibt er aus. Ohne Sperre schreibt Aus gar nichts. Schaltest du den gesperrten Kessel selbst wieder ein, an der Heizung oder über `switch.eta_heizung_kessel`, ist die Sperre damit aufgehoben. Was der Schalter sich gemerkt hat, übersteht einen Neustart von Home Assistant.
+
+#### Über die externe Verriegelung
+
+Anders als beim Ausschalten nennt der Kessel den Grund: Sein Zustand zeigt „Verriegelt“. So richtest du es ein:
+
+1. Am Display der Heizung im Konfigurations-Assistenten beim Kessel **Verriegelung durch externen Schaltkontakt** aktivieren.
+2. Unter *Kessel → Eingänge → Externe Verriegelung → Eingang* **Invertiert** einstellen. Hängt am Kontakt nichts, läuft der Kessel nur so.
+3. In Home Assistant unter **Konfigurieren** den Schreibzugriff ankreuzen, bei **Schalter „Kessel sperren“** die externe Verriegelung wählen und den Hinweis bestätigen.
+
+Ein stellt den Eingang auf „Nicht invertiert“, der Kessel sperrt. Aus stellt ihn zurück auf „Invertiert“. Der Schalter entsteht nur, wenn deine Anlage genau diesen Wert als beschreibbar meldet.
+
+> ⚠️ **Nur verwenden, wenn am Eingang der externen Verriegelung nichts angeschlossen ist.** Der Eingang ist für einen Schaltkontakt gedacht, etwa eine Sicherheitseinrichtung. Hängt dort einer, kehrt das Umstellen ihn um - eine echte Sperre wäre aufgehoben.
+
+#### Für beide gilt
+
+Der Kessel bleibt gesperrt, bis der Schalter wieder aus ist, auch wenn Home Assistant in der Zeit ausfällt. Gib ihn frei, bevor du die Einstellung unter **Konfigurieren** änderst. Den Schalter mit einer Entität zu verbinden, übernimmt der Blueprint [Kessel sperren](#-blueprints). Er schreibt nur, wenn der Schalter anders steht als verlangt, und holt das Sperren oder Freigeben nach, wenn die Heizung zwischendurch nicht erreichbar war.
+
 ### Entaschen und Aschebox leeren
 
 Findet die Integration zusätzlich die **Entaschentaste** (am Display unter *Sonstiges*), kommen zwei Dinge dazu:
@@ -625,7 +658,7 @@ Fertig verpackt gibt es das als Blueprint **Störung melden**.
 
 ## 🧩 Blueprints
 
-Vier gebrauchsfertige Automatisierungen. **Importieren** öffnet Home Assistant und übernimmt den Blueprint. Danach wählst du ihn unter **Einstellungen → Automatisierungen & Szenen → Blueprints** aus und legst die Benachrichtigung fest.
+Fünf gebrauchsfertige Automatisierungen. **Importieren** öffnet Home Assistant und übernimmt den Blueprint. Danach wählst du ihn unter **Einstellungen → Automatisierungen & Szenen → Blueprints** aus und legst die Benachrichtigung fest.
 
 | Blueprint | Wofür | |
 |---|---|---|
@@ -633,6 +666,7 @@ Vier gebrauchsfertige Automatisierungen. **Importieren** öffnet Home Assistant 
 | **Aschebox leeren** | Erinnerung, sobald die Schwelle der Anlage erreicht ist | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Faschebox_leeren.yaml) |
 | **Pelletvorrat niedrig** | Erinnerung zum Bestellen, sobald der Vorrat die Warngrenze der Anlage erreicht | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fpelletvorrat_melden.yaml) |
 | **Heizkreis auf ECO bei offenem Fenster** | Setzt den Heizkreis auf ECO, solange ein Fenster offen steht, und stellt danach die Betriebsart von vorher wieder her. Braucht den Schreibzugriff | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fheizkreis_absenken.yaml) |
+| **Kessel sperren** | Sperrt den Kessel, solange eine andere Wärmequelle heizt, und gibt ihn danach wieder frei. Braucht den Schalter [Kessel sperren](#kessel-sperren) | [![Importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdorsch95%2Fha-eta-webservices%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feta_webservices%2Fkessel_sperren.yaml) |
 
 Die Dateien liegen unter [`blueprints/automation/eta_webservices`](blueprints/automation/eta_webservices). Ohne Zugang zu GitHub kopierst du sie von Hand nach `config/blueprints/automation/eta_webservices/` und startest Home Assistant neu.
 

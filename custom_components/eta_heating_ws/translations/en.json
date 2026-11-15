@@ -28,6 +28,7 @@
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits",
+          "kessel_sperre": "Switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
           "prognose": "Pellet prognosis and store range",
           "wetter": "Weather forecast for the pellet prognosis"
@@ -37,7 +38,8 @@
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
+          "kessel_sperre": "For a stove or another heat source the ETA control does not know: while the switch is on, the boiler pauses. Via the on/off key, Home Assistant switches the boiler off and later on again; nothing needs to be set up at the heater. Via the external lock input, the boiler shows \"Verriegelt\"; this must be set up at the heater and is only for systems with nothing connected to the \"Externe Verriegelung\" input. Both need write access."
         }
       },
       "fub_names": {
@@ -115,6 +117,10 @@
         "title": "Switching writes to your heating system",
         "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
       },
+      "sperre_warnung": {
+        "title": "Locking the boiler changes an input setting of the heater",
+        "description": "You chose to lock the boiler via the external lock input. It needs \"Verriegelung durch externen Schaltkontakt\" set up for the boiler in the heater's configuration assistant. The switch **Lock boiler** then changes the value **Eingang** under *Kessel → Eingänge → Externe Verriegelung*: \"Nicht invertiert\" locks the boiler, \"Invertiert\" releases it.\n\nPlease note:\n- **Only use this if nothing is connected to that input.** If a contact is wired there, for example a safety device, changing the value inverts it - a real lock would be lifted.\n- The boiler stays locked until the switch is off again. If Home Assistant fails meanwhile, it stays locked. Frost protection and warm rooms remain the heater's job, not Home Assistant's.\n- The switch only appears if your heater reports exactly this value as writable.\n\nYou can change this at any time under Configure. Release the boiler first."
+      },
       "zeitplaene": {
         "title": "Heating schedule from Home Assistant",
         "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe heating system currently has:\n\n{programm}\n\nBest draw the schedule exactly like this, then nothing changes when you switch it on. If it differs, the integration asks under **Settings → Repairs** before it writes anything for the first time.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
@@ -183,6 +189,7 @@
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
           "enable_switches": "Allow switching the boiler and heating circuits",
+          "kessel_sperre": "Switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
           "prognose": "Pellet prognosis and store range",
           "wetter": "Weather forecast for the pellet prognosis"
@@ -192,7 +199,8 @@
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
+          "kessel_sperre": "For a stove or another heat source the ETA control does not know: while the switch is on, the boiler pauses. Via the on/off key, Home Assistant switches the boiler off and later on again; nothing needs to be set up at the heater. Via the external lock input, the boiler shows \"Verriegelt\"; this must be set up at the heater and is only for systems with nothing connected to the \"Externe Verriegelung\" input. Both need write access."
         }
       },
       "fub_names": {
@@ -262,6 +270,10 @@
         "title": "Switching writes to your heating system",
         "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
       },
+      "sperre_warnung": {
+        "title": "Locking the boiler changes an input setting of the heater",
+        "description": "You chose to lock the boiler via the external lock input. It needs \"Verriegelung durch externen Schaltkontakt\" set up for the boiler in the heater's configuration assistant. The switch **Lock boiler** then changes the value **Eingang** under *Kessel → Eingänge → Externe Verriegelung*: \"Nicht invertiert\" locks the boiler, \"Invertiert\" releases it.\n\nPlease note:\n- **Only use this if nothing is connected to that input.** If a contact is wired there, for example a safety device, changing the value inverts it - a real lock would be lifted.\n- The boiler stays locked until the switch is off again. If Home Assistant fails meanwhile, it stays locked. Frost protection and warm rooms remain the heater's job, not Home Assistant's.\n- The switch only appears if your heater reports exactly this value as writable.\n\nYou can change this at any time under Configure. Release the boiler first."
+      },
       "zeitplaene": {
         "title": "Heating schedule from Home Assistant",
         "description": "Pick a **schedule helper** for each heating circuit (Settings → Devices & services → Helpers → Schedule). Each of its blocks becomes a time window of the heating system; outside the blocks the setback applies. Whenever the schedule changes, and on start-up, the integration writes the changed time windows to the system. Changes made on the display last until then.\n\nThe heating system currently has:\n\n{programm}\n\nBest draw the schedule exactly like this, then nothing changes when you switch it on. If it differs, the integration asks under **Settings → Repairs** before it writes anything for the first time.\n\nThe system has **at most 3 time windows per day** and works in quarter hours. A temperature is only written if a block carries one in its additional data (`temperature: 21`) - otherwise the temperatures of the heating system stay as they are. Without a selection the schedule stays untouched.",
@@ -310,6 +322,13 @@
     }
   },
   "selector": {
+    "kessel_sperre": {
+      "options": {
+        "aus": "Do not create",
+        "taste": "Via the boiler's on/off key",
+        "verriegelung": "Via the external lock input"
+      }
+    },
     "components": {
       "options": {
         "twin": "TWIN (pellet unit on the log wood boiler)",
@@ -1338,6 +1357,9 @@
       },
       "kessel_schalter": {
         "name": "Boiler"
+      },
+      "kessel_sperre": {
+        "name": "Lock boiler"
       }
     }
   },

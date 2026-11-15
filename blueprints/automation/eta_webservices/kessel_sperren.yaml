@@ -1,0 +1,98 @@
+blueprint:
+  name: ETA Heizung - Kessel sperren, solange eine andere Wärmequelle heizt
+  description: >-
+    Sperrt den Kessel, solange eine Entität an ist - etwa ein Kaminofen, den
+    die ETA-Regelung nicht kennt -, und gibt ihn danach wieder frei.
+
+
+    Voraussetzung: der Schalter "Kessel sperren". Du legst ihn in den
+    Einstellungen der Integration an und wählst dort, ob er über die
+    Ein/Aus-Taste des Kessels oder über die externe Verriegelung arbeitet.
+    Beides braucht den Schreibzugriff.
+
+
+    Fällt Home Assistant aus, während der Kessel gesperrt ist, bleibt er
+    gesperrt, bis du ihn an der Heizung oder in Home Assistant freigibst.
+    Nach einem Neustart und sobald die Heizung nach einer Unterbrechung
+    wieder erreichbar ist, stellt die Automatisierung den Schalter passend
+    zur Wärmequelle; ist deren Zustand unbekannt, lässt sie ihn, wie er ist.
+    Geschrieben wird nur, wenn der Schalter anders steht als verlangt.
+  domain: automation
+  source_url: https://github.com/dorsch95/ha-eta-webservices/blob/main/blueprints/automation/eta_webservices/kessel_sperren.yaml
+  input:
+    sperre:
+      name: Kessel sperren
+      description: Der Schalter "Kessel sperren" deiner ETA-Heizung.
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: eta_heating_ws
+    waermequelle:
+      name: Andere Wärmequelle
+      description: >-
+        Eine Entität, die an ist, solange die andere Wärmequelle heizt - ein
+        Schalter, ein Helfer oder ein Binärsensor.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+            - domain: switch
+            - domain: input_boolean
+    sperren_nach:
+      name: Sperren nach
+      description: So lange muss die Wärmequelle an sein, bevor der Kessel gesperrt wird.
+      default:
+        minutes: 1
+      selector:
+        duration: {}
+    freigeben_nach:
+      name: Freigeben nach
+      description: So lange muss die Wärmequelle aus sein, bevor der Kessel wieder frei ist.
+      default:
+        minutes: 5
+      selector:
+        duration: {}
+
+mode: restart
+
+variables:
+  waermequelle: !input waermequelle
+  sperre: !input sperre
+
+triggers:
+  - trigger: state
+    entity_id: !input waermequelle
+    to: "on"
+    for: !input sperren_nach
+  - trigger: state
+    entity_id: !input waermequelle
+    to: "off"
+    for: !input freigeben_nach
+  - trigger: homeassistant
+    event: start
+  - trigger: state
+    entity_id: !input sperre
+    not_from:
+      - "on"
+      - "off"
+    to:
+      - "on"
+      - "off"
+
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ is_state(waermequelle, 'on') and is_state(sperre, 'off') }}"
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input sperre
+      - conditions:
+          - condition: template
+            value_template: "{{ is_state(waermequelle, 'off') and is_state(sperre, 'on') }}"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: !input sperre

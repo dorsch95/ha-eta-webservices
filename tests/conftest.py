@@ -148,6 +148,10 @@ class FakeSession:
         self.geschrieben: dict[str, str] = {}
         self.schreibbar = True
         self.lager_schreibbar = True
+        self.sperre_schreibbar = True
+        """Meldet die Anlage den Eingang der externen Verriegelung als umstellbar? So antwortet eine echte Anlage."""
+        self.sperre_doppelt = False
+        """Wenn True, beschreibt die Anlage beide "Eingang" gleich - dann ist nicht zu entscheiden, welcher es ist."""
         """Meldet die Anlage "Maximaler Vorrat" als beschreibbar? So antwortet eine echte Anlage."""
         self.kessel_zustand = "Heizen"
         self.asche_roh = "2370"
@@ -290,6 +294,13 @@ class FakeSession:
             return {"value": str(roh), "str_value": text, "unit": "°C", "scale": "10"}
         if "12013" in uri:
             return {"value": self.asche_roh, "str_value": "x", "unit": "kg", "scale": "100"}
+        if uri.endswith("/11039/2017"):
+            roh = self._gemeldet(uri, "3451")
+            return {
+                "value": roh,
+                "str_value": "Invertiert" if roh == "3451" else "Nicht invertiert",
+                "text_offset": "3450",
+            }
         if uri.endswith("/12112"):
             roh = self.geschrieben.get(uri.split("/user/var", 1)[-1], "1802")
             return {
@@ -395,6 +406,16 @@ class FakeSession:
                 f'scaleFactor="10" advTextOffset="0" isWritable="{1 if self.absenkwerte_schreibbar else 0}">'
                 '<type>DEFAULT</type><validValues><min strValue="0,0" unit="°C">0.0</min>'
                 '<def strValue="16,0" unit="°C">160.0</def><max strValue="80,0" unit="°C">800.0</max>'
+                "</validValues></variable></varInfo></eta>"
+            )
+        if url.endswith("/11039/2017") or (self.sperre_doppelt and url.endswith("/11039/2016")):
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable advTextOffset="3450" unit="" '
+                'fullName="Eingänge &gt; Externe Verriegelung &gt; Eingang" '
+                f'isWritable="{1 if self.sperre_schreibbar else 0}" decPlaces="0" uri="/u" '
+                'scaleFactor="1" name="Eingang"><type>TEXT</type><validValues>'
+                '<value strValue="Nicht invertiert">3450</value>'
+                '<value strValue="Invertiert">3451</value>'
                 "</validValues></variable></varInfo></eta>"
             )
         if url.endswith("/12790"):
