@@ -950,10 +950,22 @@ der Erzeuger Wärme liefert (.webp bewegt, .png als Standbild). Was hinter
 "Brenner" oder "Fremdwärme" wirklich steht - Gastherme, Ölkessel,
 Kaminofen -, verrät die Anlage nicht. "allgemein" passt auf alles.
 
-Ein Bild für Photovoltaik gibt es bewusst nicht: Die Regelung kennt
-Fremdwärme aus Photovoltaik als eigene Art ohne Temperaturfühler, nur mit
-Digitaleingang, Analogeingang oder externer Schnittstelle. Deren Werte
-liest die Integration noch nicht.
+Photovoltaik steht bewusst nicht zur Wahl, siehe
+ERZEUGER_BILDER_VORBEREITET.
+"""
+
+ERZEUGER_BILDER_VORBEREITET = {
+    "pv": ("pvm", "pvm_aktiv"),
+}
+"""Bilder, die fertig sind, aber noch nicht zur Wahl stehen.
+
+"pv" ist die PV-Anlage: Solarmodul mit Blitz, der im Betrieb leuchtet -
+die Kachel des PV-Heizmoduls. Die Regelung kennt Fremdwärme aus
+Photovoltaik als eigene Art ohne Temperaturfühler, nur mit Digitaleingang,
+Analogeingang oder externer Schnittstelle. Deren Werte liest die
+Integration noch nicht; ein wählbares Bild verspräche etwas, das es nicht
+gibt. Sobald sie gelesen werden, wandert der Eintrag nach ERZEUGER_BILDER
+- die Auswahl, beide Karten und ihre Übersetzungen folgen dieser Liste.
 """
 
 ERZEUGER_VORGABE = {"brenner": "gas", "fremdwaerme": "ofen"}

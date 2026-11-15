@@ -859,6 +859,8 @@ const allgemeinBild = () => `<svg class="eta-svg" viewBox="20 0 110 106" aria-hi
 /**
  * Die Bilder, zwischen denen der Nutzer für Brenner und Fremdwärme wählt:
  * die Zeichnung und wo die Leitung an ihr ansetzt. Die Auswahl steht am Gerät.
+ * Für die PV-Anlage steht pvmBild bereit. Zur Wahl kommt sie erst, wenn die
+ * Integration Fremdwärme aus Photovoltaik liest - siehe karte.py.
  */
 const ERZEUGER_BILDER = {
   gas: { bild: brennerBild, aus: [0.82, 0.5] },

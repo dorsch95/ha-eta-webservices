@@ -23,6 +23,7 @@ from eta_heating_ws.const import BILD_AUSWAHLEN, COMPONENTS
 from eta_heating_ws.karte import (
     BRENNER_BILD,
     ERZEUGER_BILDER,
+    ERZEUGER_BILDER_VORBEREITET,
     ERZEUGER_VORGABE,
     FREMDWAERME_BILD,
     responsive_karte,
@@ -54,6 +55,15 @@ def test_vier_bilder_stehen_zur_wahl():
 @pytest.mark.parametrize("art", ARTEN)
 def test_jedes_bild_hat_kachel_bewegung_und_standbild(art):
     grundbild, bewegt = ERZEUGER_BILDER[art]
+    for datei in (f"{grundbild}.png", f"{bewegt}.webp", f"{bewegt}.png"):
+        assert (GRAFIKEN / datei).is_file(), datei
+
+
+def test_bild_der_pv_anlage_ist_fertig_aber_noch_nicht_waehlbar():
+    """Es wartet, bis die Integration Fremdwärme aus Photovoltaik liest."""
+    assert set(ERZEUGER_BILDER_VORBEREITET) == {"pv"}
+    assert not set(ERZEUGER_BILDER_VORBEREITET) & set(ERZEUGER_BILDER)
+    grundbild, bewegt = ERZEUGER_BILDER_VORBEREITET["pv"]
     for datei in (f"{grundbild}.png", f"{bewegt}.webp", f"{bewegt}.png"):
         assert (GRAFIKEN / datei).is_file(), datei
 
