@@ -68,8 +68,6 @@ const TEXTE = {
     ladepumpe: "Ladepumpe",
     laden: "Laden",
     bereit: "Bereit",
-    laedt_klein: "lädt",
-    bereit_klein: "bereit",
     warmwasser: "Warmwasser",
     warmwasser_zustand: "Warmwasser Zustand",
     fwm: "Frischwassermodul",
@@ -90,7 +88,6 @@ const TEXTE = {
     raum_soll: "Raum Soll",
     waermer: "wärmer",
     kaelter: "kälter",
-    zeitprogramm: "Zeitprogramm",
     anforderung: "Anforderung",
     heizt: "Heizt",
     modus_automatik: "Auto",
@@ -104,7 +101,6 @@ const TEXTE = {
     reicht_bis: "Reicht bis",
     warnung_ab: "Warnung ab",
     fassungsvermoegen: "Fassungsvermögen",
-    foerdert: "Fördert",
     solar: "Solar",
     leistung: "Leistung",
     kollektor: "Kollektor",
@@ -128,6 +124,9 @@ const TEXTE = {
     sperrtemperatur: "Sperrtemperatur",
     sperrtemperatur_hinweis: "ab dieser Temperatur gilt er als heizend",
     einstellen: "einstellen",
+    nicht_verfuegbar: "gerade nicht verfügbar",
+    beachten: "beachten - aus heißt: Er sperrt nichts",
+    speichert: "Speichert …",
     zustand: "Zustand",
     temperatur: "Temperatur",
     leistung_soll: "Leistung Soll",
@@ -201,8 +200,6 @@ const TEXTE = {
     ladepumpe: "Charging pump",
     laden: "Charging",
     bereit: "Ready",
-    laedt_klein: "charging",
-    bereit_klein: "ready",
     warmwasser: "Hot water",
     warmwasser_zustand: "Hot water state",
     fwm: "Fresh water module",
@@ -223,7 +220,6 @@ const TEXTE = {
     raum_soll: "Room target",
     waermer: "warmer",
     kaelter: "cooler",
-    zeitprogramm: "Schedule",
     anforderung: "Demand",
     heizt: "Heating",
     modus_automatik: "Auto",
@@ -237,7 +233,6 @@ const TEXTE = {
     reicht_bis: "Lasts until",
     warnung_ab: "Warning below",
     fassungsvermoegen: "Capacity",
-    foerdert: "Conveying",
     solar: "Solar",
     leistung: "Power",
     kollektor: "Collector",
@@ -249,7 +244,7 @@ const TEXTE = {
     speicher_oben: "Tank top",
     brenner: "Burner",
     fremdwaerme: "External heat",
-    fremderzeuger: "External heat source",
+    fremderzeuger: "Stand-alone heat source",
     gesperrt: "Locked",
     frei: "Free",
     unbekannt: "Unknown",
@@ -261,6 +256,9 @@ const TEXTE = {
     sperrtemperatur: "Lock temperature",
     sperrtemperatur_hinweis: "from this temperature it counts as heating",
     einstellen: "settings",
+    nicht_verfuegbar: "not available right now",
+    beachten: "active - off means: it locks nothing",
+    speichert: "Saving …",
     zustand: "State",
     temperatur: "Temperature",
     leistung_soll: "Target power",
@@ -418,7 +416,10 @@ const STIL = `
   .eta-eingabe small { font-size: 13px; color: var(--text-2); }
   .eta-eingabe select { flex: 1; min-width: 0; min-height: 48px; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; }
   .eta-eingabe select option { color: var(--primary-text-color, #111); background: var(--card-background-color, #fff); }
-  .eta-neben { font-size: 12px; color: var(--text-2); }
+  .eta-formular .eta-neben { font-size: 12px; }
+  .eta-eingabe input:disabled, .eta-eingabe select:disabled { opacity: .5; }
+  .eta-formular .eta-haken { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; color: var(--text); }
+  .eta-haken input { width: 22px; height: 22px; accent-color: var(--akzent); }
   .eta-hinweis { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--flaeche); color: var(--text); font-size: 13px; line-height: 1.45; }
   .eta-hinweis b { font-weight: 600; }
   .eta-fehler { margin: 0; color: var(--error-color, #c62828); font-size: 13px; }
@@ -1035,7 +1036,7 @@ function pfad(punkte, r = 12) {
 }
 
 /** Wo eine Leitung an der Zeichnung eines Teils ansetzt, als Anteil von Breite und Höhe. */
-const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], pvm: [0.885, 0.69], brenner: [0.82, 0.5], fremdwaerme: [0.82, 0.55], fremderzeuger: [0.82, 0.55], puffer: [1, 0.14], fernleitung: [0.975, 0.31] };
+const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], pvm: [0.885, 0.69], brenner: [0.82, 0.5], fremdwaerme: [0.82, 0.55], puffer: [1, 0.14], fernleitung: [0.975, 0.31] };
 const EIN = { kessel: [0.015, 0.82], puffer: [0, 0.14], fernleitung: [0.025, 0.31], heizkreis: [0.04, 0.434], fwm: [0.04, 0.304], speicher: [0, 0.55] };
 
 /**
@@ -1082,7 +1083,8 @@ function anlageLesen(hass, struktur, t, fussboden) {
     if (s.state === "-") return null;
     const fehlt = s.state === "unavailable" || s.state === "unknown";
     const einheit = fehlt ? "" : s.attributes.unit_of_measurement || "";
-    const text = fehlt ? "–" : hass.formatEntityState ? hass.formatEntityState(s) : `${s.state}${einheit ? ` ${einheit}` : ""}`;
+    const gezeigt = fehlt ? "–" : hass.formatEntityState ? hass.formatEntityState(s) : `${s.state}${einheit ? ` ${einheit}` : ""}`;
+    const text = einheit && gezeigt.endsWith(` ${einheit}`) ? `${gezeigt.slice(0, -einheit.length - 1)}\u00a0${einheit}` : gezeigt;
     const zahl = einheit && text.endsWith(einheit) ? text.slice(0, -einheit.length).trim() : text;
     const n = fehlt || s.state === "" || Number.isNaN(Number(s.state)) ? null : Number(s.state);
     return { id: s.entity_id, text, zahl, einheit, roh: fehlt ? "" : s.state, n };
@@ -1254,7 +1256,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
         quelle: quelle ? { id: quelle.entity_id, text: quelle.state === "on" ? t.ein : quelle.state === "off" ? t.aus : t.unbekannt } : null,
         schalter: schalter ? { id: schalter.entity_id, an: schalter.state === "on" } : null,
         zustand: { id: melder?.entity_id, text: fehlt ? t.unbekannt : heizt ? t.heizt : waermtAuf ? t.heizt_an : t.aus },
-        sperre: sperre ? { id: sperre.entity_id, text: sperre.state === "on" ? t.gesperrt : t.frei, an: sperre.state === "on" } : null,
+        sperre: sperre ? { id: sperre.entity_id, text: sperre.state === "on" ? t.gesperrt : sperre.state === "off" ? t.frei : t.unbekannt, an: sperre.state === "on" } : null,
         erzeuger: erzeuger("fremderzeuger"),
       };
     },
@@ -1282,15 +1284,19 @@ class EtaUebersichtKarte extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this.shadowRoot.innerHTML = `<style>${STIL}</style><div class="eta"></div><dialog class="eta-dialog"><div class="eta-dialog-kopf"><b></b><button type="button" class="eta-rund" data-aktion="dialog-zu">${ICON.zu}</button></div><div class="eta-dialog-inhalt"></div></dialog>`;
+    this.shadowRoot.innerHTML = `<style>${STIL}</style><div class="eta"></div><dialog class="eta-dialog" aria-labelledby="eta-fenstertitel"><div class="eta-dialog-kopf"><b id="eta-fenstertitel"></b><button type="button" class="eta-rund" data-aktion="dialog-zu">${ICON.zu}</button></div><div class="eta-dialog-inhalt"></div></dialog>`;
     this._wurzel = this.shadowRoot.querySelector(".eta");
     this._dialog = this.shadowRoot.querySelector(".eta-dialog");
     this._zeitKarte = null;
     this._fensterOffen = false;
+    this._druckDaneben = false;
     this._zurueck = () => this._zeitenSchliessen(true);
     this._dialog.addEventListener("close", () => this._zeitenSchliessen());
+    this._dialog.addEventListener("pointerdown", (ereignis) => {
+      this._druckDaneben = ereignis.target === this._dialog;
+    });
     this._dialog.addEventListener("click", (ereignis) => {
-      if (ereignis.target === this._dialog) this._zeitenSchliessen();
+      if (ereignis.target === this._dialog && this._druckDaneben) this._zeitenSchliessen();
     });
     this._konfig = {};
     this._anlagen = null;
@@ -1463,13 +1469,18 @@ class EtaUebersichtKarte extends HTMLElement {
     }
   }
 
-  /** Zeichnet nur, wenn sich eine der Entitäten der Anlage geändert hat. */
+  /**
+   * Zeichnet nur, wenn sich eine der Entitäten der Anlage geändert hat -
+   * oder die Entität oder der Fühler eines Fremderzeugers, die nicht zur
+   * Integration gehören.
+   */
   _zeichnen() {
     if (!this._hass) return;
     const struktur = this._struktur;
     if (struktur?.entitaeten) {
-      const ids = Object.values(struktur.entitaeten);
-      this._veraltet = ids.some((id) => !(id in this._hass.states));
+      const eigene = Object.values(struktur.entitaeten);
+      const ids = [...eigene, ...(struktur.teile || []).flatMap((teil) => [teil.entitaet, teil.fuehler]).filter(Boolean)];
+      this._veraltet = eigene.some((id) => !(id in this._hass.states));
       const neu = ids.some((id) => this._hass.states[id] !== this._staende[id]) || !Object.keys(this._staende).length;
       if (!neu && !this._neuZeichnen) return;
       this._staende = Object.fromEntries(ids.map((id) => [id, this._hass.states[id]]));
@@ -1541,7 +1552,7 @@ class EtaUebersichtKarte extends HTMLElement {
   _erzeugerKnopf(teil) {
     if (!["brenner", "fremdwaerme", "fremderzeuger"].includes(teil.art)) return "";
     const entitaeten = this._struktur?.entitaeten || {};
-    if (!entitaeten[`${teil.id}_bild`] && !(teil.art === "fremderzeuger" && entitaeten.fremderzeuger_schwelle)) return "";
+    if (!entitaeten[`${teil.id}_bild`] && !(teil.art === "fremderzeuger" && (entitaeten.fremderzeuger_schwelle || entitaeten.fremderzeuger_schalter))) return "";
     const name = `${teil.name} ${this._t.einstellen}`;
     return `<button type="button" class="eta-rund eta-zeit" data-aktion="erzeuger-einstellen" data-teil="${e(teil.id)}" title="${e(name)}" aria-label="${e(name)}">${ICON.stift}</button>`;
   }
@@ -1792,6 +1803,11 @@ class EtaUebersichtKarte extends HTMLElement {
 
     const kanten = [];
     const kante = (von, nach, art, aktiv, aus, ein) => kanten.push({ von, nach, art, aktiv, aus, ein });
+    const mittlere = (teil) => ["brenner", "fremdwaerme", "fremderzeuger"].includes(teil.art);
+    const einMitte = (teil, von) => {
+      const reihe = anlage.teile.map((x, platz) => ({ x, platz })).filter(({ x }) => mittlere(x) && quelle(x) === von).sort((a, b) => anlage.gewaehlt(a.x) - anlage.gewaehlt(b.x) || a.platz - b.platz).map(({ x }) => x.id);
+      return [0, reihe.length < 2 ? 0.6 : 0.46 + (0.28 * reihe.indexOf(teil.id)) / (reihe.length - 1)];
+    };
     const eingang = (teil) => EIN[teil.art === "warmwasser" ? teil.bauart : teil.art];
     const aktiv = (teil) => Boolean(teil.laedt || teil.heizt || teil.pumpt || teil.fliesst);
     for (const teil of anlage.teile) {
@@ -1799,7 +1815,7 @@ class EtaUebersichtKarte extends HTMLElement {
       if (teil.art === "lager" && nachId.kessel) kante(teil.id, "kessel", "pellets", teil.foerdert, AUS.lager, EIN.kessel);
       if (!von || teil.art === "lager" || teil.art === "kessel") continue;
       if (erzeugt(teil)) {
-        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, teil.erzeuger?.aus || AUS[teil.art], { solar: [0, 0.14], brenner: [0, 0.74], fremdwaerme: [0, 0.6], fremderzeuger: [0, 0.46], pvm: [0, 0.88] }[teil.art]);
+        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, teil.erzeuger?.aus || AUS[teil.art], { solar: [0, 0.14], pvm: [0, 0.88] }[teil.art] || einMitte(teil, von));
       } else if (nachId[von].art === "kessel" && teil.art === "puffer") {
         kante(von, teil.id, "heiss", nachId[von].bild === "flamme", AUS.kessel, [0, 0.27]);
       } else {
@@ -1823,7 +1839,7 @@ class EtaUebersichtKarte extends HTMLElement {
       return `<div class="eta-spalte ${quer ? "eta-verbraucher" : ""}">${drin.map((x) => zeichnen[x.teil.art](x.teil, frei)).join("")}</div>`;
     });
     const kessel = nachId.kessel;
-    const kennzahlen = kessel ? [...kessel.zeilen, [t.aschebox, kessel.ascheStatus || kessel.asche]].filter(([, w]) => w) : [];
+    const kennzahlen = kessel ? [...kessel.zeilen.filter(([name]) => name !== t.kessel_sperre), [t.aschebox, kessel.ascheStatus || kessel.asche]].filter(([, w]) => w) : [];
     const fuss = this._bedienung(kessel, anlage);
     const offener = anlage.teile.find((teil) => teil.art === "heizkreis" && teil.id === this._offen);
     const stellen = offener ? this._stellen(offener, anlage) : "";
@@ -1940,7 +1956,7 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
       ${this._banner(anlage)}
       <header class="eta-kompakt-kopf"><h3>${e(titel)}</h3>${kessel?.zustand ? this._chip(`${t.kessel}: ${kessel.zustand.text}`, kessel.bild !== "aus" && kessel.bild !== "stoerung", kessel.bild === "stoerung" ? "stoer" : "") : ""}</header>
-      ${kessel || pufferTeil ? `<div class="eta-buehne">${kessel ? `<div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._figur(kesselBild(), 46)}${this._haupt(t.kessel, kessel.temperatur, anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : "")}</div>` : ""}${pufferTeil}</div>` : ""}
+      ${kessel || pufferTeil ? `<div class="eta-buehne">${kessel ? `<div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._figur(kesselBild(), 46)}${this._haupt(t.kessel, kessel.temperatur, [kessel.gesperrt ? t.gesperrt : "", anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : ""].filter(Boolean).join(" · "))}</div>` : ""}${pufferTeil}</div>` : ""}
       <div class="eta-liste">${liste}</div>
       ${this._bedienung(kessel, anlage)}
     </section>`;
@@ -2041,7 +2057,10 @@ class EtaUebersichtKarte extends HTMLElement {
    * Aktion "Pelletlieferung eintragen" auf - vor dem OK steht, ob dabei
    * auch der Vorrat an der Heizung geändert wird. "erzeuger-einstellen"
    * wählt das Bild von Brenner, Fremdwärme oder Fremderzeuger und stellt
-   * beim Fremderzeuger mit Fühler die Sperrtemperatur.
+   * beim Fremderzeuger mit Fühler die Sperrtemperatur; hat er einen
+   * eigenen Ein/Aus-Schalter, steht der auch dort - so ist er in jeder
+   * Ansicht erreichbar. Was gerade nicht verfügbar ist, bleibt gesperrt
+   * und wird nicht geschrieben.
    */
   _lagerFenster(aktion, teilId = null) {
     if (this._fensterOffen || !this._struktur || !this._hass) return;
@@ -2053,57 +2072,75 @@ class EtaUebersichtKarte extends HTMLElement {
     const vorrat = stand("lager_vorrat_stellen"), maximum = stand("lager_maximum_stellen"), preis = stand("pellet_preis");
     const formular = document.createElement("form");
     formular.className = "eta-formular";
-    const feld = (name, titel, s, wert, einheit, neben = "", zusatz = "") => `<label><span>${e(titel)}</span><span class="eta-eingabe"><input type="number" name="${name}" inputmode="decimal" step="any" ${s ? `min="${s.attributes.min}" max="${s.attributes.max}" data-ziel="${e(s.entity_id)}"` : ""} value="${wert ?? ""}" data-vorher="${wert ?? ""}" ${zusatz}><small>${e(einheit)}</small></span>${neben ? `<span class="eta-neben">${e(neben)}</span>` : ""}</label>`;
+    const fehlt = (s) => Boolean(s) && (s.state === "unavailable" || s.state === "unknown");
+    const feld = (name, titel, s, wert, einheit, neben = "", zusatz = "") => `<label><span>${e(titel)}</span><span class="eta-eingabe"><input type="number" name="${name}" inputmode="decimal" step="any" ${s ? `min="${e(String(s.attributes.min))}" max="${e(String(s.attributes.max))}" data-ziel="${e(s.entity_id)}"` : ""} value="${wert ?? ""}" data-vorher="${wert ?? ""}" ${fehlt(s) ? "disabled" : ""} ${zusatz}><small>${e(einheit)}</small></span>${fehlt(s) || neben ? `<span class="eta-neben">${e(fehlt(s) ? t.nicht_verfuegbar : neben)}</span>` : ""}</label>`;
     const knoepfe = (text) => `<p class="eta-fehler" role="alert" hidden></p><div class="eta-formular-knoepfe"><button type="button" data-aktion="dialog-zu">${e(t.abbrechen)}</button><button type="submit">${e(text)}</button></div>`;
     const ausfuehren = async (arbeit) => {
-      const fehler = formular.querySelector(".eta-fehler"), knopf = formular.querySelector('button[type="submit"]');
+      const fehler = formular.querySelector(".eta-fehler"), knopf = formular.querySelector('button[type="submit"]'), zurueck = formular.querySelector('[data-aktion="dialog-zu"]');
+      const beschriftung = knopf.textContent;
       knopf.disabled = true;
+      zurueck.disabled = true;
+      knopf.textContent = t.speichert;
       fehler.hidden = true;
       try {
         await arbeit();
-        this._zeitenSchliessen();
+        if (formular.isConnected) this._zeitenSchliessen();
       } catch (grund) {
         fehler.textContent = `${t.nicht_gespeichert}: ${grund?.message || grund}`;
         fehler.hidden = false;
+      } finally {
         knopf.disabled = false;
+        zurueck.disabled = false;
+        knopf.textContent = beschriftung;
       }
     };
+    const gestellt = (eingabe) => !eingabe.disabled && eingabe.value !== "" && eingabe.value !== eingabe.dataset.vorher;
 
     if (aktion === "erzeuger-einstellen") {
       const teil = this._struktur.teile.find((x) => x.id === teilId);
-      const bild = stand(`${teilId}_bild`), schwelle = teil?.art === "fremderzeuger" ? stand("fremderzeuger_schwelle") : undefined;
-      if (!teil || (!bild && !schwelle)) return;
+      const ofen = teil?.art === "fremderzeuger";
+      const bild = stand(`${teilId}_bild`), schwelle = ofen ? stand("fremderzeuger_schwelle") : undefined, schalter = ofen ? stand("fremderzeuger_schalter") : undefined;
+      if (!teil || (!bild && !schwelle && !schalter)) return;
+      const name = teilName(teil, this._struktur.teile, t);
       const beschriftung = (option) => (this._hass.formatEntityState ? this._hass.formatEntityState(bild, option) : option);
       formular.innerHTML =
-        (bild ? `<label><span>${e(t.bild)}</span><span class="eta-eingabe"><select name="bild" data-ziel="${e(bild.entity_id)}" data-vorher="${e(bild.state)}">${(bild.attributes.options || []).map((option) => `<option value="${e(option)}" ${option === bild.state ? "selected" : ""}>${e(beschriftung(option))}</option>`).join("")}</select></span></label>` : "") +
-        (schwelle ? feld("schwelle", t.sperrtemperatur, schwelle, zahl(schwelle), "°C", t.sperrtemperatur_hinweis) : "") +
+        (schalter ? `<label class="eta-haken"><input type="checkbox" name="beachten" data-ziel="${e(schalter.entity_id)}" ${schalter.state === "on" ? "checked" : ""} ${fehlt(schalter) ? "disabled" : ""}><span>${e(`${name} ${t.beachten}`)}</span></label>` : "") +
+        (bild ? `<label><span>${e(t.bild)}</span><span class="eta-eingabe"><select name="bild" data-ziel="${e(bild.entity_id)}" data-vorher="${e(bild.state)}" ${fehlt(bild) ? "disabled" : "autofocus"}>${(bild.attributes.options || []).map((option) => `<option value="${e(option)}" ${option === bild.state ? "selected" : ""}>${e(beschriftung(option))}</option>`).join("")}</select></span></label>` : "") +
+        (schwelle ? feld("schwelle", t.sperrtemperatur, schwelle, zahl(schwelle), "°C", t.sperrtemperatur_hinweis, bild ? "" : "autofocus") : "") +
         knoepfe(t.speichern);
       formular.addEventListener("submit", (ereignis) => {
         ereignis.preventDefault();
         ausfuehren(async () => {
+          const haken = formular.elements.beachten;
+          if (haken && !haken.disabled && haken.checked !== (schalter.state === "on")) await this._hass.callService("switch", haken.checked ? "turn_on" : "turn_off", { entity_id: haken.dataset.ziel });
           const wahl = formular.elements.bild;
-          if (wahl && wahl.value !== wahl.dataset.vorher) await this._hass.callService("select", "select_option", { entity_id: wahl.dataset.ziel, option: wahl.value });
+          if (wahl && gestellt(wahl)) await this._hass.callService("select", "select_option", { entity_id: wahl.dataset.ziel, option: wahl.value });
           const grad = formular.elements.schwelle;
-          if (grad && grad.value !== "" && grad.value !== grad.dataset.vorher) await this._hass.callService("number", "set_value", { entity_id: grad.dataset.ziel, value: Number(grad.value) });
+          if (grad && gestellt(grad)) await this._hass.callService("number", "set_value", { entity_id: grad.dataset.ziel, value: Number(grad.value) });
         });
       });
-      this._fensterOeffnen(`${teilName(teil, this._struktur.teile, t)} ${t.einstellen}`, formular);
+      this._fensterOeffnen(`${name} ${t.einstellen}`, formular);
       return;
     }
 
     if (aktion === "lager-einstellen") {
-      const vorratJetzt = zahl(vorrat), maximumJetzt = zahl(maximum), preisJetzt = zahl(preis);
+      const felder = [
+        ["vorrat", t.vorrat, vorrat, "kg", t.an_der_heizung, true],
+        ["maximum", t.fassungsvermoegen, maximum, "kg", maximum?.attributes.gespeichert === "Anlage" ? t.an_der_heizung : t.nur_in_ha, true],
+        ["preis", t.pelletpreis, preis, "€/t", "", false],
+      ].filter(([, , s]) => s);
+      const erstes = felder.find(([, , s]) => !fehlt(s));
       formular.innerHTML =
-        (vorrat ? feld("vorrat", t.vorrat, vorrat, vorratJetzt === null ? null : Math.round(vorratJetzt), "kg", t.an_der_heizung) : "") +
-        (maximum ? feld("maximum", t.fassungsvermoegen, maximum, maximumJetzt === null ? null : Math.round(maximumJetzt), "kg", maximum.attributes.gespeichert === "Anlage" ? t.an_der_heizung : t.nur_in_ha) : "") +
-        (preis ? feld("preis", t.pelletpreis, preis, preisJetzt, "€/t") : "") +
-        knoepfe(t.speichern);
+        felder.map((eintrag) => {
+          const [name, titel, s, einheit, neben, ganz] = eintrag;
+          const wert = zahl(s);
+          return feld(name, titel, s, wert === null ? null : ganz ? Math.round(wert) : wert, einheit, neben, eintrag === erstes ? "autofocus" : "");
+        }).join("") + knoepfe(t.speichern);
       formular.addEventListener("submit", (ereignis) => {
         ereignis.preventDefault();
         ausfuehren(async () => {
           for (const eingabe of formular.querySelectorAll("input[data-ziel]")) {
-            if (eingabe.value === "" || eingabe.value === eingabe.dataset.vorher) continue;
-            await this._hass.callService("number", "set_value", { entity_id: eingabe.dataset.ziel, value: Number(eingabe.value) });
+            if (gestellt(eingabe)) await this._hass.callService("number", "set_value", { entity_id: eingabe.dataset.ziel, value: Number(eingabe.value) });
           }
         });
       });
@@ -2117,17 +2154,18 @@ class EtaUebersichtKarte extends HTMLElement {
     const letzteText = letzte
       ? [new Date(`${letzte.datum}T00:00`).toLocaleDateString(this._sprache || "de"), kg(letzte.menge), letzte.preis ? `${Number(letzte.preis).toLocaleString(this._sprache || "de")} €/t` : ""].filter(Boolean).join(" · ")
       : "";
+    const schreibtVorrat = this._struktur.vorrat_schreibbar ?? Boolean(vorrat);
     formular.innerHTML =
       `<label><span>${e(t.datum)}</span><span class="eta-eingabe"><input type="date" name="datum" value="${tag}" max="${tag}" required></span></label>` +
-      feld("menge", t.menge, null, null, "kg", "", 'min="1" max="100000" required') +
+      feld("menge", t.menge, null, null, "kg", "", 'min="1" max="100000" required autofocus') +
       feld("preis", t.preis_je_tonne, null, zahl(preis) || null, "€", "", 'min="0" max="2000"') +
       `<p class="eta-hinweis" data-vorrat></p>` +
       (letzteText ? `<span class="eta-neben">${e(t.letzte_lieferung)}: ${e(letzteText)}</span>` : "") +
       knoepfe(t.ok);
     const hinweis = formular.querySelector("[data-vorrat]");
     const hinweisen = () => {
-      const jetzt = zahl(vorrat), menge = Number(formular.elements.menge.value);
-      if (!vorrat) {
+      const jetzt = zahl(stand("lager_vorrat")) ?? zahl(vorrat), menge = Number(formular.elements.menge.value);
+      if (!schreibtVorrat) {
         hinweis.textContent = t.vorrat_bleibt;
       } else {
         hinweis.innerHTML = `<b>${e(t.vorrat_wird_geaendert)}</b>${jetzt !== null && menge > 0 ? `: ${e(kg(jetzt))} → ${e(kg(jetzt + menge))}` : "."}`;

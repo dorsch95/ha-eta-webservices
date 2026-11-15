@@ -34,13 +34,13 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
-          "components": "External heat or external heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\"), choose External heat: the ETA control measures and loads by itself, Home Assistant shows it. If it does not appear there, choose External heat source: an entity from Home Assistant then tells whether it heats, and it can lock the boiler.",
+          "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
           "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
-          "kessel_sperre": "For a stove or another device the ETA control does not know: while the switch is on, the boiler is switched off via its on/off key; afterwards Home Assistant switches it on again. In an emergency you can switch it back on at the heater's display at any time. Needs write access."
+          "kessel_sperre": "For a stove or another device the ETA control does not know: while the switch is on, the boiler is switched off via its on/off key; afterwards Home Assistant switches it on again. In an emergency you can switch it back on at the heater's display at any time. Needs write access. Meant for your own automations or the blueprint - with the component Stand-alone heat source the switch appears by itself."
         }
       },
       "fub_names": {
@@ -79,19 +79,19 @@
         }
       },
       "fremderzeuger": {
-        "title": "External heat source",
-        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHere you decide how Home Assistant recognises that it is heating - with an entity, a temperature sensor or both:\n- **Entity only:** it heats while the entity is on.\n- **Temperature sensor only:** it heats once the lock temperature is reached. The card then gets its own on/off switch.\n- **Both:** it heats when the entity is on and the lock temperature is reached.\n\nWhile it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "title": "Stand-alone heat source",
+        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as its own block (\"F.Wärme\" by default), the component External heat is the right one instead.\n\nHere you decide how Home Assistant recognises that it is heating - with an entity, a temperature sensor or both. One of the two is required:\n- **Entity only:** it heats while the entity is on.\n- **Temperature sensor only:** it heats once the lock temperature is reached. The tile then gets an on/off button. Off means: the stove is ignored and locks nothing.\n- **Both:** it heats when the entity is on and the lock temperature is reached.\n\nWhile it heats, Home Assistant can lock the boiler and releases it afterwards. Locking needs write access - without it, the card only shows the heat source.",
         "data": {
           "fremderzeuger_name": "Name in the card",
-          "fremderzeuger_entitaet": "Entity that is on while it heats (optional)",
-          "fremderzeuger_fuehler": "Temperature sensor of the stove (optional)",
+          "fremderzeuger_entitaet": "Entity that is on while it heats",
+          "fremderzeuger_fuehler": "Temperature sensor of the stove",
           "fremderzeuger_sperrt": "Lock while it heats",
           "fremderzeuger_sperren_nach": "Lock after (minutes)",
           "fremderzeuger_freigeben_nach": "Release after (minutes)"
         },
         "data_description": {
           "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. The card only shows its state.",
-          "fremderzeuger_fuehler": "With a sensor, the lock temperature counts: set it in the card or with the number entity \"External heat source lock temperature\" (60 °C by default). It replaces the \"Lock after\" waiting time.",
+          "fremderzeuger_fuehler": "With a sensor, the lock temperature counts: set it in the card or with the number entity \"Stand-alone heat source lock temperature\" (60 °C by default). It replaces the \"Lock after\" waiting time.",
           "fremderzeuger_sperrt": "The boiler is switched off via its on/off key and on again afterwards - never if you had switched it off yourself. In an emergency, switch it back on at the heater's display. Without a selection nothing is locked.",
           "fremderzeuger_sperren_nach": "Without a temperature sensor: how long it must be on before the boiler is locked.",
           "fremderzeuger_freigeben_nach": "How long it must be off - or, with a sensor, 5 °C below the lock temperature - before the boiler is released."
@@ -175,7 +175,8 @@
           "verbindung_solar": "Solar thermal system charges",
           "verbindung_pvm": "PV heating module charges",
           "verbindung_brenner": "Burner charges",
-          "verbindung_fremdwaerme": "External heat charges"
+          "verbindung_fremdwaerme": "External heat charges",
+          "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
       }
     },
@@ -212,13 +213,13 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
-          "components": "External heat or external heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\"), choose External heat: the ETA control measures and loads by itself, Home Assistant shows it. If it does not appear there, choose External heat source: an entity from Home Assistant then tells whether it heats, and it can lock the boiler.",
+          "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
           "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
-          "kessel_sperre": "For a stove or another device the ETA control does not know: while the switch is on, the boiler is switched off via its on/off key; afterwards Home Assistant switches it on again. In an emergency you can switch it back on at the heater's display at any time. Needs write access."
+          "kessel_sperre": "For a stove or another device the ETA control does not know: while the switch is on, the boiler is switched off via its on/off key; afterwards Home Assistant switches it on again. In an emergency you can switch it back on at the heater's display at any time. Needs write access. Meant for your own automations or the blueprint - with the component Stand-alone heat source the switch appears by itself."
         }
       },
       "fub_names": {
@@ -257,19 +258,19 @@
         }
       },
       "fremderzeuger": {
-        "title": "External heat source",
-        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHere you decide how Home Assistant recognises that it is heating - with an entity, a temperature sensor or both:\n- **Entity only:** it heats while the entity is on.\n- **Temperature sensor only:** it heats once the lock temperature is reached. The card then gets its own on/off switch.\n- **Both:** it heats when the entity is on and the lock temperature is reached.\n\nWhile it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "title": "Stand-alone heat source",
+        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as its own block (\"F.Wärme\" by default), the component External heat is the right one instead.\n\nHere you decide how Home Assistant recognises that it is heating - with an entity, a temperature sensor or both. One of the two is required:\n- **Entity only:** it heats while the entity is on.\n- **Temperature sensor only:** it heats once the lock temperature is reached. The tile then gets an on/off button. Off means: the stove is ignored and locks nothing.\n- **Both:** it heats when the entity is on and the lock temperature is reached.\n\nWhile it heats, Home Assistant can lock the boiler and releases it afterwards. Locking needs write access - without it, the card only shows the heat source.",
         "data": {
           "fremderzeuger_name": "Name in the card",
-          "fremderzeuger_entitaet": "Entity that is on while it heats (optional)",
-          "fremderzeuger_fuehler": "Temperature sensor of the stove (optional)",
+          "fremderzeuger_entitaet": "Entity that is on while it heats",
+          "fremderzeuger_fuehler": "Temperature sensor of the stove",
           "fremderzeuger_sperrt": "Lock while it heats",
           "fremderzeuger_sperren_nach": "Lock after (minutes)",
           "fremderzeuger_freigeben_nach": "Release after (minutes)"
         },
         "data_description": {
           "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. The card only shows its state.",
-          "fremderzeuger_fuehler": "With a sensor, the lock temperature counts: set it in the card or with the number entity \"External heat source lock temperature\" (60 °C by default). It replaces the \"Lock after\" waiting time.",
+          "fremderzeuger_fuehler": "With a sensor, the lock temperature counts: set it in the card or with the number entity \"Stand-alone heat source lock temperature\" (60 °C by default). It replaces the \"Lock after\" waiting time.",
           "fremderzeuger_sperrt": "The boiler is switched off via its on/off key and on again afterwards - never if you had switched it off yourself. In an emergency, switch it back on at the heater's display. Without a selection nothing is locked.",
           "fremderzeuger_sperren_nach": "Without a temperature sensor: how long it must be on before the boiler is locked.",
           "fremderzeuger_freigeben_nach": "How long it must be off - or, with a sensor, 5 °C below the lock temperature - before the boiler is released."
@@ -345,7 +346,8 @@
           "verbindung_solar": "Solar thermal system charges",
           "verbindung_pvm": "PV heating module charges",
           "verbindung_brenner": "Burner charges",
-          "verbindung_fremdwaerme": "External heat charges"
+          "verbindung_fremdwaerme": "External heat charges",
+          "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
       }
     },
@@ -363,8 +365,8 @@
         "pvm": "PV heating module (PVM)",
         "lager": "Pellet store",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
-        "fremdwaerme": "External heat (stove connected to the ETA control: shown at the display as block \"F.Wärme\")",
-        "fremderzeuger": "External heat source (stove not connected to the ETA control: not shown at the display)",
+        "fremdwaerme": "External heat (stove connected to the ETA control: its own block at the display, \"F.Wärme\" by default)",
+        "fremderzeuger": "Stand-alone heat source (stove not connected to the ETA control: not shown at the display)",
         "fernleitung": "Transfer line (to another building)"
       }
     },
@@ -428,7 +430,7 @@
         "name": "Fault"
       },
       "fremderzeuger_heizt": {
-        "name": "External heat source heating"
+        "name": "Stand-alone heat source heating"
       }
     },
     "button": {
@@ -460,7 +462,7 @@
     },
     "number": {
       "lager_maximum_stellen": {
-        "name": "Pellet store capacity"
+        "name": "Store capacity"
       },
       "lager_vorrat_stellen": {
         "name": "Store level"
@@ -469,7 +471,7 @@
         "name": "Pellet price"
       },
       "fremderzeuger_schwelle": {
-        "name": "External heat source lock temperature"
+        "name": "Stand-alone heat source lock temperature"
       }
     },
     "select": {
@@ -528,7 +530,7 @@
         }
       },
       "fremderzeuger_bild": {
-        "name": "External heat source picture",
+        "name": "Stand-alone heat source picture",
         "state": {
           "gas": "Gas boiler",
           "oel": "Oil boiler",
@@ -727,7 +729,7 @@
         "name": "External heat component"
       },
       "komponente_fremderzeuger": {
-        "name": "External heat source component"
+        "name": "Stand-alone heat source component"
       },
       "komponente_fernleitung": {
         "name": "Transfer line component"
@@ -1419,7 +1421,7 @@
         "name": "Lock boiler"
       },
       "fremderzeuger_schalter": {
-        "name": "External heat source"
+        "name": "Stand-alone heat source"
       }
     }
   },

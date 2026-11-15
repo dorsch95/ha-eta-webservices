@@ -162,6 +162,9 @@ def entitaeten(hass: HomeAssistant, entry_id: str) -> dict[str, str]:
 def anlage(hass: HomeAssistant, eintrag) -> dict:
     """Eine Anlage für die Karte: Teile, Verbindungen, Entitäten, Schreibzugriff.
 
+    vorrat_schreibbar: ob "Lieferung eintragen" den Vorrat an der Anlage
+    erhöht - danach richtet sich der Hinweis vor dem OK.
+
     Ein Teil, das die Anlage nicht führt, fehlt - und mit ihm die Leitung
     zu allem, was laut Auswahl an ihm hängt.
     """
@@ -180,6 +183,7 @@ def anlage(hass: HomeAssistant, eintrag) -> dict:
         "titel": eintrag.title,
         "schreiben": bool(coordinator.enable_switches),
         "zeitprogramme_bereit": coordinator.zeitprogramme_geprueft,
+        "vorrat_schreibbar": coordinator.vorrat_an_der_anlage,
         "teile": [
             _teil(
                 coordinator,

@@ -34,13 +34,13 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
-          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block („F.Wärme“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann sagt eine Entität aus Home Assistant, ob er heizt, und er kann den Kessel sperren.",
+          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
           "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall.",
-          "kessel_sperre": "Für einen Ofen oder ein anderes Gerät, das die ETA-Regelung nicht kennt: Solange der Schalter ein ist, ist der Kessel über seine Ein/Aus-Taste ausgeschaltet; danach schaltet Home Assistant ihn wieder ein. Im Notfall lässt er sich jederzeit am Display der Heizung wieder einschalten. Braucht den Schreibzugriff."
+          "kessel_sperre": "Für einen Ofen oder ein anderes Gerät, das die ETA-Regelung nicht kennt: Solange der Schalter ein ist, ist der Kessel über seine Ein/Aus-Taste ausgeschaltet; danach schaltet Home Assistant ihn wieder ein. Im Notfall lässt er sich jederzeit am Display der Heizung wieder einschalten. Braucht den Schreibzugriff. Gedacht für eigene Automationen oder den Blueprint - mit der Komponente Fremderzeuger entsteht der Schalter von selbst."
         }
       },
       "fub_names": {
@@ -80,11 +80,11 @@
       },
       "fremderzeuger": {
         "title": "Fremderzeuger",
-        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nWoran Home Assistant erkennt, dass er heizt, bestimmst du hier - mit einer Entität, einem Temperaturfühler oder beidem:\n- **Nur Entität:** Er heizt, solange sie an ist.\n- **Nur Temperaturfühler:** Er heizt, sobald die Sperrtemperatur erreicht ist. Die Karte bekommt dann einen eigenen Ein/Aus-Schalter.\n- **Beides:** Er heizt, wenn die Entität an ist und die Sperrtemperatur erreicht ist.\n\nSolange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht er nicht, die Anlage weiß nichts von ihm. Steht dein Ofen dort als eigener Block (ab Werk „F.Wärme“), ist stattdessen die Komponente Fremdwärme richtig.\n\nWoran Home Assistant erkennt, dass er heizt, bestimmst du hier - mit einer Entität, einem Temperaturfühler oder beidem. Eines von beiden muss angegeben sein:\n- **Nur Entität:** Er heizt, solange sie an ist.\n- **Nur Temperaturfühler:** Er heizt, sobald die Sperrtemperatur erreicht ist. Die Kachel bekommt dann einen Ein/Aus-Knopf. Aus heißt: Der Ofen wird nicht beachtet und sperrt nichts.\n- **Beides:** Er heizt, wenn die Entität an ist und die Sperrtemperatur erreicht ist.\n\nSolange er heizt, kann Home Assistant den Kessel sperren; danach gibt es ihn wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
         "data": {
           "fremderzeuger_name": "Name in der Karte",
-          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt (freiwillig)",
-          "fremderzeuger_fuehler": "Temperaturfühler des Ofens (freiwillig)",
+          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
+          "fremderzeuger_fuehler": "Temperaturfühler des Ofens",
           "fremderzeuger_sperrt": "Sperren, solange er heizt",
           "fremderzeuger_sperren_nach": "Sperren nach (Minuten)",
           "fremderzeuger_freigeben_nach": "Freigeben nach (Minuten)"
@@ -175,7 +175,8 @@
           "verbindung_solar": "Solar lädt in",
           "verbindung_pvm": "PV-Heizmodul lädt in",
           "verbindung_brenner": "Brenner lädt in",
-          "verbindung_fremdwaerme": "Fremdwärme lädt in"
+          "verbindung_fremdwaerme": "Fremdwärme lädt in",
+          "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
       }
     },
@@ -212,13 +213,13 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
-          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block („F.Wärme“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann sagt eine Entität aus Home Assistant, ob er heizt, und er kann den Kessel sperren.",
+          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
           "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall.",
-          "kessel_sperre": "Für einen Ofen oder ein anderes Gerät, das die ETA-Regelung nicht kennt: Solange der Schalter ein ist, ist der Kessel über seine Ein/Aus-Taste ausgeschaltet; danach schaltet Home Assistant ihn wieder ein. Im Notfall lässt er sich jederzeit am Display der Heizung wieder einschalten. Braucht den Schreibzugriff."
+          "kessel_sperre": "Für einen Ofen oder ein anderes Gerät, das die ETA-Regelung nicht kennt: Solange der Schalter ein ist, ist der Kessel über seine Ein/Aus-Taste ausgeschaltet; danach schaltet Home Assistant ihn wieder ein. Im Notfall lässt er sich jederzeit am Display der Heizung wieder einschalten. Braucht den Schreibzugriff. Gedacht für eigene Automationen oder den Blueprint - mit der Komponente Fremderzeuger entsteht der Schalter von selbst."
         }
       },
       "fub_names": {
@@ -258,11 +259,11 @@
       },
       "fremderzeuger": {
         "title": "Fremderzeuger",
-        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nWoran Home Assistant erkennt, dass er heizt, bestimmst du hier - mit einer Entität, einem Temperaturfühler oder beidem:\n- **Nur Entität:** Er heizt, solange sie an ist.\n- **Nur Temperaturfühler:** Er heizt, sobald die Sperrtemperatur erreicht ist. Die Karte bekommt dann einen eigenen Ein/Aus-Schalter.\n- **Beides:** Er heizt, wenn die Entität an ist und die Sperrtemperatur erreicht ist.\n\nSolange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht er nicht, die Anlage weiß nichts von ihm. Steht dein Ofen dort als eigener Block (ab Werk „F.Wärme“), ist stattdessen die Komponente Fremdwärme richtig.\n\nWoran Home Assistant erkennt, dass er heizt, bestimmst du hier - mit einer Entität, einem Temperaturfühler oder beidem. Eines von beiden muss angegeben sein:\n- **Nur Entität:** Er heizt, solange sie an ist.\n- **Nur Temperaturfühler:** Er heizt, sobald die Sperrtemperatur erreicht ist. Die Kachel bekommt dann einen Ein/Aus-Knopf. Aus heißt: Der Ofen wird nicht beachtet und sperrt nichts.\n- **Beides:** Er heizt, wenn die Entität an ist und die Sperrtemperatur erreicht ist.\n\nSolange er heizt, kann Home Assistant den Kessel sperren; danach gibt es ihn wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
         "data": {
           "fremderzeuger_name": "Name in der Karte",
-          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt (freiwillig)",
-          "fremderzeuger_fuehler": "Temperaturfühler des Ofens (freiwillig)",
+          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
+          "fremderzeuger_fuehler": "Temperaturfühler des Ofens",
           "fremderzeuger_sperrt": "Sperren, solange er heizt",
           "fremderzeuger_sperren_nach": "Sperren nach (Minuten)",
           "fremderzeuger_freigeben_nach": "Freigeben nach (Minuten)"
@@ -345,7 +346,8 @@
           "verbindung_solar": "Solar lädt in",
           "verbindung_pvm": "PV-Heizmodul lädt in",
           "verbindung_brenner": "Brenner lädt in",
-          "verbindung_fremdwaerme": "Fremdwärme lädt in"
+          "verbindung_fremdwaerme": "Fremdwärme lädt in",
+          "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
       }
     },
@@ -363,7 +365,7 @@
         "pvm": "PV-Heizmodul (PVM)",
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
-        "fremdwaerme": "Fremdwärme (Ofen, der an der ETA-Regelung angeschlossen ist: am Display als Block „F.Wärme“)",
+        "fremdwaerme": "Fremdwärme (Ofen, der an der ETA-Regelung angeschlossen ist: am Display ein eigener Block, ab Werk „F.Wärme“)",
         "fremderzeuger": "Fremderzeuger (Ofen ohne Anschluss an die ETA-Regelung: steht nicht am Display)",
         "fernleitung": "Fernleitung (zu einem Nebengebäude)"
       }

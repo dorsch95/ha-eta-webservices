@@ -280,3 +280,21 @@ async def test_im_lager_steht_nichts_nach_dem_komma(hass, entry):
     neu = await coordinator.async_lieferung_eintragen(HEUTE, 4000)
     assert neu == pytest.approx(5916.7), "gerechnet wird mit dem genauen Wert"
     assert hass.session.gesetzte_werte[-1] == (VORRAT, "59167")
+
+
+@pytest.mark.parametrize("vorrat_schreibbar", [True, False])
+async def test_karte_erfaehrt_ob_die_lieferung_den_vorrat_aendert(hass, entry, vorrat_schreibbar):
+    """Danach richtet sich der Hinweis vor dem OK - nicht danach, ob das Zahlenfeld gerade da ist."""
+    from eta_heating_ws.uebersicht import anlage
+
+    coordinator, _ = await lager_von(hass, entry, vorrat_schreibbar)
+    entry.runtime_data = coordinator
+
+    assert anlage(hass, entry)["vorrat_schreibbar"] is vorrat_schreibbar
+
+
+async def test_pelletpreis_bleibt_stellbar_wenn_die_anlage_fehlt(hass, entry):
+    coordinator, zahlen = await lager_von(hass, entry, preis=310.0)
+    coordinator.last_update_success = False
+
+    assert zahlen["pellet_preis"].available is True

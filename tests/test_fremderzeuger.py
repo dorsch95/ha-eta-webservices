@@ -750,3 +750,21 @@ async def test_binaersensor_kennt_den_zustand_gleich_nach_dem_einrichten(hass, e
     ofen.starten()
 
     assert gemeldet == [False]
+
+
+def test_jedes_feld_im_schritt_wer_haengt_woran_ist_beschriftet():
+    """Mit zwei Puffern fragt der Dialog auch, wohin der Fremderzeuger lädt - das Feld braucht einen Namen."""
+    import json
+
+    from eta_heating_ws.verbindungen import feld, felder
+
+    from .conftest import UEBERSETZUNGEN
+
+    alle = felder(list(COMPONENTS))
+    assert "fremderzeuger" in alle
+    for datei in ("de.json", "en.json"):
+        texte = json.loads((UEBERSETZUNGEN / datei).read_text(encoding="utf-8"))
+        for bereich in ("config", "options"):
+            beschriftet = texte[bereich]["step"]["verbindungen"]["data"]
+            fehlend = [teil for teil in alle if feld(teil) not in beschriftet]
+            assert not fehlend, (datei, bereich, fehlend)

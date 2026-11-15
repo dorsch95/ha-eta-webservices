@@ -225,6 +225,11 @@ class ETAPelletPreis(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
         self._attr_device_info = coordinator.device_info
 
     @property
+    def available(self) -> bool:
+        """Der Preis steht in Home Assistant - er bleibt stellbar, auch wenn die Anlage fehlt."""
+        return True
+
+    @property
     def native_value(self) -> float:
         return self.coordinator.pellet_preis
 
