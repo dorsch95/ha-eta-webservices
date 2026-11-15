@@ -130,6 +130,10 @@ DISCOVERY_PATHS = {
     "brenner_temperatur": ("brenner", ["Brenner", "Brennertemperatur"]),
     "brenner_leistung_soll": ("brenner", ["Ausgänge", "Leistung Soll"]),
     "brenner_volllaststunden": ("brenner", ["Zählerstände", "Volllaststunden"]),
+    "fremdwaerme_temperatur": ("fremdwaerme", ["Eingänge", "Fremdwärme"]),
+    "fremdwaerme_speicher": ("fremdwaerme", ["Eingänge", "Speichertemperatur"]),
+    "fremdwaerme_zustand": ("fremdwaerme", ["Fremdwärme", "Fremdwärme-Zustand detailliert"]),
+    "fremdwaerme_ladepumpe": ("fremdwaerme", ["Ausgänge", "Ladepumpe", "Anforderung"]),
 }
 
 PUMPEN = {
@@ -263,6 +267,10 @@ KENNUNGEN = {
     "brenner_temperatur": "0/0/12361",
     "brenner_leistung_soll": "0/0/12008",
     "brenner_volllaststunden": "0/0/12153",
+    "fremdwaerme_temperatur": "0/11112/0",
+    "fremdwaerme_speicher": "0/11089/0",
+    "fremdwaerme_zustand": "0/0/12386",
+    "fremdwaerme_ladepumpe": "0/11088/2001",
 }
 """Zweiter Weg zu einem Messwert: die hinteren drei Zahlen seiner URI.
 

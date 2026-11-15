@@ -71,6 +71,7 @@
           "pufferflex7": "FUB-Name: Pufferspeicher 7 (PufferFlex 7 oder Puffer 7)",
           "pufferflex8": "FUB-Name: Pufferspeicher 8 (PufferFlex 8 oder Puffer 8)",
           "brenner": "FUB-Name: Brenner (Brenner)",
+          "fremdwaerme": "FUB-Name: Fremdwärme (Ofen)",
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
@@ -151,7 +152,8 @@
           "verbindung_fwm8": "Warmwasser 8 bekommt Wärme von",
           "verbindung_solar": "Solar lädt in",
           "verbindung_pvm": "PV-Heizmodul lädt in",
-          "verbindung_brenner": "Brenner lädt in"
+          "verbindung_brenner": "Brenner lädt in",
+          "verbindung_fremdwaerme": "Fremdwärme lädt in"
         }
       }
     },
@@ -224,6 +226,7 @@
           "pufferflex7": "FUB-Name: Pufferspeicher 7 (PufferFlex 7 oder Puffer 7)",
           "pufferflex8": "FUB-Name: Pufferspeicher 8 (PufferFlex 8 oder Puffer 8)",
           "brenner": "FUB-Name: Brenner (Brenner)",
+          "fremdwaerme": "FUB-Name: Fremdwärme (Ofen)",
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
@@ -296,7 +299,8 @@
           "verbindung_fwm8": "Warmwasser 8 bekommt Wärme von",
           "verbindung_solar": "Solar lädt in",
           "verbindung_pvm": "PV-Heizmodul lädt in",
-          "verbindung_brenner": "Brenner lädt in"
+          "verbindung_brenner": "Brenner lädt in",
+          "verbindung_fremdwaerme": "Fremdwärme lädt in"
         }
       }
     },
@@ -313,6 +317,7 @@
         "pvm": "PV-Heizmodul (PVM)",
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
+        "fremdwaerme": "Fremdwärme (Wärmequelle ohne Steuerung, z. B. Kaminofen)",
         "fernleitung": "Fernleitung (zu einem Nebengebäude)"
       }
     },
@@ -482,6 +487,18 @@
       "brenner_volllaststunden": {
         "name": "Brenner Volllaststunden"
       },
+      "fremdwaerme_ladepumpe": {
+        "name": "Fremdwärme Ladepumpe"
+      },
+      "fremdwaerme_speicher": {
+        "name": "Fremdwärme Speichertemperatur"
+      },
+      "fremdwaerme_temperatur": {
+        "name": "Fremdwärme Temperatur"
+      },
+      "fremdwaerme_zustand": {
+        "name": "Fremdwärme Zustand"
+      },
       "entaschung_verbrauch": {
         "name": "Verbrauch seit Entaschung"
       },
@@ -614,6 +631,9 @@
       },
       "komponente_brenner": {
         "name": "Komponente Brenner"
+      },
+      "komponente_fremdwaerme": {
+        "name": "Komponente Fremdwärme"
       },
       "komponente_fernleitung": {
         "name": "Komponente Fernleitung"
