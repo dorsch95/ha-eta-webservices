@@ -4,9 +4,8 @@ Ein Schalter der Anlage entsteht nur, wenn die Anlage die Variable als
 beschreibbar meldet und genau zwei Zustände kennt. Die Rohwerte für Ein
 und Aus stammen aus /user/varinfo.
 
-"Kessel sperren" gibt es in zwei Arten, siehe const.CONF_KESSEL_SPERRE:
-über die externe Verriegelung als gewöhnlichen Schalter der Anlage, über
-die Ein/Aus-Taste als ETAKesselSperreTaste.
+"Kessel sperren" bedient die Ein/Aus-Taste des Kessels und merkt sich,
+was er selbst getan hat, siehe ETAKesselSperre.
 
 Der Schalter "Animationen" gehört allein zu Home Assistant: Er schreibt
 nichts in die Anlage und entsteht deshalb auch ohne Schreibzugriff.
@@ -30,7 +29,6 @@ from .const import (
     KESSEL_GESPERRT_AUSGESCHALTET,
     KESSEL_GESPERRT_WAR_AUS,
     KESSEL_SPERRE,
-    KESSEL_SPERRE_TASTE,
     KESSEL_TASTE,
 )
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
@@ -83,8 +81,8 @@ async def async_setup_entry(
     stattdessen die Betriebsart-Auswahl, in der "Aus" einer von vier
     Einträgen ist.
 
-    "Kessel sperren" über die Ein/Aus-Taste entsteht, wenn diese Art
-    gewählt ist und die Taste des Kessels sich schalten lässt.
+    "Kessel sperren" entsteht, wenn er in den Einstellungen angekreuzt ist
+    und die Ein/Aus-Taste des Kessels sich schalten lässt.
     """
     coordinator = entry.runtime_data
     entities: list[SwitchEntity] = [
@@ -93,8 +91,8 @@ async def async_setup_entry(
         if not definition.get("nur_fuer_auswahl")
     ]
     taste = coordinator.switch_defs.get(KESSEL_TASTE)
-    if coordinator.kessel_sperre_art == KESSEL_SPERRE_TASTE and taste:
-        entities.append(ETAKesselSperreTaste(coordinator, taste))
+    if coordinator.kessel_sperre and taste:
+        entities.append(ETAKesselSperre(coordinator, taste))
     entities.append(ETAAnimationenSwitch(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "switch", entities)
     async_add_entities(entities)
@@ -185,7 +183,7 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
         await self.coordinator.async_request_refresh()
 
 
-class ETAKesselSperreTaste(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
+class ETAKesselSperre(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
     """Sperrt den Kessel über seine Ein/Aus-Taste, siehe const.CONF_KESSEL_SPERRE.
 
     Ein schaltet den Kessel aus. Aus schaltet ihn wieder ein - aber nur,

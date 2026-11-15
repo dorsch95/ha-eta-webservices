@@ -572,23 +572,6 @@ def _weitere_zeitprogramme(fub, komponente, namen_aus):
     return gefunden
 
 
-KESSEL_SPERRE = ["Eingänge", "Externe Verriegelung"]
-"""Wo der Eingang steht, über den ein externer Kontakt den Kessel sperrt.
-
-Den Zweig gibt es nur, wenn am Kessel "Verriegelung durch externen
-Schaltkontakt" eingerichtet ist. Darunter stehen im Menübaum einer
-Anlage zwei Objekte mit dem Namen "Eingang": der Zustand des Kontakts und
-sein Einstellwert "Invertiert / Nicht invertiert". Welches welches ist,
-sagt der Name nicht - beide gehen als Kandidaten weiter, und erst
-/user/varinfo entscheidet, siehe
-ETADataUpdateCoordinator._kessel_sperre_pruefen.
-"""
-
-KESSEL_SPERRE_EINGANG = "Eingang"
-
-KESSEL_SPERRE_KANDIDAT = "kessel_sperre_eingang_"
-"""Schlüssel der Kandidaten in den gefundenen URIs, durchnummeriert ab 1."""
-
 SWITCH_ROLES = {
     "kessel_schalter": "kessel",
     "heizkreis_schalter": "hk",
@@ -977,18 +960,6 @@ async def async_discover_uris(
         uri = _finde_schalter(fub)
         if uri:
             discovered[key] = uri
-
-    sperre = fubs_by_role.get("kessel") and _find_path(fubs_by_role["kessel"], KESSEL_SPERRE)
-    if sperre:
-        eingaenge = [
-            kind["@uri"]
-            for kind in _as_list(sperre.get("object"))
-            if isinstance(kind, dict)
-            and kind.get("@uri")
-            and _vergleichsname(kind.get("@name")) == KESSEL_SPERRE_EINGANG.casefold()
-        ]
-        for nummer, uri in enumerate(eingaenge, start=1):
-            discovered[f"{KESSEL_SPERRE_KANDIDAT}{nummer}"] = uri
 
     entaschen = _finde_nach_namen(fubs_by_role.get("kessel"), ENTASCHEN_TASTE)
     if entaschen:

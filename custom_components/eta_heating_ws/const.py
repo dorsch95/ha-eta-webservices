@@ -118,44 +118,27 @@ Optionen der Einrichtung, in keinem Formular.
 MAX_LAGER_MAXIMUM = 100000
 
 CONF_KESSEL_SPERRE = "kessel_sperre"
-"""Womit der Schalter "Kessel sperren" arbeitet - oder dass es ihn nicht gibt.
+"""Legt den Schalter "Kessel sperren" an.
 
-Der Schalter ist dafür da, den Kessel pausieren zu lassen, solange eine
-andere Wärmequelle heizt, die die Regelung nicht kennt. Zwei Wege:
+Der Schalter lässt den Kessel pausieren, solange ein Gerät heizt, das die
+Regelung nicht kennt - etwa ein Kaminofen. Er schaltet den Kessel über
+dessen Ein/Aus-Taste aus und später wieder ein. An der Heizung ist dafür
+nichts einzurichten, und im Notfall lässt sich der Kessel jederzeit am
+Display wieder einschalten.
 
-KESSEL_SPERRE_TASTE schaltet den Kessel über seine Ein/Aus-Taste aus und
-später wieder ein. Das braucht an der Heizung nichts. Am Display steht der
-Kessel dann schlicht als ausgeschaltet da; dass Home Assistant ihn
-gesperrt hat, zeigt nur der Schalter. Damit er nie einen Kessel
-einschaltet, den jemand von Hand ausgeschaltet hat, merkt er sich, was er
-selbst getan hat, siehe CONF_KESSEL_GESPERRT.
-
-KESSEL_SPERRE_VERRIEGELUNG nutzt "Verriegelung durch externen
-Schaltkontakt" am Kessel: Ein Eingang sperrt ihn, mit Meldung und dem
-Zustand "Verriegelt". Ob ein offener oder ein geschlossener Kontakt
-sperrt, bestimmt der Einstellwert "Eingang" - "Invertiert" oder "Nicht
-invertiert". Hängt am Kontakt nichts, läuft der Kessel nur mit
-"Invertiert"; "Nicht invertiert" sperrt ihn. Der Schalter stellt genau
-diesen Wert um. Das verlangt eine eigene Bestätigung, zusätzlich zum
-Schreibzugriff: Ist an dem Eingang wirklich ein Kontakt angeschlossen -
-dafür ist er gedacht, etwa für eine Sicherheitseinrichtung -, kehrte das
-Umstellen ihn um und höbe eine echte Sperre auf.
+Damit er nie einen Kessel einschaltet, den jemand von Hand ausgeschaltet
+hat, merkt er sich, was er selbst getan hat, siehe CONF_KESSEL_GESPERRT.
 """
-KESSEL_SPERRE_AUS = "aus"
-KESSEL_SPERRE_TASTE = "taste"
-KESSEL_SPERRE_VERRIEGELUNG = "verriegelung"
-KESSEL_SPERRE_ARTEN = [KESSEL_SPERRE_AUS, KESSEL_SPERRE_TASTE, KESSEL_SPERRE_VERRIEGELUNG]
-DEFAULT_KESSEL_SPERRE = KESSEL_SPERRE_AUS
+DEFAULT_KESSEL_SPERRE = False
 
 
-def kessel_sperre_art(einstellungen) -> str:
-    """Die gewählte Art der Kesselsperre, bei Unbekanntem KESSEL_SPERRE_AUS."""
-    art = einstellungen.get(CONF_KESSEL_SPERRE)
-    return art if art in KESSEL_SPERRE_ARTEN else KESSEL_SPERRE_AUS
+def kessel_sperre_gewaehlt(einstellungen) -> bool:
+    """Ob der Schalter "Kessel sperren" angelegt werden soll."""
+    return einstellungen.get(CONF_KESSEL_SPERRE, DEFAULT_KESSEL_SPERRE) is True
 
 
 CONF_KESSEL_GESPERRT = "kessel_gesperrt"
-"""Was sich der Schalter "Kessel sperren" über die Ein/Aus-Taste gemerkt hat.
+"""Was sich der Schalter "Kessel sperren" gemerkt hat.
 
 Fehlt der Eintrag, ist der Kessel nicht von Home Assistant gesperrt.
 KESSEL_GESPERRT_AUSGESCHALTET: Home Assistant hat ihn ausgeschaltet und
@@ -480,11 +463,8 @@ KESSEL_SPERRE = {
 }
 """Der Schalter "Kessel sperren", siehe CONF_KESSEL_SPERRE.
 
-Er steht nicht in SWITCHES, denn eine eigene Taste der Anlage ist er in
-keiner der beiden Arten: Über die externe Verriegelung findet ihn
-ETADataUpdateCoordinator._kessel_sperre_pruefen im Zweig der
-Verriegelung und an der Beschreibung der Anlage. Über die Ein/Aus-Taste
-bedient er KESSEL_TASTE, siehe switch.ETAKesselSperreTaste.
+Er steht nicht in SWITCHES, denn eine eigene Taste der Anlage ist er
+nicht: Er bedient KESSEL_TASTE, siehe switch.ETAKesselSperre.
 """
 
 BETRIEBSART_AUS = "aus"

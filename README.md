@@ -34,7 +34,7 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: 
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card works everywhere. Display names are translated.
 - With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Buffer loading times and hot water times can be shown too (*Show* in the card editor); hot water temperatures are editable from 0 to 80 °C, buffer loading times only switch loading on and off. Home Assistant loads the card by itself - add it via *Edit dashboard → Add card*.
 - Alternatively, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
-- With switching enabled, an optional switch **Lock boiler** pauses the boiler while a heat source the ETA control does not know is heating, such as a wood stove - either via the boiler's on/off key or via its external lock input. Choose the way in the options; a blueprint ties the switch to any entity.
+- With switching enabled, an optional switch **Lock boiler** pauses the boiler while a device the ETA control does not know is heating, such as a wood stove: it switches the boiler off via its on/off key and on again afterwards, but never switches on a boiler you turned off yourself. A blueprint ties the switch to any entity.
 - A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
 - The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which. The order of the parts can be dragged in the card settings. A clock button on each part with a time program opens its times for editing.
 - The earlier ready-made dashboard card stays available: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
@@ -88,7 +88,7 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Pelletpreis | 0 | in Euro je Tonne. Mit einem Preis rechnet die Integration auch die Kosten aus |
 | Störungsmeldungen auslesen | an | siehe [Störungen](#-störungen) |
 | Kessel und Heizkreise schalten dürfen | aus | der Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen) |
-| Schalter „Kessel sperren“ | nicht anlegen | lässt den Kessel pausieren, solange eine andere Wärmequelle heizt - über die Ein/Aus-Taste des Kessels oder über die externe Verriegelung, siehe [Kessel sperren](#kessel-sperren) |
+| Schalter „Kessel sperren“ anlegen | aus | lässt den Kessel pausieren, solange ein Ofen oder ein anderes Gerät heizt, das die ETA-Regelung nicht kennt, siehe [Kessel sperren](#kessel-sperren). Braucht den Schreibzugriff |
 | Pelletverbrauch je Zeitraum | an | heute, Woche und Jahr |
 | Pelletprognose und Reichweite des Lagers | an | siehe [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) |
 | Wettervorhersage | automatisch | für die Prognose. Gibt es genau eine Wetter-Entität, ist sie vorausgewählt |
@@ -180,7 +180,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_abgastemperatur` | Abgastemperatur | °C |
 | `sensor.eta_heizung_verbrauch_seit_entaschung` | Verbrauch seit Entaschung | kg |
 | `switch.eta_heizung_kessel` | Kessel | Schalter |
-| `switch.eta_heizung_kessel_sperren` | Kessel sperren, nur wenn in den Einstellungen gewählt | Schalter |
+| `switch.eta_heizung_kessel_sperren` | Kessel sperren, nur wenn in den Einstellungen angekreuzt | Schalter |
 | `button.eta_heizung_kessel_entaschen` | Kessel entaschen | Knopf |
 | `datetime.eta_heizung_aschebox_leeren_um` | Aschebox leeren um, startet den Aschebox-Plan | Datum/Uhrzeit |
 | `sensor.eta_heizung_aschebox_plan` | Schritt des Aschebox-Plans | Text |
@@ -503,34 +503,19 @@ Heizkreise bekommen keinen eigenen Schalter. Dort ist „Aus“ einer der Eintr�
 
 ### Kessel sperren
 
-Soll der Kessel pausieren, solange eine andere Wärmequelle heizt - etwa ein Kaminofen, den die ETA-Regelung nicht kennt -, gibt es dafür `switch.eta_heizung_kessel_sperren`. Unter **Konfigurieren** wählst du bei **Schalter „Kessel sperren“**, womit er arbeitet. Beides braucht den Schreibzugriff.
+Soll der Kessel pausieren, solange ein Ofen oder ein anderes Gerät heizt, das die ETA-Regelung nicht kennt, gibt es dafür `switch.eta_heizung_kessel_sperren`. Du legst ihn unter **Konfigurieren** mit **Schalter „Kessel sperren“ anlegen** an; er braucht den Schreibzugriff. An der Heizung ist nichts einzurichten.
 
-| | Über die Ein/Aus-Taste des Kessels | Über die externe Verriegelung |
-|---|---|---|
-| Was passiert | Home Assistant schaltet den Kessel aus und später wieder ein | Der Kessel sperrt wie über einen Schaltkontakt |
-| An der Heizung zu sehen | Der Kessel ist ausgeschaltet, ohne Grund | Zustand „Verriegelt“ |
-| Vorher einzurichten | nichts | die Verriegelung am Display der Heizung |
-| Geeignet für | jede Anlage | Anlagen, an deren Eingang der Verriegelung nichts angeschlossen ist |
+Der Schalter bedient die Ein/Aus-Taste des Kessels:
 
-#### Über die Ein/Aus-Taste
+- **Ein** schaltet den Kessel aus.
+- **Aus** schaltet ihn wieder ein - aber nur, wenn der Schalter ihn auch ausgeschaltet hat. War der Kessel beim Sperren schon aus, etwa über den Sommer, bleibt er aus. Ohne Sperre schreibt Aus gar nichts.
+- Schaltest du den gesperrten Kessel selbst wieder ein, am Display der Heizung oder über `switch.eta_heizung_kessel`, ist die Sperre damit aufgehoben.
 
-Ein schaltet den Kessel aus. Aus schaltet ihn wieder ein - aber nur, wenn der Schalter ihn auch ausgeschaltet hat: War der Kessel beim Sperren schon aus, etwa über den Sommer, bleibt er aus. Ohne Sperre schreibt Aus gar nichts. Schaltest du den gesperrten Kessel selbst wieder ein, an der Heizung oder über `switch.eta_heizung_kessel`, ist die Sperre damit aufgehoben. Was der Schalter sich gemerkt hat, übersteht einen Neustart von Home Assistant.
+Was der Schalter sich gemerkt hat, übersteht einen Neustart von Home Assistant. Das Attribut `schaltet_kessel_wieder_ein` sagt, ob das Freigeben den Kessel einschaltet.
 
-#### Über die externe Verriegelung
+> ⚠️ Der Kessel bleibt aus, bis der Schalter wieder aus ist - auch wenn Home Assistant in der Zeit ausfällt. **Im Notfall schaltest du den Kessel am Display der Heizung wieder ein.** An der Heizung selbst steht er nur als ausgeschaltet da; dass Home Assistant ihn gesperrt hat, zeigt allein der Schalter.
 
-Anders als beim Ausschalten nennt der Kessel den Grund: Sein Zustand zeigt „Verriegelt“. So richtest du es ein:
-
-1. Am Display der Heizung im Konfigurations-Assistenten beim Kessel **Verriegelung durch externen Schaltkontakt** aktivieren.
-2. Unter *Kessel → Eingänge → Externe Verriegelung → Eingang* **Invertiert** einstellen. Hängt am Kontakt nichts, läuft der Kessel nur so.
-3. In Home Assistant unter **Konfigurieren** den Schreibzugriff ankreuzen, bei **Schalter „Kessel sperren“** die externe Verriegelung wählen und den Hinweis bestätigen.
-
-Ein stellt den Eingang auf „Nicht invertiert“, der Kessel sperrt. Aus stellt ihn zurück auf „Invertiert“. Der Schalter entsteht nur, wenn deine Anlage genau diesen Wert als beschreibbar meldet.
-
-> ⚠️ **Nur verwenden, wenn am Eingang der externen Verriegelung nichts angeschlossen ist.** Der Eingang ist für einen Schaltkontakt gedacht, etwa eine Sicherheitseinrichtung. Hängt dort einer, kehrt das Umstellen ihn um - eine echte Sperre wäre aufgehoben.
-
-#### Für beide gilt
-
-Der Kessel bleibt gesperrt, bis der Schalter wieder aus ist, auch wenn Home Assistant in der Zeit ausfällt. Gib ihn frei, bevor du die Einstellung unter **Konfigurieren** änderst. Den Schalter mit einer Entität zu verbinden, übernimmt der Blueprint [Kessel sperren](#-blueprints). Er schreibt nur, wenn der Schalter anders steht als verlangt, und holt das Sperren oder Freigeben nach, wenn die Heizung zwischendurch nicht erreichbar war.
+Den Schalter mit einer Entität zu verbinden, übernimmt der Blueprint [Kessel sperren](#-blueprints). Er schreibt nur, wenn der Schalter anders steht als verlangt, und holt das Sperren oder Freigeben nach, wenn die Heizung zwischendurch nicht erreichbar war.
 
 ### Entaschen und Aschebox leeren
 

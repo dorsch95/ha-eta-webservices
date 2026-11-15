@@ -6,13 +6,13 @@ blueprint:
 
 
     Voraussetzung: der Schalter "Kessel sperren". Du legst ihn in den
-    Einstellungen der Integration an und wählst dort, ob er über die
-    Ein/Aus-Taste des Kessels oder über die externe Verriegelung arbeitet.
-    Beides braucht den Schreibzugriff.
+    Einstellungen der Integration an; er braucht den Schreibzugriff. Er
+    schaltet den Kessel über dessen Ein/Aus-Taste aus und wieder ein.
 
 
     Fällt Home Assistant aus, während der Kessel gesperrt ist, bleibt er
-    gesperrt, bis du ihn an der Heizung oder in Home Assistant freigibst.
+    aus, bis du ihn am Display der Heizung wieder einschaltest oder in
+    Home Assistant freigibst.
     Nach einem Neustart und sobald die Heizung nach einer Unterbrechung
     wieder erreichbar ist, stellt die Automatisierung den Schalter passend
     zur Wärmequelle; ist deren Zustand unbekannt, lässt sie ihn, wie er ist.

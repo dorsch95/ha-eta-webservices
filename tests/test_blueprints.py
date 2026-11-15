@@ -91,10 +91,11 @@ def test_readme_bietet_den_import_mit_einem_klick(pfad):
 def test_kesselsperre_schreibt_nur_bei_bedarf_und_holt_nach():
     """Der Blueprint zum Sperren des Kessels schont die Anlage und vergisst nichts.
 
-    Der Eingang der Verriegelung ist eine dauerhaft gespeicherte Einstellung:
-    Geschrieben wird nur, wenn der Schalter anders steht als verlangt. War
-    die Heizung nicht erreichbar, als die Wärmequelle ausging, bliebe der
-    Kessel sonst gesperrt - deshalb löst auch die Rückkehr des Schalters aus.
+    Geschaltet wird nur, wenn der Schalter anders steht als verlangt - sonst
+    bekäme die Anlage bei jedem Neustart von Home Assistant einen
+    Schaltbefehl. War die Heizung nicht erreichbar, als die Wärmequelle
+    ausging, bliebe der Kessel sonst aus - deshalb löst auch die Rückkehr
+    des Schalters aus.
     """
     roh = ha_yaml.load_yaml(str(ORDNER / "kessel_sperren.yaml"))
 

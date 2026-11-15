@@ -28,8 +28,6 @@ from .const import (
     ASCHEBOX_ENTITAETEN,
     BILD_AUSWAHLEN,
     KESSEL_SPERRE,
-    KESSEL_SPERRE_AUS,
-    kessel_sperre_art,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
@@ -55,6 +53,7 @@ from .const import (
     ALTE_URL_GRAFIKEN,
     THERMOSTATE,
     components_from_config,
+    kessel_sperre_gewaehlt,
     puffer_volumen_schluessel,
     raumfuehler_schluessel,
     zeitplan_schluessel,
@@ -133,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
     coordinator.lager_maximum_eingetragen = float(config.get(CONF_LAGER_MAXIMUM) or 0)
-    coordinator.kessel_sperre_art = kessel_sperre_art(config)
+    coordinator.kessel_sperre = kessel_sperre_gewaehlt(config)
     coordinator.schnell_intervall = config.get(
         CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL
     )
@@ -468,7 +467,7 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.puffer_mit_volumen,
             coordinator.mit_prognose,
             coordinator.mit_zeitraeumen,
-            coordinator.kessel_sperre_art != KESSEL_SPERRE_AUS,
+            coordinator.kessel_sperre,
         )
         if vorgesehen is False:
             _LOGGER.info(
