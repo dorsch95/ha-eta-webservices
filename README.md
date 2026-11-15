@@ -423,8 +423,19 @@ Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübau
 - **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und die Erträge von heute und gestern nur mit Wärmemengenmessung. `sensor.eta_heizung_solar_warmemenge` eignet sich für eine Statistik-Karte, aber nicht fürs Energie-Dashboard: Dessen Bereich *Solarpanel* ist für Strom gedacht.
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom über einen Heizstab ins Wasser. Gelesen werden Leistung, drei Temperaturen, Zustand, Gesamtenergie und die Erträge. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist verbrauchter Strom und gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 - **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Gelesen werden Anforderung, Temperatur, geforderte Leistung und Volllaststunden. Ob er wirklich brennt, meldet er der Regelung nicht zurück.
-- **Fremdwärme:** eine Wärmequelle, die die ETA-Regelung nicht steuert, etwa ein Kaminofen mit Wassertasche. Die Regelung misst ihre Temperatur und startet die Ladepumpe in den Puffer, sobald sie warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Der Funktionsblock heißt ab Werk `F.Wärme`. Geprüft ist die Variante mit Temperaturfühler und Ladepumpe; mit Umschaltventil oder Digitaleingang zeigen die fehlenden Werte `-`. An älteren Regelungen findet die Integration die Werte ebenfalls.
-- **Fremderzeuger:** eine Wärmequelle, die gar nicht an der ETA-Regelung hängt, etwa ein Kaminofen mit eigener Regelung. Die Anlage weiß nichts von ihm; ob er heizt, sagt eine Entität aus Home Assistant. Solange er heizt, kann er den Kessel sperren, siehe [Fremderzeuger](#fremderzeuger).
+- **Fremdwärme:** ein Ofen, der an der ETA-Regelung angeschlossen ist, etwa ein Kaminofen mit Wassertasche. Am Display der Heizung hat er einen eigenen Funktionsblock, ab Werk `F.Wärme`. Die Regelung misst seine Temperatur und startet die Ladepumpe in den Puffer, sobald er warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Geprüft ist die Variante mit Temperaturfühler und Ladepumpe; mit Umschaltventil oder Digitaleingang zeigen die fehlenden Werte `-`. An älteren Regelungen findet die Integration die Werte ebenfalls.
+- **Fremderzeuger:** ein Ofen ohne Anschluss an die ETA-Regelung, etwa ein Kaminofen mit eigener Regelung. Am Display der Heizung steht er nicht. Ob er heizt, sagt eine Entität aus Home Assistant; solange kann er den Kessel sperren, siehe [Fremderzeuger](#fremderzeuger).
+
+**Fremdwärme oder Fremderzeuger?** Schau am Display der Heizung nach: Steht dein Ofen dort als eigener Block (`F.Wärme`), nimm **Fremdwärme**. Steht er dort nicht, nimm **Fremderzeuger**.
+
+| | Fremdwärme | Fremderzeuger |
+|---|---|---|
+| Am Display der Heizung | eigener Block `F.Wärme` | steht dort nicht |
+| Wer merkt, dass der Ofen heizt | die ETA-Regelung, über ihren Fühler | Home Assistant, über eine Entität, die du wählst |
+| Was dann passiert | die Regelung lädt selbst in den Puffer | Home Assistant kann den Kessel sperren |
+| Was Home Assistant tut | zeigt Temperatur, Zustand und Ladepumpe an | zeigt an, ob er heizt, und sperrt auf Wunsch den Kessel |
+| Einrichten | Komponente ankreuzen, Name des Blocks bestätigen | Komponente ankreuzen, Entität und Kessel wählen |
+
 - **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe`).
 
 ---
@@ -508,7 +519,9 @@ Heizkreise bekommen keinen eigenen Schalter. Dort ist „Aus“ einer der Eintr�
 
 ### Fremderzeuger
 
-Ein Fremderzeuger ist eine Wärmequelle, die nicht an der ETA-Regelung hängt - etwa ein Kaminofen mit eigener Regelung. Anders als bei der [Fremdwärme](#-was-deine-anlage-liefert) weiß die Anlage nichts von ihm. Home Assistant erfährt über eine Entität, ob er heizt, und kann solange den Kessel sperren.
+Ein Fremderzeuger ist ein Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung** - etwa ein Kaminofen mit eigener Regelung. Am Display der Heizung steht er nicht, die Anlage weiß nichts von ihm. Home Assistant erfährt über eine Entität, ob er heizt, und kann solange den Kessel sperren.
+
+Steht dein Ofen dagegen am Display als Block `F.Wärme`, ist er an der Regelung angeschlossen: Dann ist die Komponente **Fremdwärme** richtig, siehe [Fremdwärme oder Fremderzeuger?](#-was-deine-anlage-liefert).
 
 So richtest du ihn ein:
 

@@ -34,6 +34,7 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
+          "components": "External heat or external heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\"), choose External heat: the ETA control measures and loads by itself, Home Assistant shows it. If it does not appear there, choose External heat source: an entity from Home Assistant then tells whether it heats, and it can lock the boiler.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
@@ -79,7 +80,7 @@
       },
       "fremderzeuger": {
         "title": "External heat source",
-        "description": "An external heat source is not connected to the ETA control - for example a stove with its own control. Home Assistant learns from an entity whether it is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHome Assistant learns from an entity you choose here whether the heat source is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
         "data": {
           "fremderzeuger_name": "Name in the card",
           "fremderzeuger_entitaet": "Entity that is on while it heats",
@@ -208,6 +209,7 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
+          "components": "External heat or external heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\"), choose External heat: the ETA control measures and loads by itself, Home Assistant shows it. If it does not appear there, choose External heat source: an entity from Home Assistant then tells whether it heats, and it can lock the boiler.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
@@ -253,7 +255,7 @@
       },
       "fremderzeuger": {
         "title": "External heat source",
-        "description": "An external heat source is not connected to the ETA control - for example a stove with its own control. Home Assistant learns from an entity whether it is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "description": "For a stove or another heat source **not connected to the ETA control**: it does not appear at the heater's display, the system knows nothing about it. If your stove appears there as block \"F.Wärme\", the component External heat is the right one instead.\n\nHome Assistant learns from an entity you choose here whether the heat source is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
         "data": {
           "fremderzeuger_name": "Name in the card",
           "fremderzeuger_entitaet": "Entity that is on while it heats",
@@ -355,8 +357,8 @@
         "pvm": "PV heating module (PVM)",
         "lager": "Pellet store",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
-        "fremdwaerme": "External heat (heat source without control, connected to the ETA control, e.g. wood stove)",
-        "fremderzeuger": "External heat source outside the ETA control (e.g. a stove with its own control)",
+        "fremdwaerme": "External heat (stove connected to the ETA control: shown at the display as block \"F.Wärme\")",
+        "fremderzeuger": "External heat source (stove not connected to the ETA control: not shown at the display)",
         "fernleitung": "Transfer line (to another building)"
       }
     },

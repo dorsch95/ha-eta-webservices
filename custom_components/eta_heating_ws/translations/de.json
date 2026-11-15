@@ -34,6 +34,7 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
+          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block („F.Wärme“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann sagt eine Entität aus Home Assistant, ob er heizt, und er kann den Kessel sperren.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
@@ -79,7 +80,7 @@
       },
       "fremderzeuger": {
         "title": "Fremderzeuger",
-        "description": "Ein Fremderzeuger ist eine Wärmequelle, die nicht an der ETA-Regelung hängt - etwa ein Kaminofen mit eigener Regelung. Ob er heizt, erfährt Home Assistant über eine Entität. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nOb der Fremderzeuger heizt, erfährt Home Assistant über eine Entität, die du hier wählst. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
         "data": {
           "fremderzeuger_name": "Name in der Karte",
           "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
@@ -208,6 +209,7 @@
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
+          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block („F.Wärme“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann sagt eine Entität aus Home Assistant, ob er heizt, und er kann den Kessel sperren.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
@@ -253,7 +255,7 @@
       },
       "fremderzeuger": {
         "title": "Fremderzeuger",
-        "description": "Ein Fremderzeuger ist eine Wärmequelle, die nicht an der ETA-Regelung hängt - etwa ein Kaminofen mit eigener Regelung. Ob er heizt, erfährt Home Assistant über eine Entität. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "description": "Für einen Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**: Am Display der Heizung steht sie nicht, die Anlage weiß nichts von ihr. Steht dein Ofen dort als Block „F.Wärme“, ist stattdessen die Komponente Fremdwärme richtig.\n\nOb der Fremderzeuger heizt, erfährt Home Assistant über eine Entität, die du hier wählst. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
         "data": {
           "fremderzeuger_name": "Name in der Karte",
           "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
@@ -355,8 +357,8 @@
         "pvm": "PV-Heizmodul (PVM)",
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
-        "fremdwaerme": "Fremdwärme (Wärmequelle ohne Steuerung an der ETA-Regelung, z. B. Kaminofen)",
-        "fremderzeuger": "Fremderzeuger (Wärmequelle außerhalb der ETA-Regelung, z. B. Kaminofen mit eigener Regelung)",
+        "fremdwaerme": "Fremdwärme (Ofen, der an der ETA-Regelung angeschlossen ist: am Display als Block „F.Wärme“)",
+        "fremderzeuger": "Fremderzeuger (Ofen ohne Anschluss an die ETA-Regelung: steht nicht am Display)",
         "fernleitung": "Fernleitung (zu einem Nebengebäude)"
       }
     },
