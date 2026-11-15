@@ -1,19 +1,22 @@
-"""Betriebsart der Heizkreise."""
+"""Betriebsart der Heizkreise und die Bilder von Brenner und Fremdwärme."""
 
 from __future__ import annotations
 
 import time
 
 from homeassistant.components.select import SelectEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
-from .const import BETRIEBSART_AUS
+from .const import BETRIEBSART_AUS, BILD_AUSWAHLEN
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
+from .karte import ERZEUGER_BILDER
 from .switch import vorwegnahme_pruefen
 
 
@@ -22,15 +25,55 @@ async def async_setup_entry(
     entry: ETAConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Legt je erkanntem Heizkreis eine Betriebsart-Auswahl an."""
+    """Legt je erkanntem Heizkreis eine Betriebsart-Auswahl an, dazu die Bildauswahlen."""
     coordinator = entry.runtime_data
-    entities = [
+    entities: list[SelectEntity] = [
         ETABetriebsartSelect(coordinator, key, definition)
         for key, definition in coordinator.select_defs.items()
     ]
     coordinator.betriebsart_auswahl.update({e.schluessel: e for e in entities})
+    entities.extend(
+        ETABildAuswahl(coordinator, key, definition)
+        for key, definition in BILD_AUSWAHLEN.items()
+        if definition["component"] in coordinator.components
+    )
     ids_vorschlagen(coordinator.deutsche_namen, "select", entities)
     async_add_entities(entities)
+
+
+class ETABildAuswahl(SelectEntity, RestoreEntity):
+    """Welches Bild die Dashboard-Karten für Brenner oder Fremdwärme zeigen.
+
+    Die Anlage sagt nicht, was hinter dem Funktionsblock steht - der Nutzer
+    wählt es hier, siehe karte.ERZEUGER_BILDER. Beide Karten fragen diese
+    Auswahl ab. An der Anlage ändert sie nichts, deshalb gibt es sie auch
+    ohne Schreibzugriff. Nach einem Neustart gilt die letzte Wahl, anfangs
+    die Vorgabe aus const.BILD_AUSWAHLEN.
+    """
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = False
+
+    def __init__(
+        self, coordinator: ETADataUpdateCoordinator, key: str, definition: dict
+    ) -> None:
+        self._attr_translation_key = definition["translation_key"]
+        self._attr_icon = definition["icon"]
+        self._attr_options = list(ERZEUGER_BILDER)
+        self._attr_current_option = definition["vorgabe"]
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
+        self._attr_device_info = coordinator.device_info
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        letzter = await self.async_get_last_state()
+        if letzter is not None and letzter.state in self._attr_options:
+            self._attr_current_option = letzter.state
+
+    async def async_select_option(self, option: str) -> None:
+        self._attr_current_option = option
+        self.async_write_ha_state()
 
 
 class ETABetriebsartSelect(

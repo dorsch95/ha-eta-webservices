@@ -273,11 +273,13 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_brenner_temperatur` | Brenner Temperatur | °C |
 | `sensor.eta_heizung_brenner_leistung_soll` | Brenner Leistung Soll | kW |
 | `sensor.eta_heizung_brenner_volllaststunden` | Brenner Volllaststunden | h |
+| `select.eta_heizung_brenner_bild` | Brenner Bild auf den Dashboard-Karten: Gastherme, Ölkessel, Kaminofen, PV-Anlage oder Allgemein | Auswahl |
 | **Fremdwärme** | | |
 | `sensor.eta_heizung_fremdwarme_temperatur` | Fremdwärme Temperatur | °C |
 | `sensor.eta_heizung_fremdwarme_speichertemperatur` | Fremdwärme Speichertemperatur | °C |
 | `sensor.eta_heizung_fremdwarme_zustand` | Fremdwärme Zustand | Text |
 | `sensor.eta_heizung_fremdwarme_ladepumpe` | Fremdwärme Ladepumpe | Text |
+| `select.eta_heizung_fremdwarme_bild` | Fremdwärme Bild auf den Dashboard-Karten, dieselbe Auswahl | Auswahl |
 | **Fernleitung** | | |
 | `sensor.eta_heizung_fernleitung_pumpe` | Fernleitung Pumpe | Text |
 | **Unabhängig von den Komponenten** | | |
@@ -342,11 +344,23 @@ Alternativ gibt es die **universelle Karte** [dashboard/eta-karte.yaml](dashboar
 | Heizkreis | Vorlauf und Anforderung, das Symbol der geltenden Betriebsart leuchtet, bei Anforderung fließt Wasser durch Heizkörper und Fußbodenschlange. Mit Thermostat die Zeile „Raum · Soll“, Antippen öffnet ihn |
 | Pelletlager | Füllstand in fünf Stufen, drehende Schnecke bei laufender Austragung, Warndreieck unter der Warngrenze, im Dach das Datum, bis wann der Vorrat reicht |
 | Solar, PV-Heizmodul | Sonne und Blitz leuchten, solange Leistung anliegt |
-| Brenner, Fremdwärme, Fernleitung | blaue Flammen bei Anforderung des Brenners, ein Holzfeuer im Ofen, solange die Fremdwärme heizt, wandernde Pulse bei laufender Fernpumpe |
+| Brenner, Fremdwärme, Fernleitung | das gewählte Bild in Bewegung, sobald der Brenner angefordert ist bzw. solange die Fremdwärme heizt, wandernde Pulse bei laufender Fernpumpe |
 
 Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Name ihres Funktionsblocks, etwa „PufferFlex 2“ oder „WW“. Werte, die die Anlage nicht führt, lässt die Karte weg.
 
 **Ohne Bewegung:** `switch.eta_heizung_animationen` ausschalten (Gerät *ETA Heizung*, Bereich *Konfiguration*), etwa für ein Wandtablet. Die Karte zeigt dann Standbilder mit derselben Aussage. Der Schalter wirkt sofort auf allen Dashboards und schreibt nichts in die Heizung.
+
+**Bild von Brenner und Fremdwärme:** Was hinter diesen beiden Funktionsblöcken steht, verrät die Anlage nicht. Du wählst das Bild deshalb selbst, mit `select.eta_heizung_brenner_bild` und `select.eta_heizung_fremdwarme_bild` (Gerät *ETA Heizung*, Bereich *Konfiguration*):
+
+| Auswahl | Bild | in Bewegung |
+|---|---|---|
+| Gastherme | Wandtherme mit Sichtfenster | blaue Gasflammen |
+| Ölkessel | Kessel mit rotem Brenner und Ölleitung | gelbe Flamme im Sichtglas |
+| Kaminofen | Ofen mit Rauchrohr und Holzfach | Holzfeuer |
+| PV-Anlage | Solarmodul mit Blitz | der Blitz leuchtet |
+| Allgemein | Gehäuse mit drei Wärmewellen | die Wellen glühen und steigen auf |
+
+Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. Dort führt die Leitung bei „PV-Anlage“ Strom statt Wärme. An der Anlage ändert die Auswahl nichts.
 
 ### Anpassen
 

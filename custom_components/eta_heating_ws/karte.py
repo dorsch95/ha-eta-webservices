@@ -937,6 +937,71 @@ Heizen, Übertemperatur, Störung. Bei "Störung" kann die Ladepumpe
 trotzdem laufen - ein Feuer zeigt die Kachel dann nicht.
 """
 
+ERZEUGER_BILDER = {
+    "gas": ("brenner", "brenner_aktiv"),
+    "oel": ("erzeuger_oel", "erzeuger_oel_aktiv"),
+    "ofen": ("fremdwaerme", "fremdwaerme_aktiv"),
+    "pv": ("pvm", "pvm_aktiv"),
+    "allgemein": ("erzeuger_allgemein", "erzeuger_allgemein_aktiv"),
+}
+"""Die Bilder, zwischen denen der Nutzer für Brenner und Fremdwärme wählt.
+
+Je Bild seine Kachelgrafik und die bewegte Fassung für die Zeit, in der
+der Erzeuger Wärme liefert (.webp bewegt, .png als Standbild). Was hinter
+"Brenner" oder "Fremdwärme" wirklich steht - Gastherme, Ölkessel,
+Kaminofen, Heizstab an der PV-Anlage -, verrät die Anlage nicht. "pv"
+nimmt die Kachel des PV-Heizmoduls, "allgemein" passt auf alles.
+"""
+
+ERZEUGER_VORGABE = {"brenner": "gas", "fremdwaerme": "ofen"}
+"""Das Bild je Komponente, solange der Nutzer nichts gewählt hat.
+
+Es ist das, was die Karten vor der Auswahl gezeigt haben: die Therme beim
+Brenner, der Kaminofen bei der Fremdwärme.
+"""
+
+BRENNER_BILD = "select.eta_heizung_brenner_bild"
+FREMDWAERME_BILD = "select.eta_heizung_fremdwarme_bild"
+"""Die Auswahlen, mit denen der Nutzer das Bild von Brenner und Fremdwärme bestimmt."""
+
+
+def erzeuger_bilder(auswahl):
+    """Je gewähltem Bild seine Kachelgrafik, für komponente(zustandsbilder=...).
+
+    Solange die Auswahl nichts Bekanntes meldet - etwa weil es sie noch
+    nicht gibt -, bleibt die Kachel bei ihrem Grundbild, der Vorgabe.
+    """
+    return auswahl, {
+        art: bildadresse(f"{grundbild}.png") for art, (grundbild, _) in ERZEUGER_BILDER.items()
+    }
+
+
+def erzeuger_bewegung(auswahl, vorgabe, entitaet, zustaende):
+    """Das bewegte Bild des gewählten Erzeugers, solange entitaet in einem der zustaende steht.
+
+    Für jedes wählbare Bild eine eigene Auflage. Die der Vorgabe gilt auch,
+    wenn die Auswahl keines der anderen Bilder meldet - so wie das
+    Grundbild der Kachel.
+    """
+    elemente = []
+    for art, (_, bewegt) in ERZEUGER_BILDER.items():
+        if art == vorgabe:
+            gewaehlt = [
+                {"condition": "state", "entity": auswahl, "state_not": andere}
+                for andere in ERZEUGER_BILDER
+                if andere != vorgabe
+            ]
+        else:
+            gewaehlt = [{"condition": "state", "entity": auswahl, "state": art}]
+        for zustand in zustaende:
+            elemente += bewegt_oder_still(
+                bewegt,
+                entitaet,
+                [*gewaehlt, {"condition": "state", "entity": entitaet, "state": zustand}],
+            )
+    return elemente
+
+
 FERNLEITUNG_PUMPE = "sensor.eta_heizung_fernleitung_pumpe"
 """Läuft die Fernpumpe ("Ein"), wandern Pulse durch Vor- und Rücklauf."""
 
@@ -946,7 +1011,8 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
 
     zustandsbilder ist ein Paar (Entität, {Zustand: Bild}). Dann wechselt
     die Kachel ihr Bild mit dem Zustand dieser Entität; bei jedem anderen
-    Zustand bleibt es beim Grundbild.
+    Zustand bleibt es beim Grundbild. Die Entität ist ein Sensor-Schlüssel
+    oder eine vollständige Entitäts-ID.
     """
     karte = {
         "type": "picture-elements",
@@ -955,7 +1021,7 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     }
     if zustandsbilder:
         entitaet, bilder = zustandsbilder
-        karte["entity"] = f"sensor.eta_heizung_{entitaet}"
+        karte["entity"] = entitaet if "." in entitaet else f"sensor.eta_heizung_{entitaet}"
         karte["state_image"] = bilder
     return {
         "type": "conditional",
@@ -1128,37 +1194,30 @@ def grid(spalten, schrift, kurz, puffer=PUFFER_KACHELN, warmwasser=WARMWASSER_KA
                 "brenner",
                 "brenner",
                 [
-                    *bewegt_oder_still(
-                        "brenner_aktiv",
+                    *erzeuger_bewegung(
+                        BRENNER_BILD,
+                        ERZEUGER_VORGABE["brenner"],
                         BRENNER_ANFORDERUNG,
-                        [{"condition": "state", "entity": BRENNER_ANFORDERUNG, "state": "Ein"}],
+                        ("Ein",),
                     ),
                     label("brenner_anforderung", "Anf.: " if kurz else "Anforderung: ",
                           "hell", 8, 50, schrift),
                     label("brenner_temperatur", "Temp.: " if kurz else "Temperatur: ",
                           "kessel", 15, 50, schrift - 5),
                 ],
+                erzeuger_bilder(BRENNER_BILD),
             ),
             komponente(
                 "fremdwarme",
                 "fremdwaerme",
                 "fremdwaerme",
                 [
-                    *[
-                        bild
-                        for zustand in FREMDWAERME_HEIZT
-                        for bild in bewegt_oder_still(
-                            "fremdwaerme_aktiv",
-                            FREMDWAERME_ZUSTAND,
-                            [
-                                {
-                                    "condition": "state",
-                                    "entity": FREMDWAERME_ZUSTAND,
-                                    "state": zustand,
-                                }
-                            ],
-                        )
-                    ],
+                    *erzeuger_bewegung(
+                        FREMDWAERME_BILD,
+                        ERZEUGER_VORGABE["fremdwaerme"],
+                        FREMDWAERME_ZUSTAND,
+                        FREMDWAERME_HEIZT,
+                    ),
                     label("fremdwarme_temperatur", "Temp.: " if kurz else "Temperatur: ",
                           "kessel", 8, 50, schrift),
                     label("fremdwarme_zustand", "Zust.: " if kurz else "Zustand: ",
@@ -1166,6 +1225,7 @@ def grid(spalten, schrift, kurz, puffer=PUFFER_KACHELN, warmwasser=WARMWASSER_KA
                     label("fremdwarme_ladepumpe", "Pumpe: " if kurz else "Ladepumpe: ",
                           "hell", 22, 50, schrift - 5),
                 ],
+                erzeuger_bilder(FREMDWAERME_BILD),
             ),
             komponente(
                 "fernleitung",

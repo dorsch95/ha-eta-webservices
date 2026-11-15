@@ -444,6 +444,26 @@
           "heizen": "Continuous",
           "absenken": "ECO"
         }
+      },
+      "brenner_bild": {
+        "name": "Burner picture",
+        "state": {
+          "gas": "Gas boiler",
+          "oel": "Oil boiler",
+          "ofen": "Wood stove",
+          "pv": "PV system",
+          "allgemein": "Generic"
+        }
+      },
+      "fremdwaerme_bild": {
+        "name": "External heat picture",
+        "state": {
+          "gas": "Gas boiler",
+          "oel": "Oil boiler",
+          "ofen": "Wood stove",
+          "pv": "PV system",
+          "allgemein": "Generic"
+        }
       }
     },
     "sensor": {

@@ -26,6 +26,7 @@ from .const import (
     CONF_LAGER_MAXIMUM,
     CONF_PELLET_PREIS,
     ASCHEBOX_ENTITAETEN,
+    BILD_AUSWAHLEN,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
@@ -359,6 +360,7 @@ _EIGENE_ENTITAETEN = {
     "pellet_energie_gesamt": "kessel",
     "lager_niedrig": "lager",
     "lager_fuellstand": "lager",
+    **{key: definition["component"] for key, definition in BILD_AUSWAHLEN.items()},
 }
 _PROGNOSE = {
     "pellet_prognose_morgen": "kessel",

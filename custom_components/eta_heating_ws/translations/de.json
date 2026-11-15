@@ -444,6 +444,26 @@
           "heizen": "Dauer",
           "absenken": "ECO"
         }
+      },
+      "brenner_bild": {
+        "name": "Brenner Bild",
+        "state": {
+          "gas": "Gastherme",
+          "oel": "Ölkessel",
+          "ofen": "Kaminofen",
+          "pv": "PV-Anlage",
+          "allgemein": "Allgemein"
+        }
+      },
+      "fremdwaerme_bild": {
+        "name": "Fremdwärme Bild",
+        "state": {
+          "gas": "Gastherme",
+          "oel": "Ölkessel",
+          "ofen": "Kaminofen",
+          "pv": "PV-Anlage",
+          "allgemein": "Allgemein"
+        }
       }
     },
     "sensor": {

@@ -10,6 +10,8 @@ Menübaum.
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import Platform
 
+from .karte import ERZEUGER_VORGABE
+
 DOMAIN = "eta_heating_ws"
 DEFAULT_PORT = 8080
 
@@ -452,6 +454,29 @@ SELECTS = {
     },
 }
 """Je Heizkreis eine Auswahl der Betriebsart."""
+
+BILD_AUSWAHLEN = {
+    "brenner_bild": {
+        "component": "brenner",
+        "name": "Brenner Bild",
+        "translation_key": "brenner_bild",
+        "icon": "mdi:image-edit-outline",
+        "vorgabe": ERZEUGER_VORGABE["brenner"],
+    },
+    "fremdwaerme_bild": {
+        "component": "fremdwaerme",
+        "name": "Fremdwärme Bild",
+        "translation_key": "fremdwaerme_bild",
+        "icon": "mdi:image-edit-outline",
+        "vorgabe": ERZEUGER_VORGABE["fremdwaerme"],
+    },
+}
+"""Je Erzeuger mit wählbarem Bild eine Auswahl am Gerät, siehe karte.ERZEUGER_BILDER.
+
+Die Auswahl ändert nichts an der Anlage - beide Dashboard-Karten fragen
+sie ab. vorgabe: das Bild, solange der Nutzer nichts gewählt hat; es ist
+das, was die Karten vor dieser Auswahl gezeigt haben.
+"""
 
 ZAHLEN = {
     "lager_maximum_stellen": {

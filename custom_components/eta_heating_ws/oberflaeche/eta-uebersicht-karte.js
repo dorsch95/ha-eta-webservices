@@ -489,6 +489,11 @@ const STIL = `
   .b-flamme { display: none; }
   [data-aktiv] .b-flamme { display: inline; }
   [data-aktiv] .b-anzeige { fill: var(--akzent); }
+  .b-wellen path { fill: none; stroke-width: 3.2; stroke-linecap: round; }
+  .b-wellen .ruhe { stroke: var(--metall-dunkel); }
+  .b-wellen .warm { stroke: var(--heiss); opacity: 0; }
+  [data-aktiv] .b-wellen .ruhe { opacity: .35; }
+  [data-aktiv] .b-wellen .warm { animation: eta-aufsteigen 2.4s ease-out infinite; animation-delay: calc(var(--i) * -.8s); }
 
   .eta-szene { gap: 20px; padding: 20px; }
   .eta-bild { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: max-content; justify-content: space-between; align-items: center; column-gap: 52px; padding: 8px 4px; }
@@ -820,6 +825,47 @@ const ofenBild = () => `<svg class="eta-svg" viewBox="20 0 110 106" aria-hidden=
   <rect x="44" y="94" width="8" height="10" rx="2" fill="var(--metall-dunkel)"/><rect x="98" y="94" width="8" height="10" rx="2" fill="var(--metall-dunkel)"/>
 </svg>`;
 
+/** Bodenstehender Ölkessel: roter Brenner, Sichtglas mit gelber Flamme, Ölleitung von links. */
+const oelBild = () => `<svg class="eta-svg" viewBox="20 0 110 106" aria-hidden="true">
+  <rect x="86" y="0" width="14" height="12" rx="2" fill="var(--metall-dunkel)"/>
+  <rect x="40" y="8" width="70" height="92" rx="9" fill="var(--metall)"/>
+  <path d="M40 17a9 9 0 0 1 9-9h52a9 9 0 0 1 9 9v9H40z" fill="var(--metall-hell)"/>
+  <rect x="48" y="13" width="22" height="9" rx="2.5" fill="var(--kammer)"/><rect class="b-anzeige" x="50.5" y="15.5" width="9" height="4" rx="1"/>
+  <path d="M98 11.5c2.6 3.6 4.2 5.4 4.2 7.6a4.2 4.2 0 0 1-8.4 0c0-2.2 1.6-4 4.2-7.6z" fill="#d6a03a"/>
+  <circle cx="75" cy="47" r="16" fill="var(--metall-hell)"/><circle cx="75" cy="47" r="12.5" fill="var(--kammer)"/>
+  <g class="b-flamme">
+    <path class="fl" fill="#f59e0b" d="M75 37c4 6 8 8 8 14a8 7 0 0 1-16 0c0-4 2.5-6 4-9 .8 1.6 1.6 2.4 2.4 1.6 0-2.4 0-4 1.6-6.6z"/>
+    <path class="fl fl2" fill="#fde68a" d="M75 46c2.4 3.2 4 4 4 7.2a4 4 0 0 1-8 0c0-2.4 2.4-4 4-7.2z"/>
+  </g>
+  <path d="M23 81h30" stroke="#d6a03a" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <rect x="52" y="68" width="46" height="26" rx="6" fill="#c43a2e"/>
+  <rect x="58" y="72" width="34" height="4" rx="2" fill="#96281f"/>
+  <circle cx="75" cy="84" r="5" fill="#96281f"/><circle cx="75" cy="84" r="2.6" fill="#f1f1f1"/>
+</svg>`;
+
+/** Wärmeerzeuger ohne nähere Angabe: Gehäuse mit drei Wärmewellen, die im Betrieb glühen und aufsteigen. */
+const allgemeinBild = () => `<svg class="eta-svg" viewBox="20 0 110 106" aria-hidden="true">
+  <rect x="40" y="6" width="70" height="94" rx="10" fill="var(--metall)"/>
+  <path d="M40 16a10 10 0 0 1 10-10h50a10 10 0 0 1 10 10v12H40z" fill="var(--metall-hell)"/>
+  <rect x="49" y="12" width="24" height="10" rx="2.5" fill="var(--kammer)"/><rect class="b-anzeige" x="51.5" y="14.5" width="10" height="5" rx="1"/>
+  <circle cx="75" cy="62" r="25" fill="var(--kammer)"/>
+  <g class="b-wellen">${reihe(3, (i) => `<path class="ruhe" d="M${63 + i * 12} 77c-4.5-5 4.5-9.5 0-15s4.5-10 0-15"/>`)}${reihe(3, (i) => `<path class="warm" style="--i:${i}" d="M${63 + i * 12} 77c-4.5-5 4.5-9.5 0-15s4.5-10 0-15"/>`)}</g>
+</svg>`;
+
+/**
+ * Die Bilder, zwischen denen der Nutzer für Brenner und Fremdwärme wählt:
+ * Zeichnung, ihre Breite in Kachel und Anlagenbild, wo die Leitung ansetzt
+ * und ob Strom statt Wärme fließt. Die Auswahl steht am Gerät.
+ */
+const ERZEUGER_BILDER = {
+  gas: { bild: brennerBild, kachel: 96, station: 72, aus: [0.82, 0.5] },
+  oel: { bild: oelBild, kachel: 96, station: 72, aus: [0.82, 0.5] },
+  ofen: { bild: ofenBild, kachel: 96, station: 72, aus: [0.82, 0.55] },
+  pv: { bild: pvmBild, kachel: 132, station: 92, aus: [0.885, 0.69], strom: true },
+  allgemein: { bild: allgemeinBild, kachel: 96, station: 72, aus: [0.82, 0.5] },
+};
+const ERZEUGER_VORGABE = { brenner: "gas", fremdwaerme: "ofen" };
+
 const HAHN = `<svg class="eta-hahn" viewBox="0 0 48 36" aria-hidden="true">
   <path d="M13 6h16v4h-6v5h-4v-5h-6z"/><path d="M6 15h24a9 9 0 0 1 9 9v7h-9v-6H6z"/>
 </svg>`;
@@ -968,6 +1014,8 @@ function anlageLesen(hass, struktur, t, fussboden) {
     return { id: s.entity_id, text, zahl, einheit, roh: fehlt ? "" : s.state, n };
   };
   const an = (w) => Boolean(w) && (w.n === null ? !OHNE_FLUSS.includes(w.roh) : w.n > 0);
+  /** Das gewählte Bild eines Erzeugers - ohne gültige Auswahl seine Vorgabe. */
+  const erzeuger = (komponente) => ERZEUGER_BILDER[stand(`${komponente}_bild`)?.state] || ERZEUGER_BILDER[ERZEUGER_VORGABE[komponente]];
   const ueber = (w) => Boolean(w) && w.n !== null && w.n > LEISTUNG_AB;
 
   const lesen = {
@@ -1083,7 +1131,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
     },
     brenner() {
       const anforderung = wert("brenner_anforderung");
-      return { anforderung, aktiv: an(anforderung), temperatur: wert("brenner_temperatur"), leistung: wert("brenner_leistung_soll") };
+      return { anforderung, aktiv: an(anforderung), temperatur: wert("brenner_temperatur"), leistung: wert("brenner_leistung_soll"), erzeuger: erzeuger("brenner") };
     },
     fremdwaerme() {
       const zustand = wert("fremdwaerme_zustand"), ladepumpe = wert("fremdwaerme_ladepumpe");
@@ -1096,6 +1144,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
         stoerung: zustand?.roh === FREMDWAERME_STOERUNG,
         temperatur: wert("fremdwaerme_temperatur"),
         speicher: wert("fremdwaerme_speicher"),
+        erzeuger: erzeuger("fremdwaerme"),
       };
     },
     fernleitung() {
@@ -1523,10 +1572,10 @@ class EtaUebersichtKarte extends HTMLElement {
         <div class="eta-buehne" ${this._info(p.leistung)}>${this._figur(pvmBild(), 132)}${this._haupt(t.heizstab, p.leistung)}</div>
         ${this._zeilen([[t.speicher_oben, p.oben], [t.ertrag_heute, p.heute]])}`),
       brenner: (b) => kachel(b, b.aktiv ? "data-aktiv" : "", this._chip(b.aktiv ? t.heizt : t.ruht, b.aktiv), `
-        <div class="eta-buehne" ${this._info(b.temperatur || b.anforderung)}>${this._figur(brennerBild(), 96)}${this._haupt(t.temperatur, b.temperatur)}</div>
+        <div class="eta-buehne" ${this._info(b.temperatur || b.anforderung)}>${this._figur(b.erzeuger.bild(), b.erzeuger.kachel)}${this._haupt(t.temperatur, b.temperatur)}</div>
         ${this._zeilen([[t.anforderung, b.anforderung], [t.leistung_soll, b.leistung]])}`),
       fremdwaerme: (w) => kachel(w, w.heizt ? "data-aktiv" : "", this._chip(w.stoerung ? w.zustand.text : w.heizt ? t.heizt : t.ruht, w.heizt, w.stoerung ? "stoer" : ""), `
-        <div class="eta-buehne" ${this._info(w.temperatur || w.zustand)}>${this._figur(ofenBild(), 96)}${this._haupt(t.temperatur, w.temperatur)}</div>
+        <div class="eta-buehne" ${this._info(w.temperatur || w.zustand)}>${this._figur(w.erzeuger.bild(), w.erzeuger.kachel)}${this._haupt(t.temperatur, w.temperatur)}</div>
         ${this._zeilen([[t.zustand, w.zustand], [t.ladepumpe, w.ladepumpe], [t.speichertemperatur, w.speicher]])}`),
       fernleitung: (f) => kachel(f, f.pumpt ? "data-pumpt" : "", this._chip(f.pumpt ? t.laeuft : t.ruht, f.pumpt), `
         <div class="eta-buehne" ${this._info(f.pumpe)}>${this._figur(fernBild(), 132)}${this._haupt(t.fernpumpe, f.pumpe)}</div>`),
@@ -1579,8 +1628,8 @@ class EtaUebersichtKarte extends HTMLElement {
       kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
       solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "))),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
-      brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(brennerBild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
-      fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(ofenBild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
+      brenner: (b) => station(b, "quer links", b.aktiv ? `data-aktiv data-fluss${b.erzeuger.strom ? '="strom"' : ""}` : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), b.erzeuger.station), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
+      fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? `data-fluss${w.erzeuger.strom ? '="strom"' : ""}` : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), w.erzeuger.station), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
       heizkreis: (h) => {
@@ -1604,7 +1653,7 @@ class EtaUebersichtKarte extends HTMLElement {
       if (teil.art === "lager" && nachId.kessel) kante(teil.id, "kessel", "pellets", teil.foerdert, AUS.lager, EIN.kessel);
       if (!von || teil.art === "lager" || teil.art === "kessel") continue;
       if (erzeugt(teil)) {
-        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, AUS[teil.art], { solar: [0, 0.14], brenner: [0, 0.74], fremdwaerme: [0, 0.6], pvm: [0, 0.88] }[teil.art]);
+        kante(teil.id, von, teil.art === "pvm" || teil.erzeuger?.strom ? "strom" : "heiss", teil.aktiv, teil.erzeuger?.aus || AUS[teil.art], { solar: [0, 0.14], brenner: [0, 0.74], fremdwaerme: [0, 0.6], pvm: [0, 0.88] }[teil.art]);
       } else if (nachId[von].art === "kessel" && teil.art === "puffer") {
         kante(von, teil.id, "heiss", nachId[von].bild === "flamme", AUS.kessel, [0, 0.27]);
       } else {
@@ -1732,8 +1781,8 @@ class EtaUebersichtKarte extends HTMLElement {
       lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet")),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
-      brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur),
-      fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur),
+      brenner: (b) => zeile(b.erzeuger.strom ? "blitz" : "flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur),
+      fremdwaerme: (w) => zeile(w.erzeuger.strom ? "blitz" : "flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur),
       fernleitung: (f) => zeile("rohr", f.pumpt, f.name, f.pumpt ? t.laeuft : t.ruht, f.pumpe),
     };
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
