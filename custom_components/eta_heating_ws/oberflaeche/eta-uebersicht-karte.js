@@ -127,6 +127,21 @@ const TEXTE = {
     verbrauch_heute: "Verbrauch heute",
     schliessen: "Schließen",
     zeiten: "Zeiten einstellen",
+    lieferung: "Lieferung eintragen",
+    lager_einstellen: "Lager einstellen",
+    datum: "Datum",
+    menge: "Menge",
+    preis_je_tonne: "Preis je Tonne",
+    pelletpreis: "Pelletpreis",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+    ok: "OK",
+    vorrat_wird_geaendert: "Der Vorrat wird auch an der Bedieneinheit der Heizung aktualisiert",
+    vorrat_bleibt: "Der Vorrat an der Heizung wird nicht geändert. Stelle ihn nach der Lieferung am Display ein.",
+    an_der_heizung: "wird an der Heizung geändert",
+    nur_in_ha: "nur in Home Assistant gespeichert",
+    letzte_lieferung: "Letzte Lieferung",
+    nicht_gespeichert: "Das hat nicht geklappt",
     zeitprogramm: "Zeitprogramm",
     weitere: "weitere",
   },
@@ -233,6 +248,21 @@ const TEXTE = {
     verbrauch_heute: "Used today",
     schliessen: "Close",
     zeiten: "Set times",
+    lieferung: "Enter a delivery",
+    lager_einstellen: "Store settings",
+    datum: "Date",
+    menge: "Amount",
+    preis_je_tonne: "Price per tonne",
+    pelletpreis: "Pellet price",
+    speichern: "Save",
+    abbrechen: "Cancel",
+    ok: "OK",
+    vorrat_wird_geaendert: "The stock is also updated at the heater's control unit",
+    vorrat_bleibt: "The stock at the heater is not changed. Set it at the display after the delivery.",
+    an_der_heizung: "is changed at the heater",
+    nur_in_ha: "stored in Home Assistant only",
+    letzte_lieferung: "Last delivery",
+    nicht_gespeichert: "That did not work",
     zeitprogramm: "Time program",
     weitere: "more",
   },
@@ -355,7 +385,21 @@ const STIL = `
   .eta-zeilen dt { color: var(--text-2); }
   .eta-zeilen dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
   .eta-zeilen dd .eta-icon { width: 16px; height: 16px; }
-  .eta-stift { display: inline-flex; color: var(--text-2); }
+  .eta-dialog-inhalt > .eta-formular { display: grid; gap: 14px; padding: 8px 16px 16px; }
+  .eta-formular label { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+  .eta-eingabe { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 12px; background: var(--flaeche); }
+  .eta-eingabe:focus-within { outline: 2px solid var(--akzent); }
+  .eta-eingabe input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; color-scheme: light; }
+  :host([dunkel]) .eta-eingabe input { color-scheme: dark; }
+  .eta-eingabe small { font-size: 13px; color: var(--text-2); }
+  .eta-neben { font-size: 12px; color: var(--text-2); }
+  .eta-hinweis { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--flaeche); color: var(--text); font-size: 13px; line-height: 1.45; }
+  .eta-hinweis b { font-weight: 600; }
+  .eta-fehler { margin: 0; color: var(--error-color, #c62828); font-size: 13px; }
+  .eta-formular-knoepfe { display: flex; justify-content: flex-end; gap: 8px; }
+  .eta-formular-knoepfe button { min-height: 44px; min-width: 96px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--flaeche); color: var(--text); font: inherit; font-weight: 500; cursor: pointer; }
+  .eta-formular-knoepfe button[type="submit"] { background: var(--akzent); color: var(--auf-akzent); }
+  .eta-formular-knoepfe button:disabled { opacity: .5; cursor: default; }
   .eta-messung { display: flex; flex-direction: column; gap: 6px; }
   .eta-messung-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .eta-messung-kopf span { color: var(--text-2); }
@@ -1124,6 +1168,8 @@ function anlageLesen(hass, struktur, t, fussboden) {
         heute: wert("pellet_verbrauch_heute"),
         niedrig: stand("lager_niedrig")?.state === "on",
         stellen: wert("lager_maximum_stellen"),
+        vorratStellen: wert("lager_vorrat_stellen"),
+        preis: wert("pellet_preis"),
       };
     },
     solar() {
@@ -1180,6 +1226,7 @@ class EtaUebersichtKarte extends HTMLElement {
     this._wurzel = this.shadowRoot.querySelector(".eta");
     this._dialog = this.shadowRoot.querySelector(".eta-dialog");
     this._zeitKarte = null;
+    this._fensterOffen = false;
     this._zurueck = () => this._zeitenSchliessen(true);
     this._dialog.addEventListener("close", () => this._zeitenSchliessen());
     this._dialog.addEventListener("click", (ereignis) => {
@@ -1421,6 +1468,22 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<button type="button" class="eta-rund eta-zeit" data-aktion="zeiten" data-teil="${e(teil.id)}" title="${e(this._t.zeiten)}" aria-label="${e(this._t.zeiten)}: ${e(teil.name)}">${ICON.uhr}</button>`;
   }
 
+  /** Die Knöpfe am Namen eines Teils: die Uhr für seine Zeiten, am Pelletlager Plus und Stift. */
+  _knoepfe(teil) {
+    return this._zeitKnopf(teil) + this._lagerKnoepfe(teil);
+  }
+
+  /**
+   * Am Pelletlager: Plus trägt eine Lieferung ein, der Stift stellt
+   * Vorrat, Fassungsvermögen und Pelletpreis. Beides nur, wo es die
+   * Zahlenfelder dafür gibt.
+   */
+  _lagerKnoepfe(teil) {
+    if (teil.art !== "lager") return "";
+    const knopf = (aktion, symbol, name) => `<button type="button" class="eta-rund eta-zeit" data-aktion="${aktion}" title="${e(name)}" aria-label="${e(name)}">${symbol}</button>`;
+    return (teil.preis ? knopf("lieferung", ICON.plus, this._t.lieferung) : "") + (teil.stellen || teil.vorratStellen || teil.preis ? knopf("lager-einstellen", ICON.stift, this._t.lager_einstellen) : "");
+  }
+
   _info(w) {
     return w?.id ? `data-info="${e(w.id)}" tabindex="0" role="button"` : "";
   }
@@ -1548,7 +1611,7 @@ class EtaUebersichtKarte extends HTMLElement {
 
   _kacheln(anlage) {
     const t = this._t;
-    const kachel = (teil, merkmale, kopf, inhalt) => `<article class="eta-kachel" data-art="${teil.art}" ${merkmale}><header class="eta-kachelkopf"><h3>${e(teil.name)}</h3><span class="eta-kopf-rechts">${kopf}${this._zeitKnopf(teil)}</span></header>${inhalt}</article>`;
+    const kachel = (teil, merkmale, kopf, inhalt) => `<article class="eta-kachel" data-art="${teil.art}" ${merkmale}><header class="eta-kachelkopf"><h3>${e(teil.name)}</h3><span class="eta-kopf-rechts">${kopf}${this._knoepfe(teil)}</span></header>${inhalt}</article>`;
     const zeichnen = {
       kessel: (k) => kachel(k, `data-zustand="${k.bild}"`, k.zustand ? this._chip(k.zustand.text, k.bild !== "aus" && k.bild !== "stoerung", k.bild === "stoerung" ? "stoer" : "") : "", `
         <div class="eta-buehne" ${this._info(k.temperatur)}>${this._figur(kesselBild(), 90)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
@@ -1569,7 +1632,7 @@ class EtaUebersichtKarte extends HTMLElement {
       lager: (l) => kachel(l, l.foerdert ? "data-foerdert" : "", l.niedrig ? this._chip(t.vorrat_niedrig, false, "warn") : l.zustand ? this._chip(l.zustand.text, l.foerdert) : "", `
         <div class="eta-buehne" ${this._info(l.vorrat)}>${this._figur(lagerBild(l.anteil ?? 0), 118)}${this._haupt(t.vorrat, l.vorrat, l.anteil !== null && l.maximum ? `${Math.round(l.anteil * 100)} % ${t.von} ${l.maximum.text}` : "")}</div>
         ${l.anteil === null ? "" : `<div class="eta-messung"><div class="eta-balken" data-art="${l.niedrig ? "warn" : "pellet"}"><i style="width:${(l.anteil * 100).toFixed(1)}%"></i>${l.warnAnteil === null ? "" : `<u style="left:${(l.warnAnteil * 100).toFixed(1)}%"></u>`}</div></div>`}
-        ${this._zeilen([[t.reicht_bis, l.reichtBis], [t.bestellen_bis, l.bestellenBis], [t.verbrauch_heute, l.heute], [t.warnung_ab, l.warnung], [t.fassungsvermoegen, l.stellen ? { ...l.stellen, html: `${e(l.stellen.text)}<span class="eta-stift">${ICON.stift}</span>` } : l.maximum]])}`),
+        ${this._zeilen([[t.reicht_bis, l.reichtBis], [t.bestellen_bis, l.bestellenBis], [t.verbrauch_heute, l.heute], [t.warnung_ab, l.warnung]])}`),
       solar: (s) => kachel(s, s.aktiv ? "data-aktiv" : "", this._chip(s.aktiv ? t.liefert : t.ruht, s.aktiv), `
         <div class="eta-buehne" ${this._info(s.leistung)}>${this._figur(solarBild(), 132)}${this._haupt(t.leistung, s.leistung)}</div>
         ${this._zeilen([[t.kollektor, s.kollektor], [t.ertrag_heute, s.heute]])}`),
@@ -1624,7 +1687,7 @@ class EtaUebersichtKarte extends HTMLElement {
       const mehrere = anlage.teile.filter((x) => x.art === "puffer" || x.art === "fernleitung").length > 1;
       return mehrere && von && nachId[von].art !== "kessel" ? `<span class="eta-anschluss"> · ${e(t.an_teil)} ${e(nachId[von].name)}</span>` : "";
     };
-    const schild = (teil, w, neben, text = null) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}${this._zeitKnopf(teil)}</span><span class="eta-zahl">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span></div>`;
+    const schild = (teil, w, neben, text = null) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}${this._knoepfe(teil)}</span><span class="eta-zahl">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span></div>`;
     const station = (teil, klasse, merkmale, info, bild, text) => `<div class="eta-station ${klasse}" data-id="${teil.id}" data-art="${teil.art}" ${merkmale} ${info}>${bild}${text}</div>`;
     const rang = { solar: 1, kessel: 0, brenner: 2, fremdwaerme: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
@@ -1773,17 +1836,17 @@ class EtaUebersichtKarte extends HTMLElement {
     const reihen = {
       kessel: () => "",
       puffer: (p) =>
-        (p === erster ? "" : zeile("thermo", p.laedt, p.name, p.zustand?.text || "", p.ladung || p.fuehler[0], "", this._zeitKnopf(p))) +
+        (p === erster ? "" : zeile("thermo", p.laedt, p.name, p.zustand?.text || "", p.ladung || p.fuehler[0], "", this._knoepfe(p))) +
         (p.kombi ? zeile("tropfen", p.kombi.laedt, mehrere ? `${t.warmwasser} ${p.name}` : t.warmwasser_im_puffer, p.kombi.zustand?.text || "", p.kombi.temperatur) : ""),
-      warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur, "", this._zeitKnopf(w)),
+      warmwasser: (w) => zeile("tropfen", w.laedt || w.fliesst, w.name, [this._warmwasserStatus(w)[0], w.zirkulation ? `${t.zirkulation} ${w.zirkulation.text}` : ""].filter(Boolean).join(" · "), w.temperatur, "", this._knoepfe(w)),
       heizkreis: (h) => {
         const neben = [h.modus ? t[`modus_${h.modus.wert}`] : "", this._heizkreisStatus(h), h.raum ? `${t.raum} ${h.raum.text}` : ""].filter(Boolean).join(" · ");
         const stellen = this._stellen(h, anlage);
-        if (!stellen) return zeile("heizung", h.heizt, h.name, neben, h.vorlauf, "", this._zeitKnopf(h));
+        if (!stellen) return zeile("heizung", h.heizt, h.name, neben, h.vorlauf, "", this._knoepfe(h));
         const offen = this._offen === h.id;
-        return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${h.heizt ? "data-an" : ""}>${ICON.heizung}</span><div class="eta-reihe-text"><b>${e(h.name)}</b><span>${e(neben)}</span></div><span class="eta-reihe-wert">${e(h.vorlauf ? h.vorlauf.text : "–")}</span>${this._zeitKnopf(h)}${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
+        return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${h.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${h.heizt ? "data-an" : ""}>${ICON.heizung}</span><div class="eta-reihe-text"><b>${e(h.name)}</b><span>${e(neben)}</span></div><span class="eta-reihe-wert">${e(h.vorlauf ? h.vorlauf.text : "–")}</span>${this._knoepfe(h)}${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
       },
-      lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet")),
+      lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet"), this._knoepfe(l)),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur),
@@ -1793,7 +1856,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
     const titel = this._konfig.titel ?? t.titel;
     const pufferTeil = erster
-      ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}${this._zeitKnopf(erster)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.zustand?.text ? `<span class="eta-neben">${e(erster.zustand.text)}</span>` : ""}</div></div>`
+      ? `<div class="eta-gruppe" ${this._info(erster.ladung || erster.fuehler[0])}>${this._figur(tank(erster.fuehler.length ? erster.fuehler.map((f) => f.n) : [null], [], { laedt: erster.laedt }), 36, "--tankhoehe:78px")}<div class="eta-haupt"><span class="eta-label">${e(erster.name)}${this._knoepfe(erster)}</span><span class="eta-zahl" style="font-size:24px">${e((erster.ladung || erster.fuehler[0])?.zahl ?? "–")}<small>${e((erster.ladung || erster.fuehler[0])?.einheit ?? "")}</small></span>${erster.zustand?.text ? `<span class="eta-neben">${e(erster.zustand.text)}</span>` : ""}</div></div>`
       : "";
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
       ${this._banner(anlage)}
@@ -1873,26 +1936,120 @@ class EtaUebersichtKarte extends HTMLElement {
    */
   _zeitenOeffnen(teilId) {
     const teil = this._struktur?.teile?.find((x) => x.id === teilId);
-    if (!teil?.programme?.length || this._zeitKarte || !customElements.get(ZEITKARTE)) return;
+    if (!teil?.programme?.length || this._fensterOffen || !customElements.get(ZEITKARTE)) return;
     const karte = document.createElement(ZEITKARTE);
     karte.setConfig({ programme: teil.programme, anlage: this._struktur.eintrag, titel: this._t.zeitprogramm });
     karte.hass = this._hass;
     this._zeitKarte = karte;
-    this._dialog.querySelector("b").textContent = teilName(teil, this._struktur.teile, this._t);
+    this._fensterOeffnen(teilName(teil, this._struktur.teile, this._t), karte);
+  }
+
+  /** Öffnet das Fenster der Karte mit diesem Titel und Inhalt. */
+  _fensterOeffnen(titel, inhalt) {
+    this._fensterOffen = true;
+    this._dialog.querySelector("b").textContent = titel;
     this._dialog.querySelector("[data-aktion]").setAttribute("aria-label", this._t.schliessen);
-    this._dialog.querySelector(".eta-dialog-inhalt").replaceChildren(karte);
+    this._dialog.querySelector(".eta-dialog-inhalt").replaceChildren(inhalt);
     this._dialog.showModal();
     history.pushState({ etaZeiten: true }, "");
     window.addEventListener("popstate", this._zurueck);
   }
 
   /**
-   * Schließt das Fenster mit den Zeiten. vonZurueck: "Zurück" hat den
-   * Eintrag im Verlauf schon genommen - sonst nimmt ihn das Schließen.
+   * Die beiden Fenster des Pelletlagers. "lager-einstellen" zeigt Vorrat,
+   * Fassungsvermögen und Pelletpreis als Zahlenfelder und schreibt, was
+   * geändert wurde. "lieferung" nimmt Datum, Menge und Preis und ruft die
+   * Aktion "Pelletlieferung eintragen" auf - vor dem OK steht, ob dabei
+   * auch der Vorrat an der Heizung geändert wird.
+   */
+  _lagerFenster(aktion) {
+    if (this._fensterOffen || !this._struktur || !this._hass) return;
+    const t = this._t;
+    const entitaeten = this._struktur.entitaeten || {};
+    const stand = (schluessel) => (entitaeten[schluessel] ? this._hass.states[entitaeten[schluessel]] : undefined);
+    const zahl = (s) => (s && s.state !== "" && !Number.isNaN(Number(s.state)) ? Number(s.state) : null);
+    const kg = (n) => `${Math.round(n).toLocaleString(this._sprache || "de")} kg`;
+    const vorrat = stand("lager_vorrat_stellen"), maximum = stand("lager_maximum_stellen"), preis = stand("pellet_preis");
+    const formular = document.createElement("form");
+    formular.className = "eta-formular";
+    const feld = (name, titel, s, wert, einheit, neben = "", zusatz = "") => `<label><span>${e(titel)}</span><span class="eta-eingabe"><input type="number" name="${name}" inputmode="decimal" step="any" ${s ? `min="${s.attributes.min}" max="${s.attributes.max}" data-ziel="${e(s.entity_id)}"` : ""} value="${wert ?? ""}" data-vorher="${wert ?? ""}" ${zusatz}><small>${e(einheit)}</small></span>${neben ? `<span class="eta-neben">${e(neben)}</span>` : ""}</label>`;
+    const knoepfe = (text) => `<p class="eta-fehler" role="alert" hidden></p><div class="eta-formular-knoepfe"><button type="button" data-aktion="dialog-zu">${e(t.abbrechen)}</button><button type="submit">${e(text)}</button></div>`;
+    const ausfuehren = async (arbeit) => {
+      const fehler = formular.querySelector(".eta-fehler"), knopf = formular.querySelector('button[type="submit"]');
+      knopf.disabled = true;
+      fehler.hidden = true;
+      try {
+        await arbeit();
+        this._zeitenSchliessen();
+      } catch (grund) {
+        fehler.textContent = `${t.nicht_gespeichert}: ${grund?.message || grund}`;
+        fehler.hidden = false;
+        knopf.disabled = false;
+      }
+    };
+
+    if (aktion === "lager-einstellen") {
+      const vorratJetzt = zahl(vorrat), maximumJetzt = zahl(maximum), preisJetzt = zahl(preis);
+      formular.innerHTML =
+        (vorrat ? feld("vorrat", t.vorrat, vorrat, vorratJetzt === null ? null : Math.round(vorratJetzt), "kg", t.an_der_heizung) : "") +
+        (maximum ? feld("maximum", t.fassungsvermoegen, maximum, maximumJetzt === null ? null : Math.round(maximumJetzt), "kg", maximum.attributes.gespeichert === "Anlage" ? t.an_der_heizung : t.nur_in_ha) : "") +
+        (preis ? feld("preis", t.pelletpreis, preis, preisJetzt, "€/t") : "") +
+        knoepfe(t.speichern);
+      formular.addEventListener("submit", (ereignis) => {
+        ereignis.preventDefault();
+        ausfuehren(async () => {
+          for (const eingabe of formular.querySelectorAll("input[data-ziel]")) {
+            if (eingabe.value === "" || eingabe.value === eingabe.dataset.vorher) continue;
+            await this._hass.callService("number", "set_value", { entity_id: eingabe.dataset.ziel, value: Number(eingabe.value) });
+          }
+        });
+      });
+      this._fensterOeffnen(t.lager_einstellen, formular);
+      return;
+    }
+
+    const heute = new Date();
+    const tag = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}-${String(heute.getDate()).padStart(2, "0")}`;
+    const letzte = preis?.attributes?.lieferungen?.[0];
+    const letzteText = letzte
+      ? [new Date(`${letzte.datum}T00:00`).toLocaleDateString(this._sprache || "de"), kg(letzte.menge), letzte.preis ? `${Number(letzte.preis).toLocaleString(this._sprache || "de")} €/t` : ""].filter(Boolean).join(" · ")
+      : "";
+    formular.innerHTML =
+      `<label><span>${e(t.datum)}</span><span class="eta-eingabe"><input type="date" name="datum" value="${tag}" max="${tag}" required></span></label>` +
+      feld("menge", t.menge, null, null, "kg", "", 'min="1" max="100000" required') +
+      feld("preis", t.preis_je_tonne, null, zahl(preis) || null, "€", "", 'min="0" max="2000"') +
+      `<p class="eta-hinweis" data-vorrat></p>` +
+      (letzteText ? `<span class="eta-neben">${e(t.letzte_lieferung)}: ${e(letzteText)}</span>` : "") +
+      knoepfe(t.ok);
+    const hinweis = formular.querySelector("[data-vorrat]");
+    const hinweisen = () => {
+      const jetzt = zahl(vorrat), menge = Number(formular.elements.menge.value);
+      if (!vorrat) {
+        hinweis.textContent = t.vorrat_bleibt;
+      } else {
+        hinweis.innerHTML = `<b>${e(t.vorrat_wird_geaendert)}</b>${jetzt !== null && menge > 0 ? `: ${e(kg(jetzt))} → ${e(kg(jetzt + menge))}` : "."}`;
+      }
+    };
+    hinweisen();
+    formular.elements.menge.addEventListener("input", hinweisen);
+    formular.addEventListener("submit", (ereignis) => {
+      ereignis.preventDefault();
+      const daten = { config_entry_id: this._struktur.eintrag, datum: formular.elements.datum.value, menge: Number(formular.elements.menge.value) };
+      if (formular.elements.preis.value !== "") daten.preis = Number(formular.elements.preis.value);
+      ausfuehren(() => this._hass.callService("eta_heating_ws", "lieferung_eintragen", daten));
+    });
+    this._fensterOeffnen(t.lieferung, formular);
+  }
+
+  /**
+   * Schließt das Fenster der Karte - das mit den Zeiten ebenso wie die
+   * des Pelletlagers. vonZurueck: "Zurück" hat den Eintrag im Verlauf
+   * schon genommen - sonst nimmt ihn das Schließen.
    */
   _zeitenSchliessen(vonZurueck = false) {
-    if (!this._zeitKarte) return;
+    if (!this._fensterOffen) return;
     window.removeEventListener("popstate", this._zurueck);
+    this._fensterOffen = false;
     this._zeitKarte = null;
     this._dialog.querySelector(".eta-dialog-inhalt").replaceChildren();
     if (this._dialog.open) this._dialog.close();
@@ -1913,6 +2070,10 @@ class EtaUebersichtKarte extends HTMLElement {
     }
     if (aktion === "dialog-zu") {
       this._zeitenSchliessen();
+      return;
+    }
+    if (aktion === "lieferung" || aktion === "lager-einstellen") {
+      this._lagerFenster(aktion);
       return;
     }
     const entitaeten = this._struktur?.entitaeten || {};

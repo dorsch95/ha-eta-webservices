@@ -48,7 +48,7 @@ async def mit_lager(hass, entry, schreibzugriff=False, gemerkt=None):
     coordinator.data["lager_vorrat"] = kg(3200)
     gesammelt: list = []
     await number_platform.async_setup_entry(hass, entry, gesammelt.extend)
-    [zahl] = gesammelt
+    [zahl] = [z for z in gesammelt if z.translation_key == "lager_maximum_stellen"]
     zahl.async_write_ha_state = lambda: None
     return coordinator, by_name, zahl
 

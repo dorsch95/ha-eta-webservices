@@ -128,10 +128,11 @@ async def test_laesst_die_anlage_das_schreiben_nicht_zu_bleibt_der_wert_in_home_
     assert isinstance(zahlen["lager_maximum_stellen"], number_platform.ETALagerMaximumEigen)
 
 
-async def test_ohne_pelletlager_kein_zahlenfeld(hass, entry):
+async def test_ohne_pelletlager_bleibt_nur_der_pelletpreis(hass, entry):
+    """Der Kessel meldet seinen Pelletverbrauch - Kosten gibt es auch ohne Lager."""
     coordinator, _ = await setup_integration(hass, entry)
     gesammelt: list = []
     await number_platform.async_setup_entry(hass, entry, gesammelt.extend)
 
     assert coordinator.zahl_defs == {}
-    assert gesammelt == []
+    assert [zahl.translation_key for zahl in gesammelt] == ["pellet_preis"]

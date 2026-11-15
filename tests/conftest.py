@@ -149,6 +149,11 @@ class FakeSession:
         self.schreibbar = True
         self.lager_schreibbar = True
         """Meldet die Anlage "Maximaler Vorrat" als beschreibbar? So antwortet eine echte Anlage."""
+        self.vorrat_schreibbar = False
+        """Meldet die Anlage "Vorrat" als beschreibbar, in kg? So antwortet eine echte Anlage.
+
+        Hier ab Werk aus, damit die übrigen Tests ihren Vorrat behalten.
+        """
         self.kessel_zustand = "Heizen"
         self.asche_roh = "2370"
         self.zeitfenster: dict[str, tuple[int, int, int | None]] = {}
@@ -299,6 +304,9 @@ class FakeSession:
             }
         if "12120" in uri:
             return {"value": "1000", "str_value": "1000", "unit": "kg"}
+        if uri.endswith("/12015") and self.vorrat_schreibbar:
+            roh = self._gemeldet(uri, "32000")
+            return {"value": roh, "str_value": str(int(roh) // 10), "unit": "kg", "scale": "10"}
         if uri.endswith("/12790"):
             roh = self._gemeldet(uri, "64000")
             return {"value": roh, "str_value": str(int(roh) // 10), "unit": "kg", "scale": "10"}
@@ -404,6 +412,15 @@ class FakeSession:
                 f'isWritable="{1 if self.lager_schreibbar else 0}" decPlaces="0" uri="/u" '
                 'scaleFactor="10" name="Maximaler Vorrat"><type>DEFAULT</type><validValues>'
                 '<min unit="kg" strValue="0">0</min><def unit="kg" strValue="0">0</def>'
+                '<max unit="kg" strValue="100000">1000000</max>'
+                "</validValues></variable></varInfo></eta>"
+            )
+        if url.endswith("/12015") and self.vorrat_schreibbar:
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable advTextOffset="0" unit="kg" '
+                'fullName="Vorrat" isWritable="1" decPlaces="0" uri="/u" '
+                'scaleFactor="10" name="Vorrat"><type>DEFAULT</type><validValues>'
+                '<min unit="kg" strValue="-100000">-1000000</min><def unit="kg" strValue="0">0</def>'
                 '<max unit="kg" strValue="100000">1000000</max>'
                 "</validValues></variable></varInfo></eta>"
             )
@@ -636,6 +653,10 @@ class FakeHass:
 
         async def async_reload(self, entry_id):
             return True
+
+        def async_schedule_reload(self, entry_id):
+            """Merkt sich, dass ein Neuladen bestellt wurde."""
+            self.neu_laden_bestellt = getattr(self, "neu_laden_bestellt", 0) + 1
 
         def async_update_entry(self, entry, **geaendert):
             """Übernimmt geänderte Daten oder Optionen in die Einrichtung, wie Home Assistant."""

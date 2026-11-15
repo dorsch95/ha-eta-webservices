@@ -117,6 +117,21 @@ Optionen der Einrichtung, in keinem Formular.
 """
 MAX_LAGER_MAXIMUM = 100000
 
+CONF_LIEFERUNGEN = "lieferungen"
+"""Die eingetragenen Pelletlieferungen, die neueste zuletzt.
+
+Je Lieferung ein Eintrag mit "datum" (JJJJ-MM-TT), "menge" in kg und
+"preis" in Euro je Tonne - der Preis fehlt, wenn keiner angegeben wurde.
+Sie stehen in den Optionen der Einrichtung, in keinem Formular, siehe
+ETADataUpdateCoordinator.async_lieferung_eintragen.
+"""
+MAX_LIEFERUNGEN = 20
+"""So viele Lieferungen bleiben gemerkt - die ältesten fallen weg."""
+PELLET_PREIS_ZAHL = "pellet_preis"
+"""Schlüssel des Zahlenfelds "Pelletpreis". Es stellt CONF_PELLET_PREIS."""
+LAGER_VORRAT_ZAHL = "lager_vorrat_stellen"
+"""Schlüssel des Zahlenfelds "Lager Vorrat" in ZAHLEN."""
+
 CONF_KESSEL_SPERRE = "kessel_sperre"
 """Legt den Schalter "Kessel sperren" an.
 
@@ -537,6 +552,16 @@ ZAHLEN = {
         "grenzen": (0, MAX_LAGER_MAXIMUM),
         "sonst_in_home_assistant": True,
     },
+    LAGER_VORRAT_ZAHL: {
+        "component": "lager",
+        "name": "Lager Vorrat",
+        "translation_key": "lager_vorrat_stellen",
+        "icon": "mdi:silo",
+        "quelle": "lager_vorrat",
+        "einheit": "kg",
+        "schritt": 1,
+        "grenzen": (0, MAX_LAGER_MAXIMUM),
+    },
 }
 """Zahlen, die sich an der Anlage einstellen lassen.
 
@@ -553,6 +578,12 @@ Das Fassungsvermögen des Pelletlagers ("Lager > Vorrat > Maximaler
 Vorrat") steht an der Anlage. Eine Anlage meldet es als beschreibbar, von
 0 bis 100000 kg. Der Füllstand in Prozent rechnet mit ihm - oder mit dem
 Wert, den sich das Zahlenfeld in Home Assistant gemerkt hat.
+
+Den Vorrat des Pelletlagers ("Lager > Vorrat") stellt man am Display nach
+einer Lieferung ein. Eine Anlage meldet ihn auch über die Webservices
+als beschreibbar, in kg von -100000 bis 100000; hier gilt 0 als untere
+Grenze. Das Zahlenfeld entsteht nur, wenn die Anlage ihn so meldet. Die
+Aktion "Lieferung eintragen" erhöht ihn dann um die gelieferte Menge.
 """
 
 THERMOSTATE = {

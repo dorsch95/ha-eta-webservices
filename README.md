@@ -38,7 +38,7 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: 
 - A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
 - The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which. The order of the parts can be dragged in the card settings. A clock button on each part with a time program opens its times for editing.
 - The earlier ready-made dashboard card stays available: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
-- Tested with webservices 1.2 and with one older control (software 3.42.0 from 2017, webservices 1.1). Older controls keep their values elsewhere in the menu tree; the integration finds them there for pellet boiler, older buffer, hot water tank, heating circuits, pellet store, outside temperature and solar, read-only. Where the system reports no buffer state of charge, it is calculated from the buffer sensors (0 % up to 30 °C, 100 % from 80 °C). The pellet store capacity is set with a number entity on the device page: it is written to the heater where that is possible, otherwise kept in Home Assistant.
+- Tested with webservices 1.2 and with one older control (software 3.42.0 from 2017, webservices 1.1). Older controls keep their values elsewhere in the menu tree; the integration finds them there for pellet boiler, older buffer, hot water tank, heating circuits, pellet store, outside temperature and solar, read-only. Where the system reports no buffer state of charge, it is calculated from the buffer sensors (0 % up to 30 °C, 100 % from 80 °C). The pellet store capacity is set with a number entity on the device page: it is written to the heater where that is possible, otherwise kept in Home Assistant. After a delivery, the plus button on the pellet store tile takes date, amount and price: it remembers the delivery, takes over the price and raises the stock at the heater where the heater reports it as writable. Stock, capacity and pellet price are number entities as well; the action `eta_heating_ws.lieferung_eintragen` does the same without the card.
 - Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
 
 </details>
@@ -85,7 +85,7 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Abfrageintervall | 30 Sekunden | erlaubt sind 1 bis 600. Die Integration liest alle Messwerte mit einer einzigen Anfrage. Je kürzer, desto öfter muss die Anlage antworten - bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten. Die Störungsliste wird dann nur alle 10 Sekunden gelesen |
 | Schnelle Abfrage | 3 Sekunden | 0 = aus. Liest eine kleine Gruppe öfter als den Rest: alles Schaltbare (Kessel ein/aus, Entaschen, Betriebsart und Raum Soll der Heizkreise), den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation. So zeigt das Dashboard etwa das Zapfen ohne Verzug. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall |
 | Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1. Steht auf dem Lieferschein ein anderer Wert, trag ihn ein |
-| Pelletpreis | 0 | in Euro je Tonne. Mit einem Preis rechnet die Integration auch die Kosten aus |
+| Pelletpreis | 0 | in Euro je Tonne. Mit einem Preis rechnet die Integration auch die Kosten aus. Später änderst du ihn bequemer mit `number.eta_heizung_pelletpreis` oder in der Karte, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung) |
 | Störungsmeldungen auslesen | an | siehe [Störungen](#-störungen) |
 | Kessel und Heizkreise schalten dürfen | aus | der Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen) |
 | Schalter „Kessel sperren“ anlegen | aus | lässt den Kessel pausieren, solange ein Ofen oder ein anderes Gerät heizt, das die ETA-Regelung nicht kennt, siehe [Kessel sperren](#kessel-sperren). Braucht den Schreibzugriff |
@@ -250,6 +250,8 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
 | `sensor.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen | kg |
 | `number.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen zum Einstellen | kg |
+| `number.eta_heizung_lager_vorrat` | Lager Vorrat zum Einstellen, nur mit Schreibzugriff und wenn die Anlage ihn als beschreibbar meldet | kg |
+| `number.eta_heizung_pelletpreis` | Pelletpreis zum Einstellen; die Attribute nennen die eingetragenen Lieferungen | EUR/t |
 | `sensor.eta_heizung_lager_fullstand` | Lager Füllstand (Vorrat geteilt durch Fassungsvermögen) | % |
 | `sensor.eta_heizung_lager_reicht_bis` | Tag, an dem das Lager voraussichtlich leer ist | Datum |
 | `sensor.eta_heizung_lager_bestellen_bis` | Tag, an dem voraussichtlich die Warngrenze erreicht ist | Datum |
@@ -414,7 +416,7 @@ Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübau
 - **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat. Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel.
 - **Abgastemperatur:** `sensor.eta_heizung_abgastemperatur` erscheint, wenn der Kessel einen Abgasfühler im Menübaum führt. In den Karten steht sie nicht.
 - **Puffer-Ladezustand:** PufferFlex meldet ihn selbst. Beim älteren Funktionsblock „Puffer“ rechnet ihn die Integration aus den Pufferfühlern: Jeder Fühler steht für einen gleich großen Teil des Speichers, 0 % bis 30 °C, 100 % ab 80 °C, dazwischen anteilig. Der Sensor trägt dann das Attribut `berechnet`. Nötig sind mindestens zwei Fühler.
-- **Pelletlager:** Vorrat und Warngrenze kommen von der Anlage, das Fassungsvermögen auch (*Lager → Vorrat → Maximaler Vorrat*). Einstellen lässt es sich in Home Assistant, siehe [Fassungsvermögen des Pelletlagers](#fassungsvermögen-des-pelletlagers).
+- **Pelletlager:** Vorrat und Warngrenze kommen von der Anlage, das Fassungsvermögen auch (*Lager → Vorrat → Maximaler Vorrat*). Einstellen lässt es sich in Home Assistant, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
 - **Ältere Regelungen** (belegt mit Software 3.42.0 und Webservices 1.1) zeigen ihre Messwerte an anderer Stelle im Menübaum. Die Integration findet sie dort für Pelletkessel, älteren Puffer, Warmwasserspeicher, Heizkreise, Pelletlager, Außentemperatur und Solaranlage. Ladezustand des Puffers und Fassungsvermögen des Lagers meldet so eine Anlage nicht: Den Ladezustand rechnet die Integration, das Fassungsvermögen trägst du im Zahlenfeld ein. Schalten und Einstellen gibt es dort nicht: Dafür muss die Anlage sagen, was sich beschreiben lässt, und das kann sie erst ab Webservices 1.2. Fehlt bei dir etwas, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 - **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und die Erträge von heute und gestern nur mit Wärmemengenmessung. `sensor.eta_heizung_solar_warmemenge` eignet sich für eine Statistik-Karte, aber nicht fürs Energie-Dashboard: Dessen Bereich *Solarpanel* ist für Strom gedacht.
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom über einen Heizstab ins Wasser. Gelesen werden Leistung, drei Temperaturen, Zustand, Gesamtenergie und die Erträge. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist verbrauchter Strom und gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
@@ -530,16 +532,32 @@ Findet die Integration zusätzlich die **Entaschentaste** (am Display unter *Son
 
 `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab. Hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst ein, endet der Plan ebenfalls. Er übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen, erscheint eine Meldung, dass der Kessel von Hand einzuschalten ist. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
 
-### Fassungsvermögen des Pelletlagers
+### Pelletlager: Vorrat, Fassungsvermögen, Preis und Lieferung
 
-Wie viel dein Lager fasst, stellst du mit `number.eta_heizung_lager_fassungsvermogen` ein, auf der Seite des Geräts *ETA Heizung* unter **Konfiguration**. Das Feld gibt es immer, wenn ein Pelletlager gewählt ist. Wohin es den Wert schreibt, hängt von deiner Anlage ab:
+Nach einer Lieferung ändern sich Vorrat und Preis. Beides stellst du in Home Assistant ein, ohne die Einstellungen der Integration zu öffnen: auf der Seite des Geräts *ETA Heizung* unter **Konfiguration** oder in der Karte [ETA Übersicht](#neue-karte-eta-übersicht).
+
+**In der Karte** trägt das Pelletlager oben rechts zwei kleine Knöpfe:
+
+- **Plus - Lieferung eintragen:** Datum, Menge in kg und Preis je Tonne. Home Assistant merkt sich die Lieferung, übernimmt den Preis und erhöht den Vorrat an der Heizung um die Menge. Vor dem OK steht, ob der Vorrat dabei auch an der Bedieneinheit der Heizung geändert wird und auf welchen Wert.
+- **Stift - Lager einstellen:** Vorrat, Fassungsvermögen und Pelletpreis. Geschrieben wird nur, was du änderst.
+
+**Ohne Karte** gibt es dasselbe als Zahlenfelder und als Aktion:
+
+| | Was | Wohin |
+|---|---|---|
+| `number.eta_heizung_lager_vorrat` | Vorrat in kg | an die Anlage (*Lager → Vorrat*). Das Feld gibt es nur mit Schreibzugriff und wenn die Anlage den Vorrat als beschreibbar meldet |
+| `number.eta_heizung_lager_fassungsvermogen` | Fassungsvermögen in kg | an die Anlage oder nur in Home Assistant, siehe unten |
+| `number.eta_heizung_pelletpreis` | Preis in Euro je Tonne | nur in Home Assistant. Derselbe Wert wie unter **Konfigurieren**; 0 schaltet die Kosten ab |
+| Aktion `eta_heating_ws.lieferung_eintragen` | `datum` (ohne Angabe heute), `menge` in kg, `preis` in Euro je Tonne (ohne Angabe bleibt der bisherige) | merkt sich die Lieferung, übernimmt den Preis, erhöht den Vorrat an der Anlage |
+
+Die letzten 20 Lieferungen stehen im Attribut `lieferungen` von `number.eta_heizung_pelletpreis`, die neueste zuerst. Meldet deine Anlage den Vorrat nicht als beschreibbar oder fehlt der Schreibzugriff, wird die Lieferung nur gemerkt; den Vorrat stellst du dann wie bisher am Display ein.
+
+**Fassungsvermögen.** Das Feld gibt es immer, wenn ein Pelletlager gewählt ist. Wohin es den Wert schreibt, hängt von deiner Anlage ab:
 
 - **An die Anlage** (*Lager → Vorrat → Maximaler Vorrat*), wenn der Schreibzugriff freigegeben ist und die Anlage den Wert als beschreibbar meldet. Die Grenzen nennt sie selbst, an einer Anlage sind es 0 bis 100.000 kg.
 - **Nur in Home Assistant** in allen anderen Fällen: ohne Schreibzugriff und an älteren Regelungen, die kein Fassungsvermögen melden. An der Anlage ändert sich dann nichts. Solange du nichts einträgst, zeigt das Feld den Wert der Anlage. 0 verwirft deinen Wert wieder.
 
 Der Füllstand in Prozent und `sensor.eta_heizung_lager_fassungsvermogen` rechnen mit dem, was im Feld steht. Wohin es schreibt, zeigt sein Attribut `gespeichert`.
-
-In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) erreichst du das Feld auch aus der Kachel des Pelletlagers: Ein Tipp auf die Zeile **Fassungsvermögen** mit dem Stift öffnet es.
 
 ### Betriebsart je Heizkreis
 

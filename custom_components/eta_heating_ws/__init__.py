@@ -28,6 +28,7 @@ from .const import (
     ASCHEBOX_ENTITAETEN,
     BILD_AUSWAHLEN,
     KESSEL_SPERRE,
+    PELLET_PREIS_ZAHL,
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
@@ -428,6 +429,8 @@ def entitaet_vorgesehen(
         return mit_prognose and _PROGNOSE[key] in aktiv
     if key in _MIT_PUFFERVOLUMEN:
         return "puffer" in aktiv and "puffer" in puffer_mit_volumen
+    if key == PELLET_PREIS_ZAHL:
+        return "kessel" in aktiv or "lager" in aktiv
     if key in _EIGENE_ENTITAETEN:
         return _EIGENE_ENTITAETEN[key] in aktiv
     thermostat = next(

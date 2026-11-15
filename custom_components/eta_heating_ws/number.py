@@ -1,10 +1,12 @@
-"""Zahlen zum Einstellen - bisher das Fassungsvermögen des Pelletlagers.
+"""Zahlen zum Einstellen: Fassungsvermögen und Vorrat des Pelletlagers, dazu der Pelletpreis.
 
-Welche es gibt, steht in const.ZAHLEN. An die Anlage schreibt ein
-Zahlenfeld nur mit freigegebenem Schreibzugriff und nur, wenn sie die
-Zahl als beschreibbar meldet, siehe
+Welche es an der Anlage gibt, steht in const.ZAHLEN. An die Anlage
+schreibt ein Zahlenfeld nur mit freigegebenem Schreibzugriff und nur,
+wenn sie die Zahl als beschreibbar meldet, siehe
 ETADataUpdateCoordinator._zahlen_pruefen. Das Fassungsvermögen gibt es
 auch sonst: Dann merkt es sich seinen Wert in Home Assistant.
+
+Der Pelletpreis gehört allein zu Home Assistant, siehe ETAPelletPreis.
 """
 
 from __future__ import annotations
@@ -18,8 +20,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import ETAApiError
-from .const import ZAHLEN
+from .const import MAX_PELLET_PREIS, PELLET_PREIS_ZAHL, ZAHLEN
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
 from .switch import vorwegnahme_pruefen
@@ -37,6 +38,9 @@ async def async_setup_entry(
 
     Beide tragen denselben Schlüssel - es bleibt dieselbe Entität, wenn
     der Schreibzugriff später dazukommt oder wegfällt.
+
+    Den Pelletpreis gibt es, wo Pellets verbrannt werden: mit Pelletlager
+    oder wenn der Kessel seinen Pelletverbrauch meldet.
     """
     coordinator = entry.runtime_data
     entities: list[NumberEntity] = [
@@ -50,8 +54,17 @@ async def async_setup_entry(
         and definition["component"] in coordinator.components
         and key not in coordinator.zahl_defs
     )
+    if pelletpreis_vorgesehen(coordinator):
+        entities.append(ETAPelletPreis(coordinator))
     ids_vorschlagen(coordinator.deutsche_namen, "number", entities)
     async_add_entities(entities)
+
+
+def pelletpreis_vorgesehen(coordinator: ETADataUpdateCoordinator) -> bool:
+    """Ob diese Anlage Pellets verbrennt und damit einen Pelletpreis braucht."""
+    return "lager" in coordinator.components or bool(
+        coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri")
+    )
 
 
 class ETAZahl(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
@@ -68,21 +81,14 @@ class ETAZahl(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
 
     def __init__(self, coordinator: ETADataUpdateCoordinator, key: str, definition: dict) -> None:
         super().__init__(coordinator)
+        self._key = key
         self._quelle = definition["quelle"]
-        self._uri = definition["uri"]
-        self._skala = definition["scale"] or 1.0
         self._attr_translation_key = definition["translation_key"]
         self._attr_icon = definition["icon"]
         self._attr_native_unit_of_measurement = definition["einheit"]
         self._attr_device_class = GERAETEKLASSEN.get(definition["einheit"])
         self._attr_native_step = definition["schritt"]
-        untere, obere = definition["grenzen"]
-        if definition.get("min_roh") is not None:
-            untere = max(untere, definition["min_roh"] / self._skala)
-        if definition.get("max_roh") is not None:
-            obere = min(obere, definition["max_roh"] / self._skala)
-        self._attr_native_min_value = untere
-        self._attr_native_max_value = obere
+        self._attr_native_min_value, self._attr_native_max_value = coordinator.zahl_grenzen(key)
         self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
         self._attr_device_info = coordinator.device_info
         self._erwartet: float | None = None
@@ -101,16 +107,8 @@ class ETAZahl(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
         return {"gespeichert": "Anlage"}
 
     async def async_set_native_value(self, value: float) -> None:
-        """Schreibt die Zahl auf die Anlage, im Rohwert mit ihrer Skalierung."""
-        if not self.native_min_value <= value <= self.native_max_value:
-            raise HomeAssistantError(
-                f"Nur zwischen {self.native_min_value:g} und {self.native_max_value:g} "
-                f"{self.native_unit_of_measurement}"
-            )
-        try:
-            await self.coordinator.client.async_set_value(self._uri, str(round(value * self._skala)))
-        except ETAApiError as err:
-            raise HomeAssistantError(f"Die Anlage hat den Wert nicht angenommen: {err}") from err
+        """Schreibt die Zahl auf die Anlage, siehe ETADataUpdateCoordinator.async_zahl_schreiben."""
+        await self.coordinator.async_zahl_schreiben(self._key, value)
         self._erwartet = float(value)
         self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
@@ -182,3 +180,45 @@ class ETALagerMaximumEigen(CoordinatorEntity[ETADataUpdateCoordinator], NumberEn
                 f"{self.native_unit_of_measurement}"
             )
         self.coordinator.lager_maximum_merken(value)
+
+
+class ETAPelletPreis(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
+    """Der Pelletpreis in Euro je Tonne - derselbe Wert wie im Formular unter Konfigurieren.
+
+    Als Zahlenfeld lässt er sich nach einer Lieferung ändern, ohne die
+    Einstellungen zu öffnen: auf der Geräteseite, aus der Karte oder
+    zusammen mit der Aktion "Lieferung eintragen". Mit 0 gibt es keine
+    Kostensensoren. Die Attribute nennen die eingetragenen Lieferungen,
+    die neueste zuerst.
+    """
+
+    _attr_has_entity_name = True
+    _attr_mode = NumberMode.BOX
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_min_value = 0
+    _attr_native_max_value = MAX_PELLET_PREIS
+    _attr_native_step = 0.01
+    _attr_native_unit_of_measurement = "EUR/t"
+    _attr_translation_key = PELLET_PREIS_ZAHL
+    _attr_icon = "mdi:currency-eur"
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{PELLET_PREIS_ZAHL}"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.pellet_preis
+
+    @property
+    def extra_state_attributes(self) -> dict[str, list[dict]]:
+        return {"lieferungen": self.coordinator.lieferungen[::-1]}
+
+    async def async_set_native_value(self, value: float) -> None:
+        if not self.native_min_value <= value <= self.native_max_value:
+            raise HomeAssistantError(
+                f"Nur zwischen {self.native_min_value:g} und {self.native_max_value:g} Euro je Tonne"
+            )
+        self.coordinator.pellet_preis_merken(value)
+        self.async_write_ha_state()

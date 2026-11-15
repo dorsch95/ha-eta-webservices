@@ -8,7 +8,7 @@ import time
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -20,8 +20,12 @@ from .const import (
     COMPONENTS,
     CONF_KESSEL_GESPERRT,
     CONF_LAGER_MAXIMUM,
+    CONF_LIEFERUNGEN,
+    CONF_PELLET_PREIS,
     KESSEL_GESPERRT_AUSGESCHALTET,
     KESSEL_GESPERRT_WAR_AUS,
+    LAGER_VORRAT_ZAHL,
+    MAX_LIEFERUNGEN,
     SELECTS,
     SWITCHES,
     ZAHLEN,
@@ -1151,6 +1155,101 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             optionen.pop(CONF_LAGER_MAXIMUM, None)
         self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
         self.async_update_listeners()
+
+    def zahl_grenzen(self, key: str) -> tuple[float, float]:
+        """Der Bereich einer Zahl aus ZAHLEN: der aus const, enger gefasst durch den der Anlage."""
+        definition = self.zahl_defs[key]
+        skala = definition["scale"] or 1.0
+        untere, obere = definition["grenzen"]
+        if definition.get("min_roh") is not None:
+            untere = max(untere, definition["min_roh"] / skala)
+        if definition.get("max_roh") is not None:
+            obere = min(obere, definition["max_roh"] / skala)
+        return untere, obere
+
+    async def async_zahl_schreiben(self, key: str, wert: float) -> None:
+        """Schreibt eine Zahl aus ZAHLEN auf die Anlage, im Rohwert mit ihrer Skalierung."""
+        definition = self.zahl_defs[key]
+        untere, obere = self.zahl_grenzen(key)
+        if not untere <= wert <= obere:
+            raise HomeAssistantError(
+                f"Nur zwischen {untere:g} und {obere:g} {definition['einheit']}"
+            )
+        skala = definition["scale"] or 1.0
+        try:
+            await self.client.async_set_value(definition["uri"], str(round(wert * skala)))
+        except ETAApiError as err:
+            raise HomeAssistantError(f"Die Anlage hat den Wert nicht angenommen: {err}") from err
+
+    @callback
+    def pellet_preis_merken(self, preis: float) -> None:
+        """Übernimmt einen neuen Pelletpreis in Euro je Tonne, 0 schaltet die Kosten ab.
+
+        Derselbe Wert wie im Formular unter Konfigurieren. Die Kostensensoren
+        rechnen sofort damit. Nur wenn sie neu entstehen oder wegfallen -
+        der Preis also von oder auf 0 wechselt -, wird die Einrichtung neu
+        geladen.
+        """
+        preis = max(0.0, float(preis))
+        vorher = self.pellet_preis
+        if preis == vorher:
+            return
+        self.pellet_preis = preis
+        optionen = dict(self.config_entry.options)
+        optionen[CONF_PELLET_PREIS] = preis
+        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+        if (vorher > 0) != (preis > 0):
+            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        else:
+            self.async_update_listeners()
+
+    @property
+    def lieferungen(self) -> list[dict]:
+        """Die eingetragenen Pelletlieferungen, die neueste zuletzt, siehe CONF_LIEFERUNGEN."""
+        return [dict(lieferung) for lieferung in self.config_entry.options.get(CONF_LIEFERUNGEN) or []]
+
+    @property
+    def vorrat_an_der_anlage(self) -> bool:
+        """Lässt sich der Vorrat des Pelletlagers an die Anlage schreiben?"""
+        return LAGER_VORRAT_ZAHL in self.zahl_defs
+
+    async def async_lieferung_eintragen(
+        self, datum, menge: float, preis: float | None = None
+    ) -> float | None:
+        """Trägt eine Pelletlieferung ein und gibt den neuen Vorrat zurück.
+
+        Meldet die Anlage den Vorrat als beschreibbar, wird er um die Menge
+        erhöht - zuerst, damit bei einer Ablehnung nichts gemerkt ist.
+        Danach wird die Lieferung gemerkt und ein angegebener Preis
+        übernommen. Ohne beschreibbaren Vorrat kommt None zurück: Dann
+        stellt man ihn wie bisher am Display ein.
+        """
+        neu = None
+        if self.vorrat_an_der_anlage:
+            vorrat = self.zahl("lager_vorrat")
+            if vorrat is None:
+                raise HomeAssistantError(
+                    "Die Anlage meldet gerade keinen Vorrat. Eingetragen wurde nichts."
+                )
+            neu = vorrat + float(menge)
+            _, obere = self.zahl_grenzen(LAGER_VORRAT_ZAHL)
+            if neu > obere:
+                raise HomeAssistantError(
+                    f"Mit dieser Lieferung läge der Vorrat bei {neu:g} kg - die Anlage "
+                    f"nimmt höchstens {obere:g} kg an. Eingetragen wurde nichts."
+                )
+            await self.async_zahl_schreiben(LAGER_VORRAT_ZAHL, neu)
+        eintrag = {"datum": datum.isoformat(), "menge": float(menge)}
+        if preis:
+            eintrag["preis"] = float(preis)
+        optionen = dict(self.config_entry.options)
+        optionen[CONF_LIEFERUNGEN] = [*self.lieferungen, eintrag][-MAX_LIEFERUNGEN:]
+        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+        if preis:
+            self.pellet_preis_merken(preis)
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        return neu
 
     @property
     def kessel_gesperrt(self) -> str | None:

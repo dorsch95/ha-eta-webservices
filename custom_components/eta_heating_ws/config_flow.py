@@ -42,6 +42,7 @@ from .const import (
     CONF_KESSEL_GESPERRT,
     CONF_KESSEL_SPERRE,
     CONF_LAGER_MAXIMUM,
+    CONF_LIEFERUNGEN,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
     CONF_PROGNOSE,
@@ -832,12 +833,14 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         """Speichert die Einstellungen als Optionen.
 
         Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
-        in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso,
-        dass "Kessel sperren" den Kessel gesperrt hält - solange es diesen
-        Schalter weiter gibt.
+        in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso
+        die eingetragenen Pelletlieferungen und dass "Kessel sperren" den
+        Kessel gesperrt hält - solange es diesen Schalter weiter gibt.
         """
         if self._current.get(CONF_LAGER_MAXIMUM):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
+        if self._current.get(CONF_LIEFERUNGEN):
+            daten = {CONF_LIEFERUNGEN: self._current[CONF_LIEFERUNGEN], **daten}
         if (
             self._current.get(CONF_KESSEL_GESPERRT)
             and daten.get(CONF_ENABLE_SWITCHES)

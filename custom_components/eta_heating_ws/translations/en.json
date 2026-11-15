@@ -410,6 +410,12 @@
     "number": {
       "lager_maximum_stellen": {
         "name": "Pellet store capacity"
+      },
+      "lager_vorrat_stellen": {
+        "name": "Store level"
+      },
+      "pellet_preis": {
+        "name": "Pellet price"
       }
     },
     "select": {
@@ -1349,6 +1355,28 @@
     }
   },
   "services": {
+    "lieferung_eintragen": {
+      "name": "Enter a pellet delivery",
+      "description": "Remembers a pellet delivery, takes over its price and raises the stock at the heater by the delivered amount - the latter only if the heater reports the stock as writable.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ETA heater",
+          "description": "Only needed if several ETA heaters are set up."
+        },
+        "datum": {
+          "name": "Date",
+          "description": "Day of the delivery. Today if omitted."
+        },
+        "menge": {
+          "name": "Amount",
+          "description": "Delivered pellets in kg."
+        },
+        "preis": {
+          "name": "Price",
+          "description": "Price in euros per tonne. If omitted, the pellet price stays as it is."
+        }
+      }
+    },
     "karte_erzeugen": {
       "name": "Create dashboard card",
       "description": "Returns the dashboard card tailored to your heating system - with exactly your components, buffer sensors and entities. Paste the response as a manual card.",

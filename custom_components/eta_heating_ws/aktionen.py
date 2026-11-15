@@ -1,4 +1,8 @@
-"""Die Aktion "Dashboard-Karte erzeugen".
+"""Die Aktionen "Dashboard-Karte erzeugen" und "Pelletlieferung eintragen".
+
+Die zweite steht am Ende, siehe async_aktionen_registrieren.
+
+Zur ersten:
 
 Liefert die Karte zugeschnitten auf die eingerichtete Anlage: nur die
 angekreuzten Komponenten, genau so viele Pufferfühler wie vorhanden und
@@ -26,13 +30,19 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN, PUFFER_SPEICHER
+from homeassistant.util import dt as dt_util
+
+from .const import DOMAIN, MAX_LAGER_MAXIMUM, MAX_PELLET_PREIS, PUFFER_SPEICHER
 from .coordinator import puffer_fuehler_schluessel
 from .entitaets_ids import feste_entity_id
 from .karte import responsive_karte
 
 AKTION_KARTE = "karte_erzeugen"
+AKTION_LIEFERUNG = "lieferung_eintragen"
 CONF_EINTRAG = "config_entry_id"
+CONF_DATUM = "datum"
+CONF_MENGE = "menge"
+CONF_PREIS = "preis"
 
 _ENTITAET = re.compile(
     r"\b(?:sensor|binary_sensor|switch|select|climate|button|datetime)\.eta_heizung_[a-z0-9_]+"
@@ -42,7 +52,42 @@ die Uhrzeit des Aschebox-Plans, damit eine umbenannte nicht ins Leere zeigt."""
 
 
 def async_aktionen_registrieren(hass: HomeAssistant) -> None:
-    """Meldet die Aktionen der Integration bei Home Assistant an."""
+    """Meldet die Aktionen der Integration bei Home Assistant an.
+
+    "Pelletlieferung eintragen" nimmt Datum, Menge in kg und den Preis in
+    Euro je Tonne. Sie merkt sich die Lieferung, übernimmt den Preis und
+    erhöht den Vorrat an der Anlage um die Menge - das Letzte nur, wenn
+    die Anlage ihn als beschreibbar meldet. Die Antwort nennt den neuen
+    Vorrat oder sagt, dass er am Display einzustellen ist.
+    """
+
+    async def lieferung_eintragen(call: ServiceCall) -> ServiceResponse:
+        eintrag = _eintrag_waehlen(hass, call.data.get(CONF_EINTRAG))
+        coordinator = eintrag.runtime_data
+        datum = call.data.get(CONF_DATUM) or dt_util.now().date()
+        vorrat = await coordinator.async_lieferung_eintragen(
+            datum, call.data[CONF_MENGE], call.data.get(CONF_PREIS)
+        )
+        return {"vorrat_geschrieben": vorrat is not None, "vorrat": vorrat}
+
+    hass.services.async_register(
+        DOMAIN,
+        AKTION_LIEFERUNG,
+        lieferung_eintragen,
+        schema=vol.Schema(
+            {
+                vol.Optional(CONF_EINTRAG): cv.string,
+                vol.Optional(CONF_DATUM): cv.date,
+                vol.Required(CONF_MENGE): vol.All(
+                    vol.Coerce(float), vol.Range(min=1, max=MAX_LAGER_MAXIMUM)
+                ),
+                vol.Optional(CONF_PREIS): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=MAX_PELLET_PREIS)
+                ),
+            }
+        ),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
 
     async def karte_erzeugen(call: ServiceCall) -> ServiceResponse:
         eintrag = _eintrag_waehlen(hass, call.data.get(CONF_EINTRAG))

@@ -167,7 +167,10 @@ async def test_grafiken_werden_aus_der_integration_ausgeliefert():
         data = {DATA_EXTRA_MODULE_URL: set()}
 
     assert await eta_heating_ws.async_setup(Hass(), {}) is True
-    assert Hass.services.angemeldet == [("eta_heating_ws", "karte_erzeugen")]
+    assert sorted(Hass.services.angemeldet) == [
+        ("eta_heating_ws", "karte_erzeugen"),
+        ("eta_heating_ws", "lieferung_eintragen"),
+    ]
 
     from eta_heating_ws.const import ALTE_URL_GRAFIKEN
     from eta_heating_ws.karte import BILDPFAD, VERSION

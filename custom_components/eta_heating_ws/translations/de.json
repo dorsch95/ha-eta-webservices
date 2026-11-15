@@ -410,6 +410,12 @@
     "number": {
       "lager_maximum_stellen": {
         "name": "Lager Fassungsvermögen"
+      },
+      "lager_vorrat_stellen": {
+        "name": "Lager Vorrat"
+      },
+      "pellet_preis": {
+        "name": "Pelletpreis"
       }
     },
     "select": {
@@ -1349,6 +1355,28 @@
     }
   },
   "services": {
+    "lieferung_eintragen": {
+      "name": "Pelletlieferung eintragen",
+      "description": "Merkt sich eine Pelletlieferung, übernimmt ihren Preis und erhöht den Vorrat an der Heizung um die gelieferte Menge - das Letzte nur, wenn die Heizung den Vorrat als beschreibbar meldet.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ETA-Heizung",
+          "description": "Nur nötig, wenn mehrere ETA-Heizungen eingerichtet sind."
+        },
+        "datum": {
+          "name": "Datum",
+          "description": "Tag der Lieferung. Ohne Angabe heute."
+        },
+        "menge": {
+          "name": "Menge",
+          "description": "Gelieferte Pellets in kg."
+        },
+        "preis": {
+          "name": "Preis",
+          "description": "Preis in Euro je Tonne. Ohne Angabe bleibt der bisherige Pelletpreis."
+        }
+      }
+    },
     "karte_erzeugen": {
       "name": "Dashboard-Karte erzeugen",
       "description": "Liefert die Dashboard-Karte zugeschnitten auf deine Anlage - mit genau deinen Komponenten, Pufferfühlern und Entitäten. Die Antwort als manuelle Karte einfügen.",
