@@ -451,7 +451,6 @@
           "gas": "Gastherme",
           "oel": "Ölkessel",
           "ofen": "Kaminofen",
-          "pv": "PV-Anlage",
           "allgemein": "Allgemein"
         }
       },
@@ -461,7 +460,6 @@
           "gas": "Gastherme",
           "oel": "Ölkessel",
           "ofen": "Kaminofen",
-          "pv": "PV-Anlage",
           "allgemein": "Allgemein"
         }
       }

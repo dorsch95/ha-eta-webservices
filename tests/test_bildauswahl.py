@@ -2,9 +2,12 @@
 
 Was hinter den beiden Funktionsblöcken steht, verrät die Anlage nicht:
 Der Brenner kann eine Gastherme oder ein Ölkessel sein, die Fremdwärme
-ein Kaminofen oder ein Heizstab an der PV-Anlage. Je Komponente gibt es
-deshalb eine Auswahl am Gerät - Gas, Öl, Ofen, PV-Anlage, allgemein -,
-die beide Dashboard-Karten abfragen. An der Anlage ändert sie nichts.
+ein Kaminofen oder etwas ganz anderes. Je Komponente gibt es deshalb
+eine Auswahl am Gerät - Gas, Öl, Ofen, allgemein -, die beide
+Dashboard-Karten abfragen. An der Anlage ändert sie nichts.
+
+Ein Bild für Photovoltaik gibt es nicht: Diese Art der Fremdwärme hat
+keinen Temperaturfühler, ihre Werte liest die Integration noch nicht.
 """
 
 from __future__ import annotations
@@ -28,7 +31,7 @@ from eta_heating_ws.karte import (
 from .conftest import UEBERSETZUNGEN
 from .test_sensors import setup_integration
 
-ARTEN = ["gas", "oel", "ofen", "pv", "allgemein"]
+ARTEN = ["gas", "oel", "ofen", "allgemein"]
 
 
 async def auswahlen(hass, entry, komponenten, schreibzugriff=False):
@@ -43,7 +46,7 @@ async def auswahlen(hass, entry, komponenten, schreibzugriff=False):
     return bilder
 
 
-def test_fuenf_bilder_stehen_zur_wahl():
+def test_vier_bilder_stehen_zur_wahl():
     assert list(ERZEUGER_BILDER) == ARTEN
     assert ERZEUGER_VORGABE == {"brenner": "gas", "fremdwaerme": "ofen"}
 
@@ -90,7 +93,7 @@ async def test_waehlen_schreibt_nichts_an_die_anlage(hass, entry):
 
 
 @pytest.mark.parametrize(
-    "gespeichert, erwartet", [("pv", "pv"), (None, "ofen"), ("unknown", "ofen"), ("unsinn", "ofen")]
+    "gespeichert, erwartet", [("oel", "oel"), (None, "ofen"), ("unknown", "ofen"), ("pv", "ofen")]
 )
 async def test_nach_dem_neustart_gilt_die_letzte_wahl(hass, entry, gespeichert, erwartet):
     bilder = await auswahlen(hass, entry, ["fremdwaerme"])
@@ -179,7 +182,7 @@ def test_bildkarte_bewegt_nur_das_gewaehlte_bild_des_brenners():
     } in oel
     [gas] = auflagen["brenner_aktiv.webp"]
     assert [b["state_not"] for b in gas if b["entity"] == BRENNER_BILD] == [
-        "oel", "ofen", "pv", "allgemein"
+        "oel", "ofen", "allgemein"
     ], "die Vorgabe gilt auch, solange die Auswahl nichts Bekanntes meldet"
 
 

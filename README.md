@@ -273,7 +273,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_brenner_temperatur` | Brenner Temperatur | °C |
 | `sensor.eta_heizung_brenner_leistung_soll` | Brenner Leistung Soll | kW |
 | `sensor.eta_heizung_brenner_volllaststunden` | Brenner Volllaststunden | h |
-| `select.eta_heizung_brenner_bild` | Brenner Bild auf den Dashboard-Karten: Gastherme, Ölkessel, Kaminofen, PV-Anlage oder Allgemein | Auswahl |
+| `select.eta_heizung_brenner_bild` | Brenner Bild auf den Dashboard-Karten: Gastherme, Ölkessel, Kaminofen oder Allgemein | Auswahl |
 | **Fremdwärme** | | |
 | `sensor.eta_heizung_fremdwarme_temperatur` | Fremdwärme Temperatur | °C |
 | `sensor.eta_heizung_fremdwarme_speichertemperatur` | Fremdwärme Speichertemperatur | °C |
@@ -357,10 +357,9 @@ Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Nam
 | Gastherme | Wandtherme mit Sichtfenster | blaue Gasflammen |
 | Ölkessel | Kessel mit rotem Brenner und Ölleitung | gelbe Flamme im Sichtglas |
 | Kaminofen | Ofen mit Rauchrohr und Holzfach | Holzfeuer |
-| PV-Anlage | Solarmodul mit Blitz | der Blitz leuchtet |
 | Allgemein | Gehäuse mit drei Wärmewellen | die Wellen glühen und steigen auf |
 
-Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. Dort führt die Leitung bei „PV-Anlage“ Strom statt Wärme. An der Anlage ändert die Auswahl nichts.
+Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts.
 
 ### Anpassen
 

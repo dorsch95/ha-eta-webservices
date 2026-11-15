@@ -941,7 +941,6 @@ ERZEUGER_BILDER = {
     "gas": ("brenner", "brenner_aktiv"),
     "oel": ("erzeuger_oel", "erzeuger_oel_aktiv"),
     "ofen": ("fremdwaerme", "fremdwaerme_aktiv"),
-    "pv": ("pvm", "pvm_aktiv"),
     "allgemein": ("erzeuger_allgemein", "erzeuger_allgemein_aktiv"),
 }
 """Die Bilder, zwischen denen der Nutzer für Brenner und Fremdwärme wählt.
@@ -949,8 +948,12 @@ ERZEUGER_BILDER = {
 Je Bild seine Kachelgrafik und die bewegte Fassung für die Zeit, in der
 der Erzeuger Wärme liefert (.webp bewegt, .png als Standbild). Was hinter
 "Brenner" oder "Fremdwärme" wirklich steht - Gastherme, Ölkessel,
-Kaminofen, Heizstab an der PV-Anlage -, verrät die Anlage nicht. "pv"
-nimmt die Kachel des PV-Heizmoduls, "allgemein" passt auf alles.
+Kaminofen -, verrät die Anlage nicht. "allgemein" passt auf alles.
+
+Ein Bild für Photovoltaik gibt es bewusst nicht: Die Regelung kennt
+Fremdwärme aus Photovoltaik als eigene Art ohne Temperaturfühler, nur mit
+Digitaleingang, Analogeingang oder externer Schnittstelle. Deren Werte
+liest die Integration noch nicht.
 """
 
 ERZEUGER_VORGABE = {"brenner": "gas", "fremdwaerme": "ofen"}

@@ -451,7 +451,6 @@
           "gas": "Gas boiler",
           "oel": "Oil boiler",
           "ofen": "Wood stove",
-          "pv": "PV system",
           "allgemein": "Generic"
         }
       },
@@ -461,7 +460,6 @@
           "gas": "Gas boiler",
           "oel": "Oil boiler",
           "ofen": "Wood stove",
-          "pv": "PV system",
           "allgemein": "Generic"
         }
       }
