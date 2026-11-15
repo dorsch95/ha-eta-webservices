@@ -178,10 +178,10 @@ async def test_zweimal_sperren_schreibt_einmal(hass, entry):
 async def test_sperre_uebersteht_den_neustart(hass, entry):
     """Was der Schalter sich gemerkt hat, steht in den Optionen der Einrichtung."""
     entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
-    _, sperre, _ = await schalter_von(hass, entry, kessel_ein=False)
+    coordinator, sperre, _ = await schalter_von(hass, entry, kessel_ein=False)
 
     assert sperre.is_on is True
-    sperre._handle_coordinator_update()
+    await coordinator.async_refresh()
     assert sperre.is_on is True
 
     await sperre.async_turn_off()
@@ -194,13 +194,13 @@ async def test_schaltet_jemand_den_kessel_ein_ist_die_sperre_aufgehoben(hass, en
     """An der Heizung oder über den Schalter Kessel - geschrieben wird dann nichts."""
     coordinator, sperre, _ = await schalter_von(hass, entry)
     await sperre.async_turn_on()
-    sperre._handle_coordinator_update()
-    assert sperre.is_on is True and sperre._erwartet is None, "die Anlage hat das Ausschalten bestätigt"
+    assert sperre.is_on is True and coordinator.kesselsperre._erwartet is None, (
+        "die Anlage hat das Ausschalten bestätigt"
+    )
     hass.session.gesetzte_werte.clear()
 
     hass.session.geschrieben[TASTE] = EIN
     await coordinator.async_refresh()
-    sperre._handle_coordinator_update()
 
     assert sperre.is_on is False
     assert CONF_KESSEL_GESPERRT not in entry.options
@@ -218,27 +218,27 @@ async def test_traege_anlage_hebt_die_sperre_nicht_gleich_auf(hass, entry, monke
     coordinator, sperre, _ = await schalter_von(hass, entry)
     hass.session.traege = True
     await sperre.async_turn_on()
+    assert sperre.is_on is True, "die erste Abfrage nach dem Schalten meldet noch Ein"
 
-    for _ in range(VERWERFEN_NACH - 1):
-        sperre._handle_coordinator_update()
+    for _ in range(VERWERFEN_NACH - 2):
+        await coordinator.async_refresh()
         assert sperre.is_on is True
 
     hass.session.traege = False
     await coordinator.async_refresh()
-    sperre._handle_coordinator_update()
-    assert sperre.is_on is True and sperre._erwartet is None
+    assert sperre.is_on is True and coordinator.kesselsperre._erwartet is None
 
 
 async def test_fuehrt_die_anlage_das_ausschalten_nie_aus_gilt_keine_sperre(hass, entry, monkeypatch):
     from eta_heating_ws.switch import VERWERFEN_NACH
 
     monkeypatch.setattr(switch_platform, "VERWERFEN_FRUEHESTENS", 0)
-    _, sperre, _ = await schalter_von(hass, entry)
+    coordinator, sperre, _ = await schalter_von(hass, entry)
     hass.session.traege = True
     await sperre.async_turn_on()
 
     for _ in range(VERWERFEN_NACH):
-        sperre._handle_coordinator_update()
+        await coordinator.async_refresh()
 
     assert sperre.is_on is False
     assert CONF_KESSEL_GESPERRT not in entry.options
@@ -248,7 +248,6 @@ async def test_gleich_nach_dem_freigeben_wieder_sperren_schaltet_aus(hass, entry
     """Die Anlage meldet noch "Aus" - trotzdem gilt der eigene Einschaltbefehl."""
     _, sperre, _ = await schalter_von(hass, entry)
     await sperre.async_turn_on()
-    sperre._handle_coordinator_update()
     hass.session.traege = True
     hass.session.geschrieben[TASTE] = AUS
     await sperre.async_turn_off()

@@ -34,7 +34,7 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: 
 - Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card works everywhere. Display names are translated.
 - With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Buffer loading times and hot water times can be shown too (*Show* in the card editor); hot water temperatures are editable from 0 to 80 °C, buffer loading times only switch loading on and off. Home Assistant loads the card by itself - add it via *Edit dashboard → Add card*.
 - Alternatively, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
-- With switching enabled, an optional switch **Lock boiler** pauses the boiler while a device the ETA control does not know is heating, such as a wood stove: it switches the boiler off via its on/off key and on again afterwards, but never switches on a boiler you turned off yourself. A blueprint ties the switch to any entity.
+- With switching enabled, an optional switch **Lock boiler** pauses the boiler while a device the ETA control does not know is heating, such as a wood stove: it switches the boiler off via its on/off key and on again afterwards, but never switches on a boiler you turned off yourself. A blueprint ties the switch to any entity. An **external heat source** outside the ETA control can be added as a component: you pick the entity that is on while it heats and which boiler it locks; it gets its own tile in the ETA Overview card.
 - A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
 - The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which. The order of the parts can be dragged in the card settings. A clock button on each part with a time program opens its times for editing.
 - The earlier ready-made dashboard card stays available: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
@@ -81,7 +81,7 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Pufferspeicher | 1 | Anzahl, PufferFlex und ältere Puffer zusammen, bis 8 |
 | Frischwassermodule und Warmwasserspeicher | 0 | Anzahl zusammen, bis 8 |
 | Heizkreise | 0 | Anzahl, bis 4 |
-| Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fremdwärme, Fernleitung, TWIN. Was dahintersteckt, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
+| Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fremdwärme, Fremderzeuger, Fernleitung, TWIN. Was dahintersteckt, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
 | Abfrageintervall | 30 Sekunden | erlaubt sind 1 bis 600. Die Integration liest alle Messwerte mit einer einzigen Anfrage. Je kürzer, desto öfter muss die Anlage antworten - bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten. Die Störungsliste wird dann nur alle 10 Sekunden gelesen |
 | Schnelle Abfrage | 3 Sekunden | 0 = aus. Liest eine kleine Gruppe öfter als den Rest: alles Schaltbare (Kessel ein/aus, Entaschen, Betriebsart und Raum Soll der Heizkreise), den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation. So zeigt das Dashboard etwa das Zapfen ohne Verzug. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall |
 | Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1. Steht auf dem Lieferschein ein anderer Wert, trag ihn ein |
@@ -285,6 +285,8 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_fremdwarme_zustand` | Fremdwärme Zustand | Text |
 | `sensor.eta_heizung_fremdwarme_ladepumpe` | Fremdwärme Ladepumpe | Text |
 | `select.eta_heizung_fremdwarme_bild` | Fremdwärme Bild auf den Dashboard-Karten, dieselbe Auswahl | Auswahl |
+| **Fremderzeuger** | | |
+| `select.eta_heizung_fremderzeuger_bild` | Fremderzeuger Bild in der Karte „ETA Übersicht“, dieselbe Auswahl | Auswahl |
 | **Fernleitung** | | |
 | `sensor.eta_heizung_fernleitung_pumpe` | Fernleitung Pumpe | Text |
 | **Unabhängig von den Komponenten** | | |
@@ -364,7 +366,7 @@ Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Nam
 | Kaminofen | Ofen mit Rauchrohr und Holzfach | Holzfeuer |
 | Allgemein | Gehäuse mit drei Wärmewellen | die Wellen glühen und steigen auf |
 
-Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts.
+Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Dieselbe Auswahl hat der [Fremderzeuger](#fremderzeuger) mit `select.eta_heizung_fremderzeuger_bild`. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts.
 
 ### Anpassen
 
@@ -403,7 +405,7 @@ Steht eine **Störung** an, nennt die Karte oben die Meldungen der Anlage. Ein *
 
 Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz. Das Anlagenbild liegt waagerecht, sobald die Karte breit genug ist: mit einem Pufferspeicher ab etwa 750 Pixeln, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. In einer Ansicht mit Abschnitten stellst du die **Breite** des Abschnitts auf *Volle Breite*. Reicht der Platz nicht, wird das Bild zur Liste von oben nach unten - so auch am Handy und in der Vorschau beim Bearbeiten der Karte.
 
-**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul, Brenner und Fremdwärme laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
+**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul, Brenner, Fremdwärme und Fremderzeuger laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
 
 ---
 
@@ -422,6 +424,7 @@ Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübau
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom über einen Heizstab ins Wasser. Gelesen werden Leistung, drei Temperaturen, Zustand, Gesamtenergie und die Erträge. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist verbrauchter Strom und gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 - **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Gelesen werden Anforderung, Temperatur, geforderte Leistung und Volllaststunden. Ob er wirklich brennt, meldet er der Regelung nicht zurück.
 - **Fremdwärme:** eine Wärmequelle, die die ETA-Regelung nicht steuert, etwa ein Kaminofen mit Wassertasche. Die Regelung misst ihre Temperatur und startet die Ladepumpe in den Puffer, sobald sie warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Der Funktionsblock heißt ab Werk `F.Wärme`. Geprüft ist die Variante mit Temperaturfühler und Ladepumpe; mit Umschaltventil oder Digitaleingang zeigen die fehlenden Werte `-`. An älteren Regelungen findet die Integration die Werte ebenfalls.
+- **Fremderzeuger:** eine Wärmequelle, die gar nicht an der ETA-Regelung hängt, etwa ein Kaminofen mit eigener Regelung. Die Anlage weiß nichts von ihm; ob er heizt, sagt eine Entität aus Home Assistant. Solange er heizt, kann er den Kessel sperren, siehe [Fremderzeuger](#fremderzeuger).
 - **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe`).
 
 ---
@@ -502,6 +505,30 @@ Geschrieben wird nur, was die Integration im Menübaum unter seinem Namen findet
 Findet die Integration am Kessel die **Ein/Aus-Taste**, entsteht `switch.eta_heizung_kessel`. Auf der Kessel-Kachel ist das ein antippbares Symbol, das leuchtet, solange der Kessel an ist.
 
 Heizkreise bekommen keinen eigenen Schalter. Dort ist „Aus“ einer der Einträge der Betriebsart.
+
+### Fremderzeuger
+
+Ein Fremderzeuger ist eine Wärmequelle, die nicht an der ETA-Regelung hängt - etwa ein Kaminofen mit eigener Regelung. Anders als bei der [Fremdwärme](#-was-deine-anlage-liefert) weiß die Anlage nichts von ihm. Home Assistant erfährt über eine Entität, ob er heizt, und kann solange den Kessel sperren.
+
+So richtest du ihn ein:
+
+1. Unter **Konfigurieren** bei **Weitere Komponenten** den **Fremderzeuger** ankreuzen.
+2. Im Schritt **Fremderzeuger** einen Namen vergeben und die Entität wählen, die an ist, solange er heizt: einen Schalter, einen Helfer oder einen Binärsensor.
+   - Ohne Fühler am Ofen: unter *Einstellungen → Geräte & Dienste → Helfer* einen **Schalter** anlegen. In der Karte schaltest du ihn mit einem Tipp um.
+   - Mit Temperaturfühler: Der Helfer **Schwellenwertsensor** macht aus der Temperatur an und aus.
+3. Mit Schreibzugriff wählst du dort auch, **welche Kessel** er sperrt, und wie lange er heizen oder aus sein muss, bevor gesperrt (ab Werk 1 Minute) und wieder freigegeben wird (ab Werk 5 Minuten). Ab Werk sperrt er nichts.
+
+Was dann passiert:
+
+- Heizt der Fremderzeuger, schaltet Home Assistant den gewählten Kessel über dessen Ein/Aus-Taste aus; ist er aus, schaltet es ihn wieder ein. Das läuft über dieselbe Sperre wie [Kessel sperren](#kessel-sperren): Ein Kessel, den du selbst ausgeschaltet hattest, bleibt aus.
+- Abgeglichen wird nach den beiden Wartezeiten, nach dem Start von Home Assistant und sobald die Heizung nach einer Unterbrechung wieder erreichbar ist. Ist der Zustand der Entität unbekannt, bleibt alles, wie es ist.
+- Den Schalter `switch.eta_heizung_kessel_sperren` gibt es dann von selbst. Schaltest du den gesperrten Kessel von Hand wieder ein, bleibt er an, bis der Fremderzeuger das nächste Mal anfängt zu heizen.
+
+In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) bekommt der Fremderzeuger eine eigene Kachel mit wählbarem Bild (`select.eta_heizung_fremderzeuger_bild`), im Anlagenbild lädt er wie Brenner und Fremdwärme in den ersten Pufferspeicher. Die Kachel zeigt, ob er heizt und ob der Kessel gesperrt ist; am Kessel steht dann **Kesselsperre: Gesperrt**. Die ältere fertige Karte zeigt ihn nicht.
+
+Ohne Karte und ohne diese Komponente geht es auch: mit `switch.eta_heizung_kessel_sperren` in einer eigenen Automation oder mit dem Blueprint [Kessel sperren](#-blueprints).
+
+> ⚠️ Fällt Home Assistant aus, während der Kessel gesperrt ist, bleibt er aus. Im Notfall schaltest du ihn am Display der Heizung wieder ein.
 
 ### Kessel sperren
 

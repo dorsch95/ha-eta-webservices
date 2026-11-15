@@ -27,6 +27,11 @@ from .const import (
     CONF_PELLET_PREIS,
     ASCHEBOX_ENTITAETEN,
     BILD_AUSWAHLEN,
+    CONF_FREMDERZEUGER_ENTITAET,
+    CONF_FREMDERZEUGER_FREIGEBEN_NACH,
+    CONF_FREMDERZEUGER_SPERREN_NACH,
+    DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH,
+    DEFAULT_FREMDERZEUGER_SPERREN_NACH,
     KESSEL_SPERRE,
     PELLET_PREIS_ZAHL,
     CONF_PROGNOSE,
@@ -54,12 +59,15 @@ from .const import (
     ALTE_URL_GRAFIKEN,
     THERMOSTATE,
     components_from_config,
+    fremderzeuger_sperrt,
     kessel_sperre_gewaehlt,
     puffer_volumen_schluessel,
     raumfuehler_schluessel,
     zeitplan_schluessel,
 )
 from .aschebox import AscheboxPlan, verwaisten_plan_melden
+from .fremderzeuger import Fremderzeuger
+from .switch import kesselsperre_anlegen
 from .aschebox import speicher as aschebox_speicher
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
@@ -133,7 +141,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
     coordinator.lager_maximum_eingetragen = float(config.get(CONF_LAGER_MAXIMUM) or 0)
-    coordinator.kessel_sperre = kessel_sperre_gewaehlt(config)
+    sperrt = fremderzeuger_sperrt(config, components)
+    coordinator.kessel_sperre = kessel_sperre_gewaehlt(config) or bool(sperrt)
     coordinator.schnell_intervall = config.get(
         CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL
     )
@@ -165,8 +174,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
             hass, entry.entry_id, endgueltig=not coordinator.enable_switches
         )
 
+    coordinator.kesselsperre = kesselsperre_anlegen(coordinator)
+    if coordinator.kesselsperre is not None:
+        entry.async_on_unload(coordinator.async_add_listener(coordinator.kesselsperre.abgleichen))
+    if "fremderzeuger" in components and config.get(CONF_FREMDERZEUGER_ENTITAET):
+        coordinator.fremderzeuger = Fremderzeuger(
+            hass,
+            coordinator,
+            config[CONF_FREMDERZEUGER_ENTITAET],
+            sperrt,
+            config.get(CONF_FREMDERZEUGER_SPERREN_NACH, DEFAULT_FREMDERZEUGER_SPERREN_NACH),
+            config.get(CONF_FREMDERZEUGER_FREIGEBEN_NACH, DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH),
+        )
+
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    if coordinator.fremderzeuger is not None:
+        coordinator.fremderzeuger.starten()
+        entry.async_on_unload(coordinator.fremderzeuger.beenden)
     if coordinator.aschebox is not None:
         coordinator.aschebox.starten()
         entry.async_on_unload(coordinator.aschebox.stoppen)

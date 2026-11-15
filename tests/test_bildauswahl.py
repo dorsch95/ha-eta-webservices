@@ -49,7 +49,7 @@ async def auswahlen(hass, entry, komponenten, schreibzugriff=False):
 
 def test_vier_bilder_stehen_zur_wahl():
     assert list(ERZEUGER_BILDER) == ARTEN
-    assert ERZEUGER_VORGABE == {"brenner": "gas", "fremdwaerme": "ofen"}
+    assert ERZEUGER_VORGABE == {"brenner": "gas", "fremdwaerme": "ofen", "fremderzeuger": "ofen"}
 
 
 @pytest.mark.parametrize("art", ARTEN)
@@ -69,8 +69,15 @@ def test_bild_der_pv_anlage_ist_fertig_aber_noch_nicht_waehlbar():
 
 
 def test_vorgabe_ist_das_bisherige_bild_der_komponente():
-    """Wer nichts wählt, sieht dasselbe wie vor der Auswahl."""
+    """Wer nichts wählt, sieht dasselbe wie vor der Auswahl.
+
+    Der Fremderzeuger hat keine Kachelgrafik - ihn zeigt nur die Karte
+    "ETA Übersicht", die selbst zeichnet.
+    """
     for komponente, art in ERZEUGER_VORGABE.items():
+        if COMPONENTS[komponente]["image"] is None:
+            assert komponente == "fremderzeuger"
+            continue
         assert ERZEUGER_BILDER[art][0] == COMPONENTS[komponente]["image"]
 
 

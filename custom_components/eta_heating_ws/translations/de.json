@@ -77,6 +77,23 @@
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
+      "fremderzeuger": {
+        "title": "Fremderzeuger",
+        "description": "Ein Fremderzeuger ist eine Wärmequelle, die nicht an der ETA-Regelung hängt - etwa ein Kaminofen mit eigener Regelung. Ob er heizt, erfährt Home Assistant über eine Entität. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "data": {
+          "fremderzeuger_name": "Name in der Karte",
+          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
+          "fremderzeuger_sperrt": "Sperren, solange er heizt",
+          "fremderzeuger_sperren_nach": "Sperren nach (Minuten)",
+          "fremderzeuger_freigeben_nach": "Freigeben nach (Minuten)"
+        },
+        "data_description": {
+          "fremderzeuger_entitaet": "Ein Schalter, ein Helfer oder ein Binärsensor. Ohne Fühler am Ofen: unter Einstellungen → Geräte & Dienste → Helfer einen Schalter anlegen und ihn in der Karte antippen. Mit Temperaturfühler: der Helfer „Schwellenwertsensor“ macht daraus an und aus.",
+          "fremderzeuger_sperrt": "Der Kessel wird über seine Ein/Aus-Taste ausgeschaltet und danach wieder eingeschaltet - nie, wenn er vorher von Hand aus war. Im Notfall schaltest du ihn am Display der Heizung wieder ein. Ohne Auswahl wird nichts gesperrt.",
+          "fremderzeuger_sperren_nach": "So lange muss er heizen, bevor gesperrt wird.",
+          "fremderzeuger_freigeben_nach": "So lange muss er aus sein, bevor der Kessel wieder frei ist."
+        }
+      },
       "puffer": {
         "title": "Pufferspeicher-Volumen",
         "description": "Der Funktionsblock „Puffer“ zeigt sein effektives Volumen zwar am Display der Regelung, gibt es aber nicht an die Webservices weiter. Trag ein, wie viele Liter dein Pufferspeicher fasst - etwa den Wert „Effektives Puffervolumen“ vom Display, vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
@@ -234,6 +251,23 @@
           "fernleitung": "FUB-Name: Fernleitung (Fernl)"
         }
       },
+      "fremderzeuger": {
+        "title": "Fremderzeuger",
+        "description": "Ein Fremderzeuger ist eine Wärmequelle, die nicht an der ETA-Regelung hängt - etwa ein Kaminofen mit eigener Regelung. Ob er heizt, erfährt Home Assistant über eine Entität. Solange er heizt, kann Home Assistant die gewählten Kessel sperren; danach gibt es sie wieder frei. Das Sperren braucht den Schreibzugriff - ohne ihn zeigt die Karte den Fremderzeuger nur an.",
+        "data": {
+          "fremderzeuger_name": "Name in der Karte",
+          "fremderzeuger_entitaet": "Entität, die an ist, solange er heizt",
+          "fremderzeuger_sperrt": "Sperren, solange er heizt",
+          "fremderzeuger_sperren_nach": "Sperren nach (Minuten)",
+          "fremderzeuger_freigeben_nach": "Freigeben nach (Minuten)"
+        },
+        "data_description": {
+          "fremderzeuger_entitaet": "Ein Schalter, ein Helfer oder ein Binärsensor. Ohne Fühler am Ofen: unter Einstellungen → Geräte & Dienste → Helfer einen Schalter anlegen und ihn in der Karte antippen. Mit Temperaturfühler: der Helfer „Schwellenwertsensor“ macht daraus an und aus.",
+          "fremderzeuger_sperrt": "Der Kessel wird über seine Ein/Aus-Taste ausgeschaltet und danach wieder eingeschaltet - nie, wenn er vorher von Hand aus war. Im Notfall schaltest du ihn am Display der Heizung wieder ein. Ohne Auswahl wird nichts gesperrt.",
+          "fremderzeuger_sperren_nach": "So lange muss er heizen, bevor gesperrt wird.",
+          "fremderzeuger_freigeben_nach": "So lange muss er aus sein, bevor der Kessel wieder frei ist."
+        }
+      },
       "puffer": {
         "title": "Pufferspeicher-Volumen",
         "description": "Der Funktionsblock „Puffer“ zeigt sein effektives Volumen zwar am Display der Regelung, gibt es aber nicht an die Webservices weiter. Trag ein, wie viele Liter dein Pufferspeicher fasst - etwa den Wert „Effektives Puffervolumen“ vom Display, vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
@@ -321,7 +355,8 @@
         "pvm": "PV-Heizmodul (PVM)",
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
-        "fremdwaerme": "Fremdwärme (Wärmequelle ohne Steuerung, z. B. Kaminofen)",
+        "fremdwaerme": "Fremdwärme (Wärmequelle ohne Steuerung an der ETA-Regelung, z. B. Kaminofen)",
+        "fremderzeuger": "Fremderzeuger (Wärmequelle außerhalb der ETA-Regelung, z. B. Kaminofen mit eigener Regelung)",
         "fernleitung": "Fernleitung (zu einem Nebengebäude)"
       }
     },
@@ -337,6 +372,11 @@
         "puffer7": "Pufferspeicher 7",
         "puffer8": "Pufferspeicher 8",
         "fernleitung": "Fernleitung"
+      }
+    },
+    "sperrbare_kessel": {
+      "options": {
+        "kessel": "Kessel"
       }
     }
   },
@@ -466,6 +506,15 @@
       },
       "fremdwaerme_bild": {
         "name": "Fremdwärme Bild",
+        "state": {
+          "gas": "Gastherme",
+          "oel": "Ölkessel",
+          "ofen": "Kaminofen",
+          "allgemein": "Allgemein"
+        }
+      },
+      "fremderzeuger_bild": {
+        "name": "Fremderzeuger Bild",
         "state": {
           "gas": "Gastherme",
           "oel": "Ölkessel",
@@ -662,6 +711,9 @@
       },
       "komponente_fremdwaerme": {
         "name": "Komponente Fremdwärme"
+      },
+      "komponente_fremderzeuger": {
+        "name": "Komponente Fremderzeuger"
       },
       "komponente_fernleitung": {
         "name": "Komponente Fernleitung"

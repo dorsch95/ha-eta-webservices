@@ -616,12 +616,14 @@ class FakeStates:
 
     def __init__(self) -> None:
         self.verwaist: set[str] = set()
+        self.zustaende: dict[str, str] = {}
+        """Zustände, die ein Test vorgibt - etwa "on" für die Entität eines Fremderzeugers."""
 
     def get(self, entity_id: str) -> SimpleNamespace:
         verwaist = entity_id in self.verwaist
         return SimpleNamespace(
             entity_id=entity_id,
-            state="unavailable" if verwaist else "unknown",
+            state="unavailable" if verwaist else self.zustaende.get(entity_id, "unknown"),
             attributes={"restored": True} if verwaist else {},
         )
 
@@ -778,6 +780,38 @@ def aschebox_ohne_hass(monkeypatch) -> SimpleNamespace:
         SimpleNamespace(async_create=lambda hass, text, **kwargs: stand.meldungen.append(text)),
     )
     return stand
+
+
+@pytest.fixture(autouse=True)
+def fremderzeuger_ohne_hass(monkeypatch) -> SimpleNamespace:
+    """Fängt ab, was der Fremderzeuger bei Home Assistant bestellt.
+
+    Zustandswechsel, Zeitgeber und der Start von Home Assistant brauchen
+    eine laufende Instanz. Hier hält die Attrappe nur fest, was bestellt
+    wurde - ein Test löst es dann selbst aus. zeitgeber: je Bestellung
+    Wartezeit, Rückruf und ob sie wieder abbestellt wurde.
+    """
+    from eta_heating_ws import fremderzeuger
+
+    protokoll = SimpleNamespace(beobachtet=[], zeitgeber=[], gestartet=[], abgemeldet=[])
+
+    def beobachten(hass, entitaeten, rueckruf):
+        protokoll.beobachtet.append((list(entitaeten), rueckruf))
+        return lambda: protokoll.abgemeldet.append("zustand")
+
+    def spaeter(hass, wartezeit, rueckruf):
+        bestellung = SimpleNamespace(wartezeit=wartezeit, rueckruf=rueckruf, abbestellt=False)
+        protokoll.zeitgeber.append(bestellung)
+        return lambda: setattr(bestellung, "abbestellt", True)
+
+    def beim_start(hass, rueckruf):
+        protokoll.gestartet.append(rueckruf)
+        return lambda: protokoll.abgemeldet.append("start")
+
+    monkeypatch.setattr(fremderzeuger, "async_track_state_change_event", beobachten)
+    monkeypatch.setattr(fremderzeuger, "async_call_later", spaeter)
+    monkeypatch.setattr(fremderzeuger, "async_at_started", beim_start)
+    return protokoll
 
 
 @pytest.fixture(autouse=True)

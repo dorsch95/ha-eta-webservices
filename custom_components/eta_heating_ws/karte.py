@@ -968,7 +968,7 @@ gibt. Sobald sie gelesen werden, wandert der Eintrag nach ERZEUGER_BILDER
 - die Auswahl, beide Karten und ihre Übersetzungen folgen dieser Liste.
 """
 
-ERZEUGER_VORGABE = {"brenner": "gas", "fremdwaerme": "ofen"}
+ERZEUGER_VORGABE = {"brenner": "gas", "fremdwaerme": "ofen", "fremderzeuger": "ofen"}
 """Das Bild je Komponente, solange der Nutzer nichts gewählt hat.
 
 Es ist das, was die Karten vor der Auswahl gezeigt haben: die Therme beim

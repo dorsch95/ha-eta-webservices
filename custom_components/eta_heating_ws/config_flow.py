@@ -38,6 +38,11 @@ from .const import (
     CONF_COMPONENTS,
     CONF_ENABLE_ERRORS,
     CONF_ENABLE_SWITCHES,
+    CONF_FREMDERZEUGER_ENTITAET,
+    CONF_FREMDERZEUGER_FREIGEBEN_NACH,
+    CONF_FREMDERZEUGER_NAME,
+    CONF_FREMDERZEUGER_SPERREN_NACH,
+    CONF_FREMDERZEUGER_SPERRT,
     CONF_FUB_NAMES,
     CONF_KESSEL_GESPERRT,
     CONF_KESSEL_SPERRE,
@@ -53,7 +58,13 @@ from .const import (
     CONF_ZEITRAEUME,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
+    DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH,
+    DEFAULT_FREMDERZEUGER_NAME,
+    DEFAULT_FREMDERZEUGER_SPERREN_NACH,
     DEFAULT_PELLET_KWH_PER_KG,
+    FREMDERZEUGER_FELDER,
+    MAX_FREMDERZEUGER_WARTEZEIT,
+    SPERRBARE_KESSEL,
     DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
     DEFAULT_PROGNOSE,
@@ -296,6 +307,60 @@ def _verbindungen_schema(komponenten: list[str], wege: dict[str, str | None]) ->
     )
 
 
+def _fremderzeuger_schema(current: dict[str, Any], schreiben: bool) -> vol.Schema:
+    """Name und Entität des Fremderzeugers, mit Schreibzugriff auch, welche Kessel er sperrt.
+
+    Die Auswahl der Kessel und die Wartezeiten fehlen ohne Schreibzugriff -
+    dann zeigt die Karte den Fremderzeuger nur an.
+    """
+    wartezeit = vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_FREMDERZEUGER_WARTEZEIT))
+    felder: dict = {
+        vol.Required(
+            CONF_FREMDERZEUGER_NAME,
+            default=current.get(CONF_FREMDERZEUGER_NAME) or DEFAULT_FREMDERZEUGER_NAME,
+        ): cv.string,
+        vol.Required(
+            CONF_FREMDERZEUGER_ENTITAET,
+            description={"suggested_value": current.get(CONF_FREMDERZEUGER_ENTITAET)},
+        ): EntitySelector(
+            EntitySelectorConfig(domain=["binary_sensor", "switch", "input_boolean"])
+        ),
+    }
+    if schreiben:
+        felder.update(
+            {
+                vol.Optional(
+                    CONF_FREMDERZEUGER_SPERRT,
+                    default=[
+                        kessel
+                        for kessel in SPERRBARE_KESSEL
+                        if kessel in (current.get(CONF_FREMDERZEUGER_SPERRT) or [])
+                    ],
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=SPERRBARE_KESSEL,
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                        translation_key="sperrbare_kessel",
+                    )
+                ),
+                vol.Required(
+                    CONF_FREMDERZEUGER_SPERREN_NACH,
+                    default=current.get(
+                        CONF_FREMDERZEUGER_SPERREN_NACH, DEFAULT_FREMDERZEUGER_SPERREN_NACH
+                    ),
+                ): wartezeit,
+                vol.Required(
+                    CONF_FREMDERZEUGER_FREIGEBEN_NACH,
+                    default=current.get(
+                        CONF_FREMDERZEUGER_FREIGEBEN_NACH, DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH
+                    ),
+                ): wartezeit,
+            }
+        )
+    return vol.Schema(felder)
+
+
 def _puffer_schema(komponenten: list[str], current: dict[str, Any]) -> vol.Schema:
     """Je Puffer ohne gemeldetes Volumen ein Feld für seine Liter, 0 = unbekannt."""
     return vol.Schema(
@@ -467,6 +532,32 @@ class _Anlagenschritte:
 
     Liefert die Unterklasse _adresse(), _bisher und _fertig(daten).
     """
+
+    async def _nach_namen(self) -> ConfigFlowResult:
+        """Nach den Funktionsblock-Namen: der Fremderzeuger, wenn er gewählt ist.
+
+        Er steht nicht im Menübaum - gefragt wird deshalb auch dann, wenn
+        die Anlage gerade nicht erreichbar ist.
+        """
+        if "fremderzeuger" in self._data[CONF_COMPONENTS]:
+            return await self.async_step_fremderzeuger()
+        return await self._nach_fub_namen()
+
+    async def async_step_fremderzeuger(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wie der Fremderzeuger heißt, welche Entität sagt, ob er heizt, und welche Kessel er sperrt."""
+        if user_input is not None:
+            self._data.update(
+                {feld: user_input[feld] for feld in FREMDERZEUGER_FELDER if feld in user_input}
+            )
+            return await self._nach_fub_namen()
+        return self.async_show_form(
+            step_id="fremderzeuger",
+            data_schema=_fremderzeuger_schema(
+                self._bisher, bool(self._data.get(CONF_ENABLE_SWITCHES))
+            ),
+        )
 
     async def _nach_fub_namen(self) -> ConfigFlowResult:
         host, port = self._adresse()
@@ -792,7 +883,7 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
-            return await self._nach_fub_namen()
+            return await self._nach_namen()
 
         host, port = self._adresse()
         vorschlag = fub_namen_vorschlagen(
@@ -885,7 +976,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
 
         if user_input is not None:
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
-            return await self._nach_fub_namen()
+            return await self._nach_namen()
 
         host, port = self._adresse()
         vorschlag = fub_namen_vorschlagen(

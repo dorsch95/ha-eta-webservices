@@ -152,6 +152,45 @@ def kessel_sperre_gewaehlt(einstellungen) -> bool:
     return einstellungen.get(CONF_KESSEL_SPERRE, DEFAULT_KESSEL_SPERRE) is True
 
 
+CONF_FREMDERZEUGER_NAME = "fremderzeuger_name"
+"""Wie der Fremderzeuger in der Karte heißt, siehe COMPONENTS["fremderzeuger"]."""
+DEFAULT_FREMDERZEUGER_NAME = "Ofen"
+CONF_FREMDERZEUGER_ENTITAET = "fremderzeuger_entitaet"
+"""Die Entität, die an ist, solange der Fremderzeuger heizt."""
+CONF_FREMDERZEUGER_SPERRT = "fremderzeuger_sperrt"
+"""Welche Kessel gesperrt werden, solange der Fremderzeuger heizt - eine Liste aus SPERRBARE_KESSEL.
+
+Leer zeigt die Karte den Fremderzeuger nur an. Gesperrt wird wie mit dem
+Schalter "Kessel sperren", den es dann auch ohne sein Häkchen gibt, siehe
+CONF_KESSEL_SPERRE.
+"""
+SPERRBARE_KESSEL = ["kessel"]
+"""Die Kessel, die ein Fremderzeuger sperren kann. Bisher kennt die Integration einen."""
+CONF_FREMDERZEUGER_SPERREN_NACH = "fremderzeuger_sperren_nach"
+"""So viele Minuten muss der Fremderzeuger heizen, bevor gesperrt wird."""
+DEFAULT_FREMDERZEUGER_SPERREN_NACH = 1
+CONF_FREMDERZEUGER_FREIGEBEN_NACH = "fremderzeuger_freigeben_nach"
+"""So viele Minuten muss der Fremderzeuger aus sein, bevor der Kessel wieder frei ist."""
+DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH = 5
+MAX_FREMDERZEUGER_WARTEZEIT = 240
+FREMDERZEUGER_FELDER = (
+    CONF_FREMDERZEUGER_NAME,
+    CONF_FREMDERZEUGER_ENTITAET,
+    CONF_FREMDERZEUGER_SPERRT,
+    CONF_FREMDERZEUGER_SPERREN_NACH,
+    CONF_FREMDERZEUGER_FREIGEBEN_NACH,
+)
+"""Die Felder des Einrichtungsschritts "Fremderzeuger"."""
+
+
+def fremderzeuger_sperrt(einstellungen, komponenten) -> list[str]:
+    """Die Kessel, die der Fremderzeuger dieser Einrichtung sperrt - leer ohne ihn."""
+    if "fremderzeuger" not in komponenten or not einstellungen.get(CONF_FREMDERZEUGER_ENTITAET):
+        return []
+    gewaehlt = einstellungen.get(CONF_FREMDERZEUGER_SPERRT) or []
+    return [kessel for kessel in SPERRBARE_KESSEL if kessel in gewaehlt and kessel in komponenten]
+
+
 CONF_KESSEL_GESPERRT = "kessel_gesperrt"
 """Was sich der Schalter "Kessel sperren" gemerkt hat.
 
@@ -345,6 +384,12 @@ COMPONENTS = {
         "roles": ["fremdwaerme"],
         "discovery_prefixes": ["fremdwaerme_"],
     },
+    "fremderzeuger": {
+        "name": "Fremderzeuger",
+        "image": None,
+        "roles": [],
+        "discovery_prefixes": [],
+    },
     "fernleitung": {
         "name": "Fernleitung",
         "image": "fernleitung",
@@ -383,6 +428,13 @@ etwa ein Kaminofen mit Wassertasche: Sie misst ihre Temperatur und lädt
 mit der Ladepumpe in den Puffer, sobald sie warm genug ist. Ihr
 Funktionsblock heißt ab Werk "F.Wärme"; an einer Anlage hat ihn der
 Betreiber "Ofen" genannt. Nur lesend.
+
+"fremderzeuger" ist eine Wärmequelle, die an keiner Stelle an der
+ETA-Regelung hängt, etwa ein Kaminofen mit eigener Regelung. Die Anlage
+weiß nichts von ihm: Er hat keinen Funktionsblock und keine Messwerte.
+Ob er heizt, sagt eine Entität aus Home Assistant, siehe fremderzeuger.py
+und die Einstellungen CONF_FREMDERZEUGER_*. Eine Kachel hat er nur in der
+Karte "ETA Übersicht".
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -531,6 +583,13 @@ BILD_AUSWAHLEN = {
         "translation_key": "fremdwaerme_bild",
         "icon": "mdi:image-edit-outline",
         "vorgabe": ERZEUGER_VORGABE["fremdwaerme"],
+    },
+    "fremderzeuger_bild": {
+        "component": "fremderzeuger",
+        "name": "Fremderzeuger Bild",
+        "translation_key": "fremderzeuger_bild",
+        "icon": "mdi:image-edit-outline",
+        "vorgabe": ERZEUGER_VORGABE["fremderzeuger"],
     },
 }
 """Je Erzeuger mit wählbarem Bild eine Auswahl am Gerät, siehe karte.ERZEUGER_BILDER.

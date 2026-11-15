@@ -23,13 +23,17 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     COMPONENTS,
+    CONF_FREMDERZEUGER_ENTITAET,
+    CONF_FREMDERZEUGER_NAME,
     CONF_VERBINDUNGEN,
+    DEFAULT_FREMDERZEUGER_NAME,
     DOMAIN,
     HEIZKREISE,
     KARTE_UEBERSICHT,
     PUFFER_SPEICHER,
     URL_OBERFLAECHE,
     WARMWASSER_SPEICHER,
+    fremderzeuger_sperrt,
 )
 from .karte import VERSION
 from .verbindungen import verbindungen
@@ -78,6 +82,10 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     beiden es ist, sagt ETADataUpdateCoordinator.frischwassermodul.
     programme: die beschreibbaren Zeitprogramme dieses Teils - für sie
     zeigt die Karte einen Knopf, der die Zeiten zum Einstellen öffnet.
+
+    Der Fremderzeuger steht nicht im Menübaum: Statt Messwerten bekommt
+    die Karte seinen Namen, die Entität, die sagt, ob er heizt, und welche
+    Kessel er sperrt.
     """
     block = coordinator.funktionsblock(komponente)
     teil = {
@@ -90,6 +98,17 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     }
     if komponente in WARMWASSER_SPEICHER:
         teil["bauart"] = "fwm" if coordinator.frischwassermodul(komponente) else "speicher"
+    if komponente == "fremderzeuger":
+        einstellungen = {**coordinator.config_entry.data, **coordinator.config_entry.options}
+        teil["bezeichnung"] = (
+            einstellungen.get(CONF_FREMDERZEUGER_NAME) or DEFAULT_FREMDERZEUGER_NAME
+        )
+        teil["entitaet"] = einstellungen.get(CONF_FREMDERZEUGER_ENTITAET)
+        teil["sperrt"] = (
+            fremderzeuger_sperrt(einstellungen, coordinator.components)
+            if coordinator.kesselsperre is not None
+            else []
+        )
     return teil
 
 

@@ -12,8 +12,8 @@ Fernleitung -, fragt der Einrichtungsdialog je Teil nach der Quelle, siehe
 braucht_auswahl.
 
 Puffer und Fernleitung sind beides: Sie bekommen Wärme und geben sie
-weiter. Kessel, Solar, PV-Heizmodul, Brenner und Fremdwärme erzeugen nur, Heizkreise
-und Warmwasser verbrauchen nur.
+weiter. Kessel, Solar, PV-Heizmodul, Brenner, Fremdwärme und Fremderzeuger
+erzeugen nur, Heizkreise und Warmwasser verbrauchen nur.
 
 Eine Verbindung ist genau eine Linie in der Karte. Vor- und Rücklauf
 unterscheidet sie nicht.
@@ -28,7 +28,7 @@ from .const import HEIZKREISE, PUFFER_SPEICHER, WARMWASSER_SPEICHER
 KESSEL = "kessel"
 FERNLEITUNG = "fernleitung"
 
-ERZEUGER = ("solar", "pvm", "brenner", "fremdwaerme")
+ERZEUGER = ("solar", "pvm", "brenner", "fremdwaerme", "fremderzeuger")
 """Erzeuger neben dem Kessel. Bei ihnen steht nicht die Quelle, sondern der Puffer, in den sie laden."""
 
 FELD = "verbindung_"

@@ -218,6 +218,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.pellet_preis = 0.0
         self.lager_maximum_eingetragen = 0.0
         self.kessel_sperre = False
+        self.kesselsperre = None
+        self.fremderzeuger = None
         self.prognose = None
         self.mit_prognose = True
         self.mit_zeitraeumen = True
@@ -1365,11 +1367,11 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     def funktionsblock(self, komponente: str) -> str:
         """Wie der Funktionsblock dieser Komponente an der Anlage heißt.
 
-        So, wie er im Menübaum steht. Wurde er nicht gefunden, der Name der
-        Komponente.
+        So, wie er im Menübaum steht. Wurde er nicht gefunden oder hat die
+        Komponente keinen, der Name der Komponente.
         """
-        rolle = COMPONENTS[komponente]["roles"][0]
-        return self.fub_namen.get(rolle) or COMPONENTS[komponente]["name"]
+        rollen = COMPONENTS[komponente]["roles"]
+        return (self.fub_namen.get(rollen[0]) if rollen else None) or COMPONENTS[komponente]["name"]
 
     def _volumen_der_anlage(self, komponente: str) -> float | None:
         """Das effektive Volumen, wie die Anlage es meldet, in Litern.

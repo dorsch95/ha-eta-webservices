@@ -77,6 +77,23 @@
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
+      "fremderzeuger": {
+        "title": "External heat source",
+        "description": "An external heat source is not connected to the ETA control - for example a stove with its own control. Home Assistant learns from an entity whether it is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "data": {
+          "fremderzeuger_name": "Name in the card",
+          "fremderzeuger_entitaet": "Entity that is on while it heats",
+          "fremderzeuger_sperrt": "Lock while it heats",
+          "fremderzeuger_sperren_nach": "Lock after (minutes)",
+          "fremderzeuger_freigeben_nach": "Release after (minutes)"
+        },
+        "data_description": {
+          "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. Without a sensor at the stove: create a toggle helper under Settings → Devices & services → Helpers and tap it in the card. With a temperature sensor: the Threshold helper turns it into on and off.",
+          "fremderzeuger_sperrt": "The boiler is switched off via its on/off key and on again afterwards - never if you had switched it off yourself. In an emergency, switch it back on at the heater's display. Without a selection nothing is locked.",
+          "fremderzeuger_sperren_nach": "How long it must heat before the boiler is locked.",
+          "fremderzeuger_freigeben_nach": "How long it must be off before the boiler is released."
+        }
+      },
       "puffer": {
         "title": "Buffer tank volume",
         "description": "The 'Puffer' function block shows its effective volume on the controller display but does not pass it on to the webservices. Enter how many litres your buffer tank holds - for example the 'Effektives Puffervolumen' value from the display, the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
@@ -234,6 +251,23 @@
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
+      "fremderzeuger": {
+        "title": "External heat source",
+        "description": "An external heat source is not connected to the ETA control - for example a stove with its own control. Home Assistant learns from an entity whether it is heating. While it heats, Home Assistant can lock the chosen boilers and releases them afterwards. Locking needs write access - without it, the card only shows the heat source.",
+        "data": {
+          "fremderzeuger_name": "Name in the card",
+          "fremderzeuger_entitaet": "Entity that is on while it heats",
+          "fremderzeuger_sperrt": "Lock while it heats",
+          "fremderzeuger_sperren_nach": "Lock after (minutes)",
+          "fremderzeuger_freigeben_nach": "Release after (minutes)"
+        },
+        "data_description": {
+          "fremderzeuger_entitaet": "A switch, a helper or a binary sensor. Without a sensor at the stove: create a toggle helper under Settings → Devices & services → Helpers and tap it in the card. With a temperature sensor: the Threshold helper turns it into on and off.",
+          "fremderzeuger_sperrt": "The boiler is switched off via its on/off key and on again afterwards - never if you had switched it off yourself. In an emergency, switch it back on at the heater's display. Without a selection nothing is locked.",
+          "fremderzeuger_sperren_nach": "How long it must heat before the boiler is locked.",
+          "fremderzeuger_freigeben_nach": "How long it must be off before the boiler is released."
+        }
+      },
       "puffer": {
         "title": "Buffer tank volume",
         "description": "The 'Puffer' function block shows its effective volume on the controller display but does not pass it on to the webservices. Enter how many litres your buffer tank holds - for example the 'Effektives Puffervolumen' value from the display, the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
@@ -321,7 +355,8 @@
         "pvm": "PV heating module (PVM)",
         "lager": "Pellet store",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
-        "fremdwaerme": "External heat (heat source without control, e.g. wood stove)",
+        "fremdwaerme": "External heat (heat source without control, connected to the ETA control, e.g. wood stove)",
+        "fremderzeuger": "External heat source outside the ETA control (e.g. a stove with its own control)",
         "fernleitung": "Transfer line (to another building)"
       }
     },
@@ -337,6 +372,11 @@
         "puffer7": "Buffer tank 7",
         "puffer8": "Buffer tank 8",
         "fernleitung": "Transfer line"
+      }
+    },
+    "sperrbare_kessel": {
+      "options": {
+        "kessel": "Boiler"
       }
     }
   },
@@ -466,6 +506,15 @@
       },
       "fremdwaerme_bild": {
         "name": "External heat picture",
+        "state": {
+          "gas": "Gas boiler",
+          "oel": "Oil boiler",
+          "ofen": "Wood stove",
+          "allgemein": "Generic"
+        }
+      },
+      "fremderzeuger_bild": {
+        "name": "External heat source picture",
         "state": {
           "gas": "Gas boiler",
           "oel": "Oil boiler",
@@ -662,6 +711,9 @@
       },
       "komponente_fremdwaerme": {
         "name": "External heat component"
+      },
+      "komponente_fremderzeuger": {
+        "name": "External heat source component"
       },
       "komponente_fernleitung": {
         "name": "Transfer line component"

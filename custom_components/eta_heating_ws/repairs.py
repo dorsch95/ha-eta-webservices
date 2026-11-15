@@ -33,11 +33,15 @@ def async_check_components(
     """Meldet Komponenten, für die im Menübaum nichts gefunden wurde.
 
     Wird nur bei lesbarem Menübaum aufgerufen; eine leere Komponente
-    liegt dann an den Funktionsblock-Namen.
+    liegt dann an den Funktionsblock-Namen. Eine Komponente ohne
+    Funktionsblock - der Fremderzeuger - steht nicht im Menübaum und wird
+    nicht geprüft.
     """
     ohne_treffer = []
 
     for component in components:
+        if not COMPONENTS[component]["roles"]:
+            continue
         issue_id = _issue_id(entry_id, component)
         gefunden = any(
             key.startswith(vorsilbe)

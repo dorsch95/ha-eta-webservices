@@ -116,6 +116,11 @@ const TEXTE = {
     speicher_oben: "Speicher oben",
     brenner: "Brenner",
     fremdwaerme: "Fremdwärme",
+    fremderzeuger: "Fremderzeuger",
+    gesperrt: "Gesperrt",
+    frei: "Frei",
+    unbekannt: "Unbekannt",
+    kessel_sperre: "Kesselsperre",
     zustand: "Zustand",
     temperatur: "Temperatur",
     leistung_soll: "Leistung Soll",
@@ -237,6 +242,11 @@ const TEXTE = {
     speicher_oben: "Tank top",
     brenner: "Burner",
     fremdwaerme: "External heat",
+    fremderzeuger: "External heat source",
+    gesperrt: "Locked",
+    frei: "Free",
+    unbekannt: "Unknown",
+    kessel_sperre: "Boiler lock",
     zustand: "State",
     temperatur: "Temperature",
     leistung_soll: "Target power",
@@ -912,7 +922,7 @@ const ERZEUGER_BILDER = {
   ofen: { bild: ofenBild, aus: [0.82, 0.55] },
   allgemein: { bild: allgemeinBild, aus: [0.82, 0.5] },
 };
-const ERZEUGER_VORGABE = { brenner: "gas", fremdwaerme: "ofen" };
+const ERZEUGER_VORGABE = { brenner: "gas", fremdwaerme: "ofen", fremderzeuger: "ofen" };
 
 const HAHN = `<svg class="eta-hahn" viewBox="0 0 48 36" aria-hidden="true">
   <path d="M13 6h16v4h-6v5h-4v-5h-6z"/><path d="M6 15h24a9 9 0 0 1 9 9v7h-9v-6H6z"/>
@@ -1009,7 +1019,7 @@ function pfad(punkte, r = 12) {
 }
 
 /** Wo eine Leitung an der Zeichnung eines Teils ansetzt, als Anteil von Breite und Höhe. */
-const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], pvm: [0.885, 0.69], brenner: [0.82, 0.5], fremdwaerme: [0.82, 0.55], puffer: [1, 0.14], fernleitung: [0.975, 0.31] };
+const AUS = { lager: [0.96, 0.935], kessel: [0.985, 0.3], solar: [0.885, 0.69], pvm: [0.885, 0.69], brenner: [0.82, 0.5], fremdwaerme: [0.82, 0.55], fremderzeuger: [0.82, 0.55], puffer: [1, 0.14], fernleitung: [0.975, 0.31] };
 const EIN = { kessel: [0.015, 0.82], puffer: [0, 0.14], fernleitung: [0.025, 0.31], heizkreis: [0.04, 0.434], fwm: [0.04, 0.304], speicher: [0, 0.55] };
 
 /**
@@ -1022,6 +1032,7 @@ function teilName(teil, teile, t) {
   if (teil.art === "puffer") return mehrere ? teil.block : t.puffer;
   if (teil.art === "warmwasser") return mehrere ? teil.block : teil.bauart === "fwm" ? t.fwm : t.warmwasser;
   if (teil.art === "heizkreis") return `${t.heizkreis} ${teil.nummer}`;
+  if (teil.art === "fremderzeuger") return teil.bezeichnung || t.fremderzeuger;
   return t[teil.art] || teil.block || teil.id;
 }
 
@@ -1071,6 +1082,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const zustand = wert("kessel_zustand");
       const bild = kesselArt(zustand?.roh);
       const schalter = stand("kessel_schalter");
+      const sperre = stand("kessel_sperre"), gesperrt = sperre?.state === "on";
       const plan = wert("aschebox_plan");
       const asche = wert("aschebox_verbrauch"), schwelle = wert("aschebox_schwelle");
       return {
@@ -1078,7 +1090,8 @@ function anlageLesen(hass, struktur, t, fussboden) {
         bild,
         temperatur: wert("kessel_temperatur"),
         soll: wert("kessel_soll"),
-        zeilen: [[t.ruecklauf, wert("ruecklauf_temperatur")], [t.druck, wert("kessel_druck")], [t.o2, wert("restsauerstoff")], [t.behaelter, wert("pellet_tagesbehälter")]].filter(([, w]) => w),
+        zeilen: [[t.kessel_sperre, gesperrt ? { id: sperre.entity_id, text: t.gesperrt } : null], [t.ruecklauf, wert("ruecklauf_temperatur")], [t.druck, wert("kessel_druck")], [t.o2, wert("restsauerstoff")], [t.behaelter, wert("pellet_tagesbehälter")]].filter(([, w]) => w),
+        gesperrt,
         asche,
         ascheStatus: wert("aschebox_status"),
         ascheAnteil: asche && schwelle && asche.n !== null && schwelle.n ? Math.min(asche.n / schwelle.n, 1) : null,
@@ -1196,6 +1209,26 @@ function anlageLesen(hass, struktur, t, fussboden) {
         temperatur: wert("fremdwaerme_temperatur"),
         speicher: wert("fremdwaerme_speicher"),
         erzeuger: erzeuger("fremdwaerme"),
+      };
+    },
+    /**
+     * Der Fremderzeuger hängt nicht an der Anlage. Ob er heizt, sagt die
+     * Entität, die beim Einrichten gewählt wurde; ob er den Kessel gerade
+     * sperrt, sagt der Schalter "Kessel sperren".
+     */
+    fremderzeuger(teil) {
+      const quelle = teil.entitaet ? hass.states[teil.entitaet] : undefined;
+      const fehlt = !quelle || quelle.state === "unavailable" || quelle.state === "unknown";
+      const heizt = quelle?.state === "on";
+      const sperre = (teil.sperrt || []).includes("kessel") ? stand("kessel_sperre") : undefined;
+      return {
+        quelle: quelle ? { id: quelle.entity_id } : null,
+        heizt,
+        aktiv: heizt,
+        schaltbar: !fehlt && ["switch", "input_boolean"].includes(quelle.entity_id.split(".")[0]),
+        zustand: { id: quelle?.entity_id, text: fehlt ? t.unbekannt : heizt ? t.heizt : t.aus },
+        sperre: sperre ? { id: sperre.entity_id, text: sperre.state === "on" ? t.gesperrt : t.frei, an: sperre.state === "on" } : null,
+        erzeuger: erzeuger("fremderzeuger"),
       };
     },
     fernleitung() {
@@ -1645,6 +1678,10 @@ class EtaUebersichtKarte extends HTMLElement {
       fremdwaerme: (w) => kachel(w, w.heizt ? "data-aktiv" : "", this._chip(w.stoerung ? w.zustand.text : w.heizt ? t.heizt : t.ruht, w.heizt, w.stoerung ? "stoer" : ""), `
         <div class="eta-buehne" ${this._info(w.temperatur || w.zustand)}>${this._figur(w.erzeuger.bild(), 96)}${this._haupt(t.temperatur, w.temperatur)}</div>
         ${this._zeilen([[t.zustand, w.zustand], [t.ladepumpe, w.ladepumpe], [t.speichertemperatur, w.speicher]])}`),
+      fremderzeuger: (w) => kachel(w, w.heizt ? "data-aktiv" : "", this._chip(w.zustand.text, w.heizt), `
+        <div class="eta-buehne" ${this._info(w.quelle)}>${this._figur(w.erzeuger.bild(), 96)}${this._haupt(t.zustand, { zahl: w.zustand.text, einheit: "" })}</div>
+        ${this._zeilen([[t.kessel, w.sperre]])}
+        ${w.schaltbar ? `<div class="eta-knoepfe"><button type="button" class="eta-knopf" data-aktion="umschalten" data-ziel="${e(w.quelle.id)}" aria-pressed="${w.heizt}">${ICON.flamme}<span>${e(`${w.name} ${w.heizt ? t.ein : t.aus}`)}</span></button></div>` : ""}`),
       fernleitung: (f) => kachel(f, f.pumpt ? "data-pumpt" : "", this._chip(f.pumpt ? t.laeuft : t.ruht, f.pumpt), `
         <div class="eta-buehne" ${this._info(f.pumpe)}>${this._figur(fernBild(), 132)}${this._haupt(t.fernpumpe, f.pumpe)}</div>`),
     };
@@ -1669,7 +1706,7 @@ class EtaUebersichtKarte extends HTMLElement {
   _bild(anlage) {
     const t = this._t;
     const nachId = Object.fromEntries(anlage.teile.map((teil) => [teil.id, teil]));
-    const erzeugt = (teil) => ["solar", "pvm", "brenner", "fremdwaerme"].includes(teil.art);
+    const erzeugt = (teil) => ["solar", "pvm", "brenner", "fremdwaerme", "fremderzeuger"].includes(teil.art);
     const quelle = (teil) => {
       const von = teil.von ? nachId[teil.von] : null;
       if (!von || von === teil) return null;
@@ -1689,15 +1726,16 @@ class EtaUebersichtKarte extends HTMLElement {
     };
     const schild = (teil, w, neben, text = null) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}${this._knoepfe(teil)}</span><span class="eta-zahl">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span></div>`;
     const station = (teil, klasse, merkmale, info, bild, text) => `<div class="eta-station ${klasse}" data-id="${teil.id}" data-art="${teil.art}" ${merkmale} ${info}>${bild}${text}</div>`;
-    const rang = { solar: 1, kessel: 0, brenner: 2, fremdwaerme: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
+    const rang = { solar: 1, kessel: 0, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
-      kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.zustand?.text, k.soll ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
+      kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.gesperrt ? t.gesperrt : "", k.zustand?.text, k.soll && !k.gesperrt ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
       solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "))),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
+      fremderzeuger: (w) => station(w, "quer links", w.heizt ? "data-aktiv data-fluss" : "", this._info(w.quelle), this._figur(w.erzeuger.bild(), 72), schild(w, null, w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : "", w.zustand.text)),
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
       heizkreis: (h) => {
@@ -1721,7 +1759,7 @@ class EtaUebersichtKarte extends HTMLElement {
       if (teil.art === "lager" && nachId.kessel) kante(teil.id, "kessel", "pellets", teil.foerdert, AUS.lager, EIN.kessel);
       if (!von || teil.art === "lager" || teil.art === "kessel") continue;
       if (erzeugt(teil)) {
-        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, teil.erzeuger?.aus || AUS[teil.art], { solar: [0, 0.14], brenner: [0, 0.74], fremdwaerme: [0, 0.6], pvm: [0, 0.88] }[teil.art]);
+        kante(teil.id, von, teil.art === "pvm" ? "strom" : "heiss", teil.aktiv, teil.erzeuger?.aus || AUS[teil.art], { solar: [0, 0.14], brenner: [0, 0.74], fremdwaerme: [0, 0.6], fremderzeuger: [0, 0.46], pvm: [0, 0.88] }[teil.art]);
       } else if (nachId[von].art === "kessel" && teil.art === "puffer") {
         kante(von, teil.id, "heiss", nachId[von].bild === "flamme", AUS.kessel, [0, 0.27]);
       } else {
@@ -1851,6 +1889,7 @@ class EtaUebersichtKarte extends HTMLElement {
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur),
       fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur),
+      fremderzeuger: (w) => zeile("flamme", w.heizt, w.name, w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : "", w.zustand),
       fernleitung: (f) => zeile("rohr", f.pumpt, f.name, f.pumpt ? t.laeuft : t.ruht, f.pumpe),
     };
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
@@ -2080,6 +2119,8 @@ class EtaUebersichtKarte extends HTMLElement {
     const dienst = (bereich, name, daten) => this._hass.callService(bereich, name, daten);
     if (aktion === "kessel" && entitaeten.kessel_schalter) {
       dienst("switch", knopf.getAttribute("aria-pressed") === "true" ? "turn_off" : "turn_on", { entity_id: entitaeten.kessel_schalter });
+    } else if (aktion === "umschalten") {
+      dienst("homeassistant", "toggle", { entity_id: knopf.dataset.ziel });
     } else if (aktion === "modus") {
       dienst("select", "select_option", { entity_id: knopf.dataset.ziel, option: knopf.dataset.modus });
     } else if (aktion === "aufklappen") {
