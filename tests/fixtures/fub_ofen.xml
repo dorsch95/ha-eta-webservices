@@ -1,0 +1,68 @@
+<fub name="Ofen" uri="/272/10291">
+ <object name="Eingänge" uri="/272/10291/0/0/10990">
+  <object name="Fremdwärme" uri="/272/10291/0/11112/0">
+   <object name="Zustand" uri="/272/10291/0/11112/2002"/>
+   <object name="Sensor Typ" uri="/272/10291/0/11112/2011"/>
+   <object name="Sensor Typ" uri="/272/10291/0/11112/2019"/>
+   <object name="Kalibrierwert" uri="/272/10291/0/11112/2049"/>
+   <object name="ADC-Offset" uri="/272/10291/0/11112/2015"/>
+   <object name="Fixwert" uri="/272/10291/0/11112/2054"/>
+  </object>
+  <object name="Speichertemperatur" uri="/272/10291/0/11089/0">
+   <object name="Zustand" uri="/272/10291/0/11089/2002"/>
+   <object name="Sensor Typ" uri="/272/10291/0/11089/2011"/>
+   <object name="Sensor Typ" uri="/272/10291/0/11089/2019"/>
+   <object name="Kalibrierwert" uri="/272/10291/0/11089/2049"/>
+   <object name="ADC-Offset" uri="/272/10291/0/11089/2015"/>
+   <object name="Fixwert" uri="/272/10291/0/11089/2054"/>
+  </object>
+  <object name="Lin Leistung" uri="/272/10291/12418/0/0">
+   <object name="Lin x" uri="/272/10291/12418/0/1050"/>
+   <object name="Lin x1" uri="/272/10291/12418/0/1051"/>
+   <object name="Lin y1" uri="/272/10291/12418/0/1052"/>
+   <object name="Lin x2" uri="/272/10291/12418/0/1053"/>
+   <object name="Lin y2" uri="/272/10291/12418/0/1054"/>
+   <object name="Extrapol" uri="/272/10291/12418/0/1056"/>
+   <object name="Lin y" uri="/272/10291/12418/0/1055"/>
+  </object>
+  <object name="Fixwert" uri="/272/10291/0/0/2054"/>
+  <object name="Kessel" uri="/272/10291/0/0/12161"/>
+ </object>
+ <object name="Ausgänge" uri="/272/10291/0/0/10991">
+  <object name="Ladepumpe" uri="/272/10291/0/11088/0">
+   <object name="Anforderung" uri="/272/10291/0/11088/2001"/>
+  </object>
+ </object>
+ <object name="Fremdwärme" uri="/272/10291/0/0/19414">
+  <object name="Fremdwärme-Zustand detailliert" uri="/272/10291/0/0/12386"/>
+  <object name="Einstellungen" uri="/272/10291/0/0/12421">
+   <object name="Mindestzeit" uri="/272/10291/0/0/12285"/>
+   <object name="Nennleistung" uri="/272/10291/0/0/12019"/>
+   <object name="Brenner verriegeln" uri="/272/10291/0/0/12651"/>
+  </object>
+  <object name="Kessel abschalten bei" uri="/272/10291/0/0/12384">
+   <object name="Heizübergangsdifferenz" uri="/272/10291/0/0/15114"/>
+  </object>
+  <object name="Freigabe Umschaltventil" uri="/272/10291/0/0/12387"/>
+  <object name="Umschaltventil" uri="/272/10291/0/0/12382"/>
+  <object name="Sicherheitspumpenlauf" uri="/272/10291/0/0/12121"/>
+  <object name="Kessel" uri="/272/10291/0/0/12161"/>
+  <object name="Fremdwärme" uri="/272/10291/0/0/12383"/>
+  <object name="Bereitgestellte Leistung via ext. Schnittstelle" uri="/272/10291/0/0/15159"/>
+  <object name="Bereitgestellte Leistung" uri="/272/10291/0/0/15158"/>
+ </object>
+ <object name="Ladepumpe" uri="/272/10291/0/11088/0">
+  <object name="Anforderung" uri="/272/10291/0/11088/2001"/>
+  <object name="Fremdwärme" uri="/272/10291/0/0/12383"/>
+  <object name="Speichertemperatur" uri="/272/10291/0/0/12491"/>
+  <object name="Freigabe Temperatur" uri="/272/10291/0/0/12100"/>
+  <object name="Thermostat Differenz" uri="/272/10291/0/0/12327"/>
+  <object name="Hysterese" uri="/272/10291/0/0/12325"/>
+ </object>
+ <object name="Rücklauf" uri="/272/10291/0/0/12220">
+  <object name="Rücklauf Soll" uri="/272/10291/0/0/12221"/>
+ </object>
+ <object name="Sonstiges" uri="/272/10291/0/0/12182">
+  <object name="Ergänzung" uri="/272/10291/0/0/19391"/>
+ </object>
+</fub>

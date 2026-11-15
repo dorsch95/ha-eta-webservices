@@ -4,7 +4,7 @@
 [![Downloads](https://img.shields.io/github/downloads/dorsch95/ha-eta-webservices/total?label=Downloads)](https://github.com/dorsch95/ha-eta-webservices/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home Assistant ein: Pellet-, Hackgut- und Stückholzkessel samt Pufferspeichern, Warmwasser, Heizkreisen, Solaranlage, PV-Heizmodul, Pelletlager, zweitem Wärmeerzeuger und Fernleitung. Alles läuft lokal im Heimnetz, nichts geht ins Internet.
+Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home Assistant ein: Pellet-, Hackgut- und Stückholzkessel samt Pufferspeichern, Warmwasser, Heizkreisen, Solaranlage, PV-Heizmodul, Pelletlager, zweitem Wärmeerzeuger, Fremdwärme und Fernleitung. Alles läuft lokal im Heimnetz, nichts geht ins Internet.
 
 - **Einrichten ohne Adressen:** Du gibst an, was deine Anlage hat. Die Werte findet die Integration selbst im Menübaum der Heizung.
 - **Fertige Dashboard-Karten:** „ETA Übersicht“ zeigt deine Anlage als Anlagenbild, als Kacheln oder kompakt, ohne YAML und mit eigenen Zeichnungen, für PC, Tablet und Handy.
@@ -27,7 +27,7 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: 
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
 
-**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with up to eight buffer tanks, up to eight fresh water modules or hot water tanks, heating circuits, solar, PV heating module, pellet store, a second heat source and a transfer line to another building) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
+**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with up to eight buffer tanks, up to eight fresh water modules or hot water tanks, heating circuits, solar, PV heating module, pellet store, a second heat source, an external heat source such as a wood stove and a transfer line to another building) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
 
 - Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080), the number of buffer tanks, hot water units and heating circuits, and tick the other components your system has. The function block names are then pre-filled with what your system reports. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
 - Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
@@ -80,7 +80,7 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Pufferspeicher | 1 | Anzahl, PufferFlex und ältere Puffer zusammen, bis 8 |
 | Frischwassermodule und Warmwasserspeicher | 0 | Anzahl zusammen, bis 8 |
 | Heizkreise | 0 | Anzahl, bis 4 |
-| Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fernleitung, TWIN. Was dahintersteckt, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
+| Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fremdwärme, Fernleitung, TWIN. Was dahintersteckt, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
 | Abfrageintervall | 30 Sekunden | erlaubt sind 1 bis 600. Die Integration liest alle Messwerte mit einer einzigen Anfrage. Je kürzer, desto öfter muss die Anlage antworten - bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten. Die Störungsliste wird dann nur alle 10 Sekunden gelesen |
 | Schnelle Abfrage | 3 Sekunden | 0 = aus. Liest eine kleine Gruppe öfter als den Rest: alles Schaltbare (Kessel ein/aus, Entaschen, Betriebsart und Raum Soll der Heizkreise), den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation. So zeigt das Dashboard etwa das Zapfen ohne Verzug. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall |
 | Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1. Steht auf dem Lieferschein ein anderer Wert, trag ihn ein |
@@ -122,6 +122,7 @@ Jeder Funktionsblock (FUB) lässt sich an der Steuerung umbenennen und heißt da
 | Solaranlage | `Solar` |
 | PV-Heizmodul | `PVM` |
 | Brenner | `Brenner` |
+| Fremdwärme | `Ofen` oder `Fremdwärme` |
 | Fernleitung | `Fernl` |
 | Außentemperatur | `Sys` |
 
@@ -272,6 +273,11 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_brenner_temperatur` | Brenner Temperatur | °C |
 | `sensor.eta_heizung_brenner_leistung_soll` | Brenner Leistung Soll | kW |
 | `sensor.eta_heizung_brenner_volllaststunden` | Brenner Volllaststunden | h |
+| **Fremdwärme** | | |
+| `sensor.eta_heizung_fremdwarme_temperatur` | Fremdwärme Temperatur | °C |
+| `sensor.eta_heizung_fremdwarme_speichertemperatur` | Fremdwärme Speichertemperatur | °C |
+| `sensor.eta_heizung_fremdwarme_zustand` | Fremdwärme Zustand | Text |
+| `sensor.eta_heizung_fremdwarme_ladepumpe` | Fremdwärme Ladepumpe | Text |
 | **Fernleitung** | | |
 | `sensor.eta_heizung_fernleitung_pumpe` | Fernleitung Pumpe | Text |
 | **Unabhängig von den Komponenten** | | |
@@ -336,7 +342,7 @@ Alternativ gibt es die **universelle Karte** [dashboard/eta-karte.yaml](dashboar
 | Heizkreis | Vorlauf und Anforderung, das Symbol der geltenden Betriebsart leuchtet, bei Anforderung fließt Wasser durch Heizkörper und Fußbodenschlange. Mit Thermostat die Zeile „Raum · Soll“, Antippen öffnet ihn |
 | Pelletlager | Füllstand in fünf Stufen, drehende Schnecke bei laufender Austragung, Warndreieck unter der Warngrenze, im Dach das Datum, bis wann der Vorrat reicht |
 | Solar, PV-Heizmodul | Sonne und Blitz leuchten, solange Leistung anliegt |
-| Brenner, Fernleitung | blaue Flammen bei Anforderung, wandernde Pulse bei laufender Fernpumpe |
+| Brenner, Fremdwärme, Fernleitung | Flammen bei Anforderung bzw. solange die Fremdwärme heizt, wandernde Pulse bei laufender Fernpumpe. Die Fremdwärme nutzt die Grafik des Brenners |
 
 Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Name ihres Funktionsblocks, etwa „PufferFlex 2“ oder „WW“. Werte, die die Anlage nicht führt, lässt die Karte weg.
 
@@ -379,7 +385,7 @@ Steht eine **Störung** an, nennt die Karte oben die Meldungen der Anlage. Ein *
 
 Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz. Das Anlagenbild liegt waagerecht, sobald die Karte breit genug ist: mit einem Pufferspeicher ab etwa 750 Pixeln, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. In einer Ansicht mit Abschnitten stellst du die **Breite** des Abschnitts auf *Volle Breite*. Reicht der Platz nicht, wird das Bild zur Liste von oben nach unten - so auch am Handy und in der Vorschau beim Bearbeiten der Karte.
 
-**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul und Brenner laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
+**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul, Brenner und Fremdwärme laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
 
 ---
 
@@ -397,6 +403,7 @@ Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübau
 - **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und die Erträge von heute und gestern nur mit Wärmemengenmessung. `sensor.eta_heizung_solar_warmemenge` eignet sich für eine Statistik-Karte, aber nicht fürs Energie-Dashboard: Dessen Bereich *Solarpanel* ist für Strom gedacht.
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom über einen Heizstab ins Wasser. Gelesen werden Leistung, drei Temperaturen, Zustand, Gesamtenergie und die Erträge. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist verbrauchter Strom und gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 - **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Gelesen werden Anforderung, Temperatur, geforderte Leistung und Volllaststunden. Ob er wirklich brennt, meldet er der Regelung nicht zurück.
+- **Fremdwärme:** eine Wärmequelle, die die ETA-Regelung nicht steuert, etwa ein Kaminofen mit Wassertasche. Die Regelung misst ihre Temperatur und startet die Ladepumpe in den Puffer, sobald sie warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Der Funktionsblock heißt an der Anlage oft `Ofen`.
 - **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe`).
 
 ---

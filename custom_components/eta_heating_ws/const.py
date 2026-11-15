@@ -286,6 +286,12 @@ COMPONENTS = {
         "roles": ["brenner"],
         "discovery_prefixes": ["brenner_"],
     },
+    "fremdwaerme": {
+        "name": "Fremdwärme",
+        "image": "brenner",
+        "roles": ["fremdwaerme"],
+        "discovery_prefixes": ["fremdwaerme_"],
+    },
     "fernleitung": {
         "name": "Fernleitung",
         "image": "fernleitung",
@@ -318,6 +324,12 @@ brennt, erfährt die Regelung nicht - deshalb zählt seine Anforderung,
 kein Zustand. "fernleitung" ist die Leitung zu einem Nebengebäude; von
 ihr kommt nur, ob die Fernpumpe läuft, weil ihre Temperaturen an den
 meisten Anlagen nur errechnet sind. Beide nur lesend.
+
+"fremdwaerme" ist eine Wärmequelle, die die ETA-Regelung nicht steuert,
+etwa ein Kaminofen mit Wassertasche: Sie misst ihre Temperatur und lädt
+mit der Ladepumpe in den Puffer, sobald sie warm genug ist. An der Anlage
+heißt ihr Funktionsblock oft "Ofen". Nur lesend. Eine eigene Kachelgrafik
+hat sie noch nicht, sie nimmt die des Brenners.
 """
 
 DEFAULT_COMPONENTS = ["kessel", "puffer"]
@@ -1270,6 +1282,38 @@ SENSORS = {
         "default_unit": "s",
         "suggested_unit": "h",
     },
+    "fremdwaerme_temperatur": {
+        "component": "fremdwaerme",
+        "name": "Fremdwärme Temperatur",
+        "translation_key": "fremdwaerme_temperatur",
+        "icon": "mdi:fireplace",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "fremdwaerme_speicher": {
+        "component": "fremdwaerme",
+        "name": "Fremdwärme Speichertemperatur",
+        "translation_key": "fremdwaerme_speicher",
+        "icon": "mdi:thermometer",
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "default_unit": "°C",
+    },
+    "fremdwaerme_zustand": {
+        "component": "fremdwaerme",
+        "name": "Fremdwärme Zustand",
+        "translation_key": "fremdwaerme_zustand",
+        "icon": "mdi:fireplace",
+        "is_string": True,
+    },
+    "fremdwaerme_ladepumpe": {
+        "component": "fremdwaerme",
+        "name": "Fremdwärme Ladepumpe",
+        "translation_key": "fremdwaerme_ladepumpe",
+        "icon": "mdi:pump",
+        "is_string": True,
+    },
     "fernleitung_pumpe": {
         "component": "fernleitung",
         "name": "Fernleitung Pumpe",
@@ -1345,6 +1389,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "solar": ["Solar"],
     "pvm": ["PVM"],
     "brenner": ["Brenner"],
+    "fremdwaerme": ["Ofen", "Fremdwärme", "Fremdw"],
     "fernleitung": ["Fernl", "Fernleitung"],
 }
 

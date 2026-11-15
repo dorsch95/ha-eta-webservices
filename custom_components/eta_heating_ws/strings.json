@@ -71,6 +71,7 @@
           "pufferflex7": "FUB name: buffer tank 7 (PufferFlex 7 or Puffer 7)",
           "pufferflex8": "FUB name: buffer tank 8 (PufferFlex 8 or Puffer 8)",
           "brenner": "FUB name: burner (Brenner)",
+          "fremdwaerme": "FUB name: external heat (Ofen)",
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
@@ -151,7 +152,8 @@
           "verbindung_fwm8": "Hot water 8 gets its heat from",
           "verbindung_solar": "Solar thermal system charges",
           "verbindung_pvm": "PV heating module charges",
-          "verbindung_brenner": "Burner charges"
+          "verbindung_brenner": "Burner charges",
+          "verbindung_fremdwaerme": "External heat charges"
         }
       }
     },
@@ -224,6 +226,7 @@
           "pufferflex7": "FUB name: buffer tank 7 (PufferFlex 7 or Puffer 7)",
           "pufferflex8": "FUB name: buffer tank 8 (PufferFlex 8 or Puffer 8)",
           "brenner": "FUB name: burner (Brenner)",
+          "fremdwaerme": "FUB name: external heat (Ofen)",
           "fernleitung": "FUB name: transfer line (Fernl)"
         }
       },
@@ -296,7 +299,8 @@
           "verbindung_fwm8": "Hot water 8 gets its heat from",
           "verbindung_solar": "Solar thermal system charges",
           "verbindung_pvm": "PV heating module charges",
-          "verbindung_brenner": "Burner charges"
+          "verbindung_brenner": "Burner charges",
+          "verbindung_fremdwaerme": "External heat charges"
         }
       }
     },
@@ -313,6 +317,7 @@
         "pvm": "PV heating module (PVM)",
         "lager": "Pellet store",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
+        "fremdwaerme": "External heat (heat source without control, e.g. wood stove)",
         "fernleitung": "Transfer line (to another building)"
       }
     },
@@ -482,6 +487,18 @@
       "brenner_volllaststunden": {
         "name": "Burner full-load hours"
       },
+      "fremdwaerme_ladepumpe": {
+        "name": "External heat charging pump"
+      },
+      "fremdwaerme_speicher": {
+        "name": "External heat storage temperature"
+      },
+      "fremdwaerme_temperatur": {
+        "name": "External heat temperature"
+      },
+      "fremdwaerme_zustand": {
+        "name": "External heat state"
+      },
       "entaschung_verbrauch": {
         "name": "Consumption since de-ashing"
       },
@@ -614,6 +631,9 @@
       },
       "komponente_brenner": {
         "name": "Burner component"
+      },
+      "komponente_fremdwaerme": {
+        "name": "External heat component"
       },
       "komponente_fernleitung": {
         "name": "Transfer line component"

@@ -926,6 +926,12 @@ Ob er wirklich brennt, meldet der Brenner der Regelung nicht zurück - die
 Anforderung ist alles, was sie weiß.
 """
 
+FREMDWAERME_ZUSTAND = "sensor.eta_heizung_fremdwarme_zustand"
+"""Heizt die Fremdwärme ("Heizen"), brennt die Flamme.
+
+Die Kachel nimmt die Grafik des Brenners, eine eigene gibt es noch nicht.
+"""
+
 FERNLEITUNG_PUMPE = "sensor.eta_heizung_fernleitung_pumpe"
 """Läuft die Fernpumpe ("Ein"), wandern Pulse durch Vor- und Rücklauf."""
 
@@ -1129,6 +1135,24 @@ def grid(spalten, schrift, kurz, puffer=PUFFER_KACHELN, warmwasser=WARMWASSER_KA
                 ],
             ),
             komponente(
+                "fremdwarme",
+                "fremdwaerme",
+                "brenner",
+                [
+                    *bewegt_oder_still(
+                        "brenner_aktiv",
+                        FREMDWAERME_ZUSTAND,
+                        [{"condition": "state", "entity": FREMDWAERME_ZUSTAND, "state": "Heizen"}],
+                    ),
+                    label("fremdwarme_temperatur", "Temp.: " if kurz else "Temperatur: ",
+                          "kessel", 8, 50, schrift),
+                    label("fremdwarme_zustand", "Zust.: " if kurz else "Zustand: ",
+                          "hell", 15, 50, schrift - 5),
+                    label("fremdwarme_ladepumpe", "Pumpe: " if kurz else "Ladepumpe: ",
+                          "hell", 22, 50, schrift - 5),
+                ],
+            ),
+            komponente(
                 "fernleitung",
                 "fernleitung",
                 "fernleitung",
@@ -1170,6 +1194,7 @@ MARKER = {
     "solar": "komponente_solar",
     "pvm": "komponente_pv_heizmodul",
     "brenner": "komponente_brenner",
+    "fremdwaerme": "komponente_fremdwarme",
     "fernleitung": "komponente_fernleitung",
 }
 """Welche Marker-Entität zu welcher Komponente gehört.
