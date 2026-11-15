@@ -103,6 +103,7 @@ const TEXTE = {
     von: "von",
     reicht_bis: "Reicht bis",
     warnung_ab: "Warnung ab",
+    fassungsvermoegen: "Fassungsvermögen",
     foerdert: "Fördert",
     solar: "Solar",
     leistung: "Leistung",
@@ -208,6 +209,7 @@ const TEXTE = {
     von: "of",
     reicht_bis: "Lasts until",
     warnung_ab: "Warning below",
+    fassungsvermoegen: "Capacity",
     foerdert: "Conveying",
     solar: "Solar",
     leistung: "Power",
@@ -353,6 +355,7 @@ const STIL = `
   .eta-zeilen dt { color: var(--text-2); }
   .eta-zeilen dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
   .eta-zeilen dd .eta-icon { width: 16px; height: 16px; }
+  .eta-stift { display: inline-flex; color: var(--text-2); }
   .eta-messung { display: flex; flex-direction: column; gap: 6px; }
   .eta-messung-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .eta-messung-kopf span { color: var(--text-2); }
@@ -618,6 +621,7 @@ const STIL = `
 const sym = (d, klasse = "") => `<svg class="eta-icon ${klasse}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const UMLAUF = '<path d="M5 12a7 7 0 0 1 12-5l2 2"/><path d="M19 5v4h-4"/><path d="M19 12a7 7 0 0 1-12 5l-2-2"/><path d="M5 19v-4h4"/>';
 const ICON = {
+  stift: sym('<path d="M4 20l4.2-1L19 8.2 15.8 5 5 15.8z"/><path d="M13.6 7.2l3.2 3.2"/>'),
   flamme: sym('<path d="M12 3c.6 3.2 4.5 5 4.5 9.5a4.5 4.5 0 0 1-9 0c0-2 .9-3.4 2-4.5.2 1.8 1 2.7 2 3-.3-3 .1-5.6.5-8z"/>'),
   uhr: sym('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
   blatt: sym('<path d="M5 19C5 10 10 5 19 5c0 9-5 14-14 14z"/><path d="M5 19c3-5 6-8 10-10"/>'),
@@ -1117,6 +1121,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
         bestellenBis: wert("lager_bestellen_bis"),
         heute: wert("pellet_verbrauch_heute"),
         niedrig: stand("lager_niedrig")?.state === "on",
+        stellen: wert("lager_maximum_stellen"),
       };
     },
     solar() {
@@ -1562,7 +1567,7 @@ class EtaUebersichtKarte extends HTMLElement {
       lager: (l) => kachel(l, l.foerdert ? "data-foerdert" : "", l.niedrig ? this._chip(t.vorrat_niedrig, false, "warn") : l.zustand ? this._chip(l.zustand.text, l.foerdert) : "", `
         <div class="eta-buehne" ${this._info(l.vorrat)}>${this._figur(lagerBild(l.anteil ?? 0), 118)}${this._haupt(t.vorrat, l.vorrat, l.anteil !== null && l.maximum ? `${Math.round(l.anteil * 100)} % ${t.von} ${l.maximum.text}` : "")}</div>
         ${l.anteil === null ? "" : `<div class="eta-messung"><div class="eta-balken" data-art="${l.niedrig ? "warn" : "pellet"}"><i style="width:${(l.anteil * 100).toFixed(1)}%"></i>${l.warnAnteil === null ? "" : `<u style="left:${(l.warnAnteil * 100).toFixed(1)}%"></u>`}</div></div>`}
-        ${this._zeilen([[t.reicht_bis, l.reichtBis], [t.bestellen_bis, l.bestellenBis], [t.verbrauch_heute, l.heute], [t.warnung_ab, l.warnung]])}`),
+        ${this._zeilen([[t.reicht_bis, l.reichtBis], [t.bestellen_bis, l.bestellenBis], [t.verbrauch_heute, l.heute], [t.warnung_ab, l.warnung], [t.fassungsvermoegen, l.stellen ? { ...l.stellen, html: `${e(l.stellen.text)}<span class="eta-stift">${ICON.stift}</span>` } : l.maximum]])}`),
       solar: (s) => kachel(s, s.aktiv ? "data-aktiv" : "", this._chip(s.aktiv ? t.liefert : t.ruht, s.aktiv), `
         <div class="eta-buehne" ${this._info(s.leistung)}>${this._figur(solarBild(), 132)}${this._haupt(t.leistung, s.leistung)}</div>
         ${this._zeilen([[t.kollektor, s.kollektor], [t.ertrag_heute, s.heute]])}`),

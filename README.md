@@ -520,6 +520,8 @@ Wie viel dein Lager fasst, stellst du mit `number.eta_heizung_lager_fassungsverm
 
 Der Füllstand in Prozent und `sensor.eta_heizung_lager_fassungsvermogen` rechnen mit dem, was im Feld steht. Wohin es schreibt, zeigt sein Attribut `gespeichert`.
 
+In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) erreichst du das Feld auch aus der Kachel des Pelletlagers: Ein Tipp auf die Zeile **Fassungsvermögen** mit dem Stift öffnet es.
+
 ### Betriebsart je Heizkreis
 
 Findet die Integration am Heizkreis die Tasten **Auto**, **Heizen** und **Absenken** sowie seine Ein/Aus-Taste, entsteht `select.eta_heizung_heizkreis_1_betriebsart` (bis `_4_`):
