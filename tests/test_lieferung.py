@@ -256,3 +256,27 @@ async def test_aktion_nimmt_datum_menge_und_preis(hass, entry):
     for falsch in ({"menge": 0}, {"menge": 4000, "preis": -1}, {"preis": 300}):
         with pytest.raises(vol.Invalid):
             schema(falsch)
+
+
+async def test_im_lager_steht_nichts_nach_dem_komma(hass, entry):
+    """Die Anlage führt den Vorrat auf 100 Gramm genau - gezeigt werden ganze Kilogramm."""
+    from eta_heating_ws.sensor import ETALagerMaximumSensor, ETAMeasurementSensor
+
+    coordinator, zahlen = await lager_von(hass, entry)
+    for key in ("lager_vorrat", "lager_warngrenze", "lager_maximum"):
+        coordinator.data[key].dec_places = 1
+
+    for key in ("lager_vorrat", "lager_warngrenze"):
+        sensor = ETAMeasurementSensor(coordinator, key, coordinator.sensor_defs[key])
+        assert sensor.suggested_display_precision == 0, key
+    maximum = ETALagerMaximumSensor(coordinator, coordinator.sensor_defs["lager_maximum"])
+    assert maximum.suggested_display_precision == 0
+
+    hass.session.geschrieben[VORRAT] = "19167"
+    await coordinator.async_refresh()
+    assert coordinator.zahl("lager_vorrat") == pytest.approx(1916.7)
+    assert zahlen["lager_vorrat_stellen"].native_value == 1917, "das Zahlenfeld zeigt ganze Kilogramm"
+
+    neu = await coordinator.async_lieferung_eintragen(HEUTE, 4000)
+    assert neu == pytest.approx(5916.7), "gerechnet wird mit dem genauen Wert"
+    assert hass.session.gesetzte_werte[-1] == (VORRAT, "59167")

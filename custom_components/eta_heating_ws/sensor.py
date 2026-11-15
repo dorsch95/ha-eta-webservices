@@ -113,7 +113,15 @@ def _nachkommastellen(coordinator: ETADataUpdateCoordinator, key: str) -> int:
     eigenen Messauflösung - beim Kesseldruck etwa zwei, bei Zählerständen
     in Kilogramm keine. Liegt beim Einrichten noch kein Wert vor, bleibt
     es bei einer Stelle.
+
+    Legt die Sensordefinition die Stellen selbst fest (nachkommastellen),
+    gilt das: Vorrat, Warngrenze und Fassungsvermögen des Pelletlagers
+    stehen in ganzen Kilogramm da, auch wenn die Anlage sie auf 100 Gramm
+    genau führt.
     """
+    fest = coordinator.sensor_defs.get(key, {}).get("nachkommastellen")
+    if fest is not None:
+        return fest
     reading = (coordinator.data or {}).get(key)
     if reading is None or reading.is_text or reading.dec_places is None:
         return 1
@@ -341,8 +349,7 @@ class ETALagerMaximumSensor(ETAMeasurementSensor):
 
     def __init__(self, coordinator: ETADataUpdateCoordinator, info: dict) -> None:
         super().__init__(coordinator, "lager_maximum", info)
-        if not info.get("uri"):
-            self._attr_suggested_display_precision = 0
+        self._attr_suggested_display_precision = 0
 
     @property
     def native_value(self):

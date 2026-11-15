@@ -97,10 +97,18 @@ class ETAZahl(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Der Wert der Anlage - nach dem Schreiben der neue, bis sie ihn bestätigt."""
+        """Der Wert der Anlage - nach dem Schreiben der neue, bis sie ihn bestätigt.
+
+        Gerundet auf die Schrittweite des Felds: Die Anlage führt den
+        Vorrat auf 100 Gramm genau, das Feld zeigt ganze Kilogramm.
+        """
         if self._erwartet is not None:
             return self._erwartet
-        return self.coordinator.zahl(self._quelle)
+        wert = self.coordinator.zahl(self._quelle)
+        if wert is None:
+            return None
+        schritt = self._attr_native_step
+        return round(wert / schritt) * schritt
 
     @property
     def extra_state_attributes(self) -> dict[str, str]:
