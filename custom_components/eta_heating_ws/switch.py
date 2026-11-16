@@ -271,21 +271,29 @@ class Kesselsperre:
         """Sperren und Freigeben laufen nacheinander - so gilt der letzte Befehl."""
 
     @callback
-    def befohlen(self, ein: bool) -> None:
+    def befohlen(self, ein: bool) -> float:
         """Ein anderer hat die Ein/Aus-Taste geschaltet: der Schalter "Kessel" oder der Aschebox-Plan.
 
         Bis die Anlage es meldet, gilt für die Sperre dieser Befehl. Sonst
         hielte sie einen eben ausgeschalteten Kessel noch für
-        eingeschaltet und schaltete ihn beim Freigeben ein.
+        eingeschaltet und schaltete ihn beim Freigeben ein. Gibt die Marke
+        zurück, mit der sich genau dieser Befehl wieder verwerfen lässt,
+        siehe befehl_verworfen.
         """
         self._erwartet = ein
         self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
+        return self._erwartet_seit
 
     @callback
-    def befehl_verworfen(self) -> None:
-        """Die Anlage hat einen angekündigten Schaltbefehl nicht angenommen - es zählt wieder, was sie meldet."""
-        self._erwartet = None
+    def befehl_verworfen(self, marke: float) -> None:
+        """Die Anlage hat einen angekündigten Schaltbefehl nicht angenommen - es zählt wieder, was sie meldet.
+
+        Nur wenn seither niemand anderes geschaltet hat: Hat die Sperre
+        inzwischen selbst gesperrt oder freigegeben, gilt ihr Befehl weiter.
+        """
+        if self._erwartet_seit == marke:
+            self._erwartet = None
 
     @callback
     def einschalten_uebernehmen(self) -> None:

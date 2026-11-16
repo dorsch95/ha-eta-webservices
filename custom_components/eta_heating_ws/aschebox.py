@@ -515,13 +515,12 @@ class AscheboxPlan:
         """
         definition = self.coordinator.switch_defs["kessel_schalter"]
         sperre = self.coordinator.kesselsperre
-        if sperre is not None:
-            sperre.befohlen(ein)
+        marke = sperre.befohlen(ein) if sperre is not None else None
         try:
             await self._senden(definition["uri"], definition["ein_roh" if ein else "aus_roh"])
         except HomeAssistantError:
             if sperre is not None:
-                sperre.befehl_verworfen()
+                sperre.befehl_verworfen(marke)
             raise
         await self.coordinator.async_request_refresh()
 
