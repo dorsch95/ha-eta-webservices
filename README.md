@@ -227,6 +227,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_heizkreis_raumtemperatur` | Heizkreis Raumtemperatur | °C |
 | `sensor.eta_heizung_heizkreis_zeitprogramm` | Heizkreis Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_1_thermostat` | Heizkreis 1 Thermostat | Thermostat |
+| `select.eta_heizung_heizkreis_1_bild` | Heizkreis 1 Bild in der Karte „ETA Übersicht“: Heizkörper oder Fußbodenheizung | Auswahl |
 | **Heizkreis 2** | | |
 | `select.eta_heizung_heizkreis_2_betriebsart` | Heizkreis 2 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_2_anforderung` | Heizkreis 2 Anforderung | Text |
@@ -234,6 +235,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_heizkreis_2_raumtemperatur` | Heizkreis 2 Raumtemperatur | °C |
 | `sensor.eta_heizung_heizkreis_2_zeitprogramm` | Heizkreis 2 Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_2_thermostat` | Heizkreis 2 Thermostat | Thermostat |
+| `select.eta_heizung_heizkreis_2_bild` | Heizkreis 2 Bild in der Karte „ETA Übersicht“: Heizkörper oder Fußbodenheizung | Auswahl |
 | **Heizkreis 3** | | |
 | `select.eta_heizung_heizkreis_3_betriebsart` | Heizkreis 3 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_3_anforderung` | Heizkreis 3 Anforderung | Text |
@@ -241,6 +243,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_heizkreis_3_raumtemperatur` | Heizkreis 3 Raumtemperatur | °C |
 | `sensor.eta_heizung_heizkreis_3_zeitprogramm` | Heizkreis 3 Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_3_thermostat` | Heizkreis 3 Thermostat | Thermostat |
+| `select.eta_heizung_heizkreis_3_bild` | Heizkreis 3 Bild in der Karte „ETA Übersicht“: Heizkörper oder Fußbodenheizung | Auswahl |
 | **Heizkreis 4** | | |
 | `select.eta_heizung_heizkreis_4_betriebsart` | Heizkreis 4 Betriebsart | Auswahl |
 | `sensor.eta_heizung_heizkreis_4_anforderung` | Heizkreis 4 Anforderung | Text |
@@ -248,6 +251,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_heizkreis_4_raumtemperatur` | Heizkreis 4 Raumtemperatur | °C |
 | `sensor.eta_heizung_heizkreis_4_zeitprogramm` | Heizkreis 4 Zeitprogramm | Text |
 | `climate.eta_heizung_heizkreis_4_thermostat` | Heizkreis 4 Thermostat | Thermostat |
+| `select.eta_heizung_heizkreis_4_bild` | Heizkreis 4 Bild in der Karte „ETA Übersicht“: Heizkörper oder Fußbodenheizung | Auswahl |
 | **Pelletlager** | | |
 | `sensor.eta_heizung_lager_austragung` | Lager Austragung | Text |
 | `sensor.eta_heizung_lager_fassungsvermogen` | Lager Fassungsvermögen | kg |
@@ -362,7 +366,7 @@ Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Nam
 
 **Ohne Bewegung:** `switch.eta_heizung_animationen` ausschalten (Gerät *ETA Heizung*, Bereich *Konfiguration*), etwa für ein Wandtablet. Die Karte zeigt dann Standbilder mit derselben Aussage. Der Schalter wirkt sofort auf allen Dashboards und schreibt nichts in die Heizung.
 
-**Bild von Brenner und Fremdwärme:** Was hinter diesen beiden Funktionsblöcken steht, verrät die Anlage nicht. Du wählst das Bild deshalb selbst, mit `select.eta_heizung_brenner_bild` und `select.eta_heizung_fremdwarme_bild` (Gerät *ETA Heizung*, Bereich *Konfiguration*):
+**Bilder wählen:** Was hinter Brenner und Fremdwärme steht, verrät die Anlage nicht. Du wählst das Bild deshalb einmal selbst, am Gerät *ETA Heizung* im Bereich *Konfiguration*, mit `select.eta_heizung_brenner_bild` und `select.eta_heizung_fremdwarme_bild`:
 
 | Auswahl | Bild | in Bewegung |
 |---|---|---|
@@ -371,7 +375,9 @@ Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Nam
 | Kaminofen | Ofen mit Rauchrohr und Holzfach | Holzfeuer |
 | Allgemein | Gehäuse mit drei Wärmewellen | die Wellen glühen und steigen auf |
 
-Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Dieselbe Auswahl hat der [Fremderzeuger](#fremderzeuger) mit `select.eta_heizung_fremderzeuger_bild`. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts. In der Karte „ETA Übersicht“ geht es am schnellsten: Der kleine Stift an der Kachel von Brenner, Fremdwärme und Fremderzeuger öffnet dieselbe Auswahl.
+Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Dieselbe Auswahl hat der [Fremderzeuger](#fremderzeuger) mit `select.eta_heizung_fremderzeuger_bild`. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts.
+
+Am selben Ort wählst du je Heizkreis, ob die Karte „ETA Übersicht“ ihn als **Heizkörper** oder als **Fußbodenheizung** zeichnet: `select.eta_heizung_heizkreis_1_bild` (bis `_4_`). Ohne Auswahl ist es der Heizkörper.
 
 ### Anpassen
 
@@ -398,7 +404,7 @@ In den Einstellungen der Karte wählst du die **Ansicht**:
 | Anlagenbild | die Anlage als Schema: links die Erzeuger, dann Puffer und Verbraucher, dazwischen Leitungen |
 | Kompakt | das Wichtigste als Liste, für das Handy oder neben anderen Karten |
 
-In den Einstellungen wählst du auch, welche Heizkreise statt des Heizkörpers als **Fußbodenheizung** erscheinen.
+Ob ein Heizkreis als Heizkörper oder als **Fußbodenheizung** erscheint, wählst du am Gerät, siehe [Bilder wählen](#was-die-kacheln-zeigen). Hattest du die Fußbodenheizung bisher in den Einstellungen der Karte angekreuzt, zeigt diese Karte sie weiterhin.
 
 Unter **Reihenfolge der Teile** wählst du Teile aus und ziehst sie in die Reihenfolge, die du haben willst. Was du nicht auswählst, folgt dahinter wie gewohnt. In den Kacheln und in der Kompaktansicht gilt die Reihenfolge für alles, im Anlagenbild innerhalb einer Spalte - die Spalten selbst ergeben sich daraus, wer woran hängt.
 
@@ -538,7 +544,7 @@ Steht dein Ofen dagegen am Display als eigener Block (ab Werk `F.Wärme`), ist e
 
 Mit Schreibzugriff kreuzt du im selben Schritt im Feld **Sperren, solange er heizt** den Kessel an. Ab Werk sperrt er nichts und wird nur angezeigt.
 
-**Sperrtemperatur:** Ab Werk 60 °C. Du stellst sie in der Karte über den Stift an seiner Kachel oder mit `number.eta_heizung_fremderzeuger_sperrtemperatur`. Damit der Zustand nicht flattert, gilt er erst wieder als aus, wenn der Fühler 5 °C unter die Sperrtemperatur gefallen ist.
+**Sperrtemperatur:** Ab Werk 60 °C. Du stellst sie direkt in der Karte unter **Sperrt ab** mit Minus und Plus oder mit `number.eta_heizung_fremderzeuger_sperrtemperatur`. Damit der Zustand nicht flattert, gilt er erst wieder als aus, wenn der Fühler 5 °C unter die Sperrtemperatur gefallen ist.
 
 **Was dann passiert:**
 
@@ -553,8 +559,10 @@ Mit Schreibzugriff kreuzt du im selben Schritt im Feld **Sperren, solange er hei
 
 - Die Kachel zeigt, ob er heizt, mit Fühler auch seine Temperatur, und ob der Kessel gesperrt ist. Am Kessel steht dann **Kesselsperre: Gesperrt**.
 - Eine gewählte Entität zeigt die Kachel nur an. Schalten lässt sie sich dort nicht.
-- Hast du nur einen Temperaturfühler angegeben, bringt die Integration einen eigenen Ein/Aus-Schalter mit (`switch.eta_heizung_fremderzeuger`), auch als Knopf in der Kachel. Er schaltet nicht den Ofen, sondern nur, ob Home Assistant ihn beachtet: Aus heißt, der Fremderzeuger gilt nie als heizend und der Kessel bleibt frei.
-- Der Stift an der Kachel wählt das Bild und stellt die Sperrtemperatur.
+- Hast du nur einen Temperaturfühler angegeben, bringt die Integration einen eigenen Ein/Aus-Schalter mit (`switch.eta_heizung_fremderzeuger`), auch als Knopf in der Karte. Er schaltet nicht den Ofen, sondern nur, ob Home Assistant ihn beachtet: Aus heißt, der Fremderzeuger gilt nie als heizend und der Kessel bleibt frei.
+- Mit Fühler steht in der Karte **Sperrt ab** mit Minus und Plus: die Sperrtemperatur in Schritten von 1 °C. Ein Tipp auf die Zahl öffnet das Zahlenfeld, für größere Sprünge. Sperrt der Fremderzeuger nichts, heißt die Zeile **Heizt ab**.
+- In den Kacheln stehen Sperrtemperatur und Knopf in der Kachel. Im Anlagenbild und in der kompakten Ansicht klappt ein Tipp auf den Fremderzeuger sie auf, wie bei einem Heizkreis.
+- Sein Bild wählst du am Gerät unter *Konfiguration*, siehe [Bilder wählen](#was-die-kacheln-zeigen).
 
 **Ohne Karte:** `binary_sensor.eta_heizung_fremderzeuger_heizt` sagt, ob er nach diesen Regeln heizt - etwa für eigene Automationen. Wer die Komponente gar nicht will, nimmt `switch.eta_heizung_kessel_sperren` in einer eigenen Automation oder den Blueprint [Kessel sperren](#-blueprints).
 

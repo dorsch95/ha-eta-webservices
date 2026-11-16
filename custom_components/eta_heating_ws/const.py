@@ -613,6 +613,13 @@ SELECTS = {
 }
 """Je Heizkreis eine Auswahl der Betriebsart."""
 
+HEIZKREIS_BILDER = ["heizkoerper", "fussboden"]
+"""Wie die Karte "ETA Übersicht" einen Heizkreis zeichnet: als Heizkörper oder als Fußbodenheizung.
+
+Was verbaut ist, weiß die Anlage nicht - der Nutzer wählt es je Heizkreis,
+siehe BILD_AUSWAHLEN.
+"""
+
 BILD_AUSWAHLEN = {
     "brenner_bild": {
         "component": "brenner",
@@ -635,12 +642,29 @@ BILD_AUSWAHLEN = {
         "icon": "mdi:image-edit-outline",
         "vorgabe": ERZEUGER_VORGABE["fremderzeuger"],
     },
+    **{
+        f"{praefix}_bild": {
+            "component": komponente,
+            "name": f"Heizkreis {nummer} Bild",
+            "translation_key": f"{praefix}_bild",
+            "icon": "mdi:image-edit-outline",
+            "vorgabe": HEIZKREIS_BILDER[0],
+            "optionen": HEIZKREIS_BILDER,
+        }
+        for nummer, (komponente, praefix) in enumerate(
+            [("hk1", "heizkreis"), ("hk2", "heizkreis2"), ("hk3", "heizkreis3"), ("hk4", "heizkreis4")],
+            start=1,
+        )
+    },
 }
-"""Je Erzeuger mit wählbarem Bild eine Auswahl am Gerät, siehe karte.ERZEUGER_BILDER.
+"""Je Erzeuger und je Heizkreis eine Auswahl des Bildes am Gerät, unter "Konfiguration".
 
-Die Auswahl ändert nichts an der Anlage - beide Dashboard-Karten fragen
-sie ab. vorgabe: das Bild, solange der Nutzer nichts gewählt hat; es ist
-das, was die Karten vor dieser Auswahl gezeigt haben.
+Die Auswahl ändert nichts an der Anlage. Für die Erzeuger fragen beide
+Dashboard-Karten sie ab, siehe karte.ERZEUGER_BILDER; für die Heizkreise
+die Karte "ETA Übersicht", siehe HEIZKREIS_BILDER. vorgabe: das Bild,
+solange der Nutzer nichts gewählt hat - es ist das, was die Karten vor
+dieser Auswahl gezeigt haben. optionen: was zur Wahl steht; ohne Angabe
+die Bilder der Erzeuger.
 """
 
 ZAHLEN = {

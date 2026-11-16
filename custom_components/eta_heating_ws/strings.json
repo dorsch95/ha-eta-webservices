@@ -537,6 +537,34 @@
           "ofen": "Wood stove",
           "allgemein": "Generic"
         }
+      },
+      "heizkreis_bild": {
+        "name": "Heating circuit 1 picture",
+        "state": {
+          "heizkoerper": "Radiator",
+          "fussboden": "Underfloor heating"
+        }
+      },
+      "heizkreis2_bild": {
+        "name": "Heating circuit 2 picture",
+        "state": {
+          "heizkoerper": "Radiator",
+          "fussboden": "Underfloor heating"
+        }
+      },
+      "heizkreis3_bild": {
+        "name": "Heating circuit 3 picture",
+        "state": {
+          "heizkoerper": "Radiator",
+          "fussboden": "Underfloor heating"
+        }
+      },
+      "heizkreis4_bild": {
+        "name": "Heating circuit 4 picture",
+        "state": {
+          "heizkoerper": "Radiator",
+          "fussboden": "Underfloor heating"
+        }
       }
     },
     "sensor": {

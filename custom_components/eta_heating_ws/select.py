@@ -42,13 +42,13 @@ async def async_setup_entry(
 
 
 class ETABildAuswahl(SelectEntity, RestoreEntity):
-    """Welches Bild die Dashboard-Karten für Brenner oder Fremdwärme zeigen.
+    """Welches Bild die Dashboard-Karten für einen Erzeuger oder einen Heizkreis zeigen.
 
-    Die Anlage sagt nicht, was hinter dem Funktionsblock steht - der Nutzer
-    wählt es hier, siehe karte.ERZEUGER_BILDER. Beide Karten fragen diese
-    Auswahl ab. An der Anlage ändert sie nichts, deshalb gibt es sie auch
-    ohne Schreibzugriff. Nach einem Neustart gilt die letzte Wahl, anfangs
-    die Vorgabe aus const.BILD_AUSWAHLEN.
+    Die Anlage sagt nicht, was hinter dem Funktionsblock steht - ob der
+    Brenner eine Gastherme ist oder der Heizkreis eine Fußbodenheizung. Der
+    Nutzer wählt es hier, siehe const.BILD_AUSWAHLEN. An der Anlage ändert
+    die Auswahl nichts, deshalb gibt es sie auch ohne Schreibzugriff. Nach
+    einem Neustart gilt die letzte Wahl, anfangs die Vorgabe.
     """
 
     _attr_has_entity_name = True
@@ -60,7 +60,7 @@ class ETABildAuswahl(SelectEntity, RestoreEntity):
     ) -> None:
         self._attr_translation_key = definition["translation_key"]
         self._attr_icon = definition["icon"]
-        self._attr_options = list(ERZEUGER_BILDER)
+        self._attr_options = list(definition.get("optionen") or ERZEUGER_BILDER)
         self._attr_current_option = definition["vorgabe"]
         self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
         self._attr_device_info = coordinator.device_info

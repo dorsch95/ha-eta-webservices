@@ -104,7 +104,9 @@ async def test_ohne_schreibzugriff_keine_betriebsart(hass, entry):
     coordinator, auswahl = await aufbauen(hass, entry)
 
     assert coordinator.select_defs == {}
-    assert auswahl == {}
+    assert set(auswahl) == {"heizkreis_bild", "heizkreis2_bild"}, (
+        "nur die Bildauswahl der Heizkreise - sie schreibt nichts an die Anlage"
+    )
 
 
 async def test_gewaehlte_betriebsart_wird_auch_zurueckgelesen(hass, entry):

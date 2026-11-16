@@ -29,7 +29,6 @@ const TEXTE = {
     feld_titel: "Titel",
     feld_ansicht: "Ansicht",
     feld_anlage: "Anlage",
-    feld_fussboden: "Fußbodenheizung statt Heizkörper",
     feld_reihenfolge: "Reihenfolge der Teile",
     hilfe_reihenfolge: "Teile auswählen und in die gewünschte Reihenfolge ziehen. Was fehlt, folgt dahinter wie gewohnt. Im Anlagenbild gilt die Reihenfolge innerhalb einer Spalte.",
     ansicht_kacheln: "Kacheln",
@@ -88,6 +87,8 @@ const TEXTE = {
     raum_soll: "Raum Soll",
     waermer: "wärmer",
     kaelter: "kälter",
+    hoeher: "höher",
+    niedriger: "niedriger",
     anforderung: "Anforderung",
     heizt: "Heizt",
     modus_automatik: "Auto",
@@ -118,14 +119,12 @@ const TEXTE = {
     unbekannt: "Unbekannt",
     kessel_sperre: "Kesselsperre",
     heizt_an: "Heizt an",
-    ab: "ab",
     schalter: "Schalter",
-    bild: "Bild",
     sperrtemperatur: "Sperrtemperatur",
+    sperrt_ab: "Sperrt ab",
+    heizt_ab: "Heizt ab",
     sperrtemperatur_hinweis: "ab dieser Temperatur gilt er als heizend",
-    einstellen: "einstellen",
     nicht_verfuegbar: "gerade nicht verfügbar",
-    beachten: "beachten - aus heißt: Er sperrt nichts",
     speichert: "Speichert …",
     zustand: "Zustand",
     temperatur: "Temperatur",
@@ -161,7 +160,6 @@ const TEXTE = {
     feld_titel: "Title",
     feld_ansicht: "View",
     feld_anlage: "System",
-    feld_fussboden: "Underfloor heating instead of radiator",
     feld_reihenfolge: "Order of the parts",
     hilfe_reihenfolge: "Pick parts and drag them into the order you want. Anything left out follows as usual. In the system diagram the order applies within a column.",
     ansicht_kacheln: "Tiles",
@@ -220,6 +218,8 @@ const TEXTE = {
     raum_soll: "Room target",
     waermer: "warmer",
     kaelter: "cooler",
+    hoeher: "higher",
+    niedriger: "lower",
     anforderung: "Demand",
     heizt: "Heating",
     modus_automatik: "Auto",
@@ -250,14 +250,12 @@ const TEXTE = {
     unbekannt: "Unknown",
     kessel_sperre: "Boiler lock",
     heizt_an: "Warming up",
-    ab: "from",
     schalter: "Switch",
-    bild: "Picture",
     sperrtemperatur: "Lock temperature",
+    sperrt_ab: "Locks from",
+    heizt_ab: "Heats from",
     sperrtemperatur_hinweis: "from this temperature it counts as heating",
-    einstellen: "settings",
     nicht_verfuegbar: "not available right now",
-    beachten: "active - off means: it locks nothing",
     speichert: "Saving …",
     zustand: "State",
     temperatur: "Temperature",
@@ -455,6 +453,8 @@ const STIL = `
 
   .eta-soll { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 12px; background: var(--flaeche); }
   .eta-soll span { flex: 1; min-width: 0; color: var(--text-2); }
+  .eta-soll b[data-info] { align-self: stretch; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+  .eta-soll b[data-info]:focus-visible { outline: 2px solid var(--akzent); outline-offset: -2px; }
   .eta-soll b { min-width: 68px; text-align: center; font-size: 17px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .eta-rund { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: var(--karte); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .eta-rund:disabled { opacity: .4; cursor: default; }
@@ -614,6 +614,7 @@ const STIL = `
   .eta-stellen > b { font-weight: 500; }
   .eta-stellen .eta-soll { flex: 1 1 240px; max-width: 320px; }
   .eta-stellen .eta-modi { flex: 1 1 260px; max-width: 360px; }
+  .eta-stellen .eta-knoepfe { flex: 0 1 180px; }
   .eta-stellen .zu { margin-left: auto; background: transparent; }
   .eta-klappe.eta-inline { display: none; }
   .eta-bild[data-schmal] .eta-klappe.eta-inline { display: flex; padding: 0 0 4px 22px; }
@@ -1103,7 +1104,9 @@ function teilName(teil, teile, t) {
  * in Ruhe nicht genau auf null. Erst ohne
  * beide zählt die Anforderung der Pufferpumpe: Sie bleibt nach dem
  * Zapfen stehen, die Karte zeigte dann weiter "Zapfung läuft".
- * fussboden: die Heizkreise, die als Fußbodenheizung gezeichnet werden.
+ * Ob ein Heizkreis als Heizkörper oder Fußbodenheizung erscheint, wählt
+ * der Nutzer am Gerät. fussboden: Heizkreise, die eine Karte aus der Zeit
+ * davor in ihren Einstellungen als Fußbodenheizung nennt - das gilt weiter.
  */
 function anlageLesen(hass, struktur, t, fussboden) {
   const stand = (schluessel) => {
@@ -1198,7 +1201,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
       const thermostat = stand(`${praefix}_thermostat`);
       const raumSoll = thermostat?.attributes?.temperature;
       return {
-        boden: fussboden.includes(teil.id),
+        boden: stand(`${praefix}_bild`)?.state === "fussboden" || fussboden.includes(teil.id),
         vorlauf: wert(`${praefix}_vorlauf`),
         anforderung,
         heizt: an(anforderung),
@@ -1268,12 +1271,16 @@ function anlageLesen(hass, struktur, t, fussboden) {
      * gerade sperrt, sagt der Schalter "Kessel sperren". Eine gewählte
      * Entität zeigt die Karte nur an; den Ein/Aus-Schalter gibt es nur,
      * wo die Integration ihn selbst mitbringt, also allein mit Fühler.
+     * stellen: die Sperrtemperatur, soweit sie sich stellen lässt - nur
+     * mit Fühler.
      */
     fremderzeuger(teil) {
       const melder = stand("fremderzeuger_heizt");
       const quelle = teil.entitaet ? hass.states[teil.entitaet] : undefined;
       const schalter = stand("fremderzeuger_schalter");
       const temperatur = teil.fuehler ? wertAus(hass.states[teil.fuehler]) : null;
+      const schwelle = temperatur ? stand("fremderzeuger_schwelle") : undefined;
+      const grenze = schwelle && schwelle.state !== "" && !Number.isNaN(Number(schwelle.state)) ? Number(schwelle.state) : null;
       const fehlt = !melder || melder.state === "unavailable" || melder.state === "unknown";
       const heizt = melder?.state === "on";
       const waermtAuf = !heizt && !fehlt && Boolean(temperatur) && quelle?.state === "on";
@@ -1284,7 +1291,9 @@ function anlageLesen(hass, struktur, t, fussboden) {
         aktiv: heizt,
         brennt: heizt || waermtAuf,
         temperatur,
-        schwelle: temperatur ? wert("fremderzeuger_schwelle") : null,
+        stellen: grenze === null
+          ? null
+          : { id: schwelle.entity_id, wert: grenze, min: schwelle.attributes.min ?? 0, max: schwelle.attributes.max ?? 100, schritt: schwelle.attributes.step || 1, einheit: schwelle.attributes.unit_of_measurement || "°C" },
         quelle: quelle ? { id: quelle.entity_id, text: quelle.state === "on" ? t.ein : quelle.state === "off" ? t.aus : t.unbekannt } : null,
         schalter: schalter ? { id: schalter.entity_id, an: schalter.state === "on" } : null,
         zustand: { id: melder?.entity_id, text: fehlt ? t.unbekannt : heizt ? t.heizt : waermtAuf ? t.heizt_an : t.aus },
@@ -1362,9 +1371,9 @@ class EtaUebersichtKarte extends HTMLElement {
 
   /**
    * Die Einstellungen der Karte. Die Anlage steht nur zur Wahl, wenn es
-   * mehrere gibt. Je Heizkreis lässt sich statt des Heizkörpers eine
-   * Fußbodenheizung zeigen - was verbaut ist, weiß die Anlage nicht.
-   * Die Reihenfolge der Teile lässt sich ziehen, siehe _geordnet.
+   * mehrere gibt. Die Reihenfolge der Teile lässt sich ziehen, siehe
+   * _geordnet. Welches Bild ein Teil zeigt, steht nicht hier, sondern
+   * am Gerät unter Konfiguration - das gilt für alle Karten.
    */
   static async getConfigForm() {
     const t = TEXTE[sprache(document.documentElement.lang)];
@@ -1376,16 +1385,12 @@ class EtaUebersichtKarte extends HTMLElement {
       anlagen = [];
     }
     const auswahl = (name, optionen) => ({ name, selector: { select: { mode: "dropdown", options: optionen } } });
-    const heizkreise = [...new Map(anlagen.flatMap((a) => a.teile).filter((teil) => teil.art === "heizkreis").map((teil) => [teil.id, teil])).values()];
     const teile = [...new Map(anlagen.flatMap((a) => a.teile.map((teil) => [teil.id, { value: teil.id, label: teilName(teil, a.teile, t) }]))).values()];
     return {
       schema: [
         { name: "titel", selector: { text: {} } },
         auswahl("ansicht", ANSICHTEN.map((wert) => ({ value: wert, label: t[`ansicht_${wert}`] }))),
         ...(anlagen.length > 1 ? [auswahl("anlage", anlagen.map((a) => ({ value: a.eintrag, label: a.titel })))] : []),
-        ...(heizkreise.length
-          ? [{ name: "fussboden", selector: { select: { multiple: true, mode: "list", options: heizkreise.map((teil) => ({ value: teil.id, label: `${t.heizkreis} ${teil.nummer}` })) } } }]
-          : []),
         ...(teile.length > 1 ? [{ name: "reihenfolge", selector: { select: { multiple: true, reorder: true, options: teile } } }] : []),
       ],
       computeLabel: (feld) => t[`feld_${feld.name}`],
@@ -1431,7 +1436,7 @@ class EtaUebersichtKarte extends HTMLElement {
   disconnectedCallback() {
     this._beobachter.disconnect();
     this._zeitenSchliessen();
-    Object.keys(this._sollTakt).forEach((thermostat) => this._sollSenden(thermostat));
+    Object.keys(this._sollTakt).forEach((ziel) => this._sollSenden(ziel));
     this._wunsch = {};
   }
 
@@ -1578,22 +1583,9 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<button type="button" class="eta-rund eta-zeit" data-aktion="zeiten" data-teil="${e(teil.id)}" title="${e(this._t.zeiten)}" aria-label="${e(this._t.zeiten)}: ${e(teil.name)}">${ICON.uhr}</button>`;
   }
 
-  /** Die Knöpfe am Namen eines Teils: die Uhr für seine Zeiten, am Pelletlager Plus und Stift, an den Erzeugern der Stift. */
+  /** Die Knöpfe am Namen eines Teils: die Uhr für seine Zeiten, am Pelletlager Plus und Stift. */
   _knoepfe(teil) {
-    return this._zeitKnopf(teil) + this._lagerKnoepfe(teil) + this._erzeugerKnopf(teil);
-  }
-
-  /**
-   * An Brenner, Fremdwärme und Fremderzeuger: Der Stift wählt das Bild,
-   * beim Fremderzeuger mit Temperaturfühler stellt er auch die
-   * Sperrtemperatur. Nur, wo es die Auswahl oder das Zahlenfeld gibt.
-   */
-  _erzeugerKnopf(teil) {
-    if (!["brenner", "fremdwaerme", "fremderzeuger"].includes(teil.art)) return "";
-    const entitaeten = this._struktur?.entitaeten || {};
-    if (!entitaeten[`${teil.id}_bild`] && !(teil.art === "fremderzeuger" && (entitaeten.fremderzeuger_schwelle || entitaeten.fremderzeuger_schalter))) return "";
-    const name = `${teil.name} ${this._t.einstellen}`;
-    return `<button type="button" class="eta-rund eta-zeit" data-aktion="erzeuger-einstellen" data-teil="${e(teil.id)}" title="${e(name)}" aria-label="${e(name)}">${ICON.stift}</button>`;
+    return this._zeitKnopf(teil) + this._lagerKnoepfe(teil);
   }
 
   /**
@@ -1648,9 +1640,50 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<button type="button" class="eta-banner" ${anlage.fehler ? `data-info="${e(anlage.fehler)}"` : ""}>${ICON.warn}<ul>${zeilen.join("")}</ul></button>`;
   }
 
-  /** Raum Soll und Betriebsart eines Heizkreises, soweit sie sich stellen lassen. */
-  _stellen(h, anlage) {
-    return `${this._raumSoll(h, anlage)}${this._modi(h, anlage)}`;
+  /**
+   * Was sich an einem Teil stellen lässt: am Heizkreis Raum Soll und
+   * Betriebsart, am Fremderzeuger Sperrtemperatur und Ein/Aus. Im
+   * Anlagenbild und in der kompakten Ansicht klappt es beim Antippen auf.
+   */
+  _stellen(teil, anlage) {
+    if (teil.art === "fremderzeuger") return this._ofenStellen(teil);
+    return `${this._raumSoll(teil, anlage)}${this._modi(teil, anlage)}`;
+  }
+
+  /**
+   * Die Sperrtemperatur des Fremderzeugers mit zwei Tasten - nur mit
+   * Temperaturfühler - und sein Ein/Aus-Schalter, wo die Integration ihn
+   * mitbringt. Beides steht in Home Assistant, es braucht keinen
+   * Schreibzugriff auf die Anlage. Die Zahl zwischen den Tasten öffnet
+   * das Zahlenfeld, für größere Sprünge. Beschriftet ist sie kurz, damit
+   * sie auch in die schmale Kachel passt: "Sperrt ab", und "Heizt ab",
+   * wenn der Fremderzeuger nichts sperrt.
+   */
+  _ofenStellen(w) {
+    const t = this._t;
+    const grad = w.stellen
+      ? this._stufen((w.sperrt || []).length ? t.sperrt_ab : t.heizt_ab, w.name, w.stellen, { nachkomma: Number.isInteger(w.stellen.schritt) ? 0 : 1, einheit: w.stellen.einheit, weniger: t.niedriger, mehr: t.hoeher, ansage: t.sperrtemperatur, hinweis: t.sperrtemperatur_hinweis, info: true })
+      : "";
+    const knopf = w.schalter
+      ? `<div class="eta-knoepfe"><button type="button" class="eta-knopf" data-aktion="ofen" data-ziel="${e(w.schalter.id)}" aria-pressed="${w.schalter.an}">${ICON.aus}<span>${e(`${w.name} ${w.schalter.an ? t.ein : t.aus}`)}</span></button></div>`
+      : "";
+    return grad + knopf;
+  }
+
+  /**
+   * Ein Wert mit zwei Tasten. Gezeigt wird sofort der gewünschte Wert,
+   * siehe _sollStellen. stellen: Entität, Wert, Grenzen und Schritt.
+   * ansage: der Name für Vorleseprogramme, wenn er vom Titel abweicht.
+   * info: Die Zahl selbst öffnet die Entität.
+   */
+  _stufen(titel, name, stellen, { nachkomma, einheit, weniger, mehr, ansage = titel, hinweis = "", info = false }) {
+    const { id, min, max, schritt } = stellen;
+    const wunsch = this._wunsch[id];
+    if (wunsch && (wunsch.bis < Date.now() || Math.abs(wunsch.wert - stellen.wert) < 0.01)) delete this._wunsch[id];
+    const wert = this._wunsch[id]?.wert ?? stellen.wert;
+    const text = `${wert.toLocaleString(this._hass.locale?.language || "de", { minimumFractionDigits: nachkomma, maximumFractionDigits: nachkomma })} ${einheit}`;
+    const taste = (ziel, symbol, wort) => `<button type="button" class="eta-rund" data-aktion="soll" data-ziel="${e(id)}" data-wert="${ziel}" aria-label="${e(wort)}" ${ziel < min || ziel > max ? "disabled" : ""}>${ICON[symbol]}</button>`;
+    return `<div class="eta-soll" role="group" aria-label="${e(ansage)} ${e(name)}" ${hinweis ? `title="${e(hinweis)}"` : ""}><span>${e(titel)}</span>${taste(wert - schritt, "minus", weniger)}<b ${info ? `data-info="${e(id)}" tabindex="0" role="button"` : ""}>${e(text)}</b>${taste(wert + schritt, "plus", mehr)}</div>`;
   }
 
   /** Die Tasten am Kessel - nur mit Schreibzugriff und nur, was die Anlage hat. */
@@ -1677,18 +1710,13 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
-   * Raum Soll mit zwei Tasten - nur mit Schreibzugriff und Thermostat.
-   * Gezeigt wird sofort der gewünschte Wert, siehe _sollStellen.
+   * Raum Soll mit zwei Tasten - nur mit Schreibzugriff und Thermostat,
+   * siehe _stufen.
    */
   _raumSoll(h, anlage) {
     const t = this._t;
     if (!anlage.schreiben || !h.soll || !h.thermostat) return "";
-    const wunsch = this._wunsch[h.thermostat];
-    if (wunsch && (wunsch.bis < Date.now() || Math.abs(wunsch.wert - h.soll.wert) < 0.01)) delete this._wunsch[h.thermostat];
-    const wert = this._wunsch[h.thermostat]?.wert ?? h.soll.wert;
-    const text = `${wert.toLocaleString(this._hass.locale?.language || "de", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} °C`;
-    const taste = (ziel, symbol, name) => `<button type="button" class="eta-rund" data-aktion="soll" data-ziel="${e(h.thermostat)}" data-wert="${ziel}" aria-label="${e(name)}" ${ziel < h.soll.min || ziel > h.soll.max ? "disabled" : ""}>${ICON[symbol]}</button>`;
-    return `<div class="eta-soll" role="group" aria-label="${e(t.raum_soll)} ${e(h.name)}"><span>${e(t.raum_soll)}</span>${taste(wert - h.soll.schritt, "minus", t.kaelter)}<b>${e(text)}</b>${taste(wert + h.soll.schritt, "plus", t.waermer)}</div>`;
+    return this._stufen(t.raum_soll, h.name, { id: h.thermostat, ...h.soll }, { nachkomma: 1, einheit: "°C", weniger: t.kaelter, mehr: t.waermer });
   }
 
   _heizkreisStatus(h) {
@@ -1769,9 +1797,9 @@ class EtaUebersichtKarte extends HTMLElement {
         <div class="eta-buehne" ${this._info(w.temperatur || w.zustand)}>${this._figur(w.erzeuger.bild(), 96)}${this._haupt(t.temperatur, w.temperatur)}</div>
         ${this._zeilen([[t.zustand, w.zustand], [t.ladepumpe, w.ladepumpe], [t.speichertemperatur, w.speicher]])}`),
       fremderzeuger: (w) => kachel(w, w.brennt ? "data-aktiv" : "", this._chip(w.zustand.text, w.brennt), `
-        <div class="eta-buehne" ${this._info(w.temperatur || w.melder)}>${this._figur(w.erzeuger.bild(), 96)}${w.temperatur ? this._haupt(t.temperatur, w.temperatur, w.schwelle ? `${t.ab} ${w.schwelle.text}` : "") : this._haupt(t.zustand, { zahl: w.zustand.text, einheit: "" })}</div>
+        <div class="eta-buehne" ${this._info(w.temperatur || w.melder)}>${this._figur(w.erzeuger.bild(), 96)}${w.temperatur ? this._haupt(t.temperatur, w.temperatur) : this._haupt(t.zustand, { zahl: w.zustand.text, einheit: "" })}</div>
         ${this._zeilen([[t.schalter, w.temperatur ? w.quelle : null], [t.kessel, w.sperre]])}
-        ${w.schalter ? `<div class="eta-knoepfe"><button type="button" class="eta-knopf" data-aktion="ofen" data-ziel="${e(w.schalter.id)}" aria-pressed="${w.schalter.an}">${ICON.aus}<span>${e(`${w.name} ${w.schalter.an ? t.ein : t.aus}`)}</span></button></div>` : ""}`),
+        ${this._ofenStellen(w)}`),
       fernleitung: (f) => kachel(f, f.pumpt ? "data-pumpt" : "", this._chip(f.pumpt ? t.laeuft : t.ruht, f.pumpt), `
         <div class="eta-buehne" ${this._info(f.pumpe)}>${this._figur(fernBild(), 132)}${this._haupt(t.fernpumpe, f.pumpe)}</div>`),
     };
@@ -1825,7 +1853,12 @@ class EtaUebersichtKarte extends HTMLElement {
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
-      fremderzeuger: (w) => station(w, "quer links", `${w.brennt ? "data-aktiv" : ""} ${w.heizt ? "data-fluss" : ""}`, this._info(w.temperatur || w.melder), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, [w.temperatur ? w.zustand.text : "", w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : ""].filter(Boolean).join(" · "), w.temperatur ? null : w.zustand.text)),
+      fremderzeuger: (w) => {
+        const stellen = this._stellen(w, anlage), offen = this._offen === w.id;
+        const tipp = stellen ? `data-aktion="aufklappen" data-teil="${w.id}" tabindex="0" role="button" aria-expanded="${offen}"` : this._info(w.temperatur || w.melder);
+        const text = schild(w, w.temperatur, [w.temperatur ? w.zustand.text : "", w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : ""].filter(Boolean).join(" · "), w.temperatur ? null : w.zustand.text);
+        return `${station(w, "quer links", `${w.brennt ? "data-aktiv" : ""} ${w.heizt ? "data-fluss" : ""}`, tipp, this._figur(w.erzeuger.bild(), 72), text)}${stellen && offen ? `<div class="eta-klappe eta-inline">${stellen}</div>` : ""}`;
+      },
       puffer: (p) => station(p, "", `${p.laedt ? "data-fluss" : ""} ${p.kombi ? "data-kombi" : ""}`, this._info(p.ladung || p.fuehler[0]), this._pufferBild(p, 118, 236), schild(p, p.ladung || p.fuehler[0], [p.zustand?.text, p.kombi ? `${t.warmwasser} ${p.kombi.temperatur.text}` : ""].filter(Boolean).join(" · "))),
       fernleitung: (f) => station(f, "", f.pumpt ? "data-pumpt data-fluss" : "", this._info(f.pumpe), this._figur(fernBild(), 156), schild(f, null, f.pumpe ? `${t.fernpumpe} ${f.pumpe.text}` : "", f.pumpt ? t.laeuft : t.ruht)),
       heizkreis: (h) => {
@@ -1880,7 +1913,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const kessel = nachId.kessel;
     const kennzahlen = kessel ? [...kessel.zeilen.filter(([name]) => name !== t.kessel_sperre), [t.aschebox, kessel.ascheStatus || kessel.asche]].filter(([, w]) => w) : [];
     const fuss = this._bedienung(kessel, anlage);
-    const offener = anlage.teile.find((teil) => teil.art === "heizkreis" && teil.id === this._offen);
+    const offener = anlage.teile.find((teil) => (teil.art === "heizkreis" || teil.art === "fremderzeuger") && teil.id === this._offen);
     const stellen = offener ? this._stellen(offener, anlage) : "";
     return `${this._kopf(anlage)}<section class="eta-kachel eta-szene">
       <div class="eta-bild"><svg class="eta-leitungen" aria-hidden="true" data-fest></svg>${spalten.join("")}</div>
@@ -1984,7 +2017,13 @@ class EtaUebersichtKarte extends HTMLElement {
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur, "", this._knoepfe(b)),
       fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur, "", this._knoepfe(w)),
-      fremderzeuger: (w) => zeile("flamme", w.brennt, w.name, [w.temperatur ? w.zustand.text : "", w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : ""].filter(Boolean).join(" · "), w.temperatur || w.zustand, "", this._knoepfe(w)),
+      fremderzeuger: (w) => {
+        const neben = [w.temperatur ? w.zustand.text : "", w.sperre?.an ? `${t.kessel} ${t.gesperrt.toLowerCase()}` : ""].filter(Boolean).join(" · ");
+        const stellen = this._stellen(w, anlage);
+        if (!stellen) return zeile("flamme", w.brennt, w.name, neben, w.temperatur || w.zustand, "", this._knoepfe(w));
+        const offen = this._offen === w.id;
+        return `<div class="eta-reihe" data-aktion="aufklappen" data-teil="${w.id}" tabindex="0" role="button" aria-expanded="${offen}"><span class="eta-symbol" ${w.brennt ? "data-an" : ""}>${ICON.flamme}</span><div class="eta-reihe-text"><b>${e(w.name)}</b>${neben ? `<span>${e(neben)}</span>` : ""}</div><span class="eta-reihe-wert">${e((w.temperatur || w.zustand).text)}</span>${this._knoepfe(w)}${ICON.pfeil}</div>${offen ? `<div class="eta-klappe">${stellen}</div>` : ""}`;
+      },
       fernleitung: (f) => zeile("rohr", f.pumpt, f.name, f.pumpt ? t.laeuft : t.ruht, f.pumpe),
     };
     const liste = (!kessel && anlage.aussen ? zeile("thermo", false, t.aussentemperatur, "", anlage.aussen) : "") + anlage.teile.map((teil) => reihen[teil.art](teil)).join("") + (kessel?.asche ? zeile("box", false, t.aschebox, "", kessel.ascheStatus || kessel.asche, balken(kessel.ascheAnteil, kessel.ascheFaellig ? "warn" : "")) : "");
@@ -2023,38 +2062,45 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
-   * Stellt Raum Soll. Die Karte zeigt den neuen Wert sofort und schickt
-   * ihn erst nach einer kurzen Pause - wer mehrmals tippt, schreibt nur
-   * einmal auf die Anlage. Kommt der Wert nicht zurück, steht nach ein
-   * paar Sekunden wieder der alte da.
+   * Stellt Raum Soll am Thermostat oder die Sperrtemperatur am
+   * Zahlenfeld. Die Karte zeigt den neuen Wert sofort und schickt ihn
+   * erst nach einer kurzen Pause - wer mehrmals tippt, schreibt nur
+   * einmal. Kommt der Wert nicht zurück, steht nach ein paar Sekunden
+   * wieder der alte da.
    */
-  _sollStellen(thermostat, wert) {
-    this._wunsch[thermostat] = { wert, bis: Date.now() + SOLL_WARTEN };
-    clearTimeout(this._sollTakt[thermostat]?.takt);
-    this._sollTakt[thermostat] = { wert, takt: setTimeout(() => this._sollSenden(thermostat), SOLL_SENDEN_NACH) };
+  _sollStellen(ziel, wert) {
+    this._wunsch[ziel] = { wert, bis: Date.now() + SOLL_WARTEN };
+    clearTimeout(this._sollTakt[ziel]?.takt);
+    this._sollTakt[ziel] = { wert, takt: setTimeout(() => this._sollSenden(ziel), SOLL_SENDEN_NACH) };
   }
 
   /**
-   * Schickt das gewünschte Raum Soll an die Anlage - es sei denn, es
-   * steht dort schon: Wer erst wärmer und gleich wieder kälter tippt,
-   * schreibt nichts.
+   * Schickt den gewünschten Wert ab - es sei denn, er steht dort schon:
+   * Wer erst wärmer und gleich wieder kälter tippt, schreibt nichts.
+   * Lehnt Home Assistant den Wert ab, meldet es das selbst; die Karte
+   * zeigt nach der Wartezeit wieder den alten.
    */
-  _sollSenden(thermostat) {
-    const offen = this._sollTakt[thermostat];
+  _sollSenden(ziel) {
+    const offen = this._sollTakt[ziel];
     if (!offen) return;
     clearTimeout(offen.takt);
-    delete this._sollTakt[thermostat];
-    const steht = this._hass?.states?.[thermostat]?.attributes?.temperature;
+    delete this._sollTakt[ziel];
+    const zahlenfeld = ziel.startsWith("number.");
+    const zustand = this._hass?.states?.[ziel];
+    const steht = zahlenfeld ? Number(zustand?.state) : zustand?.attributes?.temperature;
     const neuZeichnen = () => {
       this._neuZeichnen = true;
       this._zeichnen();
     };
     if (typeof steht === "number" && Math.abs(steht - offen.wert) < 0.01) {
-      delete this._wunsch[thermostat];
+      delete this._wunsch[ziel];
       neuZeichnen();
       return;
     }
-    this._hass?.callService("climate", "set_temperature", { entity_id: thermostat, temperature: offen.wert });
+    const antwort = zahlenfeld
+      ? this._hass?.callService("number", "set_value", { entity_id: ziel, value: offen.wert })
+      : this._hass?.callService("climate", "set_temperature", { entity_id: ziel, temperature: offen.wert });
+    antwort?.catch?.(() => {});
     setTimeout(neuZeichnen, SOLL_WARTEN);
   }
 
@@ -2094,14 +2140,10 @@ class EtaUebersichtKarte extends HTMLElement {
    * Fassungsvermögen und Pelletpreis als Zahlenfelder und schreibt, was
    * geändert wurde. "lieferung" nimmt Datum, Menge und Preis und ruft die
    * Aktion "Pelletlieferung eintragen" auf - vor dem OK steht, ob dabei
-   * auch der Vorrat an der Heizung geändert wird. "erzeuger-einstellen"
-   * wählt das Bild von Brenner, Fremdwärme oder Fremderzeuger und stellt
-   * beim Fremderzeuger mit Fühler die Sperrtemperatur; hat er einen
-   * eigenen Ein/Aus-Schalter, steht der auch dort - so ist er in jeder
-   * Ansicht erreichbar. Was gerade nicht verfügbar ist, bleibt gesperrt
-   * und wird nicht geschrieben.
+   * auch der Vorrat an der Heizung geändert wird. Was gerade nicht
+   * verfügbar ist, bleibt gesperrt und wird nicht geschrieben.
    */
-  _lagerFenster(aktion, teilId = null) {
+  _lagerFenster(aktion) {
     if (this._fensterOffen || !this._struktur || !this._hass) return;
     const t = this._t;
     const entitaeten = this._struktur.entitaeten || {};
@@ -2134,33 +2176,6 @@ class EtaUebersichtKarte extends HTMLElement {
       }
     };
     const gestellt = (eingabe) => !eingabe.disabled && eingabe.value !== "" && eingabe.value !== eingabe.dataset.vorher;
-
-    if (aktion === "erzeuger-einstellen") {
-      const teil = this._struktur.teile.find((x) => x.id === teilId);
-      const ofen = teil?.art === "fremderzeuger";
-      const bild = stand(`${teilId}_bild`), schwelle = ofen ? stand("fremderzeuger_schwelle") : undefined, schalter = ofen ? stand("fremderzeuger_schalter") : undefined;
-      if (!teil || (!bild && !schwelle && !schalter)) return;
-      const name = teilName(teil, this._struktur.teile, t);
-      const beschriftung = (option) => (this._hass.formatEntityState ? this._hass.formatEntityState(bild, option) : option);
-      formular.innerHTML =
-        (schalter ? `<label class="eta-haken"><input type="checkbox" name="beachten" data-ziel="${e(schalter.entity_id)}" ${schalter.state === "on" ? "checked" : ""} ${fehlt(schalter) ? "disabled" : ""}><span>${e(`${name} ${t.beachten}`)}</span></label>` : "") +
-        (bild ? `<label><span>${e(t.bild)}</span><span class="eta-eingabe"><select name="bild" data-ziel="${e(bild.entity_id)}" data-vorher="${e(bild.state)}" ${fehlt(bild) ? "disabled" : "autofocus"}>${(bild.attributes.options || []).map((option) => `<option value="${e(option)}" ${option === bild.state ? "selected" : ""}>${e(beschriftung(option))}</option>`).join("")}</select></span></label>` : "") +
-        (schwelle ? feld("schwelle", t.sperrtemperatur, schwelle, zahl(schwelle), "°C", t.sperrtemperatur_hinweis, bild ? "" : "autofocus") : "") +
-        knoepfe(t.speichern);
-      formular.addEventListener("submit", (ereignis) => {
-        ereignis.preventDefault();
-        ausfuehren(async () => {
-          const haken = formular.elements.beachten;
-          if (haken && !haken.disabled && haken.checked !== (schalter.state === "on")) await this._hass.callService("switch", haken.checked ? "turn_on" : "turn_off", { entity_id: haken.dataset.ziel });
-          const wahl = formular.elements.bild;
-          if (wahl && gestellt(wahl)) await this._hass.callService("select", "select_option", { entity_id: wahl.dataset.ziel, option: wahl.value });
-          const grad = formular.elements.schwelle;
-          if (grad && gestellt(grad)) await this._hass.callService("number", "set_value", { entity_id: grad.dataset.ziel, value: Number(grad.value) });
-        });
-      });
-      this._fensterOeffnen(`${name} ${t.einstellen}`, formular);
-      return;
-    }
 
     if (aktion === "lager-einstellen") {
       const felder = [
@@ -2252,8 +2267,8 @@ class EtaUebersichtKarte extends HTMLElement {
       this._zeitenSchliessen();
       return;
     }
-    if (aktion === "lieferung" || aktion === "lager-einstellen" || aktion === "erzeuger-einstellen") {
-      this._lagerFenster(aktion, knopf.dataset.teil);
+    if (aktion === "lieferung" || aktion === "lager-einstellen") {
+      this._lagerFenster(aktion);
       return;
     }
     const entitaeten = this._struktur?.entitaeten || {};

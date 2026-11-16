@@ -537,6 +537,34 @@
           "ofen": "Kaminofen",
           "allgemein": "Allgemein"
         }
+      },
+      "heizkreis_bild": {
+        "name": "Heizkreis 1 Bild",
+        "state": {
+          "heizkoerper": "Heizkörper",
+          "fussboden": "Fußbodenheizung"
+        }
+      },
+      "heizkreis2_bild": {
+        "name": "Heizkreis 2 Bild",
+        "state": {
+          "heizkoerper": "Heizkörper",
+          "fussboden": "Fußbodenheizung"
+        }
+      },
+      "heizkreis3_bild": {
+        "name": "Heizkreis 3 Bild",
+        "state": {
+          "heizkoerper": "Heizkörper",
+          "fussboden": "Fußbodenheizung"
+        }
+      },
+      "heizkreis4_bild": {
+        "name": "Heizkreis 4 Bild",
+        "state": {
+          "heizkoerper": "Heizkörper",
+          "fussboden": "Fußbodenheizung"
+        }
       }
     },
     "sensor": {

@@ -136,10 +136,10 @@ def test_auswahl_bleibt_solange_die_komponente_gewaehlt_ist():
 @pytest.mark.parametrize("sprache", ["de", "en"])
 def test_jede_wahl_hat_einen_namen_in_beiden_sprachen(sprache):
     texte = json.loads((UEBERSETZUNGEN / f"{sprache}.json").read_text(encoding="utf-8"))
-    for key in BILD_AUSWAHLEN:
+    for key, definition in BILD_AUSWAHLEN.items():
         eintrag = texte["entity"]["select"][key]
         assert eintrag["name"]
-        assert set(eintrag["state"]) == set(ARTEN), key
+        assert set(eintrag["state"]) == set(definition.get("optionen") or ARTEN), key
 
 
 def kacheln_mit(bildname):
@@ -214,3 +214,27 @@ def test_bildkarte_bewegt_die_fremdwaerme_bei_heizen_und_uebertemperatur():
             if b["entity"] == "sensor.eta_heizung_fremdwarme_zustand" and "state" in b
         )
         assert zustaende == ["Heizen", "Übertemperatur"], bild
+
+
+async def test_je_heizkreis_waehlt_man_heizkoerper_oder_fussbodenheizung(hass, entry):
+    """Was verbaut ist, weiß die Anlage nicht. Die Wahl steht am Gerät unter "Konfiguration", nicht mehr in der Karte."""
+    bilder = await auswahlen(hass, entry, ["hk1", "hk2"])
+
+    assert set(bilder) == {"heizkreis_bild", "heizkreis2_bild"}
+    erster = bilder["heizkreis_bild"]
+    assert erster.options == ["heizkoerper", "fussboden"]
+    assert erster.current_option == "heizkoerper", "wie bisher gezeichnet, solange niemand wählt"
+    assert erster.entity_category == "config"
+    assert erster.entity_id == "select.eta_heizung_heizkreis_1_bild"
+    assert bilder["heizkreis2_bild"].entity_id == "select.eta_heizung_heizkreis_2_bild"
+    assert erster.unique_id == f"eta_static_{entry.entry_id}_heizkreis_bild"
+
+    await bilder["heizkreis2_bild"].async_select_option("fussboden")
+    assert bilder["heizkreis2_bild"].current_option == "fussboden"
+    assert hass.session.gesetzte_werte == []
+
+
+def test_auswahl_des_heizkreises_bleibt_solange_er_gewaehlt_ist():
+    assert entitaet_vorgesehen("heizkreis2_bild", ["kessel", "hk1", "hk2"], False, True) is True
+    assert entitaet_vorgesehen("heizkreis2_bild", ["kessel", "hk1"], False, True) is False
+    assert entitaet_vorgesehen("heizkreis_bild", ["kessel", "hk1"], False, True) is True
