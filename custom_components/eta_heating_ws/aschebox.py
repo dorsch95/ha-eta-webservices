@@ -82,6 +82,11 @@ VERWERFEN_NACH = timedelta(hours=1)
 LAEUFT = ("glutabbrand", "entaschen", "leeren")
 """In diesen Schritten hat der Plan den Kessel ausgeschaltet."""
 
+BLEIBT_GESPERRT = (
+    "Der Kessel bleibt aus, weil er gesperrt ist - er geht wieder an, sobald die Sperre endet."
+)
+"""So endet eine Meldung, wenn der Plan den Kessel der Kesselsperre überlässt."""
+
 VERWAIST_HOECHSTENS = timedelta(days=1)
 """So lange wartet ein Plan, der nicht weiterlaufen kann, auf einen Start, bei dem es wieder geht."""
 
@@ -157,6 +162,11 @@ class AscheboxPlan:
     @property
     def phase(self) -> str:
         return self._daten.get("phase", "aus")
+
+    @property
+    def haelt_kessel_aus(self) -> bool:
+        """Ob der Plan den Kessel ausgeschaltet hat und ihn an seinem Ende wieder einschaltet."""
+        return self.phase in LAEUFT
 
     @property
     def ziel(self) -> datetime | None:
@@ -237,16 +247,18 @@ class AscheboxPlan:
         Lässt sich der Kessel gerade nicht einschalten, bleibt der Plan
         bestehen - sonst wäre der Kessel aus und niemand schaltete ihn mehr
         ein. Der Knopf meldet den Fehler und lässt sich erneut drücken.
+        Ein gesperrter Kessel bleibt aus, siehe _wieder_einschalten.
         """
         async with self._sperre:
             phase = self.phase
-            if phase in LAEUFT:
-                await self._kessel(ein=True)
+            eingeschaltet = phase in LAEUFT and await self._wieder_einschalten()
             self._zeitgeber_loeschen()
             self._daten = {"phase": "aus"}
             await self._sichern()
-            if phase in LAEUFT:
+            if eingeschaltet:
                 self._melden("Aschebox-Plan abgebrochen, der Kessel ist wieder eingeschaltet.")
+            elif phase in LAEUFT:
+                self._melden(f"Aschebox-Plan abgebrochen. {BLEIBT_GESPERRT}")
             else:
                 self._melden("Aschebox-Plan abgebrochen.")
 
@@ -348,9 +360,14 @@ class AscheboxPlan:
         )
         await self._sichern()
         hinweis = "" if self._daten.get("entascht") else " (Die Entaschung war nicht zu sehen.)"
+        sperre = self.coordinator.kesselsperre
+        danach = (
+            "bleibt der Kessel aus, bis seine Sperre endet."
+            if sperre is not None and sperre.gesperrt
+            else "geht der Kessel wieder an."
+        )
         self._melden(
-            "Die Aschebox kann jetzt geleert werden. Ist sie wieder eingesetzt, "
-            f"geht der Kessel wieder an.{hinweis}"
+            f"Die Aschebox kann jetzt geleert werden. Ist sie wieder eingesetzt, {danach}{hinweis}"
         )
 
     async def _nach_leeren(self, zustand: str | None, jetzt: datetime) -> None:
@@ -370,17 +387,26 @@ class AscheboxPlan:
         if not (self._daten.get("box_raus") or zurueckgesetzt or zu_lange):
             return
         try:
-            await self._kessel(ein=True)
+            eingeschaltet = await self._wieder_einschalten()
         except HomeAssistantError as err:
             _LOGGER.warning("ETA: Kessel nicht eingeschaltet, neuer Versuch: %s", err)
             return
+        stunden = int(LEEREN_HOECHSTENS.total_seconds() // 3600)
         if zu_lange and not (self._daten.get("box_raus") or zurueckgesetzt):
-            await self._beenden(
-                "Die Aschebox wurde nicht geleert - der Kessel ist nach "
-                f"{int(LEEREN_HOECHSTENS.total_seconds() // 3600)} Stunden wieder eingeschaltet."
-            )
-        else:
+            if eingeschaltet:
+                await self._beenden(
+                    "Die Aschebox wurde nicht geleert - der Kessel ist nach "
+                    f"{stunden} Stunden wieder eingeschaltet."
+                )
+            else:
+                await self._beenden(
+                    f"Die Aschebox wurde in {stunden} Stunden nicht geleert, der Plan ist "
+                    f"beendet. {BLEIBT_GESPERRT}"
+                )
+        elif eingeschaltet:
             await self._beenden("Aschebox geleert, der Kessel ist wieder eingeschaltet.")
+        else:
+            await self._beenden(f"Aschebox geleert. {BLEIBT_GESPERRT}")
 
     async def _beenden(self, nachricht: str) -> None:
         self._daten = {"phase": "aus"}
@@ -402,8 +428,27 @@ class AscheboxPlan:
         return wert.text.strip() == definition["ein_text"]
 
     async def _kessel(self, ein: bool) -> None:
+        """Schaltet den Kessel und sagt es der Kesselsperre, die dieselbe Taste bedient."""
         definition = self.coordinator.switch_defs["kessel_schalter"]
-        await self._schreiben(definition["uri"], definition["ein_roh" if ein else "aus_roh"])
+        await self._senden(definition["uri"], definition["ein_roh" if ein else "aus_roh"])
+        sperre = self.coordinator.kesselsperre
+        if sperre is not None:
+            sperre.befohlen(ein)
+        await self.coordinator.async_request_refresh()
+
+    async def _wieder_einschalten(self) -> bool:
+        """Schaltet den Kessel am Ende des Plans wieder ein - außer er ist gesperrt.
+
+        Hält "Kessel sperren" oder der Fremderzeuger ihn gesperrt, bleibt
+        er aus, und das Freigeben schaltet ihn ein, siehe
+        switch.Kesselsperre. Gibt zurück, ob eingeschaltet wurde.
+        """
+        sperre = self.coordinator.kesselsperre
+        if sperre is not None and sperre.gesperrt:
+            sperre.einschalten_uebernehmen()
+            return False
+        await self._kessel(ein=True)
+        return True
 
     async def _taste(self, roh: str) -> None:
         await self._schreiben(self.coordinator.entaschen_def["uri"], roh)
@@ -419,11 +464,14 @@ class AscheboxPlan:
         except HomeAssistantError as err:
             _LOGGER.warning("ETA: Entaschentaste nicht zurückgestellt: %s", err)
 
-    async def _schreiben(self, uri: str, roh: str) -> None:
+    async def _senden(self, uri: str, roh: str) -> None:
         try:
             await self.coordinator.client.async_set_value(uri, roh)
         except ETAApiError as err:
             raise HomeAssistantError(str(err)) from err
+
+    async def _schreiben(self, uri: str, roh: str) -> None:
+        await self._senden(uri, roh)
         await self.coordinator.async_request_refresh()
 
     async def _sichern(self) -> None:

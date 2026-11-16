@@ -73,7 +73,7 @@ from .const import (
 )
 from .aschebox import AscheboxPlan, verwaisten_plan_melden
 from .fremderzeuger import Fremderzeuger
-from .switch import kesselsperre_anlegen
+from .switch import kesselsperre_anlegen, verwaiste_sperre_aufloesen
 from .aschebox import speicher as aschebox_speicher
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
@@ -183,6 +183,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     coordinator.kesselsperre = kesselsperre_anlegen(coordinator)
     if coordinator.kesselsperre is not None:
         entry.async_on_unload(coordinator.async_add_listener(coordinator.kesselsperre.abgleichen))
+    await verwaiste_sperre_aufloesen(hass, coordinator)
     if fremderzeuger_eingerichtet(config, components):
         coordinator.fremderzeuger = Fremderzeuger(
             hass,

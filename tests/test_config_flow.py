@@ -579,8 +579,11 @@ async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
     assert geschrieben == [("192.0.2.10", "/1/5/0/0/13168", 600)]
 
     geschrieben.clear()
-    await flow.async_step_raumfuehler({"hk1_zeitueberwachung": 10})
+    geleert = await flow.async_step_raumfuehler({"hk1_zeitueberwachung": 10})
     assert geschrieben == [], "unverändert - nichts zu schreiben"
+    assert geleert["data"]["hk1_raumfuehler"] is None, (
+        "geleert heißt: kein Thermometer mehr - ausdrücklich, sonst gälte das aus der Ersteinrichtung weiter"
+    )
 
 
 async def test_zeitueberwachung_nicht_geschrieben_zeigt_einen_fehler(monkeypatch):
@@ -663,7 +666,9 @@ async def test_zeitplan_je_heizkreis_im_dialog(monkeypatch):
     fertig = await flow.async_step_zeitplaene({"hk2_zeitplan": "schedule.bad"})
     assert fertig["type"] == "create_entry"
     assert fertig["data"]["hk2_zeitplan"] == "schedule.bad"
-    assert "hk1_zeitplan" not in fertig["data"], "geleert heißt: kein Zeitplan mehr"
+    assert fertig["data"]["hk1_zeitplan"] is None, (
+        "geleert heißt: kein Zeitplan mehr - ausdrücklich, sonst gälte der aus der Ersteinrichtung weiter"
+    )
 
 
 async def test_zeitprogramm_nur_mit_schreibzugriff_im_dialog(monkeypatch):
@@ -740,3 +745,24 @@ async def test_ohne_menuebaum_bleiben_die_bisherigen_angaben(monkeypatch):
     assert fertig["data"]["hk1_raumfuehler"] == "sensor.wohnzimmer"
     assert fertig["data"][puffer_volumen_schluessel("puffer")] == 800
     assert "hk2_zeitplan" not in fertig["data"], "Heizkreis 2 ist nicht mehr gewählt"
+
+
+async def test_ohne_menuebaum_bleibt_ein_geleertes_feld_geleert(monkeypatch):
+    """Das Thermometer stammt aus der Ersteinrichtung und wurde später entfernt - das bleibt so."""
+    from eta_heating_ws import config_flow as modul
+
+    bisher = {"host": "192.0.2.10", "port": 8080, "enable_switches": True, "hk1_raumfuehler": None}
+    flow, _ = await options_schritt(
+        monkeypatch, bisher, optionen(components=["hk1"], enable_switches=True)
+    )
+
+    async def nicht_lesbar(*_):
+        return None
+
+    monkeypatch.setattr(modul, "_anlage_pruefen", nicht_lesbar)
+    fertig = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
+
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["hk1_raumfuehler"] is None, (
+        "fehlte der Eintrag, gälte wieder das Thermometer aus der Ersteinrichtung"
+    )

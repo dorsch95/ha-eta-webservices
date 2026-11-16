@@ -298,3 +298,48 @@ async def test_pelletpreis_bleibt_stellbar_wenn_die_anlage_fehlt(hass, entry):
     coordinator.last_update_success = False
 
     assert zahlen["pellet_preis"].available is True
+
+
+async def test_zwei_lieferungen_kurz_hintereinander_zaehlen_beide(hass, entry):
+    """Die Anlage meldet nach dem Schreiben noch eine Weile den alten Vorrat."""
+    coordinator, _ = await lager_von(hass, entry)
+    hass.session.traege = True
+
+    erste = await coordinator.async_lieferung_eintragen(HEUTE, 1000)
+    zweite = await coordinator.async_lieferung_eintragen(HEUTE, 2000)
+
+    assert (erste, zweite) == (4200, 6200)
+    assert hass.session.gesetzte_werte == [(VORRAT, "42000"), (VORRAT, "62000")]
+
+
+async def test_nach_der_uebernahme_zaehlt_wieder_was_die_anlage_meldet(hass, entry):
+    """Verbraucht der Kessel inzwischen Pellets, gilt der gemeldete Vorrat - nicht der geschriebene."""
+    coordinator, _ = await lager_von(hass, entry)
+    await coordinator.async_lieferung_eintragen(HEUTE, 1000)
+    hass.session.geschrieben[VORRAT] = "41900"
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+
+    assert await coordinator.async_lieferung_eintragen(HEUTE, 500) == 4690
+    assert hass.session.gesetzte_werte == [(VORRAT, "46900")]
+
+
+async def test_lieferung_gleich_nach_dem_einstellen_des_vorrats(hass, entry):
+    coordinator, zahlen = await lager_von(hass, entry)
+    hass.session.traege = True
+    await zahlen["lager_vorrat_stellen"].async_set_native_value(500)
+    hass.session.gesetzte_werte.clear()
+
+    assert await coordinator.async_lieferung_eintragen(HEUTE, 1000) == 1500
+    assert hass.session.gesetzte_werte == [(VORRAT, "15000")]
+
+
+async def test_negativer_vorrat_zaehlt_als_leeres_lager(hass, entry):
+    """Die Anlage rechnet auch unter null weiter - geliefert wird in ein leeres Lager."""
+    coordinator, _ = await lager_von(hass, entry)
+    hass.session.geschrieben[VORRAT] = "-2500"
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+
+    assert await coordinator.async_lieferung_eintragen(HEUTE, 3000) == 3000
+    assert hass.session.gesetzte_werte == [(VORRAT, "30000")]

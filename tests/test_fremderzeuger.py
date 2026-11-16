@@ -768,3 +768,313 @@ def test_jedes_feld_im_schritt_wer_haengt_woran_ist_beschriftet():
             beschriftet = texte[bereich]["step"]["verbindungen"]["data"]
             fehlend = [teil for teil in alle if feld(teil) not in beschriftet]
             assert not fehlend, (datei, bereich, fehlend)
+
+
+async def test_konfigurieren_waehrend_der_ofen_sperrt_behaelt_die_sperre(
+    monkeypatch, hass, entry, fremderzeuger_ohne_hass
+):
+    """Ohne das Häkchen "Kessel sperren" gibt es die Sperre nur durch den Fremderzeuger.
+
+    Ginge das Gemerkte beim Speichern verloren, hielte das neue Einrichten
+    den Kessel für von Hand ausgeschaltet - und nichts schaltete ihn
+    wieder ein, wenn der Ofen ausgeht.
+    """
+    eingabe = {**optionen(components=["fremderzeuger"]), "enable_switches": True}
+    angaben = {
+        CONF_FREMDERZEUGER_NAME: "Ofen",
+        CONF_FREMDERZEUGER_ENTITAET: OFEN,
+        CONF_FREMDERZEUGER_SPERRT: ["kessel"],
+        CONF_FREMDERZEUGER_SPERREN_NACH: 1,
+        CONF_FREMDERZEUGER_FREIGEBEN_NACH: 5,
+    }
+    bisher = {**eingabe, **angaben, CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe)
+    for _ in range(8):
+        if ergebnis["type"] == "create_entry":
+            break
+        if ergebnis["step_id"] == "fremderzeuger":
+            ergebnis = await flow.async_step_fremderzeuger(angaben)
+            continue
+        schema = ergebnis.get("data_schema")
+        vorgaben = {str(feld): feld.default() for feld in schema.schema} if schema else {}
+        ergebnis = await getattr(flow, f"async_step_{ergebnis['step_id']}")(vorgaben)
+    assert ergebnis["data"][CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+
+    hass.session.geschrieben[TASTE] = AUS
+    entry.options = {CONF_KESSEL_GESPERRT: ergebnis["data"][CONF_KESSEL_GESPERRT]}
+    coordinator, _ = await mit_ofen(hass, entry, zustand="on")
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+
+
+async def test_gescheitertes_freigeben_wird_nach_einer_minute_wiederholt(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Ein einziger abgelehnter Befehl hielte den Kessel sonst gesperrt, bis der Ofen wieder ausgeht."""
+    coordinator, _ = await mit_ofen(hass, entry)
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    await zeit_um(fremderzeuger_ohne_hass)
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+
+    hass.session.schreiben_erlaubt = False
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert coordinator.kesselsperre.gesperrt is True
+    assert fremderzeuger_ohne_hass.zeitgeber[-1].wartezeit == timedelta(minutes=1)
+
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert coordinator.kesselsperre.gesperrt is True
+    assert fremderzeuger_ohne_hass.zeitgeber[-1].wartezeit == timedelta(minutes=1)
+    assert fremderzeuger_ohne_hass.zeitgeber[-1].abbestellt is False, "es bleibt beim Versuchen"
+
+    hass.session.schreiben_erlaubt = True
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+    assert coordinator.kesselsperre.gesperrt is False
+    anzahl = len(fremderzeuger_ohne_hass.zeitgeber)
+    await coordinator.async_refresh()
+    assert len(fremderzeuger_ohne_hass.zeitgeber) == anzahl, "gelungen - kein weiterer Versuch"
+
+
+async def test_gescheitertes_sperren_wird_wiederholt_solange_er_heizt(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    coordinator, _ = await mit_ofen(hass, entry)
+    hass.session.schreiben_erlaubt = False
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert coordinator.kesselsperre.gesperrt is False
+    versuch = fremderzeuger_ohne_hass.zeitgeber[-1]
+    assert versuch.wartezeit == timedelta(minutes=1)
+
+    hass.session.schreiben_erlaubt = True
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    assert versuch.abbestellt is True, "er heizt nicht mehr - gesperrt wird nicht mehr"
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == []
+
+
+async def test_wackelt_der_fuehler_laeuft_die_wartezeit_zum_freigeben_weiter(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Jeder Wechsel zwischen "kalt" und "nicht verfügbar" begänne sonst die Wartezeit von vorn."""
+    coordinator, _ = await mit_fuehler(hass, entry, 80)
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+    assert coordinator.kesselsperre.gesperrt is True
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+
+    meldet(hass, fremderzeuger_ohne_hass, FUEHLER, 20)
+    wartezeit = fremderzeuger_ohne_hass.zeitgeber[-1]
+    for _ in range(4):
+        meldet(hass, fremderzeuger_ohne_hass, FUEHLER, "unavailable")
+        meldet(hass, fremderzeuger_ohne_hass, FUEHLER, 20)
+
+    assert fremderzeuger_ohne_hass.zeitgeber[-1] is wartezeit
+    assert wartezeit.abbestellt is False
+    meldet(hass, fremderzeuger_ohne_hass, FUEHLER, "unavailable")
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+    assert coordinator.kesselsperre.gesperrt is False
+
+
+async def test_wird_es_rechtzeitig_wieder_warm_bleibt_trotz_wackeln_gesperrt(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    coordinator, _ = await mit_fuehler(hass, entry, 80)
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+
+    meldet(hass, fremderzeuger_ohne_hass, FUEHLER, 20)
+    wartezeit = fremderzeuger_ohne_hass.zeitgeber[-1]
+    meldet(hass, fremderzeuger_ohne_hass, FUEHLER, "unavailable")
+    meldet(hass, fremderzeuger_ohne_hass, FUEHLER, 80)
+
+    assert wartezeit.abbestellt is True
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == []
+    assert coordinator.kesselsperre.gesperrt is True
+
+
+@pytest.mark.parametrize(
+    "einheit, wert, erwartet",
+    [("°C", "72", 72.0), ("°F", "140", 60.0), ("K", "333.15", 60.0), (None, "72", 72.0)],
+    ids=["Celsius", "Fahrenheit", "Kelvin", "ohne Einheit"],
+)
+async def test_fuehler_in_anderer_einheit_wird_in_grad_celsius_verglichen(
+    hass, entry, fremderzeuger_ohne_hass, einheit, wert, erwartet
+):
+    if einheit:
+        hass.states.einheiten[FUEHLER] = einheit
+    _, ofen = await mit_fuehler(hass, entry, wert)
+
+    assert ofen.temperatur == pytest.approx(erwartet)
+    assert ofen.heizt is True, "die Sperrtemperatur steht bei 60 °C"
+
+
+@pytest.mark.parametrize("wert", ["nan", "inf", "unavailable", ""])
+async def test_ungueltiger_fuehlerwert_sagt_nichts(hass, entry, fremderzeuger_ohne_hass, wert):
+    _, ofen = await mit_fuehler(hass, entry, wert)
+
+    assert ofen.temperatur is None
+    assert ofen.heizt is None
+
+
+async def test_entitaet_aus_der_ersteinrichtung_laesst_sich_wieder_entfernen(
+    monkeypatch, hass, entry, fremderzeuger_ohne_hass
+):
+    """Die Ersteinrichtung speichert in den Daten, Konfigurieren in den Optionen.
+
+    Fehlte das geleerte Feld dort einfach, gälte die Entität weiter.
+    """
+    eingabe = {**optionen(components=["fremderzeuger"]), "enable_switches": True}
+    erst = {
+        **eingabe,
+        CONF_FREMDERZEUGER_NAME: "Ofen",
+        CONF_FREMDERZEUGER_ENTITAET: OFEN,
+        CONF_FREMDERZEUGER_FUEHLER: FUEHLER,
+        CONF_FREMDERZEUGER_SPERRT: ["kessel"],
+    }
+    flow, ergebnis = await options_schritt(monkeypatch, erst, eingabe)
+    for _ in range(8):
+        if ergebnis["type"] == "create_entry":
+            break
+        if ergebnis["step_id"] == "fremderzeuger":
+            ergebnis = await flow.async_step_fremderzeuger(
+                {
+                    CONF_FREMDERZEUGER_NAME: "Ofen",
+                    CONF_FREMDERZEUGER_FUEHLER: FUEHLER,
+                    CONF_FREMDERZEUGER_SPERRT: ["kessel"],
+                    CONF_FREMDERZEUGER_SPERREN_NACH: 1,
+                    CONF_FREMDERZEUGER_FREIGEBEN_NACH: 5,
+                }
+            )
+            continue
+        schema = ergebnis.get("data_schema")
+        vorgaben = {str(feld): feld.default() for feld in schema.schema} if schema else {}
+        ergebnis = await getattr(flow, f"async_step_{ergebnis['step_id']}")(vorgaben)
+    assert ergebnis["data"][CONF_FREMDERZEUGER_ENTITAET] is None
+
+    entry.options = {CONF_FREMDERZEUGER_ENTITAET: None}
+    _, ofen = await mit_fuehler(hass, entry, 20, mit_entitaet=True)
+
+    assert ofen.entitaet is None
+    assert ofen.eigener_schalter is True
+
+
+async def test_ersteinrichtung_speichert_kein_leeres_feld(monkeypatch):
+    """Nur Konfigurieren muss etwas überdecken - beim Einrichten gibt es noch nichts."""
+    from eta_heating_ws import config_flow as modul
+
+    assert modul._geleert({}, {}, [CONF_FREMDERZEUGER_ENTITAET]) == {}
+    assert modul._geleert(
+        {CONF_FREMDERZEUGER_ENTITAET: OFEN}, {CONF_FREMDERZEUGER_ENTITAET: OFEN}, [CONF_FREMDERZEUGER_ENTITAET]
+    ) == {}
+    assert modul._geleert({}, {CONF_FREMDERZEUGER_ENTITAET: OFEN}, [CONF_FREMDERZEUGER_ENTITAET]) == {
+        CONF_FREMDERZEUGER_ENTITAET: None
+    }
+
+
+async def test_laesst_sich_der_kessel_mehrmals_nicht_freigeben_erscheint_eine_meldung(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Ein Kessel, der gesperrt bleibt, obwohl der Ofen aus ist, lässt das Haus auskühlen."""
+    from eta_heating_ws.fremderzeuger import MELDEN_NACH
+
+    coordinator, _ = await mit_ofen(hass, entry)
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    await zeit_um(fremderzeuger_ohne_hass)
+    await coordinator.async_refresh()
+
+    hass.session.schreiben_erlaubt = False
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    for _ in range(MELDEN_NACH - 1):
+        await zeit_um(fremderzeuger_ohne_hass)
+    assert fremderzeuger_ohne_hass.meldungen == []
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert len(fremderzeuger_ohne_hass.meldungen) == 1
+    assert "nicht freigeben" in fremderzeuger_ohne_hass.meldungen[0]
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert len(fremderzeuger_ohne_hass.meldungen) == 1, "nur einmal"
+
+    hass.session.schreiben_erlaubt = True
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert coordinator.kesselsperre.gesperrt is False
+    assert len(fremderzeuger_ohne_hass.erledigt) == 1, "gelungen - die Meldung verschwindet"
+
+
+async def test_diagnose_nennt_sperre_und_fremderzeuger_ohne_namen_der_entitaeten(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Für die Fehlersuche: was eingerichtet ist und wie gerade bewertet wird."""
+    import json
+
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
+
+    coordinator, _ = await mit_fuehler(hass, entry, 72, mit_entitaet=True, zustand="on")
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert bericht["schreibzugriff"]["kesselsperre"] == {
+        "vorhanden": True,
+        "gemerkt": KESSEL_GESPERRT_AUSGESCHALTET,
+        "kessel_ein": False,
+    }
+    assert bericht["schreibzugriff"]["fremderzeuger"] == {
+        "mit_entitaet": True,
+        "mit_fuehler": True,
+        "entitaet_an": True,
+        "temperatur": 72.0,
+        "sperrtemperatur": 60.0,
+        "eigener_schalter": None,
+        "heizt": True,
+        "sperrt": ["kessel"],
+    }
+    assert OFEN not in json.dumps(bericht) and FUEHLER not in json.dumps(bericht)
+
+
+async def test_diagnose_ohne_fremderzeuger_und_ohne_sperre(hass, entry):
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
+
+    await setup_integration(hass, entry)
+
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert bericht["schreibzugriff"]["fremderzeuger"] is None
+    assert bericht["schreibzugriff"]["kesselsperre"] == {
+        "vorhanden": False,
+        "gemerkt": None,
+        "kessel_ein": None,
+    }
+
+
+async def test_fehlversuche_beim_sperren_zaehlen_nicht_fuer_die_meldung_zum_freigeben(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Gezählt wird je Richtung - sonst käme die Meldung zu früh oder nie."""
+    from eta_heating_ws.fremderzeuger import MELDEN_NACH
+
+    coordinator, _ = await mit_ofen(hass, entry)
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    await zeit_um(fremderzeuger_ohne_hass)
+    await coordinator.async_refresh()
+    hass.session.schreiben_erlaubt = False
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    for _ in range(2):
+        await zeit_um(fremderzeuger_ohne_hass)
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    await zeit_um(fremderzeuger_ohne_hass)
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    for _ in range(MELDEN_NACH - 1):
+        await zeit_um(fremderzeuger_ohne_hass)
+    assert fremderzeuger_ohne_hass.meldungen == [], "erst vier Mal nicht freigegeben"
+
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert len(fremderzeuger_ohne_hass.meldungen) == 1

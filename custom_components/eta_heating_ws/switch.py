@@ -13,9 +13,12 @@ nichts in die Anlage und entsteht deshalb auch ohne Schreibzugriff.
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import time
 from typing import Any
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import STATE_OFF, EntityCategory
 from homeassistant.core import HomeAssistant, callback
@@ -26,6 +29,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import ETAApiError
 from .const import (
+    DOMAIN,
     FREMDERZEUGER_SCHALTER,
     KESSEL_GESPERRT_AUSGESCHALTET,
     KESSEL_GESPERRT_WAR_AUS,
@@ -34,6 +38,8 @@ from .const import (
 )
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
+
+_LOGGER = logging.getLogger(__name__)
 
 VERWERFEN_NACH = 3
 """So oft darf die Anlage dem erwarteten Zustand widersprechen.
@@ -56,18 +62,33 @@ früheren kürzesten Intervall von 10 Sekunden ließen.
 """
 
 
+SPERRE_VERWERFEN_FRUEHESTENS = 120
+"""So viele Sekunden gilt für die Kesselsperre ein Schaltbefehl mindestens.
+
+Länger als bei einem Schalter im Dashboard: Gäbe die Sperre zu früh auf,
+hielte sie einen Kessel, den die Anlage erst danach ausschaltet, nicht
+mehr für gesperrt - und nichts schaltete ihn wieder ein.
+"""
+
+
 def vorwegnahme_pruefen(
-    coordinator: ETADataUpdateCoordinator, widerspruch: int, seit: float
+    coordinator: ETADataUpdateCoordinator,
+    widerspruch: int,
+    seit: float,
+    fruehestens: float | None = None,
 ) -> tuple[int, bool]:
     """Zählt einen Widerspruch der Anlage und sagt, ob die Vorwegnahme damit endet.
 
     Gezählt wird nur bei einer vollen Abfrage: Die schnelle Gruppe meldet
     sich öfter, als die Anlage für einen Schaltbefehl braucht. seit ist der
-    Zeitpunkt des Schreibens nach time.monotonic().
+    Zeitpunkt des Schreibens nach time.monotonic(), fruehestens die
+    Mindestfrist in Sekunden - ohne Angabe VERWERFEN_FRUEHESTENS.
     """
     if coordinator.volle_abfrage:
         widerspruch += 1
-    abgelaufen = time.monotonic() - seit >= VERWERFEN_FRUEHESTENS
+    if fruehestens is None:
+        fruehestens = VERWERFEN_FRUEHESTENS
+    abgelaufen = time.monotonic() - seit >= fruehestens
     return widerspruch, widerspruch >= VERWERFEN_NACH and abgelaufen
 
 
@@ -181,6 +202,8 @@ class ETASwitch(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):
         self._erwartet = erwartet
         self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
+        if self._key == KESSEL_TASTE and self.coordinator.kesselsperre is not None:
+            self.coordinator.kesselsperre.befohlen(erwartet)
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
@@ -218,6 +241,13 @@ class Kesselsperre:
     Abfrage mit der Anlage ab. Der Schalter "Kessel sperren" zeigt und
     bedient sie; der Fremderzeuger bedient sie von selbst, siehe
     fremderzeuger.py.
+
+    Dieselbe Taste bedienen auch der Schalter "Kessel" und der
+    Aschebox-Plan. Beide sagen der Sperre, was sie geschaltet haben
+    (befohlen). Solange der Plan den Kessel aus hält, schaltet das
+    Freigeben nicht ein - das tut der Plan an seinem Ende. Endet der Plan,
+    während der Kessel gesperrt ist, bleibt der Kessel aus, und das
+    Freigeben schaltet ihn ein (einschalten_uebernehmen).
     """
 
     def __init__(self, coordinator: ETADataUpdateCoordinator, taste: dict) -> None:
@@ -230,6 +260,31 @@ class Kesselsperre:
         self._erwartet_seit = 0.0
         self._widerspruch = 0
         self._beobachter: list = []
+        self._schloss = asyncio.Lock()
+        """Sperren und Freigeben laufen nacheinander - so gilt der letzte Befehl."""
+
+    @callback
+    def befohlen(self, ein: bool) -> None:
+        """Ein anderer hat die Ein/Aus-Taste geschaltet: der Schalter "Kessel" oder der Aschebox-Plan.
+
+        Bis die Anlage es meldet, gilt für die Sperre dieser Befehl. Sonst
+        hielte sie einen eben ausgeschalteten Kessel noch für
+        eingeschaltet und schaltete ihn beim Freigeben ein.
+        """
+        self._erwartet = ein
+        self._erwartet_seit = time.monotonic()
+        self._widerspruch = 0
+
+    @callback
+    def einschalten_uebernehmen(self) -> None:
+        """Der Aschebox-Plan ist zu Ende und lässt den gesperrten Kessel aus.
+
+        Ohne Sperre hätte er ihn eingeschaltet. Das tut jetzt das
+        Freigeben, auch wenn der Kessel beim Sperren schon aus war.
+        """
+        if self._coordinator.kessel_gesperrt == KESSEL_GESPERRT_WAR_AUS:
+            self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_AUSGESCHALTET)
+            self._melden()
 
     @callback
     def beobachten(self, rueckruf):
@@ -286,7 +341,10 @@ class Kesselsperre:
                 self._erwartet = None
             else:
                 self._widerspruch, vorbei = vorwegnahme_pruefen(
-                    self._coordinator, self._widerspruch, self._erwartet_seit
+                    self._coordinator,
+                    self._widerspruch,
+                    self._erwartet_seit,
+                    SPERRE_VERWERFEN_FRUEHESTENS,
                 )
                 if vorbei:
                     self._erwartet = None
@@ -296,30 +354,42 @@ class Kesselsperre:
 
     async def async_sperren(self) -> None:
         """Sperrt den Kessel und merkt sich, ob er dafür ausgeschaltet wurde."""
-        if self._coordinator.kessel_gesperrt:
-            return
-        ein = self.kessel_ein()
-        if ein is None:
-            raise HomeAssistantError(
-                "Die Anlage meldet gerade nicht, ob der Kessel ein- oder ausgeschaltet ist. "
-                "Gesperrt wurde nichts."
-            )
-        if ein:
-            await self._schalten(self._aus_roh, False)
-            self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_AUSGESCHALTET)
-        else:
-            self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_WAR_AUS)
-        self._melden()
+        async with self._schloss:
+            if self._coordinator.kessel_gesperrt:
+                return
+            ein = self.kessel_ein()
+            if ein is None:
+                raise HomeAssistantError(
+                    "Die Anlage meldet gerade nicht, ob der Kessel ein- oder ausgeschaltet ist. "
+                    "Gesperrt wurde nichts."
+                )
+            if ein:
+                await self._schalten(self._aus_roh, False)
+                self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_AUSGESCHALTET)
+            else:
+                self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_WAR_AUS)
+            self._melden()
 
     async def async_freigeben(self) -> None:
-        """Gibt den Kessel frei und schaltet ihn ein, wenn die Sperre ihn ausgeschaltet hat."""
-        gemerkt = self._coordinator.kessel_gesperrt
-        if gemerkt is None:
-            return
-        if gemerkt == KESSEL_GESPERRT_AUSGESCHALTET:
-            await self._schalten(self._ein_roh, True)
-        self._coordinator.kessel_gesperrt_merken(None)
-        self._melden()
+        """Gibt den Kessel frei und schaltet ihn ein, wenn die Sperre ihn ausgeschaltet hat.
+
+        Hält der Aschebox-Plan den Kessel gerade aus, wird nur die Sperre
+        aufgehoben: Der Plan schaltet ihn an seinem Ende selbst ein. Ist
+        der Kessel schon eingeschaltet, wird nichts geschrieben.
+        """
+        async with self._schloss:
+            gemerkt = self._coordinator.kessel_gesperrt
+            if gemerkt is None:
+                return
+            plan = self._coordinator.aschebox
+            if (
+                gemerkt == KESSEL_GESPERRT_AUSGESCHALTET
+                and not (plan is not None and plan.haelt_kessel_aus)
+                and self.kessel_ein() is not True
+            ):
+                await self._schalten(self._ein_roh, True)
+            self._coordinator.kessel_gesperrt_merken(None)
+            self._melden()
 
     async def _schalten(self, roh_wert: str, erwartet: bool) -> None:
         """Schreibt die Ein/Aus-Taste des Kessels."""
@@ -332,6 +402,82 @@ class Kesselsperre:
         self._erwartet = erwartet
         self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
+
+
+async def verwaiste_sperre_aufloesen(
+    hass: HomeAssistant, coordinator: ETADataUpdateCoordinator
+) -> None:
+    """Räumt auf, wenn der Kessel als gesperrt gemerkt ist, es die Kesselsperre aber nicht gibt.
+
+    Das kommt vor, wenn "Kessel sperren", der Fremderzeuger oder der
+    Schreibzugriff abgewählt wurden, während der Kessel gesperrt war -
+    oder wenn die Anlage die Ein/Aus-Taste beim Start nicht bestätigt hat.
+    Hat die Sperre den Kessel ausgeschaltet, bliebe er sonst aus, ohne
+    dass es jemand merkt.
+
+    Soll es die Sperre weiter geben, bleibt das Gemerkte stehen: Beim
+    nächsten Start, bei dem die Anlage die Taste bestätigt, gilt die
+    Sperre wieder. Sonst wird das Gemerkte gelöscht und der Kessel wieder
+    eingeschaltet, soweit das geht. In jedem Fall, in dem der Kessel
+    betroffen ist, erscheint eine Meldung in Home Assistant.
+    """
+    gemerkt = coordinator.kessel_gesperrt
+    if gemerkt is None or coordinator.kesselsperre is not None:
+        return
+
+    def melden(nachricht: str) -> None:
+        _LOGGER.warning("ETA: %s", nachricht)
+        persistent_notification.async_create(
+            hass,
+            nachricht,
+            title="ETA Heizung: Kessel sperren",
+            notification_id=f"{DOMAIN}_kesselsperre_{coordinator.config_entry.entry_id}",
+        )
+
+    ausgeschaltet = gemerkt == KESSEL_GESPERRT_AUSGESCHALTET
+    gewollt = (
+        coordinator.kessel_sperre
+        and coordinator.enable_switches
+        and KESSEL_SPERRE["component"] in coordinator.components
+    )
+    if gewollt:
+        if ausgeschaltet:
+            melden(
+                "Home Assistant hält den Kessel gesperrt, kann ihn aber gerade nicht "
+                "freigeben: Die Anlage hat die Ein/Aus-Taste des Kessels beim Start nicht "
+                "bestätigt. Nach dem nächsten Neuladen der Integration geht es weiter. Soll "
+                "der Kessel vorher laufen, bitte an der Heizung einschalten."
+            )
+        return
+
+    coordinator.kessel_gesperrt_merken(None)
+    plan = coordinator.aschebox
+    if not ausgeschaltet or (plan is not None and plan.haelt_kessel_aus):
+        return
+    taste = coordinator.switch_defs.get(KESSEL_TASTE)
+    if taste is None:
+        melden(
+            "Home Assistant hatte den Kessel gesperrt und dafür ausgeschaltet. Die Sperre "
+            "gibt es nicht mehr, und einschalten kann Home Assistant ihn nicht. Ist er noch "
+            "aus, bitte an der Heizung wieder einschalten."
+        )
+        return
+    reading = (coordinator.data or {}).get(KESSEL_TASTE)
+    if reading is not None and reading.text == taste["ein_text"]:
+        return
+    try:
+        await coordinator.client.async_set_value(taste["uri"], taste["ein_roh"])
+    except ETAApiError as err:
+        melden(
+            "Home Assistant hatte den Kessel gesperrt und dafür ausgeschaltet. Die Sperre "
+            f"gibt es nicht mehr, aber der Kessel ließ sich nicht wieder einschalten ({err}). "
+            "Bitte den Kessel selbst wieder einschalten."
+        )
+        return
+    melden(
+        "Home Assistant hatte den Kessel gesperrt und dafür ausgeschaltet. Die Sperre gibt "
+        "es nicht mehr - der Kessel ist wieder eingeschaltet."
+    )
 
 
 class ETAKesselSperre(CoordinatorEntity[ETADataUpdateCoordinator], SwitchEntity):

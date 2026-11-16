@@ -113,6 +113,33 @@ def prognose_diagnose(coordinator) -> dict[str, Any]:
     }
 
 
+def _kesselsperre(coordinator) -> dict[str, Any]:
+    """Ob es die Kesselsperre gibt und was sie sich gemerkt hat, siehe switch.Kesselsperre."""
+    sperre = coordinator.kesselsperre
+    return {
+        "vorhanden": sperre is not None,
+        "gemerkt": coordinator.kessel_gesperrt,
+        "kessel_ein": None if sperre is None else sperre.kessel_ein(),
+    }
+
+
+def _fremderzeuger(coordinator) -> dict[str, Any] | None:
+    """Wie der Fremderzeuger eingerichtet ist und wie er gerade bewertet wird - ohne die Namen der Entitäten."""
+    ofen = coordinator.fremderzeuger
+    if ofen is None:
+        return None
+    return {
+        "mit_entitaet": bool(ofen.entitaet),
+        "mit_fuehler": bool(ofen.fuehler),
+        "entitaet_an": ofen.an,
+        "temperatur": ofen.temperatur,
+        "sperrtemperatur": ofen.schwelle if ofen.fuehler else None,
+        "eigener_schalter": ofen.eingeschaltet if ofen.eigener_schalter else None,
+        "heizt": ofen.heizt,
+        "sperrt": ofen.sperrt,
+    }
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ETAConfigEntry
 ) -> dict[str, Any]:
@@ -217,6 +244,8 @@ async def async_get_config_entry_diagnostics(
                 heizkreis: befund["tage"]
                 for heizkreis, befund in list(coordinator.absenkung_pruefung.items())
             },
+            "kesselsperre": _kesselsperre(coordinator),
+            "fremderzeuger": _fremderzeuger(coordinator),
             "entaschentaste": coordinator.entaschen_def is not None,
             "aschebox_plan": (
                 None

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-import eta_heating_ws
 from eta_heating_ws.coordinator import SCHNELL_PAUSE, SCHNELL_PLATTFORMEN
 
 from . import test_puffer_ohne_kombi as nutzeranlage
@@ -207,7 +206,7 @@ def test_einstellung_steht_im_dialog():
         felder = {str(k): k for k in schema.schema}
         assert felder["schnell_intervall"].default() == DEFAULT_SCHNELL_INTERVALL == 3
 
-    assert _options_schema({"schnell_intervall": 5}).schema  # baut mit gespeichertem Wert
+    assert _options_schema({"schnell_intervall": 5}).schema, "baut mit gespeichertem Wert"
     assert MIN_SCAN_INTERVAL == 1
 
 

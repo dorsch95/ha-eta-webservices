@@ -2168,7 +2168,7 @@ class EtaUebersichtKarte extends HTMLElement {
       if (!schreibtVorrat) {
         hinweis.textContent = t.vorrat_bleibt;
       } else {
-        hinweis.innerHTML = `<b>${e(t.vorrat_wird_geaendert)}</b>${jetzt !== null && menge > 0 ? `: ${e(kg(jetzt))} → ${e(kg(jetzt + menge))}` : "."}`;
+        hinweis.innerHTML = `<b>${e(t.vorrat_wird_geaendert)}</b>${jetzt !== null && menge > 0 ? `: ${e(kg(jetzt))} → ${e(kg(Math.max(jetzt, 0) + menge))}` : "."}`;
       }
     };
     hinweisen();

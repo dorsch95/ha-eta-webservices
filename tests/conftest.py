@@ -14,6 +14,7 @@ import asyncio
 import copy
 import os
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -618,13 +619,18 @@ class FakeStates:
         self.verwaist: set[str] = set()
         self.zustaende: dict[str, str] = {}
         """Zustände, die ein Test vorgibt - etwa "on" für die Entität eines Fremderzeugers."""
+        self.einheiten: dict[str, str] = {}
+        """Einheiten, die ein Test vorgibt - etwa "°F" für einen Temperaturfühler."""
 
     def get(self, entity_id: str) -> SimpleNamespace:
         verwaist = entity_id in self.verwaist
+        attribute: dict = {"restored": True} if verwaist else {}
+        if entity_id in self.einheiten:
+            attribute["unit_of_measurement"] = self.einheiten[entity_id]
         return SimpleNamespace(
             entity_id=entity_id,
             state="unavailable" if verwaist else self.zustaende.get(entity_id, "unknown"),
-            attributes={"restored": True} if verwaist else {},
+            attributes=attribute,
         )
 
 
@@ -782,6 +788,37 @@ def aschebox_ohne_hass(monkeypatch) -> SimpleNamespace:
     return stand
 
 
+class Uhr:
+    """Die Zeit des Aschebox-Plans - im Test von Hand vorgestellt."""
+
+    def __init__(self) -> None:
+        self.jetzt = datetime(2026, 9, 25, 10, 0, tzinfo=UTC)
+
+    def weiter(self, **dauer) -> None:
+        self.jetzt += timedelta(**dauer)
+
+
+@pytest.fixture
+def uhr(monkeypatch) -> Uhr:
+    """Stellt dem Aschebox-Plan eine Uhr, die nur der Test weiterdreht."""
+    from homeassistant.util import dt as dt_util
+
+    from eta_heating_ws import aschebox
+
+    uhr = Uhr()
+    monkeypatch.setattr(
+        aschebox,
+        "dt_util",
+        SimpleNamespace(
+            utcnow=lambda: uhr.jetzt,
+            parse_datetime=dt_util.parse_datetime,
+            as_utc=dt_util.as_utc,
+            as_local=dt_util.as_local,
+        ),
+    )
+    return uhr
+
+
 @pytest.fixture(autouse=True)
 def fremderzeuger_ohne_hass(monkeypatch) -> SimpleNamespace:
     """Fängt ab, was der Fremderzeuger bei Home Assistant bestellt.
@@ -789,11 +826,15 @@ def fremderzeuger_ohne_hass(monkeypatch) -> SimpleNamespace:
     Zustandswechsel, Zeitgeber und der Start von Home Assistant brauchen
     eine laufende Instanz. Hier hält die Attrappe nur fest, was bestellt
     wurde - ein Test löst es dann selbst aus. zeitgeber: je Bestellung
-    Wartezeit, Rückruf und ob sie wieder abbestellt wurde.
+    Wartezeit, Rückruf und ob sie wieder abbestellt wurde. meldungen und
+    erledigt: die Texte der Meldungen in Home Assistant und welche wieder
+    entfernt wurden.
     """
     from eta_heating_ws import fremderzeuger
 
-    protokoll = SimpleNamespace(beobachtet=[], zeitgeber=[], gestartet=[], abgemeldet=[])
+    protokoll = SimpleNamespace(
+        beobachtet=[], zeitgeber=[], gestartet=[], abgemeldet=[], meldungen=[], erledigt=[]
+    )
 
     def beobachten(hass, entitaeten, rueckruf):
         protokoll.beobachtet.append((list(entitaeten), rueckruf))
@@ -811,7 +852,33 @@ def fremderzeuger_ohne_hass(monkeypatch) -> SimpleNamespace:
     monkeypatch.setattr(fremderzeuger, "async_track_state_change_event", beobachten)
     monkeypatch.setattr(fremderzeuger, "async_call_later", spaeter)
     monkeypatch.setattr(fremderzeuger, "async_at_started", beim_start)
+    monkeypatch.setattr(
+        fremderzeuger,
+        "persistent_notification",
+        SimpleNamespace(
+            async_create=lambda hass, text, **kwargs: protokoll.meldungen.append(text),
+            async_dismiss=lambda hass, meldung_id: protokoll.erledigt.append(meldung_id),
+        ),
+    )
     return protokoll
+
+
+@pytest.fixture(autouse=True)
+def sperre_meldungen(monkeypatch) -> list[str]:
+    """Fängt die Meldungen ab, mit denen eine verwaiste Kesselsperre aufgelöst wird.
+
+    Meldungen in Home Assistant brauchen eine laufende Instanz. Hier
+    steht nur ihr Text, siehe switch.verwaiste_sperre_aufloesen.
+    """
+    from eta_heating_ws import switch
+
+    meldungen: list[str] = []
+    monkeypatch.setattr(
+        switch,
+        "persistent_notification",
+        SimpleNamespace(async_create=lambda hass, text, **kwargs: meldungen.append(text)),
+    )
+    return meldungen
 
 
 @pytest.fixture(autouse=True)

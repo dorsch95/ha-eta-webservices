@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from types import SimpleNamespace
+from datetime import timedelta
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.util import dt as dt_util
 
 from eta_heating_ws import aschebox, karte
 from eta_heating_ws import button as button_platform
@@ -19,32 +17,6 @@ from .test_sensors import setup_integration
 
 KESSEL = "/264/10891/0/0/12080"
 TASTE = "/264/10891/0/0/12112"
-
-
-class Uhr:
-    """Die Zeit des Plans - im Test von Hand vorgestellt."""
-
-    def __init__(self) -> None:
-        self.jetzt = datetime(2026, 9, 25, 10, 0, tzinfo=UTC)
-
-    def weiter(self, **dauer) -> None:
-        self.jetzt += timedelta(**dauer)
-
-
-@pytest.fixture
-def uhr(monkeypatch) -> Uhr:
-    uhr = Uhr()
-    monkeypatch.setattr(
-        aschebox,
-        "dt_util",
-        SimpleNamespace(
-            utcnow=lambda: uhr.jetzt,
-            parse_datetime=dt_util.parse_datetime,
-            as_utc=dt_util.as_utc,
-            as_local=dt_util.as_local,
-        ),
-    )
-    return uhr
 
 
 async def aufbauen(hass, entry):

@@ -259,13 +259,25 @@ async def _programm_der_anlage(
     return "\n\n".join(absaetze)
 
 
+def _geleert(eingabe: dict[str, Any], bisher: dict[str, Any], felder) -> dict[str, None]:
+    """Freiwillige Felder, die bisher gefüllt waren und jetzt leer sind - als None.
+
+    Konfigurieren speichert in den Optionen. Was dort fehlt, gilt weiter
+    aus der Ersteinrichtung; erst ein ausdrückliches None überdeckt es.
+    Ohne das ließe sich etwa die Entität eines Fremderzeugers, die beim
+    Einrichten gewählt wurde, nie wieder entfernen.
+    """
+    return {feld: None for feld in felder if not eingabe.get(feld) and bisher.get(feld)}
+
+
 def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[str, Any]:
     """Die Einstellungen, wenn der Menübaum gerade nicht lesbar ist.
 
     Dann entfallen die Schritte für Puffervolumen, Raumfühler, Zeitpläne
     und Verbindungen. Was dort bisher eingetragen war, bleibt für die weiter
     gewählten Komponenten stehen - sonst ginge es verloren, nur weil die Anlage beim
-    Speichern gerade nicht geantwortet hat.
+    Speichern gerade nicht geantwortet hat. Auch ein ausdrücklich geleertes
+    Feld bleibt geleert, siehe _geleert.
     """
     komponenten = daten.get(CONF_COMPONENTS, [])
     schluessel = [puffer_volumen_schluessel(k) for k in PUFFER_SPEICHER if k in komponenten]
@@ -277,7 +289,7 @@ def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[st
             for feld in (raumfuehler_schluessel, zeitplan_schluessel)
         ]
     schluessel.append(CONF_VERBINDUNGEN)
-    return {**{k: bisher[k] for k in schluessel if bisher.get(k)}, **daten}
+    return {**{k: bisher[k] for k in schluessel if k in bisher}, **daten}
 
 
 def _zeitplaene_schema(zeitprogramme, current: dict[str, Any]) -> vol.Schema:
@@ -566,6 +578,13 @@ class _Anlagenschritte:
                 self._data.update(
                     {feld: user_input[feld] for feld in FREMDERZEUGER_FELDER if user_input.get(feld) is not None}
                 )
+                self._data.update(
+                    _geleert(
+                        user_input,
+                        self._bisher,
+                        (CONF_FREMDERZEUGER_ENTITAET, CONF_FREMDERZEUGER_FUEHLER),
+                    )
+                )
                 return await self._nach_fub_namen()
             errors["base"] = "fremderzeuger_ohne_quelle"
         return self.async_show_form(
@@ -656,6 +675,13 @@ class _Anlagenschritte:
                     if user_input.get(zeitplan_schluessel(hk))
                 }
             )
+            self._data.update(
+                _geleert(
+                    user_input,
+                    self._bisher,
+                    [zeitplan_schluessel(hk) for hk in self._zeitprogramme],
+                )
+            )
             return await self._nach_zeitplaene()
         host, port = self._adresse()
         return self.async_show_form(
@@ -709,6 +735,13 @@ class _Anlagenschritte:
                         for hk in self._thermostate
                         if user_input.get(raumfuehler_schluessel(hk))
                     }
+                )
+                self._data.update(
+                    _geleert(
+                        user_input,
+                        self._bisher,
+                        [raumfuehler_schluessel(hk) for hk in self._thermostate],
+                    )
                 )
                 return await self._nach_raumfuehler()
         return self.async_show_form(
@@ -943,8 +976,10 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
         in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso
         die eingetragenen Pelletlieferungen, die Sperrtemperatur des
-        Fremderzeugers - solange er einen Fühler hat - und dass "Kessel
-        sperren" den Kessel gesperrt hält, solange es diesen Schalter gibt.
+        Fremderzeugers - solange er einen Fühler hat - und dass Home
+        Assistant den Kessel gesperrt hält. Gibt es nach dem Speichern
+        keine Kesselsperre mehr, räumt das Einrichten das Gemerkte auf,
+        siehe switch.verwaiste_sperre_aufloesen.
         """
         if self._current.get(CONF_LAGER_MAXIMUM):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
@@ -957,11 +992,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
                 CONF_FREMDERZEUGER_SCHWELLE: self._current[CONF_FREMDERZEUGER_SCHWELLE],
                 **daten,
             }
-        if (
-            self._current.get(CONF_KESSEL_GESPERRT)
-            and daten.get(CONF_ENABLE_SWITCHES)
-            and kessel_sperre_gewaehlt(daten)
-        ):
+        if self._current.get(CONF_KESSEL_GESPERRT):
             daten = {CONF_KESSEL_GESPERRT: self._current[CONF_KESSEL_GESPERRT], **daten}
         return self.async_create_entry(title="", data=daten)
 

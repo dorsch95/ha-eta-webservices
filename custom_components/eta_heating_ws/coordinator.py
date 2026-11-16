@@ -180,6 +180,9 @@ Kennt eine ältere Anlage /user/varinfo gar nicht, fehlt die Antwort jedes
 Mal - ohne Grenze fragte die Karte dann bei jedem Öffnen von Neuem.
 """
 
+VORRAT_UEBERNAHME = 120
+"""So viele Sekunden nach dem Schreiben kann die Anlage noch den alten Vorrat melden."""
+
 
 def _zeitfenster_befund(info: dict | None) -> str:
     """Was die Anlage über ein Zeitfenster meldet, kurz - für Protokoll und Diagnose."""
@@ -221,6 +224,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.kessel_sperre = False
         self.kesselsperre = None
         self.fremderzeuger = None
+        self._vorrat_geschrieben: tuple[float, float, float] | None = None
+        """Der zuletzt geschriebene Vorrat: neuer Wert, Wert davor, Zeitpunkt nach time.monotonic()."""
+        self._lieferung_schloss = asyncio.Lock()
         self.prognose = None
         self.mit_prognose = True
         self.mit_zeitraeumen = True
@@ -1179,10 +1185,31 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 f"Nur zwischen {untere:g} und {obere:g} {definition['einheit']}"
             )
         skala = definition["scale"] or 1.0
+        davor = self.zahl(definition["quelle"])
         try:
             await self.client.async_set_value(definition["uri"], str(round(wert * skala)))
         except ETAApiError as err:
             raise HomeAssistantError(f"Die Anlage hat den Wert nicht angenommen: {err}") from err
+        if key == LAGER_VORRAT_ZAHL and davor is not None:
+            self._vorrat_geschrieben = (float(wert), davor, time.monotonic())
+
+    def _vorrat_fuer_lieferung(self) -> float | None:
+        """Der Vorrat, auf den eine Lieferung aufgeschlagen wird - None, wenn die Anlage keinen meldet.
+
+        Kurz nach dem eigenen Schreiben meldet die Anlage noch den alten
+        Vorrat. Solange gilt der geschriebene - sonst ginge von zwei
+        Lieferungen kurz hintereinander die erste verloren. Ein negativer
+        Vorrat zählt als leeres Lager.
+        """
+        vorrat = self.zahl("lager_vorrat")
+        if vorrat is None:
+            return None
+        if self._vorrat_geschrieben is not None:
+            neu, davor, seit = self._vorrat_geschrieben
+            frisch = time.monotonic() - seit < VORRAT_UEBERNAHME
+            if frisch and abs(vorrat - davor) < abs(vorrat - neu):
+                vorrat = neu
+        return max(vorrat, 0.0)
 
     @callback
     def pellet_preis_merken(self, preis: float) -> None:
@@ -1227,32 +1254,33 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         übernommen. Ohne beschreibbaren Vorrat kommt None zurück: Dann
         stellt man ihn wie bisher am Display ein.
         """
-        neu = None
-        if self.vorrat_an_der_anlage:
-            vorrat = self.zahl("lager_vorrat")
-            if vorrat is None:
-                raise HomeAssistantError(
-                    "Die Anlage meldet gerade keinen Vorrat. Eingetragen wurde nichts."
-                )
-            neu = vorrat + float(menge)
-            _, obere = self.zahl_grenzen(LAGER_VORRAT_ZAHL)
-            if neu > obere:
-                raise HomeAssistantError(
-                    f"Mit dieser Lieferung läge der Vorrat bei {neu:g} kg - die Anlage "
-                    f"nimmt höchstens {obere:g} kg an. Eingetragen wurde nichts."
-                )
-            await self.async_zahl_schreiben(LAGER_VORRAT_ZAHL, neu)
-        eintrag = {"datum": datum.isoformat(), "menge": float(menge)}
-        if preis:
-            eintrag["preis"] = float(preis)
-        optionen = dict(self.config_entry.options)
-        optionen[CONF_LIEFERUNGEN] = [*self.lieferungen, eintrag][-MAX_LIEFERUNGEN:]
-        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
-        if preis:
-            self.pellet_preis_merken(preis)
-        self.async_update_listeners()
-        await self.async_request_refresh()
-        return neu
+        async with self._lieferung_schloss:
+            neu = None
+            if self.vorrat_an_der_anlage:
+                vorrat = self._vorrat_fuer_lieferung()
+                if vorrat is None:
+                    raise HomeAssistantError(
+                        "Die Anlage meldet gerade keinen Vorrat. Eingetragen wurde nichts."
+                    )
+                neu = vorrat + float(menge)
+                _, obere = self.zahl_grenzen(LAGER_VORRAT_ZAHL)
+                if neu > obere:
+                    raise HomeAssistantError(
+                        f"Mit dieser Lieferung läge der Vorrat bei {neu:g} kg - die Anlage "
+                        f"nimmt höchstens {obere:g} kg an. Eingetragen wurde nichts."
+                    )
+                await self.async_zahl_schreiben(LAGER_VORRAT_ZAHL, neu)
+            eintrag = {"datum": datum.isoformat(), "menge": float(menge)}
+            if preis:
+                eintrag["preis"] = float(preis)
+            optionen = dict(self.config_entry.options)
+            optionen[CONF_LIEFERUNGEN] = [*self.lieferungen, eintrag][-MAX_LIEFERUNGEN:]
+            self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+            if preis:
+                self.pellet_preis_merken(preis)
+            self.async_update_listeners()
+            await self.async_request_refresh()
+            return neu
 
     @callback
     def fremderzeuger_schwelle_merken(self, grad: float) -> None:

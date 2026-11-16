@@ -214,7 +214,7 @@ async def test_traege_anlage_hebt_die_sperre_nicht_gleich_auf(hass, entry, monke
     """Nach dem Ausschalten meldet die Anlage noch eine Weile "Ein" - das zählt nicht als Einschalten."""
     from eta_heating_ws.switch import VERWERFEN_NACH
 
-    monkeypatch.setattr(switch_platform, "VERWERFEN_FRUEHESTENS", 0)
+    monkeypatch.setattr(switch_platform, "SPERRE_VERWERFEN_FRUEHESTENS", 0)
     coordinator, sperre, _ = await schalter_von(hass, entry)
     hass.session.traege = True
     await sperre.async_turn_on()
@@ -232,7 +232,7 @@ async def test_traege_anlage_hebt_die_sperre_nicht_gleich_auf(hass, entry, monke
 async def test_fuehrt_die_anlage_das_ausschalten_nie_aus_gilt_keine_sperre(hass, entry, monkeypatch):
     from eta_heating_ws.switch import VERWERFEN_NACH
 
-    monkeypatch.setattr(switch_platform, "VERWERFEN_FRUEHESTENS", 0)
+    monkeypatch.setattr(switch_platform, "SPERRE_VERWERFEN_FRUEHESTENS", 0)
     coordinator, sperre, _ = await schalter_von(hass, entry)
     hass.session.traege = True
     await sperre.async_turn_on()
@@ -344,8 +344,11 @@ async def test_konfigurieren_behaelt_die_sperre(monkeypatch):
     ],
     ids=["abgewählt", "ohne Schreibzugriff"],
 )
-async def test_ohne_den_schalter_verfaellt_was_er_sich_gemerkt_hat(monkeypatch, neu):
-    """Ein alter Merker dürfte später keinen von Hand ausgeschalteten Kessel einschalten."""
+async def test_konfigurieren_behaelt_das_gemerkte_auch_ohne_den_schalter(monkeypatch, neu):
+    """Das Formular weiß nicht, ob es danach noch eine Sperre gibt - etwa durch den Fremderzeuger.
+
+    Aufgeräumt wird beim Einrichten, siehe die folgenden Prüfungen.
+    """
     bisher = {
         **optionen(),
         "enable_switches": True,
@@ -355,4 +358,289 @@ async def test_ohne_den_schalter_verfaellt_was_er_sich_gemerkt_hat(monkeypatch, 
 
     daten = await speichern(monkeypatch, bisher, {**optionen(), **neu})
 
-    assert CONF_KESSEL_GESPERRT not in daten
+    assert daten[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+
+
+async def test_abgewaehlt_waehrend_gesperrt_geht_der_kessel_wieder_an(hass, entry, sperre_meldungen):
+    """Sonst bliebe der Kessel aus, und kein Schalter zeigte mehr, warum."""
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    hass.session.geschrieben[TASTE] = AUS
+    entry.data[CONF_KESSEL_SPERRE] = False
+    entry.data["enable_switches"] = True
+
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.kesselsperre is None
+    assert (TASTE, EIN) in hass.session.gesetzte_werte
+    assert CONF_KESSEL_GESPERRT not in entry.options
+    assert "wieder eingeschaltet" in sperre_meldungen[-1]
+
+
+async def test_abgewaehlt_und_schon_wieder_ein_schreibt_nichts(hass, entry, sperre_meldungen):
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    entry.data[CONF_KESSEL_SPERRE] = False
+    entry.data["enable_switches"] = True
+
+    await setup_integration(hass, entry)
+
+    assert hass.session.gesetzte_werte == []
+    assert CONF_KESSEL_GESPERRT not in entry.options
+    assert sperre_meldungen == []
+
+
+async def test_ohne_schreibzugriff_waehrend_gesperrt_wird_gemeldet(hass, entry, sperre_meldungen):
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    hass.session.geschrieben[TASTE] = AUS
+    entry.data[CONF_KESSEL_SPERRE] = True
+    entry.data["enable_switches"] = False
+
+    await setup_integration(hass, entry)
+
+    assert hass.session.gesetzte_werte == []
+    assert CONF_KESSEL_GESPERRT not in entry.options
+    assert "an der Heizung wieder einschalten" in sperre_meldungen[-1]
+
+    sperre_meldungen.clear()
+    await setup_integration(hass, entry)
+    assert sperre_meldungen == [], "nur einmal"
+
+
+async def test_war_der_kessel_schon_aus_verfaellt_das_gemerkte_still(hass, entry, sperre_meldungen):
+    """Ein alter Merker dürfte später keinen von Hand ausgeschalteten Kessel einschalten."""
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_WAR_AUS}
+    hass.session.geschrieben[TASTE] = AUS
+    entry.data[CONF_KESSEL_SPERRE] = False
+    entry.data["enable_switches"] = True
+
+    await setup_integration(hass, entry)
+
+    assert hass.session.gesetzte_werte == []
+    assert CONF_KESSEL_GESPERRT not in entry.options
+    assert sperre_meldungen == []
+
+
+async def test_bestaetigt_die_anlage_die_taste_nicht_bleibt_das_gemerkte(
+    hass, entry, sperre_meldungen, monkeypatch
+):
+    """Neustart, und die Anlage beschreibt die Ein/Aus-Taste nicht: Der Kessel bliebe unbemerkt aus."""
+    from eta_heating_ws.api import ETAApiClient
+
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    hass.session.geschrieben[TASTE] = AUS
+    entry.data[CONF_KESSEL_SPERRE] = True
+    entry.data["enable_switches"] = True
+
+    async def keine_antwort(self, uri):
+        return None
+
+    echt = ETAApiClient.async_get_varinfo
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", keine_antwort)
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.kesselsperre is None
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+    assert hass.session.gesetzte_werte == []
+    assert "nicht bestätigt" in sperre_meldungen[-1]
+
+    monkeypatch.setattr(ETAApiClient, "async_get_varinfo", echt)
+    coordinator, _ = await setup_integration(hass, entry)
+    assert coordinator.kesselsperre.gesperrt is True, "beim nächsten Start gilt die Sperre wieder"
+    await coordinator.kesselsperre.async_freigeben()
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+
+
+async def test_der_schalter_kessel_sagt_der_sperre_was_er_geschaltet_hat(hass, entry):
+    """Von Hand aus, und gleich darauf gesperrt: Die Anlage meldet noch "Ein", die Sperre weiß es besser."""
+    coordinator, sperre, kessel = await schalter_von(hass, entry)
+    hass.session.traege = True
+    await kessel.async_turn_off()
+    hass.session.gesetzte_werte.clear()
+
+    await sperre.async_turn_on()
+
+    assert hass.session.gesetzte_werte == [], "der Kessel ist schon aus"
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_WAR_AUS
+    hass.session.traege = False
+    await coordinator.async_refresh()
+    await sperre.async_turn_off()
+    assert hass.session.gesetzte_werte == [], "von Hand ausgeschaltet bleibt aus"
+
+
+async def test_die_sperre_gibt_einer_traegen_anlage_laenger_zeit_als_der_schalter(
+    hass, entry, monkeypatch
+):
+    """Gäbe sie zu früh auf, ginge der Kessel danach aus, und nichts schaltete ihn wieder ein."""
+    from eta_heating_ws.switch import VERWERFEN_NACH
+
+    monkeypatch.setattr(switch_platform, "VERWERFEN_FRUEHESTENS", 0)
+    coordinator, sperre, _ = await schalter_von(hass, entry)
+    hass.session.traege = True
+    await sperre.async_turn_on()
+
+    for _ in range(VERWERFEN_NACH + 2):
+        await coordinator.async_refresh()
+
+    assert sperre.is_on is True
+    hass.session.traege = False
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+    await sperre.async_turn_off()
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+
+
+async def test_sperren_und_freigeben_zugleich_der_letzte_befehl_gilt(hass, entry):
+    import asyncio
+
+    coordinator, _, _ = await schalter_von(hass, entry)
+    sperre = coordinator.kesselsperre
+
+    await asyncio.gather(sperre.async_sperren(), sperre.async_freigeben())
+    assert sperre.gesperrt is False
+
+    await asyncio.gather(sperre.async_freigeben(), sperre.async_sperren())
+    assert sperre.gesperrt is True
+
+
+async def gesperrt_mit_plan(hass, entry):
+    """Kessel gesperrt, dazu ein Aschebox-Plan, den der Test von Hand weiterführt."""
+    from .test_aschebox import aufbauen
+
+    entry.data[CONF_KESSEL_SPERRE] = True
+    entry.data["enable_switches"] = True
+    coordinator, plan = await aufbauen(hass, entry)
+    await coordinator.kesselsperre.async_sperren()
+    await coordinator.async_refresh()
+    return coordinator, plan
+
+
+async def bis_zum_leeren(hass, coordinator, plan, uhr, aschebox_ohne_hass):
+    """Führt den Plan bis zu dem Schritt, in dem die Aschebox geleert wird."""
+    from datetime import timedelta
+
+    from .test_aschebox import abfrage, ausfuehren
+
+    await plan.planen(uhr.jetzt + timedelta(minutes=10))
+    await ausfuehren(hass, aschebox_ohne_hass)
+    uhr.weiter(minutes=5)
+    await abfrage(coordinator, plan, "Ausgeschaltet")
+    assert plan.phase == "entaschen"
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+    uhr.weiter(minutes=8)
+    await abfrage(coordinator, plan, "Ausgeschaltet")
+    assert plan.phase == "leeren"
+
+
+async def test_endet_der_aschebox_plan_bleibt_der_gesperrte_kessel_aus(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Der Plan schaltete sonst ein, und die Sperre gälte als von Hand aufgehoben."""
+    from .test_aschebox import abfrage
+
+    coordinator, plan = await gesperrt_mit_plan(hass, entry)
+    await bis_zum_leeren(hass, coordinator, plan, uhr, aschebox_ohne_hass)
+    hass.session.gesetzte_werte.clear()
+
+    await abfrage(coordinator, plan, "Aschebox fehlt")
+    await abfrage(coordinator, plan, "Ausgeschaltet")
+
+    assert plan.phase == "aus"
+    assert (TASTE, EIN) not in hass.session.gesetzte_werte
+    assert coordinator.kesselsperre.gesperrt is True
+    assert "bleibt aus, weil er gesperrt ist" in aschebox_ohne_hass.meldungen[-1]
+
+    await coordinator.kesselsperre.async_freigeben()
+    assert hass.session.gesetzte_werte[-1] == (TASTE, EIN)
+
+
+async def test_freigeben_mitten_im_aschebox_plan_schaltet_nicht_ein(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Der Plan hält den Kessel aus und schaltet ihn an seinem Ende selbst ein."""
+    from .test_aschebox import abfrage
+
+    coordinator, plan = await gesperrt_mit_plan(hass, entry)
+    await bis_zum_leeren(hass, coordinator, plan, uhr, aschebox_ohne_hass)
+    hass.session.gesetzte_werte.clear()
+
+    await coordinator.kesselsperre.async_freigeben()
+
+    assert hass.session.gesetzte_werte == []
+    assert coordinator.kesselsperre.gesperrt is False
+    await abfrage(coordinator, plan, "Aschebox fehlt")
+    await abfrage(coordinator, plan, "Ausgeschaltet")
+    assert plan.phase == "aus"
+    assert hass.session.gesetzte_werte[-1] == (TASTE, EIN)
+    assert "wieder eingeschaltet" in aschebox_ohne_hass.meldungen[-1]
+
+
+async def test_im_aschebox_plan_gesperrt_schaltet_das_freigeben_danach_ein(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Beim Sperren war der Kessel durch den Plan schon aus - ohne Sperre hätte der Plan ihn eingeschaltet."""
+    from .test_aschebox import abfrage, aufbauen
+
+    entry.data[CONF_KESSEL_SPERRE] = True
+    entry.data["enable_switches"] = True
+    coordinator, plan = await aufbauen(hass, entry)
+    await bis_zum_leeren(hass, coordinator, plan, uhr, aschebox_ohne_hass)
+    await coordinator.kesselsperre.async_sperren()
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_WAR_AUS
+
+    await abfrage(coordinator, plan, "Aschebox fehlt")
+    await abfrage(coordinator, plan, "Ausgeschaltet")
+
+    assert plan.phase == "aus"
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+    hass.session.gesetzte_werte.clear()
+    await coordinator.kesselsperre.async_freigeben()
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+
+
+async def test_aschebox_plan_abbrechen_laesst_den_gesperrten_kessel_aus(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    coordinator, plan = await gesperrt_mit_plan(hass, entry)
+    await bis_zum_leeren(hass, coordinator, plan, uhr, aschebox_ohne_hass)
+    hass.session.gesetzte_werte.clear()
+
+    await plan.abbrechen()
+
+    assert plan.phase == "aus"
+    assert hass.session.gesetzte_werte == []
+    assert coordinator.kesselsperre.gesperrt is True
+    assert "bleibt aus, weil er gesperrt ist" in aschebox_ohne_hass.meldungen[-1]
+
+
+async def test_abgewaehlt_mitten_im_aschebox_plan_schaltet_nicht_ein(
+    hass, entry, uhr, aschebox_ohne_hass, sperre_meldungen
+):
+    """Der Plan läuft nach dem Neuladen weiter und schaltet den Kessel an seinem Ende ein."""
+    from .conftest import FakeConfigEntry
+
+    coordinator, plan = await gesperrt_mit_plan(hass, entry)
+    await bis_zum_leeren(hass, coordinator, plan, uhr, aschebox_ohne_hass)
+    hass.session.gesetzte_werte.clear()
+
+    ohne = FakeConfigEntry({**entry.data, CONF_KESSEL_SPERRE: False})
+    ohne.options = dict(entry.options)
+    coordinator, _ = await setup_integration(hass, ohne)
+
+    assert coordinator.aschebox.phase == "leeren"
+    assert hass.session.gesetzte_werte == []
+    assert CONF_KESSEL_GESPERRT not in ohne.options
+    assert sperre_meldungen == []
+
+
+async def test_freigeben_schreibt_nichts_wenn_der_kessel_schon_ein_ist(hass, entry):
+    """Nach einem Neustart steht noch "gesperrt" in den Optionen, der Kessel läuft aber längst wieder."""
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    entry.data[CONF_KESSEL_SPERRE] = True
+    entry.data["enable_switches"] = True
+    coordinator, _ = await setup_integration(hass, entry)
+    hass.session.gesetzte_werte.clear()
+
+    await coordinator.kesselsperre.async_freigeben()
+
+    assert hass.session.gesetzte_werte == []
+    assert CONF_KESSEL_GESPERRT not in entry.options

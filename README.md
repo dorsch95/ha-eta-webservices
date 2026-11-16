@@ -545,6 +545,8 @@ Mit Schreibzugriff kreuzt du im selben Schritt im Feld **Sperren, solange er hei
 - Heizt der Fremderzeuger, schaltet Home Assistant den gewählten Kessel über dessen Ein/Aus-Taste aus. Heizt er die Wartezeit „Freigeben nach“ lang nicht mehr (ab Werk 5 Minuten), schaltet es ihn wieder ein. Das läuft über dieselbe Sperre wie [Kessel sperren](#kessel-sperren): Ein Kessel, den du selbst ausgeschaltet hattest, bleibt aus.
 - Geprüft und, wenn nötig, gesperrt oder freigegeben wird außerdem nach dem Start von Home Assistant und sobald die Heizung nach einer Unterbrechung wieder erreichbar ist.
 - **Fällt die Entität oder der Fühler aus**, etwa weil eine Batterie leer ist, wird der Kessel nach der Wartezeit „Freigeben nach“ freigegeben. Von sich aus gesperrt wird in dieser Lage nie.
+- **Nimmt die Heizung das Sperren oder Freigeben nicht an**, versucht Home Assistant es jede Minute wieder. Lässt sich der Kessel fünfmal hintereinander nicht freigeben, erscheint eine Meldung in Home Assistant.
+- **Wählst du den Fremderzeuger oder das Sperren ab, während der Kessel gesperrt ist**, schaltet Home Assistant den Kessel wieder ein und meldet das.
 - Den Schalter `switch.eta_heizung_kessel_sperren` gibt es dann von selbst. Schaltest du den gesperrten Kessel von Hand wieder ein, bleibt er an, bis der Fremderzeuger das nächste Mal anfängt zu heizen - oder bis Home Assistant neu startet oder die Heizung nach einer Unterbrechung wieder erreichbar ist, während er noch heizt.
 
 **In der Karte** [ETA Übersicht](#neue-karte-eta-übersicht) bekommt der Fremderzeuger eine eigene Kachel, im Anlagenbild lädt er wie Brenner und Fremdwärme in den ersten Pufferspeicher. Die ältere fertige Karte zeigt ihn nicht.
@@ -570,6 +572,8 @@ Der Schalter bedient die Ein/Aus-Taste des Kessels:
 
 Was der Schalter sich gemerkt hat, übersteht einen Neustart von Home Assistant. Das Attribut `schaltet_kessel_wieder_ein` sagt, ob das Freigeben den Kessel einschaltet.
 
+Nimmst du das Häkchen weg, während der Kessel gesperrt ist, schaltet Home Assistant ihn wieder ein, wenn es ihn ausgeschaltet hatte, und meldet das. Ist auch der Schreibzugriff weg, bittet eine Meldung darum, den Kessel an der Heizung einzuschalten.
+
 > ⚠️ Der Kessel bleibt aus, bis der Schalter wieder aus ist - auch wenn Home Assistant in der Zeit ausfällt. **Im Notfall schaltest du den Kessel am Display der Heizung wieder ein.** An der Heizung selbst steht er nur als ausgeschaltet da; dass Home Assistant ihn gesperrt hat, zeigt allein der Schalter.
 
 Den Schalter mit einer Entität zu verbinden, übernimmt der Blueprint [Kessel sperren](#-blueprints). Er schreibt nur, wenn der Schalter anders steht als verlangt, und holt das Sperren oder Freigeben nach, wenn die Heizung zwischendurch nicht erreichbar war.
@@ -585,6 +589,8 @@ Findet die Integration zusätzlich die **Entaschentaste** (am Display unter *Son
   3. Ist die Entaschung durch, kommt die Meldung, dass die Aschebox geleert werden kann.
   4. Sobald die Box abgenommen und wieder eingesetzt ist, schaltet es den Kessel wieder ein. Nach 2 Stunden geht der Kessel auch ohne Leeren wieder an, damit das Haus im Winter nicht auskühlt.
 
+**Ist der Kessel gesperrt** ([Kessel sperren](#kessel-sperren) oder [Fremderzeuger](#fremderzeuger)), vertragen sich Plan und Sperre: Am Ende des Plans bleibt ein gesperrter Kessel aus und geht an, sobald die Sperre endet. Endet die Sperre mitten im Plan, schaltet erst der Plan den Kessel wieder ein.
+
 `sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab. Hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst ein, endet der Plan ebenfalls. Er übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen, erscheint eine Meldung, dass der Kessel von Hand einzuschalten ist. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
 
 ### Pelletlager: Vorrat, Fassungsvermögen, Preis und Lieferung
@@ -593,7 +599,7 @@ Nach einer Lieferung ändern sich Vorrat und Preis. Beides stellst du in Home As
 
 **In der Karte** trägt das Pelletlager oben rechts zwei kleine Knöpfe:
 
-- **Plus - Lieferung eintragen:** Datum, Menge in kg und Preis je Tonne. Home Assistant merkt sich die Lieferung, übernimmt den Preis und erhöht den Vorrat an der Heizung um die Menge. Vor dem OK steht, ob der Vorrat dabei auch an der Bedieneinheit der Heizung geändert wird und auf welchen Wert.
+- **Plus - Lieferung eintragen:** Datum, Menge in kg und Preis je Tonne. Home Assistant merkt sich die Lieferung, übernimmt den Preis und erhöht den Vorrat an der Heizung um die Menge. Vor dem OK steht, ob der Vorrat dabei auch an der Bedieneinheit der Heizung geändert wird und auf welchen Wert. Meldet die Heizung einen Vorrat unter null, zählt das Lager als leer.
 - **Stift - Lager einstellen:** Vorrat, Fassungsvermögen und Pelletpreis. Geschrieben wird nur, was du änderst.
 
 **Ohne Karte** gibt es dasselbe als Zahlenfelder und als Aktion:
