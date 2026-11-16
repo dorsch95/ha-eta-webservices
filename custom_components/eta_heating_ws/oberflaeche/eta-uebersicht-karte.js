@@ -688,11 +688,36 @@ const STIL = `
     .eta-szene { padding: 14px; }
   }
   @container (max-width: 400px) {
-    .eta-kompakt .eta-buehne { gap: 10px 6px; padding: 12px 6px; }
+    .eta-kompakt .eta-buehne { flex-wrap: nowrap; gap: 10px 6px; padding: 12px 6px; }
     .eta-kompakt .eta-buehne .eta-gruppe { gap: 8px; }
     .eta-kompakt .eta-buehne .eta-zahl { font-size: 26px; }
-    .eta-kompakt .eta-buehne .eta-label .eta-zeit { width: 22px; height: 22px; margin: -3px 0 -2px 4px; position: relative; }
+    .eta-kompakt .eta-buehne .eta-neben { white-space: normal; }
+    .eta-kompakt .eta-buehne .eta-haupt { position: relative; }
+    .eta-kompakt .eta-buehne .eta-label .eta-zeit { position: absolute; right: 0; bottom: -3px; width: 22px; height: 22px; margin: 0; }
     .eta-kompakt .eta-buehne .eta-label .eta-zeit::after { content: ""; position: absolute; inset: -9px; }
+    .eta-kompakt .eta-buehne .eta-haupt:has(.eta-zeit) > :not(.eta-label) { padding-right: 26px; }
+    .eta-reihe { flex-wrap: wrap; gap: 2px 10px; }
+    .eta-reihe-text { display: contents; }
+    .eta-reihe-text b { order: 1; flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+    .eta-reihe-wert { order: 2; }
+    .eta-reihe > button, .eta-reihe > .eta-pfeil { order: 3; }
+    .eta-reihe-text > span, .eta-reihe-text > .eta-balken { order: 4; flex: 0 0 calc(100% - 46px); margin-left: 46px; }
+    .eta-reihe-text > b + span, .eta-reihe-text > b + .eta-balken { margin-top: -4px; }
+  }
+  @container (max-width: 340px) {
+    .eta-kompakt .eta-buehne .eta-figur { width: calc(var(--b) * .86); --tankhoehe: 68px !important; }
+    .eta-kompakt .eta-buehne .eta-gruppe { gap: 6px; }
+    .eta-kompakt .eta-buehne .eta-zahl { font-size: 24px; }
+    .eta-kompakt .eta-buehne .eta-label, .eta-kompakt .eta-buehne .eta-neben { font-size: 11.5px; }
+    .eta-reihe { column-gap: 6px; }
+    .eta-reihe .eta-symbol { width: 30px; height: 30px; border-radius: 9px; }
+    .eta-reihe-text b { font-size: 13.5px; }
+    .eta-reihe-wert { font-size: 15px; }
+    .eta-reihe > .eta-zeit { width: 28px; height: 28px; }
+    .eta-reihe-text > span, .eta-reihe-text > .eta-balken { flex-basis: calc(100% - 36px); margin-left: 36px; }
+  }
+  @container (max-width: 280px) {
+    .eta-kompakt .eta-buehne { flex-wrap: wrap; }
   }
 `;
 
