@@ -687,6 +687,13 @@ const STIL = `
     .eta-zahl { font-size: 30px; }
     .eta-szene { padding: 14px; }
   }
+  @container (max-width: 400px) {
+    .eta-kompakt .eta-buehne { gap: 10px 6px; padding: 12px 6px; }
+    .eta-kompakt .eta-buehne .eta-gruppe { gap: 8px; }
+    .eta-kompakt .eta-buehne .eta-zahl { font-size: 26px; }
+    .eta-kompakt .eta-buehne .eta-label .eta-zeit { width: 22px; height: 22px; margin: -3px 0 -2px 4px; position: relative; }
+    .eta-kompakt .eta-buehne .eta-label .eta-zeit::after { content: ""; position: absolute; inset: -9px; }
+  }
 `;
 
 const sym = (d, klasse = "") => `<svg class="eta-icon ${klasse}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
