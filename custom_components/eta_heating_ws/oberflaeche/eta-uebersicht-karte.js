@@ -407,8 +407,8 @@ const STIL = `
   .eta-zeilen dt { color: var(--text-2); }
   .eta-zeilen dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
   .eta-zeilen dd .eta-icon { width: 16px; height: 16px; }
-  .eta-dialog-inhalt > .eta-formular { display: grid; gap: 14px; padding: 8px 16px 16px; }
-  .eta-formular label { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+  .eta-dialog-inhalt > .eta-formular { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 8px 16px 16px; }
+  .eta-formular label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; font-size: 13px; color: var(--text-2); }
   .eta-eingabe { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 12px; background: var(--flaeche); }
   .eta-eingabe:focus-within { outline: 2px solid var(--akzent); }
   .eta-eingabe input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; color-scheme: light; }

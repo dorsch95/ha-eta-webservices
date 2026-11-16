@@ -105,8 +105,10 @@ class Fremderzeuger:
         self._gescheitert = 0
         """Wie oft dasselbe - Sperren oder Freigeben - zuletzt hintereinander gescheitert ist."""
         self._gescheitert_beim_sperren = False
-        self._neuer_versuch = False
-        """Ob der laufende Zeitgeber nur auf den nächsten Versuch wartet, siehe NEUER_VERSUCH_NACH."""
+        self._meldung_offen = True
+        """Ob noch eine Meldung "ließ sich nicht freigeben" stehen kann - nach dem Start ist das offen."""
+        self._beendet = False
+        """Nach beenden() wird weder gewartet noch geschaltet - auch nicht von einem Abgleich, der gerade noch lief."""
         self._beobachter: list = []
         self.eingeschaltet = True
         """Der eigene Ein/Aus-Schalter - zählt nur ohne Entität, siehe const.FREMDERZEUGER_SCHALTER."""
@@ -196,6 +198,7 @@ class Fremderzeuger:
 
     @callback
     def beenden(self) -> None:
+        self._beendet = True
         self._zeitgeber_loeschen()
         for abmelden in self._abmelden:
             abmelden()
@@ -203,7 +206,6 @@ class Fremderzeuger:
 
     @callback
     def _zeitgeber_loeschen(self) -> None:
-        self._neuer_versuch = False
         if self._zeitgeber is not None:
             self._zeitgeber()
             self._zeitgeber = None
@@ -233,6 +235,8 @@ class Fremderzeuger:
     def _warten(self, wartezeit: timedelta) -> None:
         """Bestellt den Abgleich nach dieser Wartezeit; eine laufende wird verworfen."""
         self._zeitgeber_loeschen()
+        if self._beendet:
+            return
         self._zeitgeber = async_call_later(self.hass, wartezeit, self._zeit_um)
 
     @callback
@@ -277,7 +281,6 @@ class Fremderzeuger:
 
     async def _zeit_um(self, _jetzt) -> None:
         self._zeitgeber = None
-        self._neuer_versuch = False
         if self._heizt is None:
             self._unbekannt_zu_lange = True
         await self.async_abgleichen()
@@ -287,14 +290,13 @@ class Fremderzeuger:
         """Ist die Anlage nach einer Unterbrechung wieder erreichbar, wird abgeglichen.
 
         Sonst bliebe der Kessel gesperrt, wenn der Fremderzeuger ausging,
-        während die Anlage nicht erreichbar war. Eine laufende Wartezeit
-        bleibt bestehen; nur ein anstehender neuer Versuch wird vorgezogen.
+        während die Anlage nicht erreichbar war. Läuft schon eine Wartezeit
+        oder steht ein neuer Versuch an, gleicht deren Ablauf ab.
         """
         erreichbar = self.coordinator.last_update_success
         zurueck = erreichbar and not self._erreichbar
         self._erreichbar = erreichbar
-        if zurueck and (self._zeitgeber is None or self._neuer_versuch):
-            self._zeitgeber_loeschen()
+        if zurueck and self._zeitgeber is None and not self._beendet:
             self.hass.async_create_task(self.async_abgleichen())
 
     async def async_abgleichen(self) -> None:
@@ -311,7 +313,7 @@ class Fremderzeuger:
         heizt = self._heizt
         if heizt is None and self._unbekannt_zu_lange:
             heizt = False
-        if sperre is None or KESSEL not in self.sperrt or heizt is None:
+        if self._beendet or sperre is None or KESSEL not in self.sperrt or heizt is None:
             return
         if heizt == sperre.gesperrt:
             self._gelungen()
@@ -331,7 +333,8 @@ class Fremderzeuger:
                 err,
             )
             self._gescheitert += 1
-            if not heizt and self._gescheitert == MELDEN_NACH:
+            if not heizt and self._gescheitert == MELDEN_NACH and not self._beendet:
+                self._meldung_offen = True
                 persistent_notification.async_create(
                     self.hass,
                     "Der Fremderzeuger heizt nicht mehr, aber der Kessel ließ sich nicht "
@@ -342,7 +345,6 @@ class Fremderzeuger:
                 )
             if self._zeitgeber is None:
                 self._warten(NEUER_VERSUCH_NACH)
-                self._neuer_versuch = True
             return
         self._gelungen()
         await self.coordinator.async_request_refresh()
@@ -353,7 +355,12 @@ class Fremderzeuger:
 
     @callback
     def _gelungen(self) -> None:
-        """Die Sperre steht, wie der Fremderzeuger es verlangt - eine Meldung dazu erledigt sich."""
-        if self._gescheitert >= MELDEN_NACH and not self._gescheitert_beim_sperren:
+        """Die Sperre steht, wie der Fremderzeuger es verlangt - eine Meldung dazu erledigt sich.
+
+        Auch eine, die vor einem Neuladen entstanden ist: Dieses Objekt
+        weiß von ihr nichts und räumt deshalb beim ersten Mal auf Verdacht auf.
+        """
+        if self._meldung_offen:
             persistent_notification.async_dismiss(self.hass, self._meldung_id)
+            self._meldung_offen = False
         self._gescheitert = 0

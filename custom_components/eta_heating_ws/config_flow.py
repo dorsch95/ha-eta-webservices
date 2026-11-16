@@ -260,14 +260,16 @@ async def _programm_der_anlage(
 
 
 def _geleert(eingabe: dict[str, Any], bisher: dict[str, Any], felder) -> dict[str, None]:
-    """Freiwillige Felder, die bisher gefüllt waren und jetzt leer sind - als None.
+    """Freiwillige Felder, die es bisher gab und die jetzt leer sind - als None.
 
     Konfigurieren speichert in den Optionen. Was dort fehlt, gilt weiter
     aus der Ersteinrichtung; erst ein ausdrückliches None überdeckt es.
     Ohne das ließe sich etwa die Entität eines Fremderzeugers, die beim
-    Einrichten gewählt wurde, nie wieder entfernen.
+    Einrichten gewählt wurde, nie wieder entfernen. Das None muss bei
+    jedem weiteren Speichern wieder mit - auch ein schon geleertes Feld
+    zählt deshalb als "gab es bisher".
     """
-    return {feld: None for feld in felder if not eingabe.get(feld) and bisher.get(feld)}
+    return {feld: None for feld in felder if not eingabe.get(feld) and feld in bisher}
 
 
 def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[str, Any]:

@@ -366,7 +366,8 @@ class AscheboxPlan:
             return
         if not self._daten.get("entascht") and jetzt - gedrueckt < ENTASCHEN_HOECHSTENS:
             return
-        await self._taste_zuruecksetzen()
+        if not await self._taste_zuruecksetzen():
+            self._daten["taste"] = {"gedrueckt_um": self._daten.get("gedrueckt_um"), "entascht": True}
         abgeschaltet = _zeit(self._daten.get("abgeschaltet_um"))
         if abgeschaltet is not None and self._daten.get("entascht"):
             self._gelernt = (jetzt - abgeschaltet).total_seconds()
@@ -453,21 +454,40 @@ class AscheboxPlan:
         Wie im Plan selbst erst, wenn die Entaschung durch ist: Der Kessel
         hat sie gezeigt und zeigt sie nicht mehr, oder es sind
         ENTASCHEN_HOECHSTENS vergangen. Mitten in der Entaschung wird die
-        Taste nie zurückgestellt. Nimmt die Anlage es nicht an, folgt bei
-        der nächsten Abfrage ein neuer Versuch, bis TASTE_AUFGEBEN_NACH.
+        Taste nie zurückgestellt - als Entaschung zählt jeder Zustand, der
+        davon spricht, und solange der Kessel keinen Zustand meldet, wird
+        gewartet. Danach muss er ANLAUFZEIT lang ohne Entaschung bleiben.
+        Nimmt die Anlage das Zurückstellen nicht an, folgt bei der nächsten
+        Abfrage ein neuer Versuch, bis TASTE_AUFGEBEN_NACH.
         """
         offen = self._daten["taste"]
-        if zustand in ENTASCHT_GERADE:
-            if not offen.get("entascht"):
+        gedrueckt = _zeit(offen.get("gedrueckt_um"))
+        if gedrueckt is None:
+            gedrueckt = jetzt
+            offen["gedrueckt_um"] = _text(jetzt)
+        zu_alt = jetzt - gedrueckt >= TASTE_AUFGEBEN_NACH
+        if zustand is None or zustand in ENTASCHT_GERADE or "entasch" in zustand:
+            vorher = dict(offen)
+            if zustand is not None:
                 offen["entascht"] = True
+            offen.pop("ruhig_seit", None)
+            if zu_alt:
+                self._daten.pop("taste", None)
+            if zu_alt or offen != vorher:
                 await self._sichern()
             return
-        gedrueckt = _zeit(offen.get("gedrueckt_um")) or jetzt
         if jetzt - gedrueckt < ANLAUFZEIT:
             return
         if not offen.get("entascht") and jetzt - gedrueckt < ENTASCHEN_HOECHSTENS:
             return
-        if await self._taste_zuruecksetzen() or jetzt - gedrueckt >= TASTE_AUFGEBEN_NACH:
+        ruhig_seit = _zeit(offen.get("ruhig_seit"))
+        if ruhig_seit is None:
+            offen["ruhig_seit"] = _text(jetzt)
+            await self._sichern()
+            return
+        if jetzt - ruhig_seit < ANLAUFZEIT:
+            return
+        if await self._taste_zuruecksetzen() or zu_alt:
             self._daten.pop("taste", None)
             await self._sichern()
 
@@ -486,12 +506,23 @@ class AscheboxPlan:
         return wert.text.strip() == definition["ein_text"]
 
     async def _kessel(self, ein: bool) -> None:
-        """Schaltet den Kessel und sagt es der Kesselsperre, die dieselbe Taste bedient."""
+        """Schaltet den Kessel und sagt es der Kesselsperre, die dieselbe Taste bedient.
+
+        Die Sperre erfährt es schon vor dem Schreiben: Sperrt sie, während
+        der Befehl noch unterwegs ist, rechnet sie mit dem Kessel, wie er
+        gleich steht - und schaltet ihn nach dem Einschalten des Plans
+        selbst wieder aus, statt ihn für ausgeschaltet zu halten.
+        """
         definition = self.coordinator.switch_defs["kessel_schalter"]
-        await self._senden(definition["uri"], definition["ein_roh" if ein else "aus_roh"])
         sperre = self.coordinator.kesselsperre
         if sperre is not None:
             sperre.befohlen(ein)
+        try:
+            await self._senden(definition["uri"], definition["ein_roh" if ein else "aus_roh"])
+        except HomeAssistantError:
+            if sperre is not None:
+                sperre.befehl_verworfen()
+            raise
         await self.coordinator.async_request_refresh()
 
     async def _wieder_einschalten(self) -> bool:

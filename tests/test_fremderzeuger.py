@@ -329,11 +329,96 @@ async def test_nach_einer_unterbrechung_wird_das_freigeben_nachgeholt(
     aufgaben: list = []
     hass.async_create_task = lambda ziel, *a, **k: aufgaben.append(ziel)
     ofen._anlage_gemeldet()
-    [nachholen] = aufgaben
-    await nachholen
+    assert aufgaben == [], "der neue Versuch steht schon an"
+    await zeit_um(fremderzeuger_ohne_hass)
 
     assert hass.session.gesetzte_werte == [(TASTE, EIN)]
     assert coordinator.kesselsperre.gesperrt is False
+
+
+async def test_ohne_anstehenden_versuch_gleicht_die_rueckkehr_der_anlage_ab(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Der Ofen heizt schon beim Start, die Anlage ist da noch nicht erreichbar."""
+    coordinator, ofen = await mit_ofen(hass, entry, zustand="on")
+    coordinator.last_update_success = False
+    ofen._anlage_gemeldet()
+    assert coordinator.kesselsperre.gesperrt is False
+
+    coordinator.last_update_success = True
+    aufgaben: list = []
+    hass.async_create_task = lambda ziel, *a, **k: aufgaben.append(ziel)
+    ofen._anlage_gemeldet()
+    [nachholen] = aufgaben
+    await nachholen
+
+    assert hass.session.gesetzte_werte == [(TASTE, AUS)]
+    assert coordinator.kesselsperre.gesperrt is True
+
+
+async def test_faellt_die_entitaet_waehrend_der_versuche_aus_wird_weiter_freigegeben(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Freigeben scheitert, die Entität fällt aus, die Anlage kommt zurück - die Sperre darf nicht hängen bleiben."""
+    coordinator, ofen = await mit_ofen(hass, entry)
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    await zeit_um(fremderzeuger_ohne_hass)
+    await coordinator.async_refresh()
+    hass.session.gesetzte_werte.clear()
+
+    coordinator.last_update_success = False
+    ofen._anlage_gemeldet()
+    hass.session.schreiben_erlaubt = False
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    await zeit_um(fremderzeuger_ohne_hass)
+    versuch = fremderzeuger_ohne_hass.zeitgeber[-1]
+    assert versuch.wartezeit == timedelta(minutes=1)
+
+    wechsel(hass, fremderzeuger_ohne_hass, "unavailable", alt="off")
+    assert fremderzeuger_ohne_hass.zeitgeber[-1] is versuch and not versuch.abbestellt
+
+    hass.session.schreiben_erlaubt = True
+    coordinator.last_update_success = True
+    ofen._anlage_gemeldet()
+    assert not versuch.abbestellt, "der Versuch bleibt bestellt"
+    await zeit_um(fremderzeuger_ohne_hass)
+
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+    assert coordinator.kesselsperre.gesperrt is False
+
+
+async def test_nach_dem_beenden_wird_weder_gewartet_noch_geschaltet(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Läuft beim Entladen noch ein Abgleich und scheitert, darf das alte Objekt keinen neuen Versuch bestellen."""
+    import asyncio
+
+    from eta_heating_ws.api import ETAApiError
+
+    coordinator, ofen = await mit_ofen(hass, entry)
+
+    async def langsam_scheitern(uri, roh):
+        await asyncio.sleep(0.02)
+        raise ETAApiError("Zeitüberschreitung")
+
+    coordinator.client.async_set_value = langsam_scheitern
+    wechsel(hass, fremderzeuger_ohne_hass, "on", alt="off")
+    bestellung = fremderzeuger_ohne_hass.zeitgeber[-1]
+    lauf = asyncio.ensure_future(bestellung.rueckruf(None))
+    await asyncio.sleep(0.005)
+    ofen.beenden()
+    await lauf
+
+    assert ofen._zeitgeber is None
+    assert fremderzeuger_ohne_hass.zeitgeber[-1] is bestellung, "kein neuer Zeitgeber"
+    geschrieben: list = []
+
+    async def merken(uri, roh):
+        geschrieben.append((uri, roh))
+
+    coordinator.client.async_set_value = merken
+    await ofen.async_abgleichen()
+    assert geschrieben == []
 
 
 async def test_war_der_kessel_von_hand_aus_bleibt_er_es(hass, entry, fremderzeuger_ohne_hass):
@@ -979,6 +1064,47 @@ async def test_ersteinrichtung_speichert_kein_leeres_feld(monkeypatch):
     assert modul._geleert({}, {CONF_FREMDERZEUGER_ENTITAET: OFEN}, [CONF_FREMDERZEUGER_ENTITAET]) == {
         CONF_FREMDERZEUGER_ENTITAET: None
     }
+    assert modul._geleert({}, {CONF_FREMDERZEUGER_ENTITAET: None}, [CONF_FREMDERZEUGER_ENTITAET]) == {
+        CONF_FREMDERZEUGER_ENTITAET: None
+    }, "ein schon geleertes Feld muss bei jedem Speichern wieder mit"
+
+
+async def test_geleerte_entitaet_bleibt_auch_nach_dem_zweiten_speichern_geleert(monkeypatch):
+    """Beim zweiten Speichern steht schon None in den Optionen - fiele es weg, gälte wieder die Ersteinrichtung."""
+    eingabe = {**optionen(components=["fremderzeuger"]), "enable_switches": True}
+    ersteinrichtung = {
+        **eingabe,
+        CONF_FREMDERZEUGER_NAME: "Ofen",
+        CONF_FREMDERZEUGER_ENTITAET: OFEN,
+        CONF_FREMDERZEUGER_FUEHLER: FUEHLER,
+        CONF_FREMDERZEUGER_SPERRT: ["kessel"],
+    }
+    angaben = {
+        CONF_FREMDERZEUGER_NAME: "Ofen",
+        CONF_FREMDERZEUGER_FUEHLER: FUEHLER,
+        CONF_FREMDERZEUGER_SPERRT: ["kessel"],
+        CONF_FREMDERZEUGER_SPERREN_NACH: 1,
+        CONF_FREMDERZEUGER_FREIGEBEN_NACH: 5,
+    }
+
+    async def speichern(bisher):
+        flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe)
+        for _ in range(8):
+            if ergebnis["type"] == "create_entry":
+                break
+            if ergebnis["step_id"] == "fremderzeuger":
+                ergebnis = await flow.async_step_fremderzeuger(dict(angaben))
+                continue
+            schema = ergebnis.get("data_schema")
+            vorgaben = {str(feld): feld.default() for feld in schema.schema} if schema else {}
+            ergebnis = await getattr(flow, f"async_step_{ergebnis['step_id']}")(vorgaben)
+        return ergebnis["data"]
+
+    erste = await speichern(dict(ersteinrichtung))
+    assert erste[CONF_FREMDERZEUGER_ENTITAET] is None
+    zweite = await speichern({**ersteinrichtung, **erste})
+
+    assert {**ersteinrichtung, **zweite}[CONF_FREMDERZEUGER_ENTITAET] is None
 
 
 async def test_laesst_sich_der_kessel_mehrmals_nicht_freigeben_erscheint_eine_meldung(
@@ -1003,10 +1129,24 @@ async def test_laesst_sich_der_kessel_mehrmals_nicht_freigeben_erscheint_eine_me
     await zeit_um(fremderzeuger_ohne_hass)
     assert len(fremderzeuger_ohne_hass.meldungen) == 1, "nur einmal"
 
+    fremderzeuger_ohne_hass.erledigt.clear()
     hass.session.schreiben_erlaubt = True
     await zeit_um(fremderzeuger_ohne_hass)
     assert coordinator.kesselsperre.gesperrt is False
     assert len(fremderzeuger_ohne_hass.erledigt) == 1, "gelungen - die Meldung verschwindet"
+
+
+async def test_eine_meldung_von_vor_dem_neuladen_verschwindet_beim_ersten_gelingen(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Das neue Objekt weiß nichts von ihr - sie bliebe sonst stehen, obwohl der Kessel längst frei ist."""
+    coordinator, ofen = await mit_ofen(hass, entry)
+
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+
+    assert len(fremderzeuger_ohne_hass.erledigt) == 1
+    await ofen.async_abgleichen()
+    assert len(fremderzeuger_ohne_hass.erledigt) == 1, "nur beim ersten Mal"
 
 
 async def test_diagnose_nennt_sperre_und_fremderzeuger_ohne_namen_der_entitaeten(

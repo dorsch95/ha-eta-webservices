@@ -248,6 +248,11 @@ class Kesselsperre:
     Freigeben nicht ein - das tut der Plan an seinem Ende. Endet der Plan,
     während der Kessel gesperrt ist, bleibt der Kessel aus, und das
     Freigeben schaltet ihn ein (einschalten_uebernehmen).
+
+    Hat die Sperre den Kessel ausgeschaltet, gilt dieser Befehl nach einem
+    Neuladen noch einmal die volle Frist (SPERRE_VERWERFEN_FRUEHESTENS).
+    Sonst gälte bei einer trägen Anlage die Sperre gleich als von Hand
+    aufgehoben - und der Kessel, der danach ausgeht, bliebe aus.
     """
 
     def __init__(self, coordinator: ETADataUpdateCoordinator, taste: dict) -> None:
@@ -259,6 +264,8 @@ class Kesselsperre:
         self._erwartet: bool | None = None
         self._erwartet_seit = 0.0
         self._widerspruch = 0
+        if coordinator.kessel_gesperrt == KESSEL_GESPERRT_AUSGESCHALTET:
+            self.befohlen(False)
         self._beobachter: list = []
         self._schloss = asyncio.Lock()
         """Sperren und Freigeben laufen nacheinander - so gilt der letzte Befehl."""
@@ -274,6 +281,11 @@ class Kesselsperre:
         self._erwartet = ein
         self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
+
+    @callback
+    def befehl_verworfen(self) -> None:
+        """Die Anlage hat einen angekündigten Schaltbefehl nicht angenommen - es zählt wieder, was sie meldet."""
+        self._erwartet = None
 
     @callback
     def einschalten_uebernehmen(self) -> None:

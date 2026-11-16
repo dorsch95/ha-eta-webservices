@@ -290,6 +290,11 @@ const STIL = `
     .editor { margin-left: 0; }
     .meldung { padding-left: 0; }
   }
+  @container (max-width: 340px) {
+    .felder { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 1fr); gap: 6px; }
+    .felder.zwei { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    select { padding: 4px 2px 4px 4px; }
+  }
 `;
 
 /**
