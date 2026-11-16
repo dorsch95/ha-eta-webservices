@@ -18,6 +18,12 @@ bis dahin durch sind:
 Die Dauer vom Abschalten bis zum Ende der Entaschung wird gemessen und
 beim nächsten Mal genommen, mit ASCHEBOX_AUFSCHLAG obendrauf. Der Plan
 übersteht einen Neustart von Home Assistant.
+
+Schaltet jemand den Kessel wieder ein, endet der Plan - in jedem Schritt.
+Endet er im Schritt "entaschen" vorzeitig, durch Abbrechen oder weil der
+Kessel eingeschaltet wurde, steht die Entaschentaste noch auf "Ein". Sie
+wird dann wie sonst erst zurückgestellt, wenn die Entaschung durch ist,
+siehe AscheboxPlan._taste_nachholen.
 """
 
 from __future__ import annotations
@@ -86,6 +92,9 @@ BLEIBT_GESPERRT = (
     "Der Kessel bleibt aus, weil er gesperrt ist - er geht wieder an, sobald die Sperre endet."
 )
 """So endet eine Meldung, wenn der Plan den Kessel der Kesselsperre überlässt."""
+
+TASTE_AUFGEBEN_NACH = timedelta(hours=2)
+"""So lange nach dem Drücken wird versucht, die Entaschentaste nachträglich zurückzustellen."""
 
 VERWAIST_HOECHSTENS = timedelta(days=1)
 """So lange wartet ein Plan, der nicht weiterlaufen kann, auf einen Start, bei dem es wieder geht."""
@@ -203,7 +212,7 @@ class AscheboxPlan:
             ziel = self.ziel
             if ziel is None or ziel + VERWERFEN_NACH < dt_util.utcnow():
                 _LOGGER.info("ETA: Aschebox-Plan für %s ist abgelaufen, verworfen", ziel)
-                self._daten = {"phase": "aus"}
+                self._daten = self._aus()
                 await self._sichern()
 
     def starten(self) -> None:
@@ -233,6 +242,7 @@ class AscheboxPlan:
         if ziel <= dt_util.utcnow():
             raise HomeAssistantError("Die Zeit zum Leeren muss in der Zukunft liegen")
         self._daten = {
+            **self._aus(),
             "phase": "geplant",
             "ziel": _text(ziel),
             "abschalten_um": _text(ziel - self.dauer),
@@ -253,7 +263,7 @@ class AscheboxPlan:
             phase = self.phase
             eingeschaltet = phase in LAEUFT and await self._wieder_einschalten()
             self._zeitgeber_loeschen()
-            self._daten = {"phase": "aus"}
+            self._daten = self._aus()
             await self._sichern()
             if eingeschaltet:
                 self._melden("Aschebox-Plan abgebrochen, der Kessel ist wieder eingeschaltet.")
@@ -291,7 +301,7 @@ class AscheboxPlan:
             try:
                 await self._kessel(ein=False)
             except HomeAssistantError as err:
-                self._daten = {"phase": "aus"}
+                self._daten = self._aus()
                 await self._sichern()
                 self._melden(f"Aschebox-Plan abgebrochen: Kessel ließ sich nicht ausschalten ({err}).")
                 return
@@ -304,7 +314,7 @@ class AscheboxPlan:
     @callback
     def _abgefragt(self) -> None:
         """Ein Schritt je voller Abfrage - die schnelle Gruppe treibt den Plan nicht."""
-        if self.phase in LAEUFT and self.coordinator.volle_abfrage:
+        if (self.phase in LAEUFT or "taste" in self._daten) and self.coordinator.volle_abfrage:
             self.hass.async_create_task(self.weiter())
 
     async def weiter(self) -> None:
@@ -314,6 +324,8 @@ class AscheboxPlan:
         async with self._sperre:
             zustand = self._kessel_zustand()
             jetzt = dt_util.utcnow()
+            if "taste" in self._daten:
+                await self._taste_nachholen(zustand, jetzt)
             if self.phase == "glutabbrand":
                 await self._nach_glutabbrand(zustand, jetzt)
             elif self.phase == "entaschen":
@@ -335,11 +347,15 @@ class AscheboxPlan:
         except HomeAssistantError as err:
             _LOGGER.warning("ETA: Entaschentaste nicht gedrückt, neuer Versuch: %s", err)
             return
+        self._daten.pop("taste", None)
         self._daten.update(phase="entaschen", gedrueckt_um=_text(jetzt), entascht=False)
         await self._sichern()
         self._melden("Glutabbrand fertig, der Kessel entascht.")
 
     async def _nach_entaschen(self, zustand: str | None, jetzt: datetime) -> None:
+        if self._von_hand_eingeschaltet():
+            await self._beenden("Aschebox-Plan beendet: Der Kessel wurde wieder eingeschaltet.")
+            return
         if zustand in ENTASCHT_GERADE:
             if not self._daten.get("entascht"):
                 self._daten["entascht"] = True
@@ -409,9 +425,51 @@ class AscheboxPlan:
             await self._beenden(f"Aschebox geleert. {BLEIBT_GESPERRT}")
 
     async def _beenden(self, nachricht: str) -> None:
-        self._daten = {"phase": "aus"}
+        self._daten = self._aus()
         await self._sichern()
         self._melden(nachricht)
+
+    def _aus(self) -> dict:
+        """Der Plan ohne Vorhaben - samt dem Vermerk, dass die Entaschentaste noch zurückzustellen ist.
+
+        Der Vermerk entsteht, wenn der Plan im Schritt "entaschen" endet,
+        und bleibt stehen, bis _taste_nachholen ihn erledigt hat.
+        """
+        if self.phase == "entaschen":
+            return {
+                "phase": "aus",
+                "taste": {
+                    "gedrueckt_um": self._daten.get("gedrueckt_um"),
+                    "entascht": bool(self._daten.get("entascht")),
+                },
+            }
+        if "taste" in self._daten:
+            return {"phase": "aus", "taste": self._daten["taste"]}
+        return {"phase": "aus"}
+
+    async def _taste_nachholen(self, zustand: str | None, jetzt: datetime) -> None:
+        """Stellt die Entaschentaste zurück, nachdem der Plan im Schritt "entaschen" geendet hat.
+
+        Wie im Plan selbst erst, wenn die Entaschung durch ist: Der Kessel
+        hat sie gezeigt und zeigt sie nicht mehr, oder es sind
+        ENTASCHEN_HOECHSTENS vergangen. Mitten in der Entaschung wird die
+        Taste nie zurückgestellt. Nimmt die Anlage es nicht an, folgt bei
+        der nächsten Abfrage ein neuer Versuch, bis TASTE_AUFGEBEN_NACH.
+        """
+        offen = self._daten["taste"]
+        if zustand in ENTASCHT_GERADE:
+            if not offen.get("entascht"):
+                offen["entascht"] = True
+                await self._sichern()
+            return
+        gedrueckt = _zeit(offen.get("gedrueckt_um")) or jetzt
+        if jetzt - gedrueckt < ANLAUFZEIT:
+            return
+        if not offen.get("entascht") and jetzt - gedrueckt < ENTASCHEN_HOECHSTENS:
+            return
+        if await self._taste_zuruecksetzen() or jetzt - gedrueckt >= TASTE_AUFGEBEN_NACH:
+            self._daten.pop("taste", None)
+            await self._sichern()
 
     def _kessel_zustand(self) -> str | None:
         wert = (self.coordinator.data or {}).get("kessel_zustand")
@@ -453,16 +511,22 @@ class AscheboxPlan:
     async def _taste(self, roh: str) -> None:
         await self._schreiben(self.coordinator.entaschen_def["uri"], roh)
 
-    async def _taste_zuruecksetzen(self) -> None:
-        """Steht die Entaschentaste noch auf "Ein", zurück auf "Aus"."""
+    async def _taste_zuruecksetzen(self) -> bool:
+        """Steht die Entaschentaste noch auf "Ein", zurück auf "Aus".
+
+        Gibt zurück, ob sie danach auf "Aus" steht - also auch dann, wenn
+        nichts zu schreiben war.
+        """
         definition = self.coordinator.entaschen_def
         wert = (self.coordinator.data or {}).get("kessel_entaschen")
         if wert is None or (wert.text or "").strip() != definition["ein_text"]:
-            return
+            return True
         try:
             await self._taste(definition["aus_roh"])
         except HomeAssistantError as err:
             _LOGGER.warning("ETA: Entaschentaste nicht zurückgestellt: %s", err)
+            return False
+        return True
 
     async def _senden(self, uri: str, roh: str) -> None:
         try:

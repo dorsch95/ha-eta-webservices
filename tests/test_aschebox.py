@@ -479,3 +479,173 @@ async def test_eine_ausgebliebene_antwort_kostet_keinen_schalter(hass, entry, mo
     assert "kessel_schalter" in coordinator.switch_defs
     assert coordinator.entaschen_def is not None
     assert coordinator.aschebox is not None
+
+
+async def bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass):
+    """Führt den Plan bis kurz nach dem Drücken der Entaschentaste."""
+    coordinator, plan = await aufbauen(hass, entry)
+    await plan.planen(uhr.jetzt + timedelta(minutes=10))
+    await ausfuehren(hass, aschebox_ohne_hass)
+    uhr.weiter(minutes=5)
+    await abfrage(coordinator, plan, "Bereit")
+    assert plan.phase == "entaschen"
+    assert hass.session.gesetzte_werte[-1] == (TASTE, "1803")
+    hass.session.gesetzte_werte.clear()
+    return coordinator, plan
+
+
+async def test_abbrechen_beim_entaschen_stellt_die_taste_erst_nach_der_entaschung_zurueck(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Sonst bliebe die Entaschentaste auf "Ein" stehen - mitten in der Entaschung wird sie aber nicht angefasst."""
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+
+    await plan.abbrechen()
+    assert plan.phase == "aus"
+    assert hass.session.gesetzte_werte == [(KESSEL, "950")], "die Taste bleibt vorerst, wie sie ist"
+
+    uhr.weiter(minutes=1)
+    await abfrage(coordinator, plan, "Entaschen")
+    assert (TASTE, "1802") not in hass.session.gesetzte_werte, "die Entaschung läuft noch"
+
+    uhr.weiter(minutes=3)
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte[-1] == (TASTE, "1802")
+
+    hass.session.gesetzte_werte.clear()
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte == [], "nur einmal"
+
+
+async def test_abbrechen_gleich_nach_dem_druecken_wartet_wie_der_plan(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Zeigt sich die Entaschung nicht, gilt sie nach 20 Minuten als durch."""
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    await plan.abbrechen()
+    hass.session.gesetzte_werte.clear()
+
+    uhr.weiter(minutes=10)
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte == []
+
+    uhr.weiter(minutes=11)
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte == [(TASTE, "1802")]
+
+
+async def test_von_hand_eingeschaltet_beendet_den_plan_auch_beim_entaschen(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Sonst hieße es später "Aschebox kann jetzt geleert werden", obwohl der Kessel läuft."""
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    hass.session.geschrieben[KESSEL] = "950"
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+
+    assert plan.phase == "aus"
+    assert "wieder eingeschaltet" in aschebox_ohne_hass.meldungen[-1]
+    assert hass.session.gesetzte_werte == [], "nichts geschaltet"
+
+    uhr.weiter(minutes=3)
+    await abfrage(coordinator, plan, "Entaschen")
+    await abfrage(coordinator, plan, "Zünden")
+    assert hass.session.gesetzte_werte == [(TASTE, "1802")]
+
+
+async def test_stellt_die_anlage_die_taste_selbst_zurueck_wird_nichts_geschrieben(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+    await plan.abbrechen()
+    hass.session.gesetzte_werte.clear()
+    hass.session.geschrieben[TASTE] = "1802"
+
+    uhr.weiter(minutes=3)
+    await abfrage(coordinator, plan, "Heizen")
+
+    assert hass.session.gesetzte_werte == []
+    hass.session.geschrieben[TASTE] = "1803"
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte == [], "erledigt ist erledigt"
+
+
+async def test_das_zurueckstellen_uebersteht_einen_neustart(hass, entry, uhr, aschebox_ohne_hass):
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+    await plan.abbrechen()
+
+    coordinator, plan = await aufbauen(hass, entry)
+    hass.session.gesetzte_werte.clear()
+    assert plan.phase == "aus"
+    uhr.weiter(minutes=3)
+    await abfrage(coordinator, plan, "Heizen")
+
+    assert hass.session.gesetzte_werte == [(TASTE, "1802")]
+
+
+async def test_nimmt_die_anlage_das_zurueckstellen_nicht_an_folgt_ein_neuer_versuch(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+    await plan.abbrechen()
+    hass.session.gesetzte_werte.clear()
+
+    hass.session.schreiben_erlaubt = False
+    uhr.weiter(minutes=3)
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte == []
+
+    hass.session.schreiben_erlaubt = True
+    await abfrage(coordinator, plan, "Heizen")
+    assert hass.session.gesetzte_werte == [(TASTE, "1802")]
+
+
+async def test_ein_neuer_plan_uebernimmt_die_taste(hass, entry, uhr, aschebox_ohne_hass):
+    """Drückt der nächste Plan die Taste selbst, stellt er sie auch selbst zurück."""
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    await plan.abbrechen()
+    await plan.planen(uhr.jetzt + timedelta(minutes=10))
+    await ausfuehren(hass, aschebox_ohne_hass)
+    assert plan.phase == "glutabbrand"
+    hass.session.gesetzte_werte.clear()
+
+    uhr.weiter(minutes=5)
+    await abfrage(coordinator, plan, "Bereit")
+    assert plan.phase == "entaschen"
+    uhr.weiter(minutes=2)
+    await abfrage(coordinator, plan, "Entaschen")
+    uhr.weiter(minutes=8)
+    await abfrage(coordinator, plan, "Bereit")
+
+    assert plan.phase == "leeren"
+    assert hass.session.gesetzte_werte.count((TASTE, "1802")) == 1
+
+
+async def test_der_vermerk_treibt_die_abfragen_auch_ohne_laufenden_plan(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Nach dem Abbrechen läuft kein Schritt mehr - zurückgestellt wird trotzdem bei der nächsten vollen Abfrage."""
+    coordinator, plan = await bis_zum_entaschen(hass, entry, uhr, aschebox_ohne_hass)
+    await plan.abbrechen()
+    hass.session.gesetzte_werte.clear()
+    aufgaben = hass.data["aufgaben"]
+
+    uhr.weiter(minutes=21)
+    hass.session.kessel_zustand = "Heizen"
+    await coordinator.async_refresh()
+    plan._abgefragt()
+    assert len(aufgaben) == 1
+    while aufgaben:
+        await aufgaben.pop(0)
+    assert hass.session.gesetzte_werte == [(TASTE, "1802")]
+
+    plan._abgefragt()
+    assert aufgaben == [], "erledigt - der Plan ruht wieder"

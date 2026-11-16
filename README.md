@@ -591,7 +591,7 @@ Findet die Integration zusätzlich die **Entaschentaste** (am Display unter *Son
 
 **Ist der Kessel gesperrt** ([Kessel sperren](#kessel-sperren) oder [Fremderzeuger](#fremderzeuger)), vertragen sich Plan und Sperre: Am Ende des Plans bleibt ein gesperrter Kessel aus und geht an, sobald die Sperre endet. Endet die Sperre mitten im Plan, schaltet erst der Plan den Kessel wieder ein.
 
-`sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab. Hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst ein, endet der Plan ebenfalls. Er übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen, erscheint eine Meldung, dass der Kessel von Hand einzuschalten ist. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
+`sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab. Hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst ein, endet der Plan ebenfalls - in jedem Schritt. Endet er während des Entaschens, stellt Home Assistant die Entaschentaste zurück, sobald die Entaschung durch ist. Er übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen, erscheint eine Meldung, dass der Kessel von Hand einzuschalten ist. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
 
 ### Pelletlager: Vorrat, Fassungsvermögen, Preis und Lieferung
 
