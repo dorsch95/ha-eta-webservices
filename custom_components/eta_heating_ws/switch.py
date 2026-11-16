@@ -390,6 +390,25 @@ class Kesselsperre:
                 self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_WAR_AUS)
             self._melden()
 
+    async def async_bekraeftigen(self) -> bool:
+        """Schaltet einen gesperrten Kessel, den die Anlage als eingeschaltet meldet, noch einmal aus.
+
+        Für den Start von Home Assistant: Gemerkt ist "gesperrt", der Kessel
+        läuft aber - weil ihn jemand eingeschaltet hat, während Home
+        Assistant aus war, oder weil die Anlage das Ausschalten von vor dem
+        Neuladen noch nicht ausgeführt hat. In beiden Fällen ist noch
+        einmal Ausschalten richtig, solange gesperrt bleiben soll; das
+        Freigeben schaltet danach wieder ein. Gibt zurück, ob geschrieben
+        wurde.
+        """
+        async with self._schloss:
+            if not self._coordinator.kessel_gesperrt or self._gemeldet() is not True:
+                return False
+            await self._schalten(self._aus_roh, False)
+            self._coordinator.kessel_gesperrt_merken(KESSEL_GESPERRT_AUSGESCHALTET)
+            self._melden()
+            return True
+
     async def async_freigeben(self) -> None:
         """Gibt den Kessel frei und schaltet ihn ein, wenn die Sperre ihn ausgeschaltet hat.
 

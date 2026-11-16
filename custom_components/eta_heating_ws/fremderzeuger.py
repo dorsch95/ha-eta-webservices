@@ -109,6 +109,8 @@ class Fremderzeuger:
         """Ob noch eine Meldung "ließ sich nicht freigeben" stehen kann - nach dem Start ist das offen."""
         self._beendet = False
         """Nach beenden() wird weder gewartet noch geschaltet - auch nicht von einem Abgleich, der gerade noch lief."""
+        self._beim_start = False
+        """Ob der Abgleich zum Start noch aussteht: Dann wird ein gesperrt gemerkter, laufender Kessel wieder ausgeschaltet."""
         self._beobachter: list = []
         self.eingeschaltet = True
         """Der eigene Ein/Aus-Schalter - zählt nur ohne Entität, siehe const.FREMDERZEUGER_SCHALTER."""
@@ -219,6 +221,7 @@ class Fremderzeuger:
         if self._heizt is None:
             self._warten(self._freigeben_nach)
             return
+        self._beim_start = True
         await self.async_abgleichen()
 
     def _uebernehmen(self, heizt: bool | None) -> bool:
@@ -308,6 +311,12 @@ class Fremderzeuger:
         Fremderzeuger das nächste Mal ausgeht. Gewarnt wird nur beim
         ersten Mal; lässt sich der Kessel MELDEN_NACH Mal nicht freigeben,
         erscheint eine Meldung in Home Assistant.
+
+        Zum Start von Home Assistant gehört noch etwas: Heizt der
+        Fremderzeuger und ist der Kessel als gesperrt gemerkt, läuft aber,
+        wird er wieder ausgeschaltet (Kesselsperre.async_bekraeftigen). So
+        gilt der Start auch dann als Anlass zum Sperren, wenn jemand den
+        Kessel eingeschaltet hat, während Home Assistant aus war.
         """
         sperre = self.coordinator.kesselsperre
         heizt = self._heizt
@@ -315,14 +324,14 @@ class Fremderzeuger:
             heizt = False
         if self._beendet or sperre is None or KESSEL not in self.sperrt or heizt is None:
             return
-        if heizt == sperre.gesperrt:
-            self._gelungen()
-            return
+        geschaltet = True
         try:
-            if heizt:
-                await sperre.async_sperren()
+            if heizt != sperre.gesperrt:
+                await (sperre.async_sperren() if heizt else sperre.async_freigeben())
+            elif heizt and self._beim_start:
+                geschaltet = await sperre.async_bekraeftigen()
             else:
-                await sperre.async_freigeben()
+                geschaltet = False
         except HomeAssistantError as err:
             if self._gescheitert_beim_sperren != heizt:
                 self._gescheitert = 0
@@ -346,8 +355,10 @@ class Fremderzeuger:
             if self._zeitgeber is None:
                 self._warten(NEUER_VERSUCH_NACH)
             return
+        self._beim_start = False
         self._gelungen()
-        await self.coordinator.async_request_refresh()
+        if geschaltet:
+            await self.coordinator.async_request_refresh()
 
     @property
     def _meldung_id(self) -> str:

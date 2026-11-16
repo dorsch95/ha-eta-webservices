@@ -1218,3 +1218,93 @@ async def test_fehlversuche_beim_sperren_zaehlen_nicht_fuer_die_meldung_zum_frei
 
     await zeit_um(fremderzeuger_ohne_hass)
     assert len(fremderzeuger_ohne_hass.meldungen) == 1
+
+
+async def test_beim_start_wird_ein_von_hand_eingeschalteter_kessel_wieder_gesperrt(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Jemand hat den gesperrten Kessel eingeschaltet, während Home Assistant aus war - der Ofen heizt noch.
+
+    Der Start ist ein Anlass zum Sperren. Ohne das höbe sich die Sperre
+    nach ihrer Frist auf, und der Kessel liefe neben dem Ofen weiter.
+    """
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    coordinator, _ = await mit_ofen(hass, entry, zustand="on")
+    assert hass.session.geschrieben.get(TASTE, EIN) == EIN, "der Kessel läuft"
+
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+
+    assert hass.session.gesetzte_werte == [(TASTE, AUS)]
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+    await coordinator.async_refresh()
+    assert coordinator.kesselsperre.gesperrt is True
+
+    hass.session.gesetzte_werte.clear()
+    wechsel(hass, fremderzeuger_ohne_hass, "off", alt="on")
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == [(TASTE, EIN)]
+
+
+async def test_beim_start_wird_ein_kessel_der_schon_aus_ist_nicht_noch_einmal_geschaltet(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    hass.session.geschrieben[TASTE] = AUS
+    await mit_ofen(hass, entry, zustand="on")
+
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+
+    assert hass.session.gesetzte_werte == []
+
+
+async def test_war_der_kessel_beim_sperren_aus_und_laeuft_beim_start_schaltet_das_freigeben_danach_ein(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    """Gemerkt "war aus", inzwischen von Hand eingeschaltet: Wer ihn eingeschaltet hat, will ihn nach dem Ofen wieder haben."""
+    from eta_heating_ws.const import KESSEL_GESPERRT_WAR_AUS
+
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_WAR_AUS}
+    await mit_ofen(hass, entry, zustand="on")
+
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+
+    assert hass.session.gesetzte_werte == [(TASTE, AUS)]
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+
+
+async def test_von_hand_eingeschaltet_bei_laufendem_home_assistant_bleibt_bis_zum_naechsten_anlass(
+    hass, entry, fremderzeuger_ohne_hass, monkeypatch
+):
+    """Nur der Start sperrt wieder. Im laufenden Betrieb hebt das Einschalten von Hand die Sperre auf."""
+    monkeypatch.setattr(switch_platform, "SPERRE_VERWERFEN_FRUEHESTENS", 0)
+    coordinator, ofen = await mit_ofen(hass, entry, zustand="on")
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+    await coordinator.async_refresh()
+    assert coordinator.kesselsperre.gesperrt is True
+    hass.session.gesetzte_werte.clear()
+
+    hass.session.geschrieben[TASTE] = EIN
+    anzahl = len(fremderzeuger_ohne_hass.zeitgeber)
+    for _ in range(3):
+        await coordinator.async_refresh()
+
+    assert coordinator.kesselsperre.gesperrt is False
+    assert hass.session.gesetzte_werte == [], "von selbst wird nicht wieder gesperrt"
+    assert len(fremderzeuger_ohne_hass.zeitgeber) == anzahl, "und auch kein Zeitgeber dafür bestellt"
+    assert ofen._beim_start is False
+
+
+async def test_scheitert_das_erneute_ausschalten_beim_start_folgt_ein_neuer_versuch(
+    hass, entry, fremderzeuger_ohne_hass
+):
+    entry.options = {CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
+    coordinator, _ = await mit_ofen(hass, entry, zustand="on")
+    hass.session.schreiben_erlaubt = False
+
+    await fremderzeuger_ohne_hass.gestartet[0](hass)
+    assert hass.session.gesetzte_werte == []
+    assert fremderzeuger_ohne_hass.zeitgeber[-1].wartezeit == timedelta(minutes=1)
+
+    hass.session.schreiben_erlaubt = True
+    await zeit_um(fremderzeuger_ohne_hass)
+    assert hass.session.gesetzte_werte == [(TASTE, AUS)]
