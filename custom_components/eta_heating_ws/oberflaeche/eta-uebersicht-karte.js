@@ -1439,8 +1439,15 @@ class EtaUebersichtKarte extends HTMLElement {
     return this._ansicht === "kompakt" ? 8 : 10;
   }
 
+  /**
+   * In einem Dashboard vom Typ "Abschnitte" teilt sich jeder Abschnitt in
+   * zwölf Spalten. "Kompakt" nimmt die ganze Breite eines Abschnitts,
+   * die anderen Ansichten die ganze Zeile. Schmaler lässt sich die Karte
+   * dort nicht ziehen: Mit dem halben Abschnitt, rund 170 bis 230 px,
+   * brächen Namen und Werte mitten im Wort um.
+   */
   getGridOptions() {
-    return this._ansicht === "kompakt" ? { columns: 6, min_columns: 6 } : { columns: "full", min_columns: 6 };
+    return this._ansicht === "kompakt" ? { columns: 12, min_columns: 12 } : { columns: "full", min_columns: 12 };
   }
 
   get _ansicht() {
