@@ -508,20 +508,25 @@ class AscheboxPlan:
     async def _kessel(self, ein: bool) -> None:
         """Schaltet den Kessel und sagt es der Kesselsperre, die dieselbe Taste bedient.
 
-        Die Sperre erfährt es schon vor dem Schreiben: Sperrt sie, während
-        der Befehl noch unterwegs ist, rechnet sie mit dem Kessel, wie er
-        gleich steht - und schaltet ihn nach dem Einschalten des Plans
-        selbst wieder aus, statt ihn für ausgeschaltet zu halten.
+        Das Einschalten erfährt die Sperre schon vor dem Schreiben: Sperrt
+        sie, während der Befehl noch unterwegs ist, rechnet sie mit einem
+        eingeschalteten Kessel und schaltet ihn danach selbst wieder aus,
+        statt ihn für ausgeschaltet zu halten. Das Ausschalten erfährt sie
+        erst, wenn die Anlage es angenommen hat - sonst verließe sie sich
+        auf ein Ausschalten, das vielleicht scheitert, und schaltete selbst
+        nicht aus.
         """
         definition = self.coordinator.switch_defs["kessel_schalter"]
         sperre = self.coordinator.kesselsperre
-        marke = sperre.befohlen(ein) if sperre is not None else None
+        marke = sperre.befohlen(True) if sperre is not None and ein else None
         try:
             await self._senden(definition["uri"], definition["ein_roh" if ein else "aus_roh"])
         except HomeAssistantError:
-            if sperre is not None:
+            if marke is not None:
                 sperre.befehl_verworfen(marke)
             raise
+        if sperre is not None and not ein:
+            sperre.befohlen(False)
         await self.coordinator.async_request_refresh()
 
     async def _wieder_einschalten(self) -> bool:

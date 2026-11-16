@@ -394,8 +394,9 @@ class Kesselsperre:
         """Gibt den Kessel frei und schaltet ihn ein, wenn die Sperre ihn ausgeschaltet hat.
 
         Hält der Aschebox-Plan den Kessel gerade aus, wird nur die Sperre
-        aufgehoben: Der Plan schaltet ihn an seinem Ende selbst ein. Ist
-        der Kessel schon eingeschaltet, wird nichts geschrieben.
+        aufgehoben: Der Plan schaltet ihn an seinem Ende selbst ein. Meldet
+        die Anlage den Kessel schon als eingeschaltet und steht kein
+        eigener Schaltbefehl mehr aus, wird nichts geschrieben.
         """
         async with self._schloss:
             gemerkt = self._coordinator.kessel_gesperrt

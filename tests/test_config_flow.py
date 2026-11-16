@@ -766,3 +766,106 @@ async def test_ohne_menuebaum_bleibt_ein_geleertes_feld_geleert(monkeypatch):
     assert fertig["data"]["hk1_raumfuehler"] is None, (
         "fehlte der Eintrag, gälte wieder das Thermometer aus der Ersteinrichtung"
     )
+
+
+async def _konfigurieren(monkeypatch, daten, gespeichert, pruefung, schreiben=True, eingaben=None):
+    """Ein Durchlauf von Konfigurieren für Heizkreis 1 - gibt zurück, was als Optionen gespeichert wird."""
+    from eta_heating_ws import config_flow as modul
+    from eta_heating_ws.api import ETAApiClient, ETAValue
+
+    flow, schritt = await options_schritt(
+        monkeypatch, {**daten, **gespeichert}, optionen(components=["hk1"], enable_switches=schreiben)
+    )
+
+    async def lesen(self, uri):
+        return ETAValue(0.0, "00:00 - 00:00 0,0", "°C", False, 1)
+
+    monkeypatch.setattr(modul, "_anlage_pruefen", pruefung)
+    monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
+    monkeypatch.setattr(ETAApiClient, "async_get_value", lesen)
+    for _ in range(8):
+        if schritt["type"] == "create_entry":
+            return schritt["data"]
+        name = schritt["step_id"]
+        if name == "fub_names":
+            schritt = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
+        elif name == "switch_warning":
+            schritt = await flow.async_step_switch_warning({})
+        else:
+            schritt = await getattr(flow, f"async_step_{name}")(dict((eingaben or {}).get(name, {})))
+    raise AssertionError("kein Ende")
+
+
+_ERSTEINRICHTUNG_HK1 = {
+    "host": "192.0.2.10",
+    "port": 8080,
+    "enable_switches": True,
+    "components": ["kessel", "hk1"],
+    "hk1_raumfuehler": "sensor.alt",
+    "hk1_zeitplan": "schedule.alt",
+}
+
+
+def _hk1_mit_allem():
+    from eta_heating_ws.const import WOCHENTAGE
+
+    fenster = {(tag, n): f"/{tag}/{n}" for tag in WOCHENTAGE for n in (1, 2, 3)}
+
+    async def pruefung(hass, host, port, namen, komponenten, schreiben):
+        if not schreiben:
+            return [], {}, {}
+        return [], {"hk1": {"uri": None, "sekunden": None}}, {"hk1": fenster}
+
+    return pruefung
+
+
+async def test_geleertes_feld_bleibt_geleert_auch_wenn_ein_speichern_den_schritt_nicht_zeigt(monkeypatch):
+    """Thermometer und Zeitplan entfernt, dann den Schreibzugriff aus- und wieder eingeschaltet.
+
+    Ohne Schreibzugriff zeigt Konfigurieren die beiden Schritte nicht. Fiele
+    das None dabei weg, gälten danach wieder die Werte aus der
+    Ersteinrichtung - und Home Assistant schriebe wieder an die Anlage.
+    """
+    erreichbar = _hk1_mit_allem()
+
+    async def nicht_lesbar(*_):
+        return None
+
+    erste = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, {}, erreichbar)
+    assert erste["hk1_raumfuehler"] is None and erste["hk1_zeitplan"] is None
+
+    ohne_schreiben = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, erste, erreichbar, schreiben=False)
+    assert ohne_schreiben["hk1_raumfuehler"] is None and ohne_schreiben["hk1_zeitplan"] is None
+
+    wieder_ein = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, ohne_schreiben, nicht_lesbar)
+    gilt = {**_ERSTEINRICHTUNG_HK1, **wieder_ein}
+    assert gilt["hk1_raumfuehler"] is None and gilt["hk1_zeitplan"] is None
+
+
+async def test_geleertes_feld_bleibt_geleert_wenn_die_anlage_das_zeitprogramm_einmal_nicht_meldet(monkeypatch):
+    async def ohne_zeitprogramm(*_):
+        return [], {"hk1": {"uri": None, "sekunden": None}}, {}
+
+    erste = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, {}, _hk1_mit_allem())
+    assert erste["hk1_zeitplan"] is None
+
+    zweite = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, erste, ohne_zeitprogramm)
+
+    assert {**_ERSTEINRICHTUNG_HK1, **zweite}["hk1_zeitplan"] is None
+
+
+async def test_ein_neu_gewaehlter_wert_ersetzt_das_none(monkeypatch):
+    """Geleert heißt nicht gesperrt: Wer später wieder etwas wählt, bekommt es."""
+    erste = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, {}, _hk1_mit_allem())
+    assert erste["hk1_raumfuehler"] is None
+
+    zweite = await _konfigurieren(
+        monkeypatch,
+        _ERSTEINRICHTUNG_HK1,
+        erste,
+        _hk1_mit_allem(),
+        eingaben={"raumfuehler": {"hk1_raumfuehler": "sensor.neu"}},
+    )
+
+    assert zweite["hk1_raumfuehler"] == "sensor.neu"
+    assert zweite["hk1_zeitplan"] is None

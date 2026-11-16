@@ -982,7 +982,15 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         Assistant den Kessel gesperrt hält. Gibt es nach dem Speichern
         keine Kesselsperre mehr, räumt das Einrichten das Gemerkte auf,
         siehe switch.verwaiste_sperre_aufloesen.
+
+        Auch jedes ausdrücklich geleerte Feld (None, siehe _geleert) bleibt
+        geleert, wenn dieser Durchlauf seinen Schritt gar nicht gezeigt hat
+        - etwa weil der Schreibzugriff gerade aus ist. Sonst gälte danach
+        wieder der Wert aus der Ersteinrichtung.
         """
+        for schluessel, wert in self._current.items():
+            if wert is None and schluessel not in daten:
+                daten = {schluessel: None, **daten}
         if self._current.get(CONF_LAGER_MAXIMUM):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         if self._current.get(CONF_LIEFERUNGEN):

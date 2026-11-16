@@ -775,3 +775,47 @@ async def test_scheitert_das_einschalten_des_plans_bleibt_ein_inzwischen_gesperr
     assert plan.phase == "aus"
     assert coordinator.kesselsperre.gesperrt is True
     assert hass.session.geschrieben[TASTE] == AUS
+
+
+async def test_scheitert_das_ausschalten_des_plans_schaltet_die_sperre_selbst_aus(
+    hass, entry, uhr, aschebox_ohne_hass
+):
+    """Der Plan schaltet gerade ab, da sperrt der Ofen - und das Abschalten des Plans scheitert.
+
+    Die Sperre verlässt sich nicht auf ein Ausschalten, das noch unterwegs
+    ist: Sie schaltet selbst aus.
+    """
+    import asyncio
+    from datetime import timedelta
+
+    from eta_heating_ws.api import ETAApiError
+
+    from .test_aschebox import aufbauen
+
+    entry.data[CONF_KESSEL_SPERRE] = True
+    entry.data["enable_switches"] = True
+    coordinator, plan = await aufbauen(hass, entry)
+    await plan.planen(uhr.jetzt + timedelta(minutes=40))
+    uhr.jetzt = plan.abschalten_um
+    echt = coordinator.client.async_set_value
+    aufrufe: list = []
+
+    async def erst_scheitern(uri, roh):
+        aufrufe.append(roh)
+        if len(aufrufe) == 1:
+            await asyncio.sleep(0.03)
+            raise ETAApiError("Zeitüberschreitung")
+        await echt(uri, roh)
+
+    coordinator.client.async_set_value = erst_scheitern
+    abschalten = asyncio.ensure_future(plan._abschalten())
+    await asyncio.sleep(0.005)
+    await coordinator.kesselsperre.async_sperren()
+    await abschalten
+    coordinator.client.async_set_value = echt
+    await coordinator.async_refresh()
+
+    assert plan.phase == "aus", "der Plan ist abgebrochen"
+    assert entry.options[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+    assert hass.session.geschrieben[TASTE] == AUS
+    assert coordinator.kesselsperre.gesperrt is True
