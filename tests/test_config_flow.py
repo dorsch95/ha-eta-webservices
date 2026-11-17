@@ -41,6 +41,60 @@ def test_verbindungsformular_lehnt_ungueltiges_intervall_ab(intervall):
         _connection_schema({})(gueltige_eingabe(scan_interval=intervall))
 
 
+def test_einstellungen_haben_kein_blosses_zahlen_oder_textfeld():
+    """Home Assistant setzt beim Öffnen die Schreibmarke ins erste bloße Zahlen- oder Textfeld und rollt dorthin.
+
+    Unter Konfigurieren stehen die Anzahlen als Auswahlfelder ganz oben -
+    mit einem bloßen Zahlenfeld weiter unten öffnete sich der Dialog schon
+    nach unten gerollt, die Anzahlen standen oberhalb des Bildes.
+    """
+    import homeassistant.helpers.config_validation as cv
+    from homeassistant.helpers.selector import Selector
+
+    from eta_heating_ws.config_flow import _options_schema
+
+    bloss = [
+        str(feld)
+        for feld, pruefer in _options_schema({}).schema.items()
+        if not isinstance(pruefer, Selector) and pruefer is not cv.boolean
+    ]
+    assert bloss == []
+
+
+def test_abfrageintervalle_werden_als_ganze_sekunden_gespeichert():
+    """Das Zahlenfeld liefert Kommazahlen - gespeichert werden ganze Sekunden, der Heizwert bleibt genau."""
+    from eta_heating_ws.config_flow import _einstellungen, _options_schema
+
+    eingabe = _options_schema({})(
+        {"scan_interval": 45, "schnell_intervall": 2, "pellet_kwh_per_kg": 4.85, "pellet_preis": 310}
+    )
+    daten = _einstellungen(eingabe, [])
+
+    assert (daten["scan_interval"], type(daten["scan_interval"])) == (45, int)
+    assert (daten["schnell_intervall"], type(daten["schnell_intervall"])) == (2, int)
+    assert daten["pellet_kwh_per_kg"] == 4.85
+    assert daten["pellet_preis"] == 310
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [
+        {"schnell_intervall": -1},
+        {"schnell_intervall": MAX_SCAN_INTERVAL + 1},
+        {"pellet_kwh_per_kg": 2.9},
+        {"pellet_kwh_per_kg": 6.1},
+        {"pellet_preis": -1},
+        {"pellet_preis": 2001},
+        {"scan_interval": "viel"},
+    ],
+)
+def test_zahlenfelder_lehnen_werte_ausserhalb_ihrer_grenzen_ab(eingabe):
+    from eta_heating_ws.config_flow import _options_schema
+
+    with pytest.raises(vol.Invalid):
+        _options_schema({})(eingabe)
+
+
 def test_verbindungsformular_lehnt_unbekannte_komponente_ab():
     with pytest.raises(vol.Invalid):
         _connection_schema({})(gueltige_eingabe(components=["gibt_es_nicht"]))

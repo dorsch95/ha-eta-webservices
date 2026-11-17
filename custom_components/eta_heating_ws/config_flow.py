@@ -21,6 +21,9 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -118,9 +121,16 @@ async def _fub_namen_der_anlage(hass: HomeAssistant, host: str | None, port: int
 
 
 def _einstellungen(eingabe: dict[str, Any], bisher: list[str]) -> dict[str, Any]:
-    """Was vom Formular gespeichert wird: die Komponenten statt der Anzahlen."""
+    """Was vom Formular gespeichert wird: die Komponenten statt der Anzahlen.
+
+    Die beiden Abfrageintervalle sind ganze Sekunden - das Zahlenfeld
+    liefert sie als Kommazahl, siehe _zahlenfeld.
+    """
     daten = {key: wert for key, wert in eingabe.items() if key not in GEZAEHLTE_KOMPONENTEN}
     daten[CONF_COMPONENTS] = komponenten_aus_formular(eingabe, bisher)
+    for feld in (CONF_SCAN_INTERVAL, CONF_SCHNELL_INTERVALL):
+        if feld in daten:
+            daten[feld] = int(daten[feld])
     return daten
 
 
@@ -427,6 +437,27 @@ def wetter_vorschlag(hass: HomeAssistant, current: dict[str, Any]) -> str | None
     return einzige_wetter_entitaet(hass)
 
 
+def _zahlenfeld(kleinste: float, groesste: float, ganz: bool = True) -> NumberSelector:
+    """Ein Feld zum Eintippen einer Zahl zwischen kleinste und groesste.
+
+    Ein Selector und keine bloße Zahl im Schema: Home Assistant setzt beim
+    Öffnen eines Dialogs die Schreibmarke in das erste Feld, das als bloße
+    Zahl oder bloßer Text im Schema steht, und rollt dorthin. Stehen wie
+    bei den Einstellungen Auswahlfelder darüber, öffnete sich der Dialog
+    deshalb schon nach unten gerollt, die Anzahlen standen oberhalb des
+    Bildes. Felder aus Selectoren bekommen die Schreibmarke nicht. Den Wert
+    liefert der Selector als Kommazahl, siehe _einstellungen.
+    """
+    return NumberSelector(
+        NumberSelectorConfig(
+            min=kleinste,
+            max=groesste,
+            step=1 if ganz else "any",
+            mode=NumberSelectorMode.BOX,
+        )
+    )
+
+
 def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> dict:
     """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Wetter.
 
@@ -468,17 +499,11 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
         vol.Required(
             CONF_SCAN_INTERVAL,
             default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-        ): vol.All(
-            cv.positive_int,
-            vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-        ),
+        ): _zahlenfeld(MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL),
         vol.Required(
             CONF_SCHNELL_INTERVALL,
             default=current.get(CONF_SCHNELL_INTERVALL, DEFAULT_SCHNELL_INTERVALL),
-        ): vol.All(
-            cv.positive_int,
-            vol.Range(min=0, max=MAX_SCHNELL_INTERVALL),
-        ),
+        ): _zahlenfeld(0, MAX_SCHNELL_INTERVALL),
         vol.Required(
             CONF_ENABLE_ERRORS,
             default=current.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
@@ -502,14 +527,11 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
         vol.Required(
             CONF_PELLET_KWH_PER_KG,
             default=current.get(CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG),
-        ): vol.All(
-            vol.Coerce(float),
-            vol.Range(min=MIN_PELLET_KWH_PER_KG, max=MAX_PELLET_KWH_PER_KG),
-        ),
+        ): _zahlenfeld(MIN_PELLET_KWH_PER_KG, MAX_PELLET_KWH_PER_KG, ganz=False),
         vol.Required(
             CONF_PELLET_PREIS,
             default=current.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS),
-        ): vol.All(vol.Coerce(float), vol.Range(min=0, max=MAX_PELLET_PREIS)),
+        ): _zahlenfeld(0, MAX_PELLET_PREIS, ganz=False),
         vol.Optional(
             CONF_WETTER, description={"suggested_value": wetter}
         ): EntitySelector(EntitySelectorConfig(domain="weather")),
