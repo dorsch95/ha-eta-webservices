@@ -951,10 +951,27 @@ def _warmwasser_zustand_sensoren():
     "Durchflusssensor" meldet an derselben Anlage die Impulse in Hz und
     fällt in Ruhe nicht auf null - die Karte zeigte damit dauerhaft
     "Zapfung läuft".
+
+    Ein Warmwasserspeicher kann einen zweiten Fühler unten haben, etwa für
+    eine Solaranlage. Eingerichtet steht er unter "Eingänge >
+    Warmwasserspeicher unten" (Menübaum einer Anlage mit diesem Fühler).
+    Der Anzeigewert gleichen Namens unter "Warmwasserspeicher" steht
+    dagegen an jedem Warmwasserspeicher, auch ohne den Fühler - gesucht
+    wird deshalb nur der Eingang.
     """
     sensoren = {}
     for komponente, zusatz in WARMWASSER_SPEICHER.items():
         name = f"Warmwasser{zusatz}" if zusatz else "FWM"
+        sensoren[f"{komponente}_warmwasser_unten"] = {
+            "component": komponente,
+            "name": f"{name} Temperatur unten" if zusatz else f"{name} Warmwassertemperatur unten",
+            "translation_key": f"{komponente}_warmwasser_unten",
+            "nur_wenn_vorhanden": True,
+            "icon": "mdi:water-thermometer",
+            "device_class": SensorDeviceClass.TEMPERATURE,
+            "state_class": SensorStateClass.MEASUREMENT,
+            "default_unit": "°C",
+        }
         for art, bezeichnung, symbol in (
             ("durchfluss", "Durchfluss", "mdi:waves-arrow-right"),
             ("pufferpumpe_drehzahl", "Pufferpumpe Drehzahl", "mdi:pump"),
@@ -1097,6 +1114,17 @@ SENSORS = {
         "device_class": SensorDeviceClass.WEIGHT,
         "state_class": SensorStateClass.TOTAL_INCREASING,
         "default_unit": "kg",
+    },
+    "kessel_volllaststunden": {
+        "component": "kessel",
+        "name": "Kessel Volllaststunden",
+        "translation_key": "kessel_volllaststunden",
+        "nur_wenn_vorhanden": True,
+        "icon": "mdi:timer-outline",
+        "device_class": SensorDeviceClass.DURATION,
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "default_unit": "s",
+        "suggested_unit": "h",
     },
     "aschebox_verbrauch": {
         "component": "kessel",

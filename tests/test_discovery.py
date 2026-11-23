@@ -167,6 +167,31 @@ async def test_kessel_ohne_abgasfuehler_bekommt_keinen_sensor(hass, entry, menu_
     assert "abgas_temperatur" not in build_sensor_defs(uris, fuehler, ["kessel"])
 
 
+async def test_volllaststunden_des_kessels(hass, menu_xml):
+    """Am Display unter Kessel > Zählerstände - so steht es im Menübaum mehrerer Anlagen."""
+    from eta_heating_ws.coordinator import build_sensor_defs
+
+    hass.session.menu = menu_xml.replace(
+        '<object uri="/264/10891/0/0/12016" name="Gesamtverbrauch"/>',
+        '<object uri="/264/10891/0/0/12016" name="Gesamtverbrauch"/>'
+        '<object uri="/264/10891/0/0/12153" name="Volllaststunden"/>'
+        '<object uri="/264/10891/0/0/12404" name="Volllaststunden seit Wartung"/>',
+    )
+    uris, fuehler = await discover(hass)
+
+    assert uris["kessel_volllaststunden"] == "/264/10891/0/0/12153"
+    assert "kessel_volllaststunden" in build_sensor_defs(uris, fuehler, ["kessel"])
+
+
+async def test_kessel_ohne_volllaststunden_bekommt_keinen_sensor(hass):
+    from eta_heating_ws.coordinator import build_sensor_defs
+
+    uris, fuehler = await discover(hass)
+
+    assert "kessel_volllaststunden" not in uris
+    assert "kessel_volllaststunden" not in build_sensor_defs(uris, fuehler, ["kessel"])
+
+
 async def test_solarwerte_werden_gefunden(hass):
     uris, _ = await discover(hass)
     assert uris["solar_kollektor"] == "/120/10221/0/11139/0"

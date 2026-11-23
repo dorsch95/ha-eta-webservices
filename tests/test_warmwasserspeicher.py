@@ -43,15 +43,46 @@ def fenster_der_anlage() -> dict[str, tuple[int, int, int | None]]:
     return werte
 
 
-async def aufbauen(hass, entry):
+async def aufbauen_mit_sensoren(hass, entry):
     hass.session.menu = MENU
     hass.session.zeitfenster.update(fenster_der_anlage())
     entry.data["components"] = ["kessel", "puffer", "puffer2", "fwm"]
     entry.data["fub_names"] = {"pufferflex2": "Puffer"}
-    coordinator, _ = await setup_integration(hass, entry)
+    coordinator, nach_namen = await setup_integration(hass, entry)
     hass.config_entries.geladen.append(entry)
     hass.session.gesetzte_zeitfenster.clear()
+    return coordinator, nach_namen
+
+
+async def aufbauen(hass, entry):
+    coordinator, _ = await aufbauen_mit_sensoren(hass, entry)
     return coordinator
+
+
+async def test_unterer_fuehler_fehlt_solange_er_nicht_eingerichtet_ist(hass, entry):
+    """Der Anzeigewert "Warmwasserspeicher unten" steht an jedem Speicher - ein Fühler ist das noch nicht."""
+    coordinator = await aufbauen(hass, entry)
+
+    assert 'name="Warmwasserspeicher unten" uri="/120/10111/0/0/12272"' in MENU
+    assert "fwm_warmwasser_unten" not in coordinator.sensor_defs
+
+
+async def test_eingerichteter_unterer_fuehler_wird_ein_sensor(hass, entry, monkeypatch):
+    """Mit dem Fühler führt die Anlage ihn unter Eingänge - so steht er im Menübaum einer Anlage mit Solar."""
+    from . import test_warmwasserspeicher as modul
+
+    eingang = '<object name="Warmwasserspeicher" uri="/120/10111/0/11129/0">'
+    assert MENU.count(eingang) == 1
+    monkeypatch.setattr(
+        modul,
+        "MENU",
+        MENU.replace(eingang, '<object name="Warmwasserspeicher unten" uri="/120/10111/0/11130/0" />' + eingang),
+    )
+    coordinator, nach_namen = await aufbauen_mit_sensoren(hass, entry)
+
+    assert coordinator.sensor_defs["fwm_warmwasser_unten"]["uri"] == "/120/10111/0/11130/0"
+    assert coordinator.sensor_defs["fwm_warmwasser"]["uri"] == "/120/10111/0/11129/0"
+    assert nach_namen["FWM Warmwassertemperatur unten"].native_unit_of_measurement == "°C"
 
 
 async def test_alle_programme_der_testanlage(hass, entry):

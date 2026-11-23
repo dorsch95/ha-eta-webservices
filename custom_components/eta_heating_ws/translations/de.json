@@ -629,11 +629,17 @@
       "fwm_warmwasser": {
         "name": "FWM Warmwassertemperatur"
       },
+      "fwm_warmwasser_unten": {
+        "name": "FWM Warmwassertemperatur unten"
+      },
       "fwm_zirkulationspumpe": {
         "name": "FWM Zirkulationspumpe"
       },
       "fwm2_warmwasser": {
         "name": "Warmwasser 2 Temperatur"
+      },
+      "fwm2_warmwasser_unten": {
+        "name": "Warmwasser 2 Temperatur unten"
       },
       "fwm2_zirkulationspumpe": {
         "name": "Warmwasser 2 Zirkulationspumpe"
@@ -641,11 +647,17 @@
       "fwm3_warmwasser": {
         "name": "Warmwasser 3 Temperatur"
       },
+      "fwm3_warmwasser_unten": {
+        "name": "Warmwasser 3 Temperatur unten"
+      },
       "fwm3_zirkulationspumpe": {
         "name": "Warmwasser 3 Zirkulationspumpe"
       },
       "fwm4_warmwasser": {
         "name": "Warmwasser 4 Temperatur"
+      },
+      "fwm4_warmwasser_unten": {
+        "name": "Warmwasser 4 Temperatur unten"
       },
       "fwm4_zirkulationspumpe": {
         "name": "Warmwasser 4 Zirkulationspumpe"
@@ -653,11 +665,17 @@
       "fwm5_warmwasser": {
         "name": "Warmwasser 5 Temperatur"
       },
+      "fwm5_warmwasser_unten": {
+        "name": "Warmwasser 5 Temperatur unten"
+      },
       "fwm5_zirkulationspumpe": {
         "name": "Warmwasser 5 Zirkulationspumpe"
       },
       "fwm6_warmwasser": {
         "name": "Warmwasser 6 Temperatur"
+      },
+      "fwm6_warmwasser_unten": {
+        "name": "Warmwasser 6 Temperatur unten"
       },
       "fwm6_zirkulationspumpe": {
         "name": "Warmwasser 6 Zirkulationspumpe"
@@ -665,11 +683,17 @@
       "fwm7_warmwasser": {
         "name": "Warmwasser 7 Temperatur"
       },
+      "fwm7_warmwasser_unten": {
+        "name": "Warmwasser 7 Temperatur unten"
+      },
       "fwm7_zirkulationspumpe": {
         "name": "Warmwasser 7 Zirkulationspumpe"
       },
       "fwm8_warmwasser": {
         "name": "Warmwasser 8 Temperatur"
+      },
+      "fwm8_warmwasser_unten": {
+        "name": "Warmwasser 8 Temperatur unten"
       },
       "fwm8_zirkulationspumpe": {
         "name": "Warmwasser 8 Zirkulationspumpe"
@@ -749,6 +773,9 @@
       },
       "kessel_zustand": {
         "name": "Kessel Zustand"
+      },
+      "kessel_volllaststunden": {
+        "name": "Kessel Volllaststunden"
       },
       "komponente_brenner": {
         "name": "Komponente Brenner"

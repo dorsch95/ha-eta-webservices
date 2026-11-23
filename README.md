@@ -101,7 +101,7 @@ Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet. Ändern m
 
 **3. Pufferspeicher-Volumen**
 
-Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“. Er zeigt sein effektives Volumen am Display, gibt es aber nicht an die Webservices weiter. Trag die Liter vom Display, vom Typenschild oder aus den Unterlagen ein. Beim PufferFlex liest die Integration das Volumen selbst.
+Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“. Er zeigt sein effektives Volumen am Display, gibt es aber nicht an die Webservices weiter. Trag die Liter vom Display, vom Typenschild oder aus den Unterlagen ein. Beim PufferFlex liest die Integration das Volumen selbst. Das effektive Volumen ist kleiner als das Gesamtvolumen des Puffers: Die Regelung errechnet es daraus. Ändern lässt es sich deshalb nur an der Anlage, am Display unter *Puffer → Einstellungen → Gesamtvolumen*.
 
 **Weitere Schritte, je nach Anlage**
 
@@ -149,7 +149,7 @@ Was eine Erklärung braucht:
 - **Ladezustand** gibt es nur beim PufferFlex, eine **Ladepumpe** nur bei einem Puffer, der im ETA-Assistenten als dezentral geladen eingerichtet ist.
 - **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Volumen und Ladepumpe mit, Warmwasser 2 bis 8 die Temperatur und die Zirkulationspumpe. Den Energieinhalt gibt es nur für den ersten Puffer.
 - **Pumpen** (Zirkulation, Ladepumpe, Pufferpumpe, Fernleitung) melden `Ein` oder `Aus`, also ob sie gerade laufen.
-- **Warmwasser:** Der **Zustand** sagt beim Warmwasserspeicher, ob er lädt. Seine **Ladepumpe** läuft, solange dafür Wärme fließt. Das Frischwassermodul hat stattdessen eine **Pufferpumpe**: Sie läuft, solange es Wasser erwärmt, also beim Zapfen und bei laufender Zirkulation. Ihre Anforderung bleibt nach dem Zapfen noch stehen; ob gerade wirklich Wasser fließt, zeigen der **Durchfluss** und die **Drehzahl** der Pufferpumpe. Deren Einheit übernimmt die Integration von der Anlage. Jeden dieser Werte gibt es nur, wenn deine Anlage ihn führt.
+- **Warmwasser:** Der **Zustand** sagt beim Warmwasserspeicher, ob er lädt. Seine **Ladepumpe** läuft, solange dafür Wärme fließt. Das Frischwassermodul hat stattdessen eine **Pufferpumpe**: Sie läuft, solange es Wasser erwärmt, also beim Zapfen und bei laufender Zirkulation. Ihre Anforderung bleibt nach dem Zapfen noch stehen; ob gerade wirklich Wasser fließt, zeigen der **Durchfluss** und die **Drehzahl** der Pufferpumpe. Deren Einheit übernimmt die Integration von der Anlage. Ist am Warmwasserspeicher ein zweiter Fühler unten eingerichtet, etwa für eine Solaranlage, gibt es dazu die **Temperatur unten**. Jeden dieser Werte gibt es nur, wenn deine Anlage ihn führt.
 - **Kombispeicher:** Ist im Pufferspeicher ein Warmwasserbereich eingerichtet, gibt es dessen Temperatur als **Puffer Warmwasser**, beim älteren Funktionsblock „Puffer“ dazu den Zustand. Ohne Kombispeicher entstehen beide nicht.
 - **`sensor.eta_heizung_aschebox_status`** fasst Verbrauch und Schwelle in einem Text zusammen („459/1000kg“), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
 - **Komponenten-Marker** (Diagnose): je Komponente eine Entität, an der die Dashboard-Karte erkennt, was vorhanden ist.
@@ -169,6 +169,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_kesseldruck` | Kesseldruck | bar |
 | `sensor.eta_heizung_kesseltemperatur` | Kesseltemperatur | °C |
 | `sensor.eta_heizung_pellet_gesamtverbrauch` | Pellet Gesamtverbrauch | kg |
+| `sensor.eta_heizung_kessel_volllaststunden` | Kessel Volllaststunden | h |
 | `sensor.eta_heizung_pelletverbrauch_heute` | Pelletverbrauch seit Mitternacht | kg |
 | `sensor.eta_heizung_pelletverbrauch_diese_woche` | Pelletverbrauch seit Montag | kg |
 | `sensor.eta_heizung_pelletverbrauch_dieses_jahr` | Pelletverbrauch seit 1. Januar | kg |
@@ -206,6 +207,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_puffer_2_fuhler_1` … `_9` | je vorhandenem Pufferfühler einer | °C |
 | **FWM** (erstes Frischwassermodul oder erster Warmwasserspeicher) | | |
 | `sensor.eta_heizung_fwm_warmwassertemperatur` | FWM Warmwassertemperatur | °C |
+| `sensor.eta_heizung_fwm_warmwassertemperatur_unten` | FWM Warmwassertemperatur unten | °C |
 | `sensor.eta_heizung_fwm_zirkulationspumpe` | FWM Zirkulationspumpe | Text |
 | `sensor.eta_heizung_fwm_zustand` | FWM Zustand | Text |
 | `sensor.eta_heizung_fwm_ladepumpe` | FWM Ladepumpe | Text |
@@ -214,6 +216,7 @@ Was eine Erklärung braucht:
 | `sensor.eta_heizung_fwm_pufferpumpe_drehzahl` | FWM Pufferpumpe Drehzahl | von der Anlage |
 | **Warmwasser 2 bis 8** (hier für Nummer 2, die weiteren heißen genauso mit ihrer Nummer) | | |
 | `sensor.eta_heizung_warmwasser_2_temperatur` | Warmwasser 2 Temperatur | °C |
+| `sensor.eta_heizung_warmwasser_2_temperatur_unten` | Warmwasser 2 Temperatur unten | °C |
 | `sensor.eta_heizung_warmwasser_2_zirkulationspumpe` | Warmwasser 2 Zirkulationspumpe | Text |
 | `sensor.eta_heizung_warmwasser_2_zustand` | Warmwasser 2 Zustand | Text |
 | `sensor.eta_heizung_warmwasser_2_ladepumpe` | Warmwasser 2 Ladepumpe | Text |

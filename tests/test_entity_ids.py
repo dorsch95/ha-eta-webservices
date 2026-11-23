@@ -36,6 +36,7 @@ ERWARTETE_IDS = {
     "fremdwaerme_temperatur": "sensor.eta_heizung_fremdwarme_temperatur",
     "fremdwaerme_zustand": "sensor.eta_heizung_fremdwarme_zustand",
     "fwm_warmwasser": "sensor.eta_heizung_fwm_warmwassertemperatur",
+    "fwm_warmwasser_unten": "sensor.eta_heizung_fwm_warmwassertemperatur_unten",
     "fwm_zirkulationspumpe": "sensor.eta_heizung_fwm_zirkulationspumpe",
     "heizkreis2_anforderung": "sensor.eta_heizung_heizkreis_2_anforderung",
     "heizkreis2_vorlauf": "sensor.eta_heizung_heizkreis_2_vorlauftemperatur",
@@ -56,6 +57,7 @@ ERWARTETE_IDS = {
     "kessel_druck": "sensor.eta_heizung_kesseldruck",
     "kessel_soll": "sensor.eta_heizung_kessel_solltemperatur",
     "kessel_temperatur": "sensor.eta_heizung_kesseltemperatur",
+    "kessel_volllaststunden": "sensor.eta_heizung_kessel_volllaststunden",
     "kessel_zustand": "sensor.eta_heizung_kessel_zustand",
     "komponente_brenner": "sensor.eta_heizung_komponente_brenner",
     "komponente_fernleitung": "sensor.eta_heizung_komponente_fernleitung",
@@ -128,7 +130,11 @@ ERWARTETE_IDS = {
     **{
         f"fwm{n}_{teil}": f"sensor.eta_heizung_warmwasser_{n}_{endung}"
         for n in range(2, 9)
-        for teil, endung in (("warmwasser", "temperatur"), ("zirkulationspumpe", "zirkulationspumpe"))
+        for teil, endung in (
+            ("warmwasser", "temperatur"),
+            ("warmwasser_unten", "temperatur_unten"),
+            ("zirkulationspumpe", "zirkulationspumpe"),
+        )
     },
     **{f"komponente_fwm{n}": f"sensor.eta_heizung_komponente_warmwasser_{n}" for n in range(2, 9)},
     "fwm_zustand": "sensor.eta_heizung_fwm_zustand",

@@ -53,6 +53,7 @@ DISCOVERY_PATHS = {
     "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
     "abgas_temperatur": ("kessel", ["Eingänge", "Abgas"]),
     "pellet_gesamtverbrauch": ("kessel", ["Zählerstände", "Gesamtverbrauch"]),
+    "kessel_volllaststunden": ("kessel", ["Zählerstände", "Volllaststunden"]),
     "aschebox_verbrauch": (
         "kessel",
         ["Kessel", "Entaschung", "Verbrauch seit Aschebox leeren"],
@@ -89,6 +90,10 @@ DISCOVERY_PATHS = {
     "heizkreis4_zeitprogramm": ("hk4", ["Heizkreis", "Heizzeiten", "Schaltzustand"]),
     "fwm_warmwasser": ("fwm", ["Eingänge", "Warmwasser"]),
     **{f"{k}_warmwasser": (_rolle(k), ["Eingänge", "Warmwasser"]) for k in WEITERES_WARMWASSER},
+    **{
+        f"{k}_warmwasser_unten": (_rolle(k), ["Eingänge", "Warmwasserspeicher unten"])
+        for k in WARMWASSER_SPEICHER
+    },
     **{
         f"{k}_zustand": (_rolle(k), ["Warmwasser", "Warmwasser-Zustand detailliert"])
         for k in WARMWASSER_SPEICHER
@@ -225,6 +230,7 @@ KENNUNGEN = {
     "restsauerstoff": "0/11108/2060",
     "abgas_temperatur": "0/11693/0",
     "pellet_gesamtverbrauch": "0/0/12016",
+    "kessel_volllaststunden": "0/0/12153",
     "aschebox_verbrauch": "0/0/12013",
     "entaschung_verbrauch": "0/0/12012",
     "aschebox_schwelle": "0/0/12120",
@@ -247,6 +253,7 @@ KENNUNGEN = {
     "heizkreis3_zeitprogramm": "12113/0/1109",
     "heizkreis4_zeitprogramm": "12113/0/1109",
     **{f"{k}_warmwasser": "0/11148/0" for k in WARMWASSER_SPEICHER},
+    **{f"{k}_warmwasser_unten": "0/11130/0" for k in WARMWASSER_SPEICHER},
     "lager_vorrat": "0/0/12015",
     "lager_warngrenze": "0/0/12042",
     "lager_maximum": "0/0/12790",

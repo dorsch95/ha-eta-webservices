@@ -629,11 +629,17 @@
       "fwm_warmwasser": {
         "name": "Hot water temperature"
       },
+      "fwm_warmwasser_unten": {
+        "name": "Hot water temperature bottom"
+      },
       "fwm_zirkulationspumpe": {
         "name": "Hot water circulation pump"
       },
       "fwm2_warmwasser": {
         "name": "Hot water 2 temperature"
+      },
+      "fwm2_warmwasser_unten": {
+        "name": "Hot water 2 temperature bottom"
       },
       "fwm2_zirkulationspumpe": {
         "name": "Hot water 2 circulation pump"
@@ -641,11 +647,17 @@
       "fwm3_warmwasser": {
         "name": "Hot water 3 temperature"
       },
+      "fwm3_warmwasser_unten": {
+        "name": "Hot water 3 temperature bottom"
+      },
       "fwm3_zirkulationspumpe": {
         "name": "Hot water 3 circulation pump"
       },
       "fwm4_warmwasser": {
         "name": "Hot water 4 temperature"
+      },
+      "fwm4_warmwasser_unten": {
+        "name": "Hot water 4 temperature bottom"
       },
       "fwm4_zirkulationspumpe": {
         "name": "Hot water 4 circulation pump"
@@ -653,11 +665,17 @@
       "fwm5_warmwasser": {
         "name": "Hot water 5 temperature"
       },
+      "fwm5_warmwasser_unten": {
+        "name": "Hot water 5 temperature bottom"
+      },
       "fwm5_zirkulationspumpe": {
         "name": "Hot water 5 circulation pump"
       },
       "fwm6_warmwasser": {
         "name": "Hot water 6 temperature"
+      },
+      "fwm6_warmwasser_unten": {
+        "name": "Hot water 6 temperature bottom"
       },
       "fwm6_zirkulationspumpe": {
         "name": "Hot water 6 circulation pump"
@@ -665,11 +683,17 @@
       "fwm7_warmwasser": {
         "name": "Hot water 7 temperature"
       },
+      "fwm7_warmwasser_unten": {
+        "name": "Hot water 7 temperature bottom"
+      },
       "fwm7_zirkulationspumpe": {
         "name": "Hot water 7 circulation pump"
       },
       "fwm8_warmwasser": {
         "name": "Hot water 8 temperature"
+      },
+      "fwm8_warmwasser_unten": {
+        "name": "Hot water 8 temperature bottom"
       },
       "fwm8_zirkulationspumpe": {
         "name": "Hot water 8 circulation pump"
@@ -749,6 +773,9 @@
       },
       "kessel_zustand": {
         "name": "Boiler state"
+      },
+      "kessel_volllaststunden": {
+        "name": "Boiler full-load hours"
       },
       "komponente_brenner": {
         "name": "Burner component"
