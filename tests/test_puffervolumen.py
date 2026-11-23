@@ -67,7 +67,7 @@ async def test_pufferflex_zeigt_das_gesamtvolumen_der_anlage(hass, entry):
     assert zahl.entity_id == "number.eta_heizung_puffervolumen"
     assert zahl.unique_id == "eta_static_testeintrag_puffer_volumen_stellen"
     assert zahl.extra_state_attributes == {"gespeichert": "Anlage"}
-    assert by_name["Puffer Energieinhalt"].extra_state_attributes["volumen_liter"] == 1200
+    assert coordinator.puffer_volumen == 1200
 
 
 async def test_schreibt_das_gesamtvolumen_an_die_anlage_und_meldet_es(hass, entry, puffer_meldungen):
@@ -79,7 +79,7 @@ async def test_schreibt_das_gesamtvolumen_an_die_anlage_und_meldet_es(hass, entr
     assert hass.session.gesetzte_werte == [(URI, "2000")]
     assert zahl.native_value == 2000
     assert coordinator.puffer_volumen == 2000, "nach dem Schreiben neu gelesen"
-    assert by_name["Puffer Energieinhalt"].extra_state_attributes["volumen_quelle"] == "Anlage"
+    assert coordinator.volumen_quelle("puffer") == "Anlage"
     [(text, angaben)] = puffer_meldungen
     assert "jetzt auf 2000 l" in text
     assert "Vorher standen dort 1200 l" in text
@@ -161,12 +161,8 @@ async def test_ohne_schreibzugriff_merkt_sich_home_assistant_den_wert(hass, entr
     assert zahl.native_value == 900
     assert zahl.extra_state_attributes["wert_der_anlage"] == 1200
     assert coordinator.puffer_volumen == 900
-    assert by_name["Puffer Energieinhalt"].extra_state_attributes == {
-        "volumen_liter": 900,
-        "volumen_quelle": "Home Assistant",
-        "ab_temperatur": 30.0,
-    }
-    assert getattr(hass.config_entries, "neu_laden_bestellt", 0) == 0, "der Energieinhalt bleibt"
+    assert coordinator.volumen_quelle("puffer") == "Home Assistant"
+    assert getattr(hass.config_entries, "neu_laden_bestellt", 0) == 0, "neu geladen wird nichts"
 
 
 async def test_null_verwirft_den_eigenen_wert(hass, entry):
@@ -211,11 +207,10 @@ async def test_aelterer_puffer_ohne_liter_zeigt_nichts(hass, entry, menu_xml):
     assert zahl.native_value is None
     assert zahl.extra_state_attributes == {"gespeichert": "Home Assistant", "wert_der_anlage": None}
     assert coordinator.puffer_volumen is None
-    assert "Puffer Energieinhalt" not in by_name
 
 
 async def test_aelterer_puffer_bekommt_seine_liter_im_feld(hass, entry, menu_xml):
-    """Mit den ersten Litern entsteht der Energieinhalt - dafür wird neu geladen."""
+    """Die Liter gelten sofort, neu geladen wird dafür nichts."""
     coordinator, _, zahl = await aelterer_puffer(hass, entry, menu_xml)
     hass.session.gesetzte_werte.clear()
 
@@ -226,7 +221,7 @@ async def test_aelterer_puffer_bekommt_seine_liter_im_feld(hass, entry, menu_xml
     assert zahl.native_value == 1500
     assert coordinator.puffer_volumen == 1500
     assert coordinator.volumen_quelle("puffer") == "Home Assistant"
-    assert hass.config_entries.neu_laden_bestellt == 1
+    assert getattr(hass.config_entries, "neu_laden_bestellt", 0) == 0
 
 
 async def test_aelterer_puffer_zeigt_die_liter_aus_der_einrichtung(hass, entry, menu_xml):
@@ -236,7 +231,7 @@ async def test_aelterer_puffer_zeigt_die_liter_aus_der_einrichtung(hass, entry, 
     await zahl.async_set_native_value(1800)
 
     assert entry.options == {SCHLUESSEL: 1800}
-    assert by_name["Puffer Energieinhalt"].extra_state_attributes["volumen_liter"] == 1800
+    assert coordinator.puffer_volumen == 1800
     assert getattr(hass.config_entries, "neu_laden_bestellt", 0) == 0
 
 
@@ -249,12 +244,11 @@ async def test_aelterer_puffer_null_gilt_auch_gegen_die_liter_aus_der_einrichtun
     assert entry.options == {SCHLUESSEL: 0}
     assert entry.data[SCHLUESSEL] == 1500
     assert coordinator.puffer_volumen is None
-    assert hass.config_entries.neu_laden_bestellt == 1, "der Energieinhalt entfällt"
+    assert getattr(hass.config_entries, "neu_laden_bestellt", 0) == 0
 
     neu, by_name, feld = await aelterer_puffer(hass, entry, menu_xml)
     assert neu.puffer_volumen is None
     assert feld.native_value is None
-    assert "Puffer Energieinhalt" not in by_name
 
 
 async def test_zweiter_puffer_hat_sein_eigenes_feld(hass, entry, menu_xml):

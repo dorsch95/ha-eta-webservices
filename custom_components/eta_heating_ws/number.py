@@ -216,10 +216,9 @@ class ETAPuffervolumenEigen(CoordinatorEntity[ETADataUpdateCoordinator], NumberE
     Beim älteren Funktionsblock "Puffer", der kein Gesamtvolumen führt, und
     beim PufferFlex ohne Schreibzugriff. Das Feld merkt sich seinen Wert
     dann in Home Assistant, siehe
-    ETADataUpdateCoordinator.puffer_volumen_merken; Energieinhalt und
-    Prognose rechnen damit. Solange nichts eingetragen ist, zeigt es das
-    Gesamtvolumen der Anlage, falls sie eines meldet. 0 verwirft den
-    eigenen Wert wieder.
+    ETADataUpdateCoordinator.puffer_volumen_merken; die Prognose rechnet
+    damit. Solange nichts eingetragen ist, zeigt es das Gesamtvolumen der
+    Anlage, falls sie eines meldet. 0 verwirft den eigenen Wert wieder.
     """
 
     _attr_has_entity_name = True

@@ -90,7 +90,6 @@ ERWARTETE_IDS = {
     "puffer3_fuehler_1": "sensor.eta_heizung_puffer_3_fuhler_1",
     "puffer3_ladepumpe": "sensor.eta_heizung_puffer_3_ladepumpe",
     "puffer3_ladezustand": "sensor.eta_heizung_puffer_3_ladezustand",
-    "puffer_energieinhalt": "sensor.eta_heizung_puffer_energieinhalt",
     "puffer_fuehler_1": "sensor.eta_heizung_puffer_fuhler_1",
     "puffer_ladepumpe": "sensor.eta_heizung_puffer_ladepumpe",
     "puffer_ladezustand": "sensor.eta_heizung_puffer_ladezustand",

@@ -411,9 +411,11 @@ _PROGNOSE = {
 }
 _ZEITRAUM = {"pellet_verbrauch_heute", "pellet_verbrauch_woche", "pellet_verbrauch_jahr"}
 _KOSTEN = {"pellet_kosten_heute", "pellet_kosten_woche", "pellet_kosten_jahr"}
-_MIT_PUFFERVOLUMEN = {"puffer_energieinhalt"}
-_ENTFALLEN = {f"{komponente}_volumen" for komponente in PUFFER_SPEICHER}
-"""Schlüssel früherer Entitäten, die es nicht mehr gibt: die Sensoren "Puffer effektives Volumen"."""
+_ENTFALLEN = {"puffer_energieinhalt", *(f"{komponente}_volumen" for komponente in PUFFER_SPEICHER)}
+"""Schlüssel früherer Entitäten, die es nicht mehr gibt.
+
+Die Sensoren "Puffer effektives Volumen" und "Puffer Energieinhalt".
+"""
 _STOERUNG = {"aktive_fehler", "stoerung"}
 
 
@@ -423,7 +425,6 @@ def entitaet_vorgesehen(
     enable_switches: bool,
     enable_errors: bool,
     mit_kosten: bool = False,
-    puffer_mit_volumen: frozenset[str] | set[str] = frozenset(),
     mit_prognose: bool = True,
     mit_zeitraeumen: bool = True,
     kessel_sperre: bool = False,
@@ -468,8 +469,6 @@ def entitaet_vorgesehen(
         return mit_kosten and mit_zeitraeumen and "kessel" in aktiv
     if key in _PROGNOSE:
         return mit_prognose and _PROGNOSE[key] in aktiv
-    if key in _MIT_PUFFERVOLUMEN:
-        return "puffer" in aktiv and "puffer" in puffer_mit_volumen
     if key == FREMDERZEUGER_SCHWELLE_ZAHL:
         return ofenfuehler and "fremderzeuger" in aktiv
     if key == FREMDERZEUGER_SCHALTER:
@@ -512,7 +511,6 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.enable_switches,
             coordinator.enable_errors,
             coordinator.pellet_preis > 0,
-            coordinator.puffer_mit_volumen,
             coordinator.mit_prognose,
             coordinator.mit_zeitraeumen,
             coordinator.kessel_sperre,

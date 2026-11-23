@@ -1498,20 +1498,14 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Der Wert steht in den Optionen der Einrichtung, unter demselben
         Schlüssel wie bei der Einrichtung, siehe puffer_volumen_schluessel.
         Auch die 0 wird gespeichert: Sonst gälte wieder ein Wert aus der
-        Ersteinrichtung. Energieinhalt und Prognose rechnen sofort mit dem
-        neuen Wert. Neu geladen wird nur, wenn der erste Puffer dadurch ein
-        Volumen bekommt oder verliert - dann entsteht oder entfällt sein
-        Energieinhalt.
+        Ersteinrichtung. Neu geladen wird dafür nichts - die Prognose
+        rechnet beim nächsten Lauf mit dem neuen Wert.
         """
-        vorher = self.puffer_mit_volumen
         self.puffer_volumen_eingetragen[komponente] = max(0.0, float(liter))
         optionen = dict(self.config_entry.options)
         optionen[puffer_volumen_schluessel(komponente)] = self.puffer_volumen_eingetragen[komponente]
         self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
-        if ("puffer" in vorher) != ("puffer" in self.puffer_mit_volumen):
-            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
-        else:
-            self.async_update_listeners()
+        self.async_update_listeners()
 
     @callback
     def puffer_volumen_geschrieben(self, komponente: str, davor: float | None, liter: float) -> None:

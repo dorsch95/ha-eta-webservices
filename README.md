@@ -134,9 +134,9 @@ Alle Entitäten gehören zum Gerät **ETA Heizung**.
 Gut zu wissen:
 
 - **Pufferfühler:** PufferFlex hat 3 bis 9, der ältere Funktionsblock „Puffer“ 2 bis 5. Fühler 1 ist der oberste (Attribut `position`).
-- **Puffervolumen:** ein Zahlenfeld, siehe [Puffervolumen](#puffervolumen). Mit ihm rechnen Energieinhalt und Prognose.
+- **Puffervolumen:** ein Zahlenfeld, siehe [Puffervolumen](#puffervolumen). Mit ihm rechnet die Prognose.
 - **Ladezustand:** PufferFlex meldet ihn, der ältere „Puffer“ nur mit mehr als zwei Fühlern. Sonst rechnet ihn die Integration aus den Fühlern: 0 % bis 30 °C, 100 % ab 80 °C. Der Sensor trägt dann das Attribut `berechnet`.
-- **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Puffervolumen und Ladepumpe mit, Warmwasser 2 bis 8 dieselben Werte wie das erste. Den Energieinhalt gibt es nur für den ersten Puffer.
+- **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Puffervolumen und Ladepumpe mit, Warmwasser 2 bis 8 dieselben Werte wie das erste.
 - **Pumpen** melden `Ein` oder `Aus`.
 - **Warmwasser:** Der Warmwasserspeicher hat eine **Ladepumpe**, das Frischwassermodul eine **Pufferpumpe**. Ob gerade Wasser fließt, zeigen **Durchfluss** und **Drehzahl**. Mit einem zweiten Fühler unten gibt es die **Temperatur unten**.
 - **Kombispeicher:** Mit einem Warmwasserbereich im Puffer gibt es **Puffer Warmwasser**.
@@ -181,7 +181,6 @@ Gut zu wissen:
 | `sensor.eta_heizung_puffer_ladepumpe` | Puffer Ladepumpe | Text |
 | `sensor.eta_heizung_puffer_warmwasser` | Puffer Warmwasser | °C |
 | `sensor.eta_heizung_puffer_warmwasser_zustand` | Puffer Warmwasser Zustand | Text |
-| `sensor.eta_heizung_puffer_energieinhalt` | Puffer Energieinhalt über 30 °C, nur mit bekanntem Puffervolumen | kWh |
 | `sensor.eta_heizung_puffer_fuhler_1` … `_9` | je vorhandenem Pufferfühler einer | °C |
 | **Pufferspeicher 2 bis 8** (hier für Nummer 2, die weiteren heißen genauso mit ihrer Nummer) | | |
 | `sensor.eta_heizung_puffer_2_zustand` | Puffer 2 Zustand | Text |
@@ -508,13 +507,13 @@ Das **Fassungsvermögen** geht an die Anlage (*Lager → Vorrat → Maximaler Vo
 
 ### Puffervolumen
 
-Jeder Pufferspeicher hat am Gerät *ETA Heizung* unter **Konfiguration** das Zahlenfeld **Puffervolumen** (`number.eta_heizung_puffervolumen`, weitere Puffer `number.eta_heizung_puffer_2_volumen` usw.). Mit diesen Litern rechnen Energieinhalt und Prognose.
+Jeder Pufferspeicher hat am Gerät *ETA Heizung* unter **Konfiguration** das Zahlenfeld **Puffervolumen** (`number.eta_heizung_puffervolumen`, weitere Puffer `number.eta_heizung_puffer_2_volumen` usw.). Mit diesen Litern rechnet die Prognose.
 
 | Puffer | Das Feld zeigt | Eine Änderung geht |
 |---|---|---|
 | PufferFlex, mit Schreibzugriff | das Gesamtvolumen der Heizung (*PufferFlex → Einstellungen → Gesamtvolumen*, ab Werk 1000 l) | an die Heizung, ab 50 l |
 | PufferFlex, ohne Schreibzugriff | das Gesamtvolumen der Heizung | nur an Home Assistant. 0 nimmt wieder den Wert der Heizung |
-| Älterer „Puffer“ | die Liter aus der Einrichtung | nur an Home Assistant. 0 heißt unbekannt, dann gibt es keinen Energieinhalt |
+| Älterer „Puffer“ | die Liter aus der Einrichtung | nur an Home Assistant. 0 heißt unbekannt |
 
 > ⚠️ Mit Schreibzugriff ändert das Feld beim PufferFlex das Gesamtvolumen **an der Heizung**. Home Assistant meldet jede solche Änderung mit dem Wert von vorher.
 

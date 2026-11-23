@@ -15,8 +15,6 @@ Integration von der Anlage, das effektive Volumen liest sie nicht.
 
 from __future__ import annotations
 
-import pytest
-
 from .conftest import FIXTURES, load_menu
 from .test_sensors import setup_integration
 
@@ -51,11 +49,6 @@ async def einrichtung_fragt(hass, monkeypatch, namen=None) -> list[str]:
     return ohne_volumen
 
 
-def energie_bei(liter: float) -> float:
-    """Wärme über 30 °C bei 55,5 °C an allen Fühlern, in kWh."""
-    return liter * (55.5 - 30.0) * 4.186 / 3600
-
-
 async def test_zwei_fuehler_ohne_volumen_und_ohne_ladezustand(hass, entry, monkeypatch):
     als_einziger_puffer(hass, entry, ZWEI_FUEHLER)
     coordinator, by_name = await setup_integration(hass, entry)
@@ -68,7 +61,6 @@ async def test_zwei_fuehler_ohne_volumen_und_ohne_ladezustand(hass, entry, monke
     assert coordinator.puffer_volumen is None
     assert coordinator.puffer_mit_berechnetem_ladezustand == ["puffer"]
     assert by_name["Puffer Ladezustand"].extra_state_attributes["berechnet"] is True
-    assert "Puffer Energieinhalt" not in by_name
     assert await einrichtung_fragt(hass, monkeypatch) == ["puffer"]
 
 
@@ -78,7 +70,7 @@ async def test_zwei_fuehler_mit_eingetragenen_litern(hass, entry):
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen == 1500
     assert coordinator.volumen_quelle("puffer") == "Home Assistant"
-    assert by_name["Puffer Energieinhalt"].native_value == pytest.approx(energie_bei(1500), rel=0.01)
+    assert coordinator.puffer_mit_volumen == {"puffer"}
 
 
 async def test_fuenf_fuehler_von_oben_nach_unten(hass, entry):
@@ -112,7 +104,6 @@ async def test_mit_zusatzfuehlern_kommt_nur_der_ladezustand_von_der_anlage(hass,
     assert "berechnet" not in by_name["Puffer Ladezustand"].extra_state_attributes
 
     assert coordinator.puffer_volumen is None
-    assert "Puffer Energieinhalt" not in by_name
     assert await einrichtung_fragt(hass, monkeypatch) == ["puffer"]
 
 
@@ -125,10 +116,6 @@ async def test_mit_zusatzfuehlern_zaehlen_die_eingetragenen_liter(hass, entry):
     assert not coordinator.puffer_volumen_an_der_anlage("puffer")
     assert coordinator.puffer_volumen == 2000
     assert coordinator.volumen_quelle("puffer") == "Home Assistant"
-    energie = by_name["Puffer Energieinhalt"]
-    assert energie.extra_state_attributes["volumen_liter"] == 2000
-    assert energie.extra_state_attributes["volumen_quelle"] == "Home Assistant"
-    assert energie.native_value == pytest.approx(energie_bei(2000), rel=0.01)
 
     diagnose = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnose["konfiguration"]["puffer_volumen"] == {"puffer": 2000}
@@ -141,7 +128,7 @@ async def test_null_liter_heisst_unbekannt(hass, entry):
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen is None
     assert coordinator.volumen_quelle("puffer") is None
-    assert "Puffer Energieinhalt" not in by_name
+    assert coordinator.puffer_mit_volumen == set()
 
 
 async def test_beim_pufferflex_fragt_die_einrichtung_nicht(hass, monkeypatch):

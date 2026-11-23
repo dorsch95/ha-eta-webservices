@@ -330,8 +330,7 @@ weiteren heißen puffer2_… bis puffer8_…. Die Entitäten heißen
 Je Puffer gibt es bewusst nur wenig: die Fühler, den Zustand, den
 Ladezustand (PufferFlex meldet ihn, der ältere Funktionsblock "Puffer"
 nur mit zusätzlichen Fühlern), das Puffervolumen als Zahlenfeld, siehe
-ZAHLEN, und - bei dezentraler Ladung - die Ladepumpe. Den Energieinhalt
-hat nur der erste Puffer, weil es ihn schon vorher gab.
+ZAHLEN, und - bei dezentraler Ladung - die Ladepumpe.
 """
 
 WARMWASSER_SPEICHER = {

@@ -1,4 +1,4 @@
-"""Tests für Pufferspeicher: Puffervolumen, Energieinhalt, Ladepumpe, weitere Puffer."""
+"""Tests für Pufferspeicher: Puffervolumen, Ladepumpe, weitere Puffer."""
 
 from __future__ import annotations
 
@@ -91,7 +91,7 @@ async def test_pufferflex_meldet_sein_gesamtvolumen(hass, entry, menu_xml):
     assert VOLUMEN_URI in coordinator.abfragbare_uris.values()
     assert coordinator.puffer_volumen == 1200
     assert not [name for name in by_name if "olumen" in name]
-    assert "Puffer Energieinhalt" in by_name
+    assert "Puffer Energieinhalt" not in by_name
 
 
 async def test_volumen_auch_ueber_die_kennung(hass, entry, menu_xml):
@@ -102,14 +102,13 @@ async def test_volumen_auch_ueber_die_kennung(hass, entry, menu_xml):
 
 
 async def test_ohne_gesamtvolumen_im_menue_kein_volumen(hass, entry, menu_xml):
-    """Das "Effektive Puffervolumen" allein zählt nicht: kein Energieinhalt, nichts abgefragt."""
+    """Das "Effektive Puffervolumen" allein zählt nicht: kein Volumen, nichts abgefragt."""
     hass.session.menu = ohne_volumen_im_menue(menu_xml)
     assert "Effektives Puffervolumen" in hass.session.menu
     coordinator, by_name = await setup_integration(hass, entry)
     assert "puffer_volumen" not in coordinator.discovered_uris
     assert "puffer_volumen" not in coordinator.sensor_defs
     assert coordinator.puffer_volumen is None
-    assert "Puffer Energieinhalt" not in by_name
     abgefragt = set(coordinator.abfragbare_uris.values())
     assert VOLUMEN_URI not in abgefragt
     assert "/120/10601/0/0/12499" not in abgefragt
@@ -122,7 +121,6 @@ async def test_eingetragenes_volumen_ohne_volumen_der_anlage(hass, entry, menu_x
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen == 1000
     assert coordinator.volumen_quelle("puffer") == "Home Assistant"
-    assert by_name["Puffer Energieinhalt"].extra_state_attributes["volumen_quelle"] == "Home Assistant"
 
 
 async def test_schreibt_das_feld_an_die_anlage_zaehlt_nur_ihr_wert(hass, entry):
@@ -147,7 +145,7 @@ async def test_ohne_puffer_kein_volumen(hass, entry, menu_xml):
     entry.data["components"] = ["kessel", "fwm"]
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen is None
-    assert "Puffer Energieinhalt" not in by_name
+    assert coordinator.puffer_mit_volumen == set()
 
 
 @pytest.mark.parametrize("volumen", ["0", "12", "5000000"])
@@ -155,36 +153,19 @@ async def test_unplausibles_volumen_gilt_nicht(hass, entry, menu_xml, volumen):
     coordinator, by_name = await setup_integration(hass, entry)
     coordinator.data["puffer_volumen"] = _wert(float(volumen))
     assert coordinator.puffer_volumen is None
-    assert by_name["Puffer Energieinhalt"].native_value is None
 
 
-async def test_energieinhalt_aus_volumen_und_fuehlern(hass, entry, menu_xml):
-    coordinator, by_name = await setup_integration(hass, entry)
-    energie = by_name["Puffer Energieinhalt"]
-    fuehler = sorted(k for k in coordinator.sensor_defs if k.startswith("puffer_fuehler_"))
-    for key, temperatur in zip(fuehler, (70, 60, 50, 40, 30, 20, 20, 20, 20)):
-        coordinator.data[key] = _wert(temperatur)
-    anzahl = len(fuehler)
-    ueber = sum(max(0, t - 30) for t in (70, 60, 50, 40, 30, 20, 20, 20, 20)[:anzahl])
-    assert energie.native_value == pytest.approx(round(ueber / anzahl * 1200 * 0.001163, 2))
-    assert energie.native_unit_of_measurement == "kWh"
-    assert energie.device_class == "energy_storage"
-    assert energie.extra_state_attributes == {
-        "volumen_liter": 1200,
-        "volumen_quelle": "Anlage",
-        "ab_temperatur": 30.0,
-    }
-    coordinator.data.pop(fuehler[-1])
-    assert energie.native_value is None, "mit fehlendem Fühler wäre das Mittel schief"
-
-
-def test_energieinhalt_wird_mit_dem_volumen_aufgeraeumt():
+def test_der_energieinhalt_wird_aufgeraeumt():
+    """Den Sensor "Puffer Energieinhalt" gibt es nicht mehr, auch nicht mit bekanntem Volumen."""
     from eta_heating_ws import entitaet_vorgesehen
 
-    mit = {"puffer"}
-    assert entitaet_vorgesehen("puffer_energieinhalt", ["kessel", "puffer"], False, False, False, mit)
-    assert entitaet_vorgesehen("puffer_energieinhalt", ["kessel", "puffer"], False, False) is False
-    assert entitaet_vorgesehen("puffer_energieinhalt", ["kessel"], False, False, False, mit) is False
+    assert entitaet_vorgesehen("puffer_energieinhalt", ["kessel", "puffer"], True, True) is False
+
+
+async def test_kein_sensor_rechnet_mit_dem_volumen(hass, entry):
+    _, by_name = await setup_integration(hass, entry)
+    for sensor in by_name.values():
+        assert "volumen_liter" not in (sensor.extra_state_attributes or {})
 
 
 async def test_diagnose_nennt_das_volumen(hass, entry, menu_xml):
@@ -213,7 +194,7 @@ async def test_ladepumpe_bei_dezentraler_ladung(hass, entry, menu_xml):
 
 
 async def test_zweiter_puffer_mit_fuehlern_volumen_und_pumpe(hass, entry, menu_xml):
-    """Fühler, Zustand, Ladezustand und Ladepumpe als Sensoren - kein Energieinhalt."""
+    """Fühler, Zustand, Ladezustand und Ladepumpe als Sensoren."""
     hass.session.menu = mit_fub(menu_xml, ZWEITER_PUFFER)
     entry.data["components"] = ["kessel", "puffer", "puffer2"]
     coordinator, by_name = await setup_integration(hass, entry)
@@ -231,7 +212,6 @@ async def test_zweiter_puffer_mit_fuehlern_volumen_und_pumpe(hass, entry, menu_x
     assert coordinator.puffer_mit_volumen == {"puffer", "puffer2"}
     assert by_name["Puffer 2 Fühler 1"].extra_state_attributes["position"] == "oben"
     assert by_name["Puffer 2 Fühler 3"].extra_state_attributes["position"] == "unten"
-    assert "Puffer 2 Energieinhalt" not in by_name
 
 
 async def test_alter_puffer_nennt_seine_fuehler_oben_und_unten(hass, entry, menu_xml):

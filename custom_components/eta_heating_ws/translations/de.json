@@ -99,7 +99,7 @@
       },
       "puffer": {
         "title": "Puffervolumen",
-        "description": "Dein Pufferspeicher führt an der Heizung kein Gesamtvolumen. So ist es beim Funktionsblock „Puffer“. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Damit rechnet die Integration den Energieinhalt, und die Pelletprognose wird genauer. Später änderst du den Wert am Gerät im Feld „Puffervolumen“. 0 heißt: weiß ich nicht.",
+        "description": "Dein Pufferspeicher führt an der Heizung kein Gesamtvolumen. So ist es beim Funktionsblock „Puffer“. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Damit wird die Pelletprognose genauer. Später änderst du den Wert am Gerät im Feld „Puffervolumen“. 0 heißt: weiß ich nicht.",
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
@@ -278,7 +278,7 @@
       },
       "puffer": {
         "title": "Puffervolumen",
-        "description": "Dein Pufferspeicher führt an der Heizung kein Gesamtvolumen. So ist es beim Funktionsblock „Puffer“. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Damit rechnet die Integration den Energieinhalt, und die Pelletprognose wird genauer. Später änderst du den Wert am Gerät im Feld „Puffervolumen“. 0 heißt: weiß ich nicht.",
+        "description": "Dein Pufferspeicher führt an der Heizung kein Gesamtvolumen. So ist es beim Funktionsblock „Puffer“. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Damit wird die Pelletprognose genauer. Später änderst du den Wert am Gerät im Feld „Puffervolumen“. 0 heißt: weiß ich nicht.",
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
@@ -1199,9 +1199,6 @@
       },
       "puffer8_fuehler_9": {
         "name": "Puffer 8 Fühler 9"
-      },
-      "puffer_energieinhalt": {
-        "name": "Puffer Energieinhalt"
       },
       "puffer_fuehler_1": {
         "name": "Puffer Fühler 1"

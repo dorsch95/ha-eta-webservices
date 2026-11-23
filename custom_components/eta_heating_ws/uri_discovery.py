@@ -347,8 +347,8 @@ PUFFER_VOLUMEN = ("Gesamtvolumen", "0/0/13520")
 
 Der PufferFlex führt es unter Einstellungen. Eine Anlage meldet es über
 die Webservices als beschreibbar, von 50 bis 500000 l, ab Werk 1000 l.
-Mit ihm rechnen Energieinhalt und Prognose, und das Zahlenfeld
-"Puffervolumen" stellt es, siehe const.ZAHLEN.
+Mit ihm rechnet die Prognose, und das Zahlenfeld "Puffervolumen" stellt
+es, siehe const.ZAHLEN.
 
 Der ältere Funktionsblock "Puffer" führt kein Gesamtvolumen. Dort trägt
 der Nutzer die Liter ein, bei der Einrichtung oder im Zahlenfeld.

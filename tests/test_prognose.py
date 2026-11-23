@@ -635,12 +635,7 @@ def test_puffertemperaturen_nur_wenn_alle_fuehler_da_sind():
     assert p.puffer_temperaturen(None, ["puffer_fuehler_1"]) == []
 
 
-def test_energieinhalt_zaehlt_nur_waerme_ueber_dem_bezug():
-    assert p.puffer_energieinhalt([70.0, 50.0, 30.0, 20.0], 1000) == pytest.approx(
-        (40 + 20 + 0 + 0) / 4 * 1.163
-    )
-    assert p.puffer_energieinhalt([], 1000) is None
-    assert p.puffer_energieinhalt([60.0], None) is None
+
 
 
 def test_tagesende_ist_die_letzte_stunde_mit_allen_fuehlern():

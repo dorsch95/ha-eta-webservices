@@ -584,14 +584,6 @@ def puffer_temperaturen(daten, schluessel) -> list[float]:
     return werte
 
 
-def puffer_energieinhalt(temperaturen: list[float], volumen: float) -> float | None:
-    """Nutzbare Wärme im Puffer in kWh: alles über PUFFER_BEZUG."""
-    if not temperaturen or not volumen:
-        return None
-    ueber = sum(max(0.0, t - PUFFER_BEZUG) for t in temperaturen) / len(temperaturen)
-    return ueber * volumen * WASSER_KWH_JE_LITER_KELVIN
-
-
 PUFFER_VOLL = 80.0
 """Bei dieser Temperatur gilt Pufferwasser als voll geladen.
 
@@ -606,8 +598,7 @@ def puffer_ladezustand(temperaturen: list[float]) -> float | None:
     Jeder Fühler steht für einen gleich großen Teil des Speichers. Ein
     Teil zählt mit 0 %, solange er nicht wärmer ist als PUFFER_BEZUG, mit
     100 % ab PUFFER_VOLL, dazwischen anteilig. Das Ergebnis ist das Mittel
-    über alle Teile - derselbe Maßstab wie beim Energieinhalt, nur ohne
-    Volumen. Ohne Temperaturen gibt es keinen Wert.
+    über alle Teile. Ohne Temperaturen gibt es keinen Wert.
     """
     if not temperaturen:
         return None

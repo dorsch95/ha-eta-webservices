@@ -99,7 +99,7 @@
       },
       "puffer": {
         "title": "Buffer tank volume",
-        "description": "Your buffer tank has no total volume stored on the controller. That is the case for the 'Puffer' function block. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to calculate the energy content, and the pellet forecast becomes more accurate. You can change the value later on the device, in the field 'Buffer tank volume'. 0 means: unknown.",
+        "description": "Your buffer tank has no total volume stored on the controller. That is the case for the 'Puffer' function block. Enter how many litres it holds - for example from the type plate or the documentation. It makes the pellet forecast more accurate. You can change the value later on the device, in the field 'Buffer tank volume'. 0 means: unknown.",
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
@@ -278,7 +278,7 @@
       },
       "puffer": {
         "title": "Buffer tank volume",
-        "description": "Your buffer tank has no total volume stored on the controller. That is the case for the 'Puffer' function block. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to calculate the energy content, and the pellet forecast becomes more accurate. You can change the value later on the device, in the field 'Buffer tank volume'. 0 means: unknown.",
+        "description": "Your buffer tank has no total volume stored on the controller. That is the case for the 'Puffer' function block. Enter how many litres it holds - for example from the type plate or the documentation. It makes the pellet forecast more accurate. You can change the value later on the device, in the field 'Buffer tank volume'. 0 means: unknown.",
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
@@ -1199,9 +1199,6 @@
       },
       "puffer8_fuehler_9": {
         "name": "Buffer 8 sensor 9"
-      },
-      "puffer_energieinhalt": {
-        "name": "Buffer energy content"
       },
       "puffer_fuehler_1": {
         "name": "Buffer sensor 1"

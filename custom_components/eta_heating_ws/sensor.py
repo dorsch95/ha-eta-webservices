@@ -53,8 +53,6 @@ async def async_setup_entry(
                 entities.append(ETAPelletZeitraumSensor(coordinator, zeitraum, kosten=True))
     if "lager_vorrat" in coordinator.sensor_defs:
         entities.append(ETALagerFuellstandSensor(coordinator))
-    if "puffer" in coordinator.puffer_mit_volumen:
-        entities.append(ETAPufferEnergieSensor(coordinator))
     if coordinator.prognose is not None:
         schluessel = list(PROGNOSE)
         if "lager_vorrat" not in coordinator.sensor_defs:
@@ -439,47 +437,6 @@ class ETAPufferLadezustandSensor(ETABaseSensor):
             "leer_bei": prognose.PUFFER_BEZUG,
             "voll_bei": prognose.PUFFER_VOLL,
             "fuehler": len(self._fuehler),
-        }
-
-
-class ETAPufferEnergieSensor(ETABaseSensor):
-    """Wie viel nutzbare Wärme im Pufferspeicher steckt, in kWh.
-
-    Aus Volumen und Pufferfühlern: Jeder Fühler steht für einen gleich
-    großen Teil des Speichers, gezählt wird die Wärme über
-    prognose.PUFFER_BEZUG. Das Volumen ist das Puffervolumen: beim
-    PufferFlex das Gesamtvolumen der Anlage, sonst die eingetragenen Liter,
-    siehe ETADataUpdateCoordinator.volumen. Fehlt ein Fühler, bleibt der
-    Wert leer, statt schief zu sein.
-
-    Nur für den ersten Puffer - weitere fließen in die Prognose ein, ohne
-    eigene Entität.
-    """
-
-    _attr_icon = "mdi:heat-wave"
-    _attr_device_class = SensorDeviceClass.ENERGY_STORAGE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "kWh"
-    _attr_suggested_display_precision = 1
-
-    def __init__(self, coordinator: ETADataUpdateCoordinator, komponente: str = "puffer") -> None:
-        super().__init__(coordinator, f"{komponente}_energieinhalt")
-        self._attr_translation_key = f"{komponente}_energieinhalt"
-        self._komponente = komponente
-        self._fuehler = puffer_fuehler_schluessel(coordinator.sensor_defs, komponente)
-
-    @property
-    def native_value(self) -> float | None:
-        werte = prognose.puffer_temperaturen(self.coordinator.data, self._fuehler)
-        inhalt = prognose.puffer_energieinhalt(werte, self.coordinator.volumen(self._komponente))
-        return round(inhalt, 2) if inhalt is not None else None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        return {
-            "volumen_liter": self.coordinator.volumen(self._komponente),
-            "volumen_quelle": self.coordinator.volumen_quelle(self._komponente),
-            "ab_temperatur": prognose.PUFFER_BEZUG,
         }
 
 
