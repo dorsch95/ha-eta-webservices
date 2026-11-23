@@ -205,6 +205,7 @@ async def async_get_config_entry_diagnostics(
                     k: coordinator.volumen_quelle(k)
                     for k in sorted(coordinator.puffer_mit_volumen)
                 },
+                "aeltere_puffer": sorted(coordinator.aeltere_puffer),
                 "lager_fassungsvermoegen": coordinator.lager_fassungsvermoegen(),
                 "lager_fassungsvermoegen_quelle": coordinator.lager_fassungsvermoegen_quelle(),
                 "abfrageintervall": (

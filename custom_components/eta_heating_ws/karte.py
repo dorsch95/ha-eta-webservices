@@ -393,9 +393,8 @@ def puffer_kachel(komponente_, schrift, kurz, gruppe=PUFFER_KACHELN):
     """Die Kachel eines Pufferspeichers.
 
     Der Rahmen des Speichers pulsiert, solange der Puffer Wärme anfordert
-    oder aufnimmt, siehe PUFFER_LAEDT. Oben der Ladezustand - der ältere
-    Funktionsblock "Puffer" kennt keinen,
-    dann bleibt die Zeile leer. Darunter die Ladepumpe, falls der Puffer
+    oder aufnimmt, siehe PUFFER_LAEDT. Oben der Ladezustand - gibt es
+    keinen, bleibt die Zeile leer. Darunter die Ladepumpe, falls der Puffer
     dezentral geladen wird. Gibt es mehrere Puffer, steht über dem
     Speicher sein Name, siehe speicher_name.
     """

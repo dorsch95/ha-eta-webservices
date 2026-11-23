@@ -447,9 +447,10 @@ class ETAPufferEnergieSensor(ETABaseSensor):
 
     Aus Volumen und Pufferfühlern: Jeder Fühler steht für einen gleich
     großen Teil des Speichers, gezählt wird die Wärme über
-    prognose.PUFFER_BEZUG. Das Volumen ist das effektive, das PufferFlex
-    selbst meldet; beim älteren Funktionsblock "Puffer" trägt es der Nutzer
-    ein. Fehlt ein Fühler, bleibt der Wert leer, statt schief zu sein.
+    prognose.PUFFER_BEZUG. Das Volumen ist das effektive, das die Anlage
+    meldet; beim älteren Funktionsblock "Puffer" gehen eingetragene Liter
+    vor, siehe ETADataUpdateCoordinator.volumen. Fehlt ein Fühler, bleibt
+    der Wert leer, statt schief zu sein.
 
     Nur für den ersten Puffer - weitere fließen in die Prognose ein, ohne
     eigene Entität.

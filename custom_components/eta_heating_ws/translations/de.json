@@ -99,7 +99,21 @@
       },
       "puffer": {
         "title": "Pufferspeicher-Volumen",
-        "description": "Der Funktionsblock „Puffer“ zeigt sein effektives Volumen zwar am Display der Regelung, gibt es aber nicht an die Webservices weiter. Trag ein, wie viele Liter dein Pufferspeicher fasst - etwa den Wert „Effektives Puffervolumen“ vom Display, vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
+        "description": "Dein Pufferspeicher meldet kein Volumen. So ist es beim Funktionsblock „Puffer“ mit zwei Fühlern. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
+        "data": {
+          "puffer_volumen": "Pufferspeicher (Liter)",
+          "puffer2_volumen": "Pufferspeicher 2 (Liter)",
+          "puffer3_volumen": "Pufferspeicher 3 (Liter)",
+          "puffer4_volumen": "Pufferspeicher 4 (Liter)",
+          "puffer5_volumen": "Pufferspeicher 5 (Liter)",
+          "puffer6_volumen": "Pufferspeicher 6 (Liter)",
+          "puffer7_volumen": "Pufferspeicher 7 (Liter)",
+          "puffer8_volumen": "Pufferspeicher 8 (Liter)"
+        }
+      },
+      "puffer_einstellwert": {
+        "title": "Pufferspeicher-Volumen prüfen",
+        "description": "Der Funktionsblock „Puffer“ mit mehr als zwei Fühlern meldet ein effektives Volumen. Dort ist es aber kein errechneter Wert, sondern eine Einstellung an der Heizung, ab Werk 1000 l. Deine Heizung meldet: {gemeldet}. Passt das zu deinem Pufferspeicher, lass 0 stehen - dann rechnet die Integration mit dem Wert der Heizung. Sonst trag ein, wie viele Liter er fasst, etwa vom Typenschild oder aus den Unterlagen. Diese Liter gelten dann statt des Werts der Heizung.",
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
@@ -278,7 +292,21 @@
       },
       "puffer": {
         "title": "Pufferspeicher-Volumen",
-        "description": "Der Funktionsblock „Puffer“ zeigt sein effektives Volumen zwar am Display der Regelung, gibt es aber nicht an die Webservices weiter. Trag ein, wie viele Liter dein Pufferspeicher fasst - etwa den Wert „Effektives Puffervolumen“ vom Display, vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
+        "description": "Dein Pufferspeicher meldet kein Volumen. So ist es beim Funktionsblock „Puffer“ mit zwei Fühlern. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
+        "data": {
+          "puffer_volumen": "Pufferspeicher (Liter)",
+          "puffer2_volumen": "Pufferspeicher 2 (Liter)",
+          "puffer3_volumen": "Pufferspeicher 3 (Liter)",
+          "puffer4_volumen": "Pufferspeicher 4 (Liter)",
+          "puffer5_volumen": "Pufferspeicher 5 (Liter)",
+          "puffer6_volumen": "Pufferspeicher 6 (Liter)",
+          "puffer7_volumen": "Pufferspeicher 7 (Liter)",
+          "puffer8_volumen": "Pufferspeicher 8 (Liter)"
+        }
+      },
+      "puffer_einstellwert": {
+        "title": "Pufferspeicher-Volumen prüfen",
+        "description": "Der Funktionsblock „Puffer“ mit mehr als zwei Fühlern meldet ein effektives Volumen. Dort ist es aber kein errechneter Wert, sondern eine Einstellung an der Heizung, ab Werk 1000 l. Deine Heizung meldet: {gemeldet}. Passt das zu deinem Pufferspeicher, lass 0 stehen - dann rechnet die Integration mit dem Wert der Heizung. Sonst trag ein, wie viele Liter er fasst, etwa vom Typenschild oder aus den Unterlagen. Diese Liter gelten dann statt des Werts der Heizung.",
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",

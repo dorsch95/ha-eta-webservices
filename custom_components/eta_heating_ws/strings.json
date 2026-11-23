@@ -99,7 +99,21 @@
       },
       "puffer": {
         "title": "Buffer tank volume",
-        "description": "The 'Puffer' function block shows its effective volume on the controller display but does not pass it on to the webservices. Enter how many litres your buffer tank holds - for example the 'Effektives Puffervolumen' value from the display, the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
+        "description": "Your buffer tank does not report a volume. That is the case for the 'Puffer' function block with two sensors. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
+        "data": {
+          "puffer_volumen": "Buffer tank (litres)",
+          "puffer2_volumen": "Buffer tank 2 (litres)",
+          "puffer3_volumen": "Buffer tank 3 (litres)",
+          "puffer4_volumen": "Buffer tank 4 (litres)",
+          "puffer5_volumen": "Buffer tank 5 (litres)",
+          "puffer6_volumen": "Buffer tank 6 (litres)",
+          "puffer7_volumen": "Buffer tank 7 (litres)",
+          "puffer8_volumen": "Buffer tank 8 (litres)"
+        }
+      },
+      "puffer_einstellwert": {
+        "title": "Check buffer tank volume",
+        "description": "The 'Puffer' function block with more than two sensors reports an effective volume. There it is not a calculated value but a setting on the controller, 1000 l by default. Your controller reports: {gemeldet}. If that matches your buffer tank, leave 0 - the integration then uses the controller's value. Otherwise enter how many litres it holds, for example from the type plate or the documentation. These litres then apply instead of the controller's value.",
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
@@ -278,7 +292,21 @@
       },
       "puffer": {
         "title": "Buffer tank volume",
-        "description": "The 'Puffer' function block shows its effective volume on the controller display but does not pass it on to the webservices. Enter how many litres your buffer tank holds - for example the 'Effektives Puffervolumen' value from the display, the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
+        "description": "Your buffer tank does not report a volume. That is the case for the 'Puffer' function block with two sensors. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
+        "data": {
+          "puffer_volumen": "Buffer tank (litres)",
+          "puffer2_volumen": "Buffer tank 2 (litres)",
+          "puffer3_volumen": "Buffer tank 3 (litres)",
+          "puffer4_volumen": "Buffer tank 4 (litres)",
+          "puffer5_volumen": "Buffer tank 5 (litres)",
+          "puffer6_volumen": "Buffer tank 6 (litres)",
+          "puffer7_volumen": "Buffer tank 7 (litres)",
+          "puffer8_volumen": "Buffer tank 8 (litres)"
+        }
+      },
+      "puffer_einstellwert": {
+        "title": "Check buffer tank volume",
+        "description": "The 'Puffer' function block with more than two sensors reports an effective volume. There it is not a calculated value but a setting on the controller, 1000 l by default. Your controller reports: {gemeldet}. If that matches your buffer tank, leave 0 - the integration then uses the controller's value. Otherwise enter how many litres it holds, for example from the type plate or the documentation. These litres then apply instead of the controller's value.",
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",

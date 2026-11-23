@@ -8,7 +8,7 @@ from .conftest import ohne_objekt
 from .test_sensors import setup_integration
 
 VOLUMEN_URI = "/120/10601/0/0/12499"
-"""Im Menübaum der Tests steht es wie bei PufferFlex unter Einstellungen > Leistungsregelung."""
+"""Im Menübaum der Tests steht es unter Einstellungen > Leistungsregelung, gesucht wird nach dem Namen."""
 
 
 def ohne_volumen_im_menue(menu: str) -> str:
@@ -66,7 +66,7 @@ ALTER_PUFFER = (
 )
 """Der ältere Funktionsblock "Puffer": zwei Fühler, kein Volumen im Menübaum.
 
-Am Display kennt er es, an die Webservices gibt er es nicht weiter.
+Mit zusätzlichen Fühlern meldet er eines, siehe test_puffer_zusatzfuehler.
 """
 
 
@@ -122,7 +122,7 @@ async def test_eingetragenes_volumen_ohne_volumen_der_anlage(hass, entry, menu_x
 
 
 async def test_volumen_der_anlage_geht_vor(hass, entry):
-    """Ein früher eingetragener Wert stört nicht, wenn die Anlage ihr Volumen meldet."""
+    """Beim PufferFlex stört ein früher eingetragener Wert nicht: Die Anlage errechnet ihr Volumen."""
     entry.data["puffer_volumen"] = 1000
     coordinator, _ = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen == 825

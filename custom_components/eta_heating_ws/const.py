@@ -265,10 +265,12 @@ MAX_PUFFER_VOLUMEN = 100000
 def puffer_volumen_schluessel(komponente):
     """Unter welchem Schlüssel das eingetragene Volumen eines Puffers steht, in Litern.
 
-    Nur für Puffer, die ihr effektives Volumen nicht an die Webservices
-    geben - der ältere Funktionsblock "Puffer". Der erste Puffer heißt
+    Gefragt wird nur beim älteren Funktionsblock "Puffer": Mit zwei
+    Fühlern meldet er kein Volumen, mit zusätzlichen Fühlern einen
+    Einstellwert, dem eingetragene Liter vorgehen. Der erste Puffer heißt
     "puffer_volumen" wie schon in Version 0.23, ein dort eingetragener
-    Wert gilt also weiter. 0 heißt: unbekannt.
+    Wert gilt also weiter. 0 heißt: unbekannt oder - wenn die Anlage ein
+    Volumen meldet - deren Wert nehmen.
     """
     return f"{komponente}_volumen"
 
@@ -322,8 +324,9 @@ weiteren heißen puffer2_… bis puffer8_…. Die Entitäten heißen
 älteren Puffer.
 
 Je Puffer gibt es bewusst nur wenig: die Fühler, den Zustand, den
-Ladezustand (nur PufferFlex, der ältere Funktionsblock "Puffer" kennt
-keinen), das effektive Volumen und - bei dezentraler Ladung - die
+Ladezustand (PufferFlex meldet ihn, der ältere Funktionsblock "Puffer"
+nur mit zusätzlichen Fühlern), das effektive Volumen und - bei
+dezentraler Ladung - die
 Ladepumpe. Den Energieinhalt hat nur der erste Puffer, weil es ihn schon
 vorher gab.
 """

@@ -237,6 +237,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.discovered_uris: dict[str, str] = {}
         self.ueber_kennung: set[str] = set()
         self.fub_namen: dict[str, str] = {}
+        self.aeltere_puffer: set[str] = set()
+        """Die Puffer, deren Funktionsblock der ältere "Puffer" ist, siehe uri_discovery._aelterer_puffer."""
         self.thermostat_defs: dict[str, dict] = {}
         self.zeitprogramm_defs: dict[str, dict[tuple[str, int], dict]] = {}
         """Je Heizkreis mit beschreibbarem Zeitprogramm seine 21 Zeitfenster, siehe zeitplan.py."""
@@ -1347,6 +1349,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 self.ueber_kennung,
                 self.fub_namen,
                 self.zeitprogramm_namen,
+                self.aeltere_puffer,
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
@@ -1428,24 +1431,37 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return liter if liter is not None and 50 <= liter <= 100000 else None
 
-    def volumen(self, komponente: str = "puffer") -> float | None:
-        """Das Volumen eines Puffers in Litern: von der Anlage, sonst eingetragen.
+    def _volumen_mit_quelle(self, komponente: str) -> tuple[float | None, str | None]:
+        """Das Volumen eines Puffers in Litern und woher es stammt.
 
-        Eingetragen wird es nur beim älteren Funktionsblock "Puffer", der
-        sein Volumen nicht an die Webservices gibt.
+        "Anlage" ist der Wert, den die Anlage meldet, "Einstellung" sind die
+        Liter, die der Nutzer eingetragen hat. Beim PufferFlex gilt immer
+        der Wert der Anlage: Sie errechnet ihn. Ein früher eingetragener
+        Wert stört dort nicht.
+
+        Beim älteren Funktionsblock "Puffer" gehen eingetragene Liter vor.
+        Mit zwei Fühlern führt er kein Volumen. Mit zusätzlichen Fühlern
+        meldet er einen Einstellwert, der ab Werk auf 1000 l steht, siehe
+        uri_discovery.PUFFER_VOLUMEN - ob er zum Puffer passt, weiß nur der
+        Nutzer. Ist nichts eingetragen, gilt auch dort der Wert der Anlage.
         """
         if komponente not in self.components:
-            return None
+            return None, None
         von_der_anlage = self._volumen_der_anlage(komponente)
-        if von_der_anlage is not None:
-            return von_der_anlage
         eingetragen = self.puffer_volumen_eingetragen.get(komponente, 0.0)
-        return eingetragen if eingetragen > 0 else None
+        if eingetragen > 0 and (von_der_anlage is None or komponente in self.aeltere_puffer):
+            return eingetragen, "Einstellung"
+        if von_der_anlage is not None:
+            return von_der_anlage, "Anlage"
+        return None, None
+
+    def volumen(self, komponente: str = "puffer") -> float | None:
+        """Das Volumen eines Puffers in Litern, siehe _volumen_mit_quelle."""
+        return self._volumen_mit_quelle(komponente)[0]
 
     def volumen_quelle(self, komponente: str = "puffer") -> str | None:
-        if self.volumen(komponente) is None:
-            return None
-        return "Anlage" if self._volumen_der_anlage(komponente) is not None else "Einstellung"
+        """Woher das Volumen eines Puffers stammt: "Anlage" oder "Einstellung"."""
+        return self._volumen_mit_quelle(komponente)[1]
 
     @property
     def puffer_volumen(self) -> float | None:
@@ -1470,9 +1486,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """Die angekreuzten Puffer, deren Ladezustand aus den Fühlern gerechnet wird.
 
         Das sind Puffer, für die die Anlage keinen Ladezustand führt, aber
-        mindestens zwei Fühler: der ältere Funktionsblock "Puffer". PufferFlex
-        meldet seinen Ladezustand selbst. Mit nur einem Fühler wäre es
-        bloß dessen Temperatur in anderer Einheit.
+        mindestens zwei Fühler: der ältere Funktionsblock "Puffer" mit
+        seinen zwei Fühlern ab Werk. PufferFlex meldet seinen Ladezustand
+        selbst, der ältere Puffer mit zusätzlichen Fühlern ebenfalls. Mit
+        nur einem Fühler wäre es bloß dessen Temperatur in anderer Einheit.
         """
         return [
             k

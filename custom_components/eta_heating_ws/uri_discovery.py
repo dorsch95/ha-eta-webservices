@@ -345,12 +345,21 @@ Diagnose ebenfalls unter "ueber_kennung_gefunden".
 PUFFER_VOLUMEN = ("Effektives Puffervolumen", "0/0/12499")
 """Name und Kennung des effektiven Puffervolumens in Litern.
 
-Die Regelung rechnet es aus dem eingestellten Gesamtvolumen und der Lage
-der Fühler; damit rechnen Energieinhalt und Prognose. PufferFlex zeigt es
-unter Einstellungen > Leistungsregelung. Der ältere Funktionsblock
-"Puffer" kennt es am Display auch, gibt es aber nicht an die Webservices
-weiter - dort fragt die Einrichtung nach den Litern. Ob ein Puffer das
-Volumen meldet, ist damit zugleich das Merkmal, ob es ein PufferFlex ist.
+Damit rechnen Energieinhalt und Prognose. Beim PufferFlex errechnet die
+Regelung es aus dem eingestellten Gesamtvolumen; es steht unter Puffer >
+Erzeuger Kessel/Puffer > Leistungsregelung, und die Anlage meldet es als
+nicht beschreibbar.
+
+Der ältere Funktionsblock "Puffer" führt es nur, wenn er mehr als seine
+zwei Fühler ab Werk hat. Dann steht es unter Puffer > geforderte
+Leistung und ist ein Einstellwert: Die Anlage meldet es als beschreibbar,
+ab Werk mit 1000 l. Die Einrichtung zeigt diesen Wert und nimmt eigene
+Liter an, die dann vorgehen, siehe ETADataUpdateCoordinator.volumen. Mit
+zwei Fühlern führt der ältere Puffer kein Volumen - dort fragt die
+Einrichtung nach den Litern. Ob ein Puffer das Volumen meldet, sagt also
+nicht, ob es ein PufferFlex ist; das sagt _aelterer_puffer. Die
+Menübäume dazu stehen in tests/fixtures/fub_puffer_2_fuehler.xml und
+fub_puffer_5_fuehler.xml.
 """
 
 ALTE_PUFFER_FUEHLER = (
@@ -860,7 +869,19 @@ def _discover_puffer_fuehler(fub):
     if eingaenge is None:
         return _alte_puffer_fuehler(_find_path(fub, ALTE_PUFFER_FUNKTION))
 
+    found = _nummerierte_fuehler(eingaenge)
+    if found:
+        return found
+    return _alte_puffer_fuehler(eingaenge) or _alte_puffer_fuehler(
+        _find_path(fub, ALTE_PUFFER_FUNKTION)
+    )
+
+
+def _nummerierte_fuehler(eingaenge):
+    """Die Fühler eines PufferFlex unter "Eingänge": je Nummer der erste "Fühler <Zahl>"."""
     found = {}
+    if eingaenge is None:
+        return found
     for child in _as_list(eingaenge.get("object")):
         if not isinstance(child, dict):
             continue
@@ -873,15 +894,31 @@ def _discover_puffer_fuehler(fub):
         uri = child.get("@uri")
         if uri and index not in found:
             found[index] = uri
-    if found:
-        return found
-    return _alte_puffer_fuehler(eingaenge) or _alte_puffer_fuehler(
-        _find_path(fub, ALTE_PUFFER_FUNKTION)
-    )
+    return found
+
+
+def _aelterer_puffer(fub):
+    """Ob dieser Funktionsblock der ältere "Puffer" ist und kein PufferFlex.
+
+    Merkmal sind die Namen der Fühler: Der ältere Puffer nennt sie "Puffer
+    oben" bis "Puffer unten", siehe ALTE_PUFFER_FUEHLER, PufferFlex
+    "Fühler 1" bis "Fühler 9". Ein Block ohne gefundene Fühler gilt nicht
+    als älterer Puffer.
+    """
+    if fub is None:
+        return False
+    if _nummerierte_fuehler(_find_path(fub, ["Eingänge"])):
+        return False
+    return bool(_discover_puffer_fuehler(fub))
 
 
 async def async_discover_uris(
-    client, fub_name_overrides=None, ueber_kennung=None, fub_namen=None, zeitprogramme=None
+    client,
+    fub_name_overrides=None,
+    ueber_kennung=None,
+    fub_namen=None,
+    zeitprogramme=None,
+    aeltere_puffer=None,
 ):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
@@ -898,7 +935,9 @@ async def async_discover_uris(
     Funktionsblocks, wie er im Menübaum steht - etwa "Puffer" statt des
     vorbelegten "PufferFlex", wenn die Erkennung auf den älteren Block
     ausgewichen ist. In zeitprogramme, falls übergeben, landen die Lade-
-    und Bereitschaftszeiten, siehe WEITERE_ZEITPROGRAMME.
+    und Bereitschaftszeiten, siehe WEITERE_ZEITPROGRAMME. In aeltere_puffer,
+    falls übergeben, landen die Puffer-Komponenten, deren Funktionsblock
+    der ältere "Puffer" ist, siehe _aelterer_puffer.
     """
     discovered = {}
 
@@ -991,6 +1030,8 @@ async def async_discover_uris(
             alle_fuehler.add(f"{komponente}_fuehler_{index}")
         if komponente == "puffer":
             puffer_fuehler_indices = sorted(fuehler)
+        if aeltere_puffer is not None and _aelterer_puffer(puffer):
+            aeltere_puffer.add(komponente)
         volumen = _finde_nach_namen(puffer, PUFFER_VOLUMEN[0]) or _finde_nach_kennung(
             puffer, PUFFER_VOLUMEN[1]
         )
