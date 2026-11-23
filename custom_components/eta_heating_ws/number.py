@@ -1,10 +1,11 @@
-"""Zahlen zum Einstellen: Fassungsvermögen und Vorrat des Pelletlagers, dazu der Pelletpreis.
+"""Zahlen zum Einstellen: Fassungsvermögen und Vorrat des Pelletlagers, Puffervolumen, dazu der Pelletpreis.
 
 Welche es an der Anlage gibt, steht in const.ZAHLEN. An die Anlage
 schreibt ein Zahlenfeld nur mit freigegebenem Schreibzugriff und nur,
 wenn sie die Zahl als beschreibbar meldet, siehe
-ETADataUpdateCoordinator._zahlen_pruefen. Das Fassungsvermögen gibt es
-auch sonst: Dann merkt es sich seinen Wert in Home Assistant.
+ETADataUpdateCoordinator._zahlen_pruefen. Fassungsvermögen und
+Puffervolumen gibt es auch sonst: Dann merken sie sich ihren Wert in Home
+Assistant.
 
 Der Pelletpreis und die Sperrtemperatur des Fremderzeugers gehören allein
 zu Home Assistant, siehe ETAPelletPreis und ETAFremderzeugerSchwelle.
@@ -32,7 +33,7 @@ from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator
 from .entitaets_ids import ids_vorschlagen
 from .switch import vorwegnahme_pruefen
 
-GERAETEKLASSEN = {"kg": NumberDeviceClass.WEIGHT}
+GERAETEKLASSEN = {"kg": NumberDeviceClass.WEIGHT, "L": NumberDeviceClass.VOLUME_STORAGE}
 """Die Geräteklasse zur Einheit einer Zahl."""
 
 
@@ -55,7 +56,9 @@ async def async_setup_entry(
         for key, definition in coordinator.zahl_defs.items()
     ]
     entities.extend(
-        ETALagerMaximumEigen(coordinator, key, definition)
+        (ETAPuffervolumenEigen if definition.get("puffer") else ETALagerMaximumEigen)(
+            coordinator, key, definition
+        )
         for key, definition in ZAHLEN.items()
         if definition.get("sonst_in_home_assistant")
         and definition["component"] in coordinator.components
@@ -92,6 +95,7 @@ class ETAZahl(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
         super().__init__(coordinator)
         self._key = key
         self._quelle = definition["quelle"]
+        self._puffer = definition.get("puffer")
         self._attr_translation_key = definition["translation_key"]
         self._attr_icon = definition["icon"]
         self._attr_native_unit_of_measurement = definition["einheit"]
@@ -124,13 +128,20 @@ class ETAZahl(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
         return {"gespeichert": "Anlage"}
 
     async def async_set_native_value(self, value: float) -> None:
-        """Schreibt die Zahl auf die Anlage, siehe ETADataUpdateCoordinator.async_zahl_schreiben."""
+        """Schreibt die Zahl auf die Anlage, siehe ETADataUpdateCoordinator.async_zahl_schreiben.
+
+        Beim Puffervolumen meldet Home Assistant die Änderung eigens, siehe
+        ETADataUpdateCoordinator.puffer_volumen_geschrieben.
+        """
+        davor = self.coordinator.zahl(self._quelle)
         await self.coordinator.async_zahl_schreiben(self._key, value)
         self._erwartet = float(value)
         self._erwartet_seit = time.monotonic()
         self._widerspruch = 0
         if self._quelle == "lager_maximum" and self.coordinator.lager_maximum_eingetragen:
             self.coordinator.lager_maximum_merken(0)
+        if self._puffer and (davor is None or abs(davor - float(value)) >= 0.5):
+            self.coordinator.puffer_volumen_geschrieben(self._puffer, davor, float(value))
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
@@ -197,6 +208,57 @@ class ETALagerMaximumEigen(CoordinatorEntity[ETADataUpdateCoordinator], NumberEn
                 f"{self.native_unit_of_measurement}"
             )
         self.coordinator.lager_maximum_merken(value)
+
+
+class ETAPuffervolumenEigen(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):
+    """Das Volumen eines Puffers, wenn es nicht an die Anlage geschrieben werden kann.
+
+    Beim älteren Funktionsblock "Puffer", der kein Gesamtvolumen führt, und
+    beim PufferFlex ohne Schreibzugriff. Das Feld merkt sich seinen Wert
+    dann in Home Assistant, siehe
+    ETADataUpdateCoordinator.puffer_volumen_merken; Energieinhalt und
+    Prognose rechnen damit. Solange nichts eingetragen ist, zeigt es das
+    Gesamtvolumen der Anlage, falls sie eines meldet. 0 verwirft den
+    eigenen Wert wieder.
+    """
+
+    _attr_has_entity_name = True
+    _attr_mode = NumberMode.BOX
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_min_value = 0
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator, key: str, definition: dict) -> None:
+        super().__init__(coordinator)
+        self._quelle = definition["quelle"]
+        self._puffer = definition["puffer"]
+        self._attr_translation_key = definition["translation_key"]
+        self._attr_icon = definition["icon"]
+        self._attr_native_unit_of_measurement = definition["einheit"]
+        self._attr_device_class = GERAETEKLASSEN.get(definition["einheit"])
+        self._attr_native_step = definition["schritt"]
+        self._attr_native_max_value = definition["grenzen"][1]
+        self._attr_unique_id = f"eta_static_{coordinator.config_entry.entry_id}_{key}"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def native_value(self) -> float | None:
+        eigen = self.coordinator.puffer_volumen_eigen(self._puffer)
+        return eigen if eigen is not None else self.coordinator.zahl(self._quelle)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | None]:
+        return {
+            "gespeichert": "Home Assistant",
+            "wert_der_anlage": self.coordinator.zahl(self._quelle),
+        }
+
+    async def async_set_native_value(self, value: float) -> None:
+        if not self.native_min_value <= value <= self.native_max_value:
+            raise HomeAssistantError(
+                f"Nur zwischen {self.native_min_value:g} und {self.native_max_value:g} "
+                f"{self.native_unit_of_measurement}"
+            )
+        self.coordinator.puffer_volumen_merken(self._puffer, value)
 
 
 class ETAPelletPreis(CoordinatorEntity[ETADataUpdateCoordinator], NumberEntity):

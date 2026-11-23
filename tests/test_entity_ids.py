@@ -87,11 +87,9 @@ ERWARTETE_IDS = {
     "puffer2_fuehler_1": "sensor.eta_heizung_puffer_2_fuhler_1",
     "puffer2_ladepumpe": "sensor.eta_heizung_puffer_2_ladepumpe",
     "puffer2_ladezustand": "sensor.eta_heizung_puffer_2_ladezustand",
-    "puffer2_volumen": "sensor.eta_heizung_puffer_2_effektives_volumen",
     "puffer3_fuehler_1": "sensor.eta_heizung_puffer_3_fuhler_1",
     "puffer3_ladepumpe": "sensor.eta_heizung_puffer_3_ladepumpe",
     "puffer3_ladezustand": "sensor.eta_heizung_puffer_3_ladezustand",
-    "puffer3_volumen": "sensor.eta_heizung_puffer_3_effektives_volumen",
     "puffer_energieinhalt": "sensor.eta_heizung_puffer_energieinhalt",
     "puffer_fuehler_1": "sensor.eta_heizung_puffer_fuhler_1",
     "puffer_ladepumpe": "sensor.eta_heizung_puffer_ladepumpe",
@@ -99,7 +97,6 @@ ERWARTETE_IDS = {
     "puffer3_zustand": "sensor.eta_heizung_puffer_3_zustand",
     "puffer2_zustand": "sensor.eta_heizung_puffer_2_zustand",
     "puffer_zustand": "sensor.eta_heizung_puffer_zustand",
-    "puffer_volumen": "sensor.eta_heizung_puffer_effektives_volumen",
     "pvm_ertrag_gestern": "sensor.eta_heizung_pv_heizmodul_ertrag_gestern",
     "pvm_ertrag_heute": "sensor.eta_heizung_pv_heizmodul_ertrag_heute",
     "pvm_gesamtenergie": "sensor.eta_heizung_pv_heizmodul_gesamtenergie",
@@ -121,7 +118,6 @@ ERWARTETE_IDS = {
         for teil, endung in (
             ("zustand", "zustand"),
             ("ladezustand", "ladezustand"),
-            ("volumen", "effektives_volumen"),
             ("ladepumpe", "ladepumpe"),
             ("fuehler_1", "fuhler_1"),
         )
@@ -166,6 +162,17 @@ def deutsche_namen() -> dict[str, str]:
 def test_entity_id_bleibt_unveraendert(key, entity_id):
     name = deutsche_namen()[key]
     assert f"sensor.{slugify(f'{GERAET} {name}')}" == entity_id
+
+
+def test_puffervolumen_hat_seine_feste_id():
+    """Das Zahlenfeld je Puffer, siehe const.ZAHLEN."""
+    daten = json.loads((UEBERSETZUNGEN / "de.json").read_text(encoding="utf-8"))
+    namen = {key: eintrag["name"] for key, eintrag in daten["entity"]["number"].items()}
+    ids = {key: f"number.{slugify(f'{GERAET} {name}')}" for key, name in namen.items()}
+    assert ids["puffer_volumen_stellen"] == "number.eta_heizung_puffervolumen"
+    for nummer in range(2, 9):
+        assert ids[f"puffer{nummer}_volumen_stellen"] == f"number.eta_heizung_puffer_{nummer}_volumen"
+    assert not [key for key in daten["entity"]["sensor"] if key.endswith("_volumen")]
 
 
 def test_neue_entitaeten_sind_hier_eingetragen():

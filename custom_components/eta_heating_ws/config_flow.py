@@ -141,15 +141,12 @@ async def _anlage_pruefen(
     fub_names: dict[str, str],
     komponenten: list[str],
     schreiben: bool,
-) -> (
-    tuple[list[str], dict[str, dict], dict[str, dict[tuple[str, int], str]], dict[str, dict]]
-    | None
-):
+) -> tuple[list[str], dict[str, dict], dict[str, dict[tuple[str, int], str]]] | None:
     """Liest einmal den Menübaum und sagt, welche Schritte noch folgen.
 
-    Erstens die angekreuzten Puffer, die kein effektives Volumen melden.
-    Das ist der ältere Funktionsblock "Puffer" mit seinen zwei Fühlern ab
-    Werk: Er führt kein Volumen. Gefragt wird nur für Puffer, deren Fühler
+    Erstens die angekreuzten Puffer, die kein Gesamtvolumen melden. Das
+    ist der ältere Funktionsblock "Puffer": Er führt keines, siehe
+    uri_discovery.PUFFER_VOLUMEN. Gefragt wird nur für Puffer, deren Fühler
     gefunden wurden.
 
     Zweitens - nur mit Schreibzugriff - die Heizkreise mit Raumfühler über
@@ -162,23 +159,13 @@ async def _anlage_pruefen(
     beschreibbar, fehlt der Heizkreis - ein Zeitplan bliebe dort wirkungslos.
     Alle Fenster prüft erst das Einrichten selbst.
 
-    Viertens die angekreuzten älteren Puffer, die ein Volumen melden - mit
-    zusätzlichen Fühlern. Dort ist es ein Einstellwert der Anlage, ab Werk
-    1000 l, siehe uri_discovery.PUFFER_VOLUMEN. Je Puffer der Name seines
-    Funktionsblocks und die gemeldeten Liter; None, wenn die Anlage sie
-    gerade nicht nennt.
-
     Ist der Menübaum nicht lesbar, folgt keiner der Schritte - dann None.
     """
     if not host:
         return None
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
-    namen: dict[str, str] = {}
-    aeltere: set[str] = set()
     try:
-        gefunden, _ = await async_discover_uris(
-            client, fub_names, fub_namen=namen, aeltere_puffer=aeltere
-        )
+        gefunden, _ = await async_discover_uris(client, fub_names)
     except ETAApiError:
         return None
     ohne_volumen = [
@@ -188,18 +175,9 @@ async def _anlage_pruefen(
         and f"{komponente}_volumen" not in gefunden
         and any(key.startswith(f"{komponente}_fuehler_") for key in gefunden)
     ]
-    einstellwerte: dict[str, dict] = {}
-    for komponente in PUFFER_SPEICHER:
-        uri = gefunden.get(f"{komponente}_volumen")
-        if komponente in komponenten and komponente in aeltere and uri:
-            einstellwerte[komponente] = {
-                "name": namen.get(COMPONENTS[komponente]["roles"][0])
-                or COMPONENTS[komponente]["name"],
-                "liter": await _gemeldete_liter(client, uri),
-            }
     thermostate: dict[str, dict] = {}
     if not schreiben:
-        return ohne_volumen, thermostate, {}, einstellwerte
+        return ohne_volumen, thermostate, {}
     zeitprogramme = {}
     for heizkreis, definition in THERMOSTATE.items():
         uris = {
@@ -221,28 +199,7 @@ async def _anlage_pruefen(
             except (ETAApiError, TypeError, ValueError):
                 sekunden = None
         thermostate[heizkreis] = {"uri": uri, "sekunden": sekunden}
-    return ohne_volumen, thermostate, zeitprogramme, einstellwerte
-
-
-async def _gemeldete_liter(client: ETAApiClient, uri: str) -> int | None:
-    """Das Volumen in Litern, wie die Anlage es unter dieser URI meldet - sonst None."""
-    try:
-        return int(float((await client.async_get_value(uri)).value))
-    except (ETAApiError, TypeError, ValueError):
-        return None
-
-
-def _gemeldet(einstellwerte: dict[str, dict]) -> str:
-    """Die gemeldeten Liter je Puffer als Text, etwa "Puffer: 1000 l, Puffer 2: 800 l".
-
-    Die Namen sind die der Funktionsblöcke an der Anlage und damit in
-    jeder Sprache gleich. Nennt die Anlage keinen Wert, steht ein
-    Fragezeichen.
-    """
-    return ", ".join(
-        f"{info['name']}: {'?' if info['liter'] is None else info['liter']} l"
-        for info in einstellwerte.values()
-    )
+    return ohne_volumen, thermostate, zeitprogramme
 
 
 async def _beschreibbar(client: ETAApiClient, uris: dict[tuple[str, int], str]) -> bool:
@@ -437,12 +394,7 @@ def _fremderzeuger_schema(current: dict[str, Any], schreiben: bool) -> vol.Schem
 
 
 def _puffer_schema(komponenten: list[str], current: dict[str, Any]) -> vol.Schema:
-    """Je Puffer ein Feld für seine Liter, vorbelegt mit dem bisher Eingetragenen.
-
-    0 heißt bei einem Puffer ohne gemeldetes Volumen: unbekannt. Bei einem
-    älteren Puffer, der ein Volumen meldet, heißt 0: den Wert der Anlage
-    nehmen.
-    """
+    """Je Puffer ohne Gesamtvolumen an der Anlage ein Feld für seine Liter, 0 = unbekannt."""
     return vol.Schema(
         {
             vol.Required(
@@ -679,22 +631,12 @@ class _Anlagenschritte:
         )
         if geprueft is None:
             return self._fertig(_bisherige_angaben(self._data, self._bisher))
-        (
-            self._ohne_volumen,
-            self._thermostate,
-            self._zeitprogramme,
-            self._einstellwerte,
-        ) = geprueft
+        self._ohne_volumen, self._thermostate, self._zeitprogramme = geprueft
         if self._ohne_volumen:
             return await self.async_step_puffer()
         return await self._nach_puffer()
 
     async def _nach_puffer(self) -> ConfigFlowResult:
-        if self._einstellwerte:
-            return await self.async_step_puffer_einstellwert()
-        return await self._nach_puffer_einstellwert()
-
-    async def _nach_puffer_einstellwert(self) -> ConfigFlowResult:
         if self._thermostate:
             return await self.async_step_raumfuehler()
         return await self._nach_raumfuehler()
@@ -779,32 +721,12 @@ class _Anlagenschritte:
     async def async_step_puffer(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Fragt nach den Litern der Puffer, die kein Volumen melden."""
+        """Fragt nach den Litern der Puffer, die kein Gesamtvolumen melden."""
         if user_input is not None:
             self._data.update(user_input)
             return await self._nach_puffer()
         return self.async_show_form(
             step_id="puffer", data_schema=_puffer_schema(self._ohne_volumen, self._bisher)
-        )
-
-    async def async_step_puffer_einstellwert(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Zeigt das Volumen, das ein älterer Puffer meldet, und nimmt eigene Liter an.
-
-        Beim älteren Funktionsblock "Puffer" mit zusätzlichen Fühlern ist
-        das Volumen ein Einstellwert der Anlage, ab Werk 1000 l. Ob er zum
-        Puffer passt, weiß nur der Nutzer. Eingetragene Liter gehen deshalb
-        vor, 0 heißt: den Wert der Anlage nehmen, siehe
-        ETADataUpdateCoordinator.volumen.
-        """
-        if user_input is not None:
-            self._data.update(user_input)
-            return await self._nach_puffer_einstellwert()
-        return self.async_show_form(
-            step_id="puffer_einstellwert",
-            data_schema=_puffer_schema(list(self._einstellwerte), self._bisher),
-            description_placeholders={"gemeldet": _gemeldet(self._einstellwerte)},
         )
 
     async def async_step_raumfuehler(
@@ -869,7 +791,6 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
-        self._einstellwerte: dict[str, dict] = {}
         self._neu_gewaehlt = False
 
     _bisher: dict[str, Any] = {}
@@ -1061,7 +982,6 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
-        self._einstellwerte: dict[str, dict] = {}
 
     @property
     def _current(self) -> dict[str, Any]:
@@ -1079,6 +999,8 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
 
         Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
         in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso
+        das Puffervolumen eines Puffers, nach dem dieser Durchlauf nicht
+        gefragt hat - beim PufferFlex steht es nur im Zahlenfeld. Ebenso
         die eingetragenen Pelletlieferungen, die Sperrtemperatur des
         Fremderzeugers - solange er einen Fühler hat - und dass Home
         Assistant den Kessel gesperrt hält. Gibt es nach dem Speichern
@@ -1093,6 +1015,14 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         for schluessel, wert in self._current.items():
             if wert is None and schluessel not in daten:
                 daten = {schluessel: None, **daten}
+        for komponente in PUFFER_SPEICHER:
+            schluessel = puffer_volumen_schluessel(komponente)
+            if (
+                komponente in daten.get(CONF_COMPONENTS, [])
+                and schluessel not in daten
+                and schluessel in self._current
+            ):
+                daten = {schluessel: self._current[schluessel], **daten}
         if self._current.get(CONF_LAGER_MAXIMUM):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         if self._current.get(CONF_LIEFERUNGEN):

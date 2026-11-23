@@ -412,6 +412,8 @@ _PROGNOSE = {
 _ZEITRAUM = {"pellet_verbrauch_heute", "pellet_verbrauch_woche", "pellet_verbrauch_jahr"}
 _KOSTEN = {"pellet_kosten_heute", "pellet_kosten_woche", "pellet_kosten_jahr"}
 _MIT_PUFFERVOLUMEN = {"puffer_energieinhalt"}
+_ENTFALLEN = {f"{komponente}_volumen" for komponente in PUFFER_SPEICHER}
+"""Schlüssel früherer Entitäten, die es nicht mehr gibt: die Sensoren "Puffer effektives Volumen"."""
 _STOERUNG = {"aktive_fehler", "stoerung"}
 
 
@@ -436,6 +438,8 @@ def entitaet_vorgesehen(
     unbekannter Schlüssel, nicht anfassen.
     """
     aktiv = set(components)
+    if key in _ENTFALLEN:
+        return False
     if key in SENSORS:
         return SENSORS[key]["component"] in aktiv
     if key in SWITCHES:

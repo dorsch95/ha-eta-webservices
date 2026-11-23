@@ -150,6 +150,8 @@ class FakeSession:
         self.schreibbar = True
         self.lager_schreibbar = True
         """Meldet die Anlage "Maximaler Vorrat" als beschreibbar? So antwortet eine echte Anlage."""
+        self.volumen_schreibbar = True
+        """Meldet die Anlage das Gesamtvolumen des PufferFlex als beschreibbar? So antwortet eine echte Anlage."""
         self.vorrat_schreibbar = False
         """Meldet die Anlage "Vorrat" als beschreibbar, in kg? So antwortet eine echte Anlage.
 
@@ -334,6 +336,9 @@ class FakeSession:
             return {"value": "2059", "str_value": "Bereit", "text_offset": "2057"}
         if uri.endswith("/12499"):
             return {"value": "825", "str_value": "825", "unit": "l"}
+        if uri.endswith("/13520"):
+            roh = self._gemeldet(uri, "1200")
+            return {"value": roh, "str_value": roh, "unit": "l"}
         if uri.endswith("/12113/0/1109"):
             roh = self.geschrieben.get(uri.split("/user/var", 1)[-1], "1803")
             return {
@@ -414,6 +419,16 @@ class FakeSession:
                 'scaleFactor="10" name="Maximaler Vorrat"><type>DEFAULT</type><validValues>'
                 '<min unit="kg" strValue="0">0</min><def unit="kg" strValue="0">0</def>'
                 '<max unit="kg" strValue="100000">1000000</max>'
+                "</validValues></variable></varInfo></eta>"
+            )
+        if url.endswith("/13520"):
+            return self._tracked(
+                '<eta version="1.0"><varInfo uri="/u"><variable name="Gesamtvolumen" decPlaces="0" '
+                'uri="/u" unit="l" scaleFactor="1" '
+                f'isWritable="{1 if self.volumen_schreibbar else 0}" advTextOffset="0" '
+                'fullName="Einstellungen &gt; Gesamtvolumen"><type>DEFAULT</type><validValues>'
+                '<min strValue="50" unit="l">50</min><def strValue="1000" unit="l">1000</def>'
+                '<max strValue="500000" unit="l">500000</max>'
                 "</validValues></variable></varInfo></eta>"
             )
         if url.endswith("/12015") and self.vorrat_schreibbar:
@@ -877,6 +892,24 @@ def sperre_meldungen(monkeypatch) -> list[str]:
         switch,
         "persistent_notification",
         SimpleNamespace(async_create=lambda hass, text, **kwargs: meldungen.append(text)),
+    )
+    return meldungen
+
+
+@pytest.fixture(autouse=True)
+def puffer_meldungen(monkeypatch) -> list[tuple[str, dict]]:
+    """Fängt die Meldungen ab, die ein an der Anlage geändertes Puffervolumen ankündigen.
+
+    Je Meldung der Text und die übrigen Angaben, siehe
+    ETADataUpdateCoordinator.puffer_volumen_geschrieben.
+    """
+    from eta_heating_ws import coordinator
+
+    meldungen: list[tuple[str, dict]] = []
+    monkeypatch.setattr(
+        coordinator,
+        "persistent_notification",
+        SimpleNamespace(async_create=lambda hass, text, **kwargs: meldungen.append((text, kwargs))),
     )
     return meldungen
 

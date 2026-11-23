@@ -75,6 +75,7 @@
 <object uri="/120/10601/0/0/12528" name="Ladezustand"/>
 </object>
 <object uri="/120/10601/0/0/12421" name="Einstellungen">
+<object uri="/120/10601/0/0/13520" name="Gesamtvolumen"/>
 <object uri="/120/10601/0/0/13196" name="Leistungsregelung">
 <object uri="/120/10601/0/0/12499" name="Effektives Puffervolumen"/>
 </object>

@@ -7,6 +7,7 @@ import logging
 import time
 from datetime import timedelta
 
+from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.core import HomeAssistant, callback
@@ -43,6 +44,8 @@ from .const import (
     ZEITFENSTER_JE_TAG,
     normalize_components,
     puffer_fuehler_info,
+    puffer_volumen_schluessel,
+    puffer_volumen_zahl,
     absenkwert_schluessel,
     zeitfenster_schluessel,
 )
@@ -126,6 +129,10 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
     nur ohne URI - sie zeigt dann dauerhaft "-". Ausgenommen ist, was als
     "nur_wenn_vorhanden" markiert ist. Für nicht ausgewählte Komponenten
     entsteht nichts.
+
+    Das Gesamtvolumen eines Puffers wird mitgelesen, bekommt aber keinen
+    Sensor: Es steht im Zahlenfeld "Puffervolumen", daher der Vermerk
+    "platform": "number".
     """
     aktiv = set(normalize_components(components))
     sensor_defs = {
@@ -153,6 +160,16 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
             sensor_defs[key] = {
                 **puffer_fuehler_info(index, index == last_index, komponente),
                 "uri": discovered_uris.get(key),
+            }
+        volumen = discovered_uris.get(f"{komponente}_volumen")
+        if volumen:
+            sensor_defs[f"{komponente}_volumen"] = {
+                "component": komponente,
+                "name": ZAHLEN[puffer_volumen_zahl(komponente)]["name"],
+                "translation_key": puffer_volumen_zahl(komponente),
+                "uri": volumen,
+                "default_unit": "L",
+                "platform": "number",
             }
 
     return sensor_defs
@@ -237,8 +254,6 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.discovered_uris: dict[str, str] = {}
         self.ueber_kennung: set[str] = set()
         self.fub_namen: dict[str, str] = {}
-        self.aeltere_puffer: set[str] = set()
-        """Die Puffer, deren Funktionsblock der ältere "Puffer" ist, siehe uri_discovery._aelterer_puffer."""
         self.thermostat_defs: dict[str, dict] = {}
         self.zeitprogramm_defs: dict[str, dict[tuple[str, int], dict]] = {}
         """Je Heizkreis mit beschreibbarem Zeitprogramm seine 21 Zeitfenster, siehe zeitplan.py."""
@@ -732,9 +747,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             self.zahl_defs[key] = {
                 **definition,
                 "uri": uri,
-                "scale": info["scale"],
-                "min_roh": info["min_roh"],
-                "max_roh": info["max_roh"],
+                "scale": info.get("scale") or 1.0,
+                "min_roh": info.get("min_roh"),
+                "max_roh": info.get("max_roh"),
             }
             _LOGGER.info("ETA: %s lässt sich einstellen (%s)", key, uri)
 
@@ -1349,7 +1364,6 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 self.ueber_kennung,
                 self.fub_namen,
                 self.zeitprogramm_namen,
-                self.aeltere_puffer,
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
@@ -1419,7 +1433,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return (self.fub_namen.get(rollen[0]) if rollen else None) or COMPONENTS[komponente]["name"]
 
     def _volumen_der_anlage(self, komponente: str) -> float | None:
-        """Das effektive Volumen, wie die Anlage es meldet, in Litern.
+        """Das Gesamtvolumen, wie die Anlage es meldet, in Litern.
 
         Unplausible Werte - kein Puffer hat unter 50 oder über 100000
         Liter - gelten als unbekannt.
@@ -1431,26 +1445,40 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return liter if liter is not None and 50 <= liter <= 100000 else None
 
+    def puffer_volumen_an_der_anlage(self, komponente: str) -> bool:
+        """Schreibt das Zahlenfeld "Puffervolumen" dieses Puffers an die Anlage?
+
+        Nur mit Schreibzugriff und wenn sie das Gesamtvolumen als
+        beschreibbar meldet, siehe _zahlen_pruefen. Sonst merkt es sich
+        seinen Wert in Home Assistant.
+        """
+        return puffer_volumen_zahl(komponente) in self.zahl_defs
+
+    def puffer_volumen_eigen(self, komponente: str) -> float | None:
+        """Die Liter, die nur Home Assistant kennt - None, wenn keine gelten.
+
+        Sie gelten nicht, solange das Zahlenfeld an die Anlage schreibt:
+        Dann zählt allein, was dort steht.
+        """
+        eingetragen = self.puffer_volumen_eingetragen.get(komponente, 0.0)
+        if self.puffer_volumen_an_der_anlage(komponente) or eingetragen <= 0:
+            return None
+        return eingetragen
+
     def _volumen_mit_quelle(self, komponente: str) -> tuple[float | None, str | None]:
         """Das Volumen eines Puffers in Litern und woher es stammt.
 
-        "Anlage" ist der Wert, den die Anlage meldet, "Einstellung" sind die
-        Liter, die der Nutzer eingetragen hat. Beim PufferFlex gilt immer
-        der Wert der Anlage: Sie errechnet ihn. Ein früher eingetragener
-        Wert stört dort nicht.
-
-        Beim älteren Funktionsblock "Puffer" gehen eingetragene Liter vor.
-        Mit zwei Fühlern führt er kein Volumen. Mit zusätzlichen Fühlern
-        meldet er einen Einstellwert, der ab Werk auf 1000 l steht, siehe
-        uri_discovery.PUFFER_VOLUMEN - ob er zum Puffer passt, weiß nur der
-        Nutzer. Ist nichts eingetragen, gilt auch dort der Wert der Anlage.
+        "Home Assistant" sind die Liter, die der Nutzer eingetragen hat,
+        siehe puffer_volumen_eigen. Sie gehen vor. "Anlage" ist das
+        Gesamtvolumen, das ein PufferFlex meldet. Der ältere Funktionsblock
+        "Puffer" führt keines - dort gibt es nur eingetragene Liter.
         """
         if komponente not in self.components:
             return None, None
+        eigen = self.puffer_volumen_eigen(komponente)
+        if eigen is not None:
+            return eigen, "Home Assistant"
         von_der_anlage = self._volumen_der_anlage(komponente)
-        eingetragen = self.puffer_volumen_eingetragen.get(komponente, 0.0)
-        if eingetragen > 0 and (von_der_anlage is None or komponente in self.aeltere_puffer):
-            return eingetragen, "Einstellung"
         if von_der_anlage is not None:
             return von_der_anlage, "Anlage"
         return None, None
@@ -1460,8 +1488,50 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         return self._volumen_mit_quelle(komponente)[0]
 
     def volumen_quelle(self, komponente: str = "puffer") -> str | None:
-        """Woher das Volumen eines Puffers stammt: "Anlage" oder "Einstellung"."""
+        """Woher das Volumen eines Puffers stammt: "Anlage" oder "Home Assistant"."""
         return self._volumen_mit_quelle(komponente)[1]
+
+    @callback
+    def puffer_volumen_merken(self, komponente: str, liter: float) -> None:
+        """Merkt sich das Volumen eines Puffers in Home Assistant, 0 verwirft es.
+
+        Der Wert steht in den Optionen der Einrichtung, unter demselben
+        Schlüssel wie bei der Einrichtung, siehe puffer_volumen_schluessel.
+        Auch die 0 wird gespeichert: Sonst gälte wieder ein Wert aus der
+        Ersteinrichtung. Energieinhalt und Prognose rechnen sofort mit dem
+        neuen Wert. Neu geladen wird nur, wenn der erste Puffer dadurch ein
+        Volumen bekommt oder verliert - dann entsteht oder entfällt sein
+        Energieinhalt.
+        """
+        vorher = self.puffer_mit_volumen
+        self.puffer_volumen_eingetragen[komponente] = max(0.0, float(liter))
+        optionen = dict(self.config_entry.options)
+        optionen[puffer_volumen_schluessel(komponente)] = self.puffer_volumen_eingetragen[komponente]
+        self.hass.config_entries.async_update_entry(self.config_entry, options=optionen)
+        if ("puffer" in vorher) != ("puffer" in self.puffer_mit_volumen):
+            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        else:
+            self.async_update_listeners()
+
+    @callback
+    def puffer_volumen_geschrieben(self, komponente: str, davor: float | None, liter: float) -> None:
+        """Meldet, dass das Gesamtvolumen an der Anlage geändert wurde.
+
+        Das Gesamtvolumen ist eine Einstellung der Anlage - eine Änderung
+        soll niemand übersehen. Die Meldung nennt den Wert von vorher,
+        damit er sich zurückstellen lässt. Ein in Home Assistant gemerkter
+        Wert gilt daneben nicht mehr und wird verworfen.
+        """
+        if self.puffer_volumen_eingetragen.get(komponente, 0.0) > 0:
+            self.puffer_volumen_merken(komponente, 0)
+        vorher = "" if davor is None else f" Vorher standen dort {davor:g} l."
+        persistent_notification.async_create(
+            self.hass,
+            f"Das Gesamtvolumen von „{self.funktionsblock(komponente)}“ steht an der Heizung "
+            f"jetzt auf {liter:g} l.{vorher} Die Heizung rechnet nun mit diesem Wert.",
+            title="Puffervolumen an der Heizung geändert",
+            notification_id=f"{DOMAIN}_{self.config_entry.entry_id}_{puffer_volumen_zahl(komponente)}",
+        )
 
     @property
     def puffer_volumen(self) -> float | None:

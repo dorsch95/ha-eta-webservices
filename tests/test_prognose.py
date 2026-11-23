@@ -761,7 +761,7 @@ def test_mehrere_puffer_zaehlen_zusammen():
 
 
 async def test_puffer_quellen_mit_zwei_puffern(hass, entry, menu_xml):
-    """Je Puffer mit effektivem Volumen eine Quelle, mit den Fühlern oben zuerst."""
+    """Je Puffer mit Volumen eine Quelle, mit den Fühlern oben zuerst."""
     from eta_heating_ws import _puffer_quellen
 
     from .test_puffer import ZWEITER_PUFFER, mit_fub
@@ -778,7 +778,7 @@ async def test_puffer_quellen_mit_zwei_puffern(hass, entry, menu_xml):
     quellen = _puffer_quellen(hass, entry, coordinator)
     assert [q["schluessel"][0] for q in quellen] == ["puffer_fuehler_1", "puffer2_fuehler_1"]
     assert [len(q["ids"]) for q in quellen] == [5, 3]
-    assert [q["volumen"] for q in quellen] == [825, 825]
+    assert [q["volumen"] for q in quellen] == [1200, 1200]
 
 
 async def test_prognose_laesst_sich_abwaehlen(hass, entry, monkeypatch):

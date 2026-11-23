@@ -335,7 +335,7 @@ def test_optionen_fragen_nicht_nach_der_adresse():
 
 
 async def _keiner_ohne_volumen(*_):
-    return [], {}, {}, {}
+    return [], {}, {}
 
 
 async def _keine_namen(*_):
@@ -522,7 +522,7 @@ async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
     flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
 
     async def nur_puffer2(*_):
-        return ["puffer2"], {}, {}, {}
+        return ["puffer2"], {}, {}
 
     monkeypatch.setattr(modul, "_anlage_pruefen", nur_puffer2)
     schritt = await flow.async_step_fub_names(
@@ -545,157 +545,24 @@ async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
     """Fühler gefunden, Volumen nicht: der ältere Funktionsblock "Puffer"."""
     from eta_heating_ws import config_flow as modul
 
-    async def menue(client, fub_names, **_):
+    async def menue(client, fub_names):
         return {
             "puffer_fuehler_1": "/1/2/0/11327/0",
-            "puffer_volumen": "/1/2/0/0/12499",
+            "puffer_volumen": "/1/2/0/0/13520",
             "puffer2_fuehler_1": "/1/3/0/11153/0",
         }, [1]
 
     monkeypatch.setattr(modul, "async_discover_uris", menue)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
     komponenten = ["kessel", "puffer", "puffer2", "puffer3"]
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == (["puffer2"], {}, {}, {})
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "puffer"], False) == ([], {}, {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == (["puffer2"], {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "puffer"], False) == ([], {}, {})
 
-    async def kaputt(client, fub_names, **_):
+    async def kaputt(client, fub_names):
         raise modul.ETAApiError("kein Menübaum")
 
     monkeypatch.setattr(modul, "async_discover_uris", kaputt)
     assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, True) is None
-
-
-async def test_erkennung_der_aelteren_puffer_mit_gemeldetem_volumen(monkeypatch):
-    """Älterer Puffer mit gemeldetem Volumen: Name seines Blocks und die Liter der Anlage."""
-    from eta_heating_ws import config_flow as modul
-    from eta_heating_ws.api import ETAApiClient, ETAValue
-
-    async def menue(client, fub_names, fub_namen=None, aeltere_puffer=None):
-        fub_namen.update({"pufferflex": "PufferFlex", "pufferflex2": "Puffer", "pufferflex3": "Puffer 2"})
-        aeltere_puffer.update({"puffer2", "puffer3"})
-        return {
-            "puffer_fuehler_1": "/1/2/0/11327/0",
-            "puffer_volumen": "/1/2/0/0/12499",
-            "puffer2_fuehler_1": "/1/3/0/11153/0",
-            "puffer2_volumen": "/1/3/0/0/12499",
-            "puffer3_fuehler_1": "/1/4/0/11153/0",
-        }, [1]
-
-    gelesen = []
-
-    async def wert(self, uri):
-        gelesen.append(uri)
-        return ETAValue(1000.0, "1000", "l", False, 0)
-
-    monkeypatch.setattr(modul, "async_discover_uris", menue)
-    monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
-    monkeypatch.setattr(ETAApiClient, "async_get_value", wert)
-    komponenten = ["kessel", "puffer", "puffer2", "puffer3"]
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == (
-        ["puffer3"],
-        {},
-        {},
-        {"puffer2": {"name": "Puffer", "liter": 1000}},
-    )
-    assert gelesen == ["/1/3/0/0/12499"], "das Volumen des PufferFlex wird hier nicht gelesen"
-    assert (await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "puffer"], False))[3] == {}
-
-    async def stumm(self, uri):
-        raise modul.ETAApiError("keine Antwort")
-
-    monkeypatch.setattr(ETAApiClient, "async_get_value", stumm)
-    einstellwerte = (await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False))[3]
-    assert einstellwerte == {"puffer2": {"name": "Puffer", "liter": None}}
-    assert modul._gemeldet(einstellwerte) == "Puffer: ? l"
-    assert (
-        modul._gemeldet(
-            {"puffer": {"name": "Puffer", "liter": 1000}, "puffer2": {"name": "Puffer 2", "liter": 800}}
-        )
-        == "Puffer: 1000 l, Puffer 2: 800 l"
-    )
-
-
-async def test_aelterer_puffer_mit_gemeldetem_volumen_zeigt_den_wert(monkeypatch):
-    """Eigener Schritt mit dem Wert der Anlage; vorbelegt ist 0, also der Wert der Anlage."""
-    from eta_heating_ws import config_flow as modul
-
-    bisher = {"host": "192.0.2.10", "port": 8080}
-    flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
-
-    async def gemeldet(*_):
-        return [], {}, {}, {"puffer2": {"name": "Puffer", "liter": 1000}}
-
-    monkeypatch.setattr(modul, "_anlage_pruefen", gemeldet)
-    schritt = await flow.async_step_fub_names(
-        {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
-    )
-    assert schritt["step_id"] == "puffer_einstellwert"
-    assert schritt["description_placeholders"] == {"gemeldet": "Puffer: 1000 l"}
-    felder = {str(k): k.default() for k in schritt["data_schema"].schema}
-    assert felder == {"puffer2_volumen": 0}
-    with pytest.raises(vol.Invalid):
-        schritt["data_schema"]({"puffer2_volumen": -5})
-    fertig = await verbindungen_bestaetigen(
-        flow, await flow.async_step_puffer_einstellwert({"puffer2_volumen": 1500})
-    )
-    assert fertig["type"] == "create_entry"
-    assert fertig["data"]["puffer2_volumen"] == 1500
-
-
-async def test_aelterer_puffer_behaelt_frueher_eingetragene_liter_als_vorgabe(monkeypatch):
-    """Was schon eingetragen war, steht im Feld - und 0 stellt auf den Wert der Anlage zurück."""
-    from eta_heating_ws import config_flow as modul
-
-    bisher = {"host": "192.0.2.10", "port": 8080, "puffer2_volumen": 800}
-    flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
-
-    async def gemeldet(*_):
-        return [], {}, {}, {"puffer2": {"name": "Puffer", "liter": 1000}}
-
-    monkeypatch.setattr(modul, "_anlage_pruefen", gemeldet)
-    schritt = await flow.async_step_fub_names(
-        {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
-    )
-    felder = {str(k): k.default() for k in schritt["data_schema"].schema}
-    assert felder == {"puffer2_volumen": 800}
-    fertig = await verbindungen_bestaetigen(
-        flow, await flow.async_step_puffer_einstellwert({"puffer2_volumen": 0})
-    )
-    assert fertig["data"]["puffer2_volumen"] == 0
-
-
-async def test_beide_puffer_schritte_nacheinander(monkeypatch):
-    """Erst der Puffer ohne Volumen, dann der ältere Puffer mit gemeldetem Volumen."""
-    from eta_heating_ws import config_flow as modul
-
-    bisher = {"host": "192.0.2.10", "port": 8080}
-    flow, _ = await options_schritt(
-        monkeypatch, bisher, optionen(components=["puffer", "puffer2", "puffer3"])
-    )
-
-    async def beide(*_):
-        return ["puffer3"], {}, {}, {"puffer2": {"name": "Puffer", "liter": 1000}}
-
-    monkeypatch.setattr(modul, "_anlage_pruefen", beide)
-    schritt = await flow.async_step_fub_names(
-        {
-            "kessel": "Kessel",
-            "sys": "Sys",
-            "pufferflex": "PufferFlex",
-            "pufferflex2": "Puffer",
-            "pufferflex3": "Puffer 2",
-        }
-    )
-    assert schritt["step_id"] == "puffer"
-    assert [str(k) for k in schritt["data_schema"].schema] == ["puffer3_volumen"]
-    schritt = await flow.async_step_puffer({"puffer3_volumen": 600})
-    assert schritt["step_id"] == "puffer_einstellwert"
-    assert [str(k) for k in schritt["data_schema"].schema] == ["puffer2_volumen"]
-    fertig = await verbindungen_bestaetigen(
-        flow, await flow.async_step_puffer_einstellwert({"puffer2_volumen": 0})
-    )
-    assert fertig["data"]["puffer3_volumen"] == 600
-    assert fertig["data"]["puffer2_volumen"] == 0
 
 
 async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
@@ -703,7 +570,7 @@ async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
     from eta_heating_ws import config_flow as modul
     from eta_heating_ws.api import ETAApiClient, ETAValue
 
-    async def menue(client, fub_names, **_):
+    async def menue(client, fub_names):
         return {
             "heizkreis_raum_extern": "/1/5/0/0/13046",
             "heizkreis_zeitueberwachung": "/1/5/0/0/13168",
@@ -721,10 +588,9 @@ async def test_erkennung_der_heizkreise_mit_externer_schnittstelle(monkeypatch):
         [],
         {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}},
         {},
-        {},
     )
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == ([], {}, {}, {})
-    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "hk2"], True) == ([], {}, {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, komponenten, False) == ([], {}, {})
+    assert await modul._anlage_pruefen(None, "h", 8080, {}, ["kessel", "hk2"], True) == ([], {}, {})
 
 
 async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
@@ -737,7 +603,7 @@ async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
     )
 
     async def mit_thermostat(*_):
-        return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}}, [], {}
+        return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}}, []
 
     geschrieben = []
 
@@ -782,7 +648,7 @@ async def test_zeitueberwachung_nicht_geschrieben_zeigt_einen_fehler(monkeypatch
     )
 
     async def mit_thermostat(*_):
-        return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 0}}, [], {}
+        return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 0}}, []
 
     async def abgelehnt(*_):
         raise modul.ETAApiError("nein")
@@ -829,7 +695,7 @@ async def test_zeitplan_je_heizkreis_im_dialog(monkeypatch):
     fenster = {(tag, n): f"/{tag}/{n}" for tag in WOCHENTAGE for n in (1, 2, 3)}
 
     async def mit_zeitprogramm(*_):
-        return [], {}, {"hk1": fenster, "hk2": fenster}, {}
+        return [], {}, {"hk1": fenster, "hk2": fenster}
 
     async def lesen(self, uri):
         text = "05:30 - 22:30 20,0" if uri.endswith("/1") else "00:00 - 00:00 0,0"
@@ -869,7 +735,7 @@ async def test_zeitprogramm_nur_mit_schreibzugriff_im_dialog(monkeypatch):
         for nummer in (1, 2, 3)
     }
 
-    async def menue(client, fub_names, **_):
+    async def menue(client, fub_names):
         return gefunden, []
 
     beschreibung = {"writable": True, "zeitfenster": {"mit_wert": True}}
@@ -1001,8 +867,8 @@ def _hk1_mit_allem():
 
     async def pruefung(hass, host, port, namen, komponenten, schreiben):
         if not schreiben:
-            return [], {}, {}, {}
-        return [], {"hk1": {"uri": None, "sekunden": None}}, {"hk1": fenster}, {}
+            return [], {}, {}
+        return [], {"hk1": {"uri": None, "sekunden": None}}, {"hk1": fenster}
 
     return pruefung
 
@@ -1032,7 +898,7 @@ async def test_geleertes_feld_bleibt_geleert_auch_wenn_ein_speichern_den_schritt
 
 async def test_geleertes_feld_bleibt_geleert_wenn_die_anlage_das_zeitprogramm_einmal_nicht_meldet(monkeypatch):
     async def ohne_zeitprogramm(*_):
-        return [], {"hk1": {"uri": None, "sekunden": None}}, {}, {}
+        return [], {"hk1": {"uri": None, "sekunden": None}}, {}
 
     erste = await _konfigurieren(monkeypatch, _ERSTEINRICHTUNG_HK1, {}, _hk1_mit_allem())
     assert erste["hk1_zeitplan"] is None

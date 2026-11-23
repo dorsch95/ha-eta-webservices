@@ -99,21 +99,7 @@
       },
       "puffer": {
         "title": "Buffer tank volume",
-        "description": "Your buffer tank does not report a volume. That is the case for the 'Puffer' function block with two sensors. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
-        "data": {
-          "puffer_volumen": "Buffer tank (litres)",
-          "puffer2_volumen": "Buffer tank 2 (litres)",
-          "puffer3_volumen": "Buffer tank 3 (litres)",
-          "puffer4_volumen": "Buffer tank 4 (litres)",
-          "puffer5_volumen": "Buffer tank 5 (litres)",
-          "puffer6_volumen": "Buffer tank 6 (litres)",
-          "puffer7_volumen": "Buffer tank 7 (litres)",
-          "puffer8_volumen": "Buffer tank 8 (litres)"
-        }
-      },
-      "puffer_einstellwert": {
-        "title": "Check buffer tank volume",
-        "description": "The 'Puffer' function block with more than two sensors reports an effective volume. There it is not a calculated value but a setting on the controller, 1000 l by default. Your controller reports: {gemeldet}. If that matches your buffer tank, leave 0 - the integration then uses the controller's value. Otherwise enter how many litres it holds, for example from the type plate or the documentation. These litres then apply instead of the controller's value.",
+        "description": "Your buffer tank has no total volume stored on the controller. That is the case for the 'Puffer' function block. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to calculate the energy content, and the pellet forecast becomes more accurate. You can change the value later on the device, in the field 'Buffer tank volume'. 0 means: unknown.",
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
@@ -292,21 +278,7 @@
       },
       "puffer": {
         "title": "Buffer tank volume",
-        "description": "Your buffer tank does not report a volume. That is the case for the 'Puffer' function block with two sensors. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to work out how much heat is stored in the buffer, and the pellet forecast becomes more accurate. 0 means: unknown.",
-        "data": {
-          "puffer_volumen": "Buffer tank (litres)",
-          "puffer2_volumen": "Buffer tank 2 (litres)",
-          "puffer3_volumen": "Buffer tank 3 (litres)",
-          "puffer4_volumen": "Buffer tank 4 (litres)",
-          "puffer5_volumen": "Buffer tank 5 (litres)",
-          "puffer6_volumen": "Buffer tank 6 (litres)",
-          "puffer7_volumen": "Buffer tank 7 (litres)",
-          "puffer8_volumen": "Buffer tank 8 (litres)"
-        }
-      },
-      "puffer_einstellwert": {
-        "title": "Check buffer tank volume",
-        "description": "The 'Puffer' function block with more than two sensors reports an effective volume. There it is not a calculated value but a setting on the controller, 1000 l by default. Your controller reports: {gemeldet}. If that matches your buffer tank, leave 0 - the integration then uses the controller's value. Otherwise enter how many litres it holds, for example from the type plate or the documentation. These litres then apply instead of the controller's value.",
+        "description": "Your buffer tank has no total volume stored on the controller. That is the case for the 'Puffer' function block. Enter how many litres it holds - for example from the type plate or the documentation. The integration uses it to calculate the energy content, and the pellet forecast becomes more accurate. You can change the value later on the device, in the field 'Buffer tank volume'. 0 means: unknown.",
         "data": {
           "puffer_volumen": "Buffer tank (litres)",
           "puffer2_volumen": "Buffer tank 2 (litres)",
@@ -500,6 +472,30 @@
       },
       "fremderzeuger_schwelle": {
         "name": "Stand-alone heat source lock temperature"
+      },
+      "puffer_volumen_stellen": {
+        "name": "Buffer tank volume"
+      },
+      "puffer2_volumen_stellen": {
+        "name": "Buffer tank 2 volume"
+      },
+      "puffer3_volumen_stellen": {
+        "name": "Buffer tank 3 volume"
+      },
+      "puffer4_volumen_stellen": {
+        "name": "Buffer tank 4 volume"
+      },
+      "puffer5_volumen_stellen": {
+        "name": "Buffer tank 5 volume"
+      },
+      "puffer6_volumen_stellen": {
+        "name": "Buffer tank 6 volume"
+      },
+      "puffer7_volumen_stellen": {
+        "name": "Buffer tank 7 volume"
+      },
+      "puffer8_volumen_stellen": {
+        "name": "Buffer tank 8 volume"
       }
     },
     "select": {
@@ -985,9 +981,6 @@
       "puffer2_ladezustand": {
         "name": "Buffer 2 charge level"
       },
-      "puffer2_volumen": {
-        "name": "Buffer 2 effective volume"
-      },
       "puffer2_zustand": {
         "name": "Buffer 2 state"
       },
@@ -1024,9 +1017,6 @@
       "puffer3_ladezustand": {
         "name": "Buffer 3 charge level"
       },
-      "puffer3_volumen": {
-        "name": "Buffer 3 effective volume"
-      },
       "puffer3_zustand": {
         "name": "Buffer 3 state"
       },
@@ -1035,9 +1025,6 @@
       },
       "puffer4_ladezustand": {
         "name": "Buffer 4 charge level"
-      },
-      "puffer4_volumen": {
-        "name": "Buffer 4 effective volume"
       },
       "puffer4_ladepumpe": {
         "name": "Buffer 4 charging pump"
@@ -1075,9 +1062,6 @@
       "puffer5_ladezustand": {
         "name": "Buffer 5 charge level"
       },
-      "puffer5_volumen": {
-        "name": "Buffer 5 effective volume"
-      },
       "puffer5_ladepumpe": {
         "name": "Buffer 5 charging pump"
       },
@@ -1113,9 +1097,6 @@
       },
       "puffer6_ladezustand": {
         "name": "Buffer 6 charge level"
-      },
-      "puffer6_volumen": {
-        "name": "Buffer 6 effective volume"
       },
       "puffer6_ladepumpe": {
         "name": "Buffer 6 charging pump"
@@ -1153,9 +1134,6 @@
       "puffer7_ladezustand": {
         "name": "Buffer 7 charge level"
       },
-      "puffer7_volumen": {
-        "name": "Buffer 7 effective volume"
-      },
       "puffer7_ladepumpe": {
         "name": "Buffer 7 charging pump"
       },
@@ -1191,9 +1169,6 @@
       },
       "puffer8_ladezustand": {
         "name": "Buffer 8 charge level"
-      },
-      "puffer8_volumen": {
-        "name": "Buffer 8 effective volume"
       },
       "puffer8_ladepumpe": {
         "name": "Buffer 8 charging pump"
@@ -1260,9 +1235,6 @@
       },
       "puffer_ladezustand": {
         "name": "Buffer charge level"
-      },
-      "puffer_volumen": {
-        "name": "Buffer effective volume"
       },
       "puffer_zustand": {
         "name": "Buffer state"

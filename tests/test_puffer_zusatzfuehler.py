@@ -5,14 +5,12 @@ Beide Blöcke stehen in fixtures/ so, wie ein Testaufbau sie unter
 Fühler ab Werk. In fub_puffer_5_fuehler.xml sind im
 Konfigurations-Assistenten die drei zusätzlichen Fühler angehakt.
 
-Mit zwei Fühlern führt der Block weder ein Volumen noch einen
-Ladezustand. Sobald ein zusätzlicher Fühler dazukommt, stehen unter
-"Puffer > geforderte Leistung" das "Effektive Puffervolumen" und der
-"Ladezustand". Das Volumen ist dort ein Einstellwert, den die Anlage als
-beschreibbar meldet, kein berechneter Wert wie beim PufferFlex. Die
-Einrichtung zeigt ihn deshalb und nimmt eigene Liter an, die vorgehen.
-
-Die Attrappe der Anlage meldet für jedes "Effektive Puffervolumen" 825 l.
+Ein Gesamtvolumen führt der Block in keinem der beiden Fälle. Die
+Einrichtung fragt deshalb nach den Litern, und das Zahlenfeld
+"Puffervolumen" merkt sie sich in Home Assistant. Mit zusätzlichen
+Fühlern stehen unter "Puffer > geforderte Leistung" ein "Effektives
+Puffervolumen" und der "Ladezustand". Den Ladezustand nimmt die
+Integration von der Anlage, das effektive Volumen liest sie nicht.
 """
 
 from __future__ import annotations
@@ -37,15 +35,20 @@ def als_einziger_puffer(hass, entry, block: str) -> None:
     entry.data["fub_names"] = {"pufferflex": "Puffer"}
 
 
-async def einrichtung_prueft(hass, monkeypatch) -> tuple[list[str], dict[str, dict]]:
-    """Was die Einrichtung an dieser Anlage fragt: Puffer ohne Volumen und gemeldete Einstellwerte."""
+async def einrichtung_fragt(hass, monkeypatch, namen=None) -> list[str]:
+    """Für welche Puffer die Einrichtung an dieser Anlage nach Litern fragt."""
     from eta_heating_ws import config_flow as modul
 
     monkeypatch.setattr(modul, "async_get_clientsession", lambda _hass: hass.session)
-    ohne_volumen, _, _, einstellwerte = await modul._anlage_pruefen(
-        hass, "192.0.2.10", 8080, {"pufferflex": "Puffer"}, ["kessel", "puffer"], False
+    ohne_volumen, _, _ = await modul._anlage_pruefen(
+        hass,
+        "192.0.2.10",
+        8080,
+        {"pufferflex": "Puffer"} if namen is None else namen,
+        ["kessel", "puffer"],
+        False,
     )
-    return ohne_volumen, einstellwerte
+    return ohne_volumen
 
 
 def energie_bei(liter: float) -> float:
@@ -62,13 +65,11 @@ async def test_zwei_fuehler_ohne_volumen_und_ohne_ladezustand(hass, entry, monke
     assert "puffer_fuehler_3" not in gefunden
     assert "puffer_volumen" not in gefunden
     assert "puffer_ladezustand" not in gefunden
-    assert coordinator.aeltere_puffer == {"puffer"}
     assert coordinator.puffer_volumen is None
     assert coordinator.puffer_mit_berechnetem_ladezustand == ["puffer"]
     assert by_name["Puffer Ladezustand"].extra_state_attributes["berechnet"] is True
-    assert "Puffer effektives Volumen" not in by_name
     assert "Puffer Energieinhalt" not in by_name
-    assert await einrichtung_prueft(hass, monkeypatch) == (["puffer"], {})
+    assert await einrichtung_fragt(hass, monkeypatch) == ["puffer"]
 
 
 async def test_zwei_fuehler_mit_eingetragenen_litern(hass, entry):
@@ -76,7 +77,7 @@ async def test_zwei_fuehler_mit_eingetragenen_litern(hass, entry):
     entry.data["puffer_volumen"] = 1500
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen == 1500
-    assert coordinator.volumen_quelle("puffer") == "Einstellung"
+    assert coordinator.volumen_quelle("puffer") == "Home Assistant"
     assert by_name["Puffer Energieinhalt"].native_value == pytest.approx(energie_bei(1500), rel=0.01)
 
 
@@ -97,87 +98,52 @@ async def test_fuenf_fuehler_von_oben_nach_unten(hass, entry):
     ]
 
 
-async def test_mit_zusatzfuehlern_meldet_die_anlage_volumen_und_ladezustand(hass, entry, monkeypatch):
-    """Ohne eingetragene Liter gilt der Wert der Anlage, und die Einrichtung zeigt ihn."""
+async def test_mit_zusatzfuehlern_kommt_nur_der_ladezustand_von_der_anlage(hass, entry, monkeypatch):
+    """Das "Effektive Puffervolumen" steht im Menübaum, gelesen wird es nicht."""
+    assert f'{BLOCK}/0/0/12499' in FUENF_FUEHLER
     als_einziger_puffer(hass, entry, FUENF_FUEHLER)
     coordinator, by_name = await setup_integration(hass, entry)
     gefunden = coordinator.discovered_uris
-    assert gefunden["puffer_volumen"] == f"{BLOCK}/0/0/12499"
-    assert "puffer_volumen" not in coordinator.ueber_kennung
+    assert "puffer_volumen" not in gefunden
+    assert f"{BLOCK}/0/0/12499" not in coordinator.abfragbare_uris.values()
     assert gefunden["puffer_ladezustand"] == f"{BLOCK}/0/0/12528"
     assert "puffer_ladezustand" in coordinator.ueber_kennung, "steht unter geforderte Leistung"
-    assert coordinator.aeltere_puffer == {"puffer"}
     assert coordinator.puffer_mit_berechnetem_ladezustand == []
     assert "berechnet" not in by_name["Puffer Ladezustand"].extra_state_attributes
 
-    assert coordinator.puffer_volumen == 825
-    assert coordinator.volumen_quelle("puffer") == "Anlage"
-    assert by_name["Puffer effektives Volumen"].native_value == 825
-    energie = by_name["Puffer Energieinhalt"]
-    assert energie.extra_state_attributes["volumen_liter"] == 825
-    assert energie.extra_state_attributes["volumen_quelle"] == "Anlage"
-    assert energie.native_value == pytest.approx(energie_bei(825), rel=0.01)
-    assert await einrichtung_prueft(hass, monkeypatch) == (
-        [],
-        {"puffer": {"name": "Puffer", "liter": 825}},
-    )
+    assert coordinator.puffer_volumen is None
+    assert "Puffer Energieinhalt" not in by_name
+    assert await einrichtung_fragt(hass, monkeypatch) == ["puffer"]
 
 
-async def test_eingetragene_liter_gehen_beim_aelteren_puffer_vor(hass, entry):
-    """Der Sensor zeigt weiter den Wert der Anlage, gerechnet wird mit den eingetragenen Litern."""
+async def test_mit_zusatzfuehlern_zaehlen_die_eingetragenen_liter(hass, entry):
     from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
 
     als_einziger_puffer(hass, entry, FUENF_FUEHLER)
     entry.data["puffer_volumen"] = 2000
     coordinator, by_name = await setup_integration(hass, entry)
+    assert not coordinator.puffer_volumen_an_der_anlage("puffer")
     assert coordinator.puffer_volumen == 2000
-    assert coordinator.volumen_quelle("puffer") == "Einstellung"
-    assert by_name["Puffer effektives Volumen"].native_value == 825
+    assert coordinator.volumen_quelle("puffer") == "Home Assistant"
     energie = by_name["Puffer Energieinhalt"]
     assert energie.extra_state_attributes["volumen_liter"] == 2000
-    assert energie.extra_state_attributes["volumen_quelle"] == "Einstellung"
+    assert energie.extra_state_attributes["volumen_quelle"] == "Home Assistant"
     assert energie.native_value == pytest.approx(energie_bei(2000), rel=0.01)
 
     diagnose = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnose["konfiguration"]["puffer_volumen"] == {"puffer": 2000}
-    assert diagnose["konfiguration"]["puffer_volumen_quelle"] == {"puffer": "Einstellung"}
-    assert diagnose["konfiguration"]["aeltere_puffer"] == ["puffer"]
+    assert diagnose["konfiguration"]["puffer_volumen_quelle"] == {"puffer": "Home Assistant"}
 
 
-async def test_null_liter_nimmt_den_wert_der_anlage(hass, entry):
+async def test_null_liter_heisst_unbekannt(hass, entry):
     als_einziger_puffer(hass, entry, FUENF_FUEHLER)
     entry.data["puffer_volumen"] = 0
-    coordinator, _ = await setup_integration(hass, entry)
-    assert coordinator.puffer_volumen == 825
-    assert coordinator.volumen_quelle("puffer") == "Anlage"
-
-
-@pytest.mark.parametrize("gemeldet", [0.0, 12.0])
-async def test_unplausibler_wert_der_anlage(hass, entry, gemeldet):
-    """Unter 50 l gilt der Wert der Anlage als unbekannt - dann zählen nur eingetragene Liter."""
-    from eta_heating_ws.api import ETAValue
-
-    als_einziger_puffer(hass, entry, FUENF_FUEHLER)
-    coordinator, _ = await setup_integration(hass, entry)
-    coordinator.data["puffer_volumen"] = ETAValue(gemeldet, str(gemeldet), "l", False, 0)
+    coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen is None
-    coordinator.puffer_volumen_eingetragen["puffer"] = 1200.0
-    assert coordinator.puffer_volumen == 1200
-    assert coordinator.volumen_quelle("puffer") == "Einstellung"
+    assert coordinator.volumen_quelle("puffer") is None
+    assert "Puffer Energieinhalt" not in by_name
 
 
-async def test_pufferflex_bleibt_beim_wert_der_anlage(hass, entry, monkeypatch):
-    """PufferFlex errechnet sein Volumen selbst - eingetragene Liter zählen dort nicht."""
-    from eta_heating_ws import config_flow as modul
-
-    entry.data["puffer_volumen"] = 2000
-    coordinator, _ = await setup_integration(hass, entry)
-    assert coordinator.aeltere_puffer == set()
-    assert coordinator.puffer_volumen == 825
-    assert coordinator.volumen_quelle("puffer") == "Anlage"
-
-    monkeypatch.setattr(modul, "async_get_clientsession", lambda _hass: hass.session)
-    ohne_volumen, _, _, einstellwerte = await modul._anlage_pruefen(
-        hass, "192.0.2.10", 8080, {}, ["kessel", "puffer"], False
-    )
-    assert (ohne_volumen, einstellwerte) == ([], {})
+async def test_beim_pufferflex_fragt_die_einrichtung_nicht(hass, monkeypatch):
+    """Er führt sein Gesamtvolumen selbst."""
+    assert await einrichtung_fragt(hass, monkeypatch, {}) == []

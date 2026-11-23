@@ -98,22 +98,8 @@
         }
       },
       "puffer": {
-        "title": "Pufferspeicher-Volumen",
-        "description": "Dein Pufferspeicher meldet kein Volumen. So ist es beim Funktionsblock „Puffer“ mit zwei Fühlern. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
-        "data": {
-          "puffer_volumen": "Pufferspeicher (Liter)",
-          "puffer2_volumen": "Pufferspeicher 2 (Liter)",
-          "puffer3_volumen": "Pufferspeicher 3 (Liter)",
-          "puffer4_volumen": "Pufferspeicher 4 (Liter)",
-          "puffer5_volumen": "Pufferspeicher 5 (Liter)",
-          "puffer6_volumen": "Pufferspeicher 6 (Liter)",
-          "puffer7_volumen": "Pufferspeicher 7 (Liter)",
-          "puffer8_volumen": "Pufferspeicher 8 (Liter)"
-        }
-      },
-      "puffer_einstellwert": {
-        "title": "Pufferspeicher-Volumen prüfen",
-        "description": "Der Funktionsblock „Puffer“ mit mehr als zwei Fühlern meldet ein effektives Volumen. Dort ist es aber kein errechneter Wert, sondern eine Einstellung an der Heizung, ab Werk 1000 l. Deine Heizung meldet: {gemeldet}. Passt das zu deinem Pufferspeicher, lass 0 stehen - dann rechnet die Integration mit dem Wert der Heizung. Sonst trag ein, wie viele Liter er fasst, etwa vom Typenschild oder aus den Unterlagen. Diese Liter gelten dann statt des Werts der Heizung.",
+        "title": "Puffervolumen",
+        "description": "Dein Pufferspeicher führt an der Heizung kein Gesamtvolumen. So ist es beim Funktionsblock „Puffer“. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Damit rechnet die Integration den Energieinhalt, und die Pelletprognose wird genauer. Später änderst du den Wert am Gerät im Feld „Puffervolumen“. 0 heißt: weiß ich nicht.",
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
@@ -291,22 +277,8 @@
         }
       },
       "puffer": {
-        "title": "Pufferspeicher-Volumen",
-        "description": "Dein Pufferspeicher meldet kein Volumen. So ist es beim Funktionsblock „Puffer“ mit zwei Fühlern. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Daraus berechnet die Integration, wie viel Wärme im Puffer steckt, und die Pelletprognose wird genauer. 0 heißt: weiß ich nicht.",
-        "data": {
-          "puffer_volumen": "Pufferspeicher (Liter)",
-          "puffer2_volumen": "Pufferspeicher 2 (Liter)",
-          "puffer3_volumen": "Pufferspeicher 3 (Liter)",
-          "puffer4_volumen": "Pufferspeicher 4 (Liter)",
-          "puffer5_volumen": "Pufferspeicher 5 (Liter)",
-          "puffer6_volumen": "Pufferspeicher 6 (Liter)",
-          "puffer7_volumen": "Pufferspeicher 7 (Liter)",
-          "puffer8_volumen": "Pufferspeicher 8 (Liter)"
-        }
-      },
-      "puffer_einstellwert": {
-        "title": "Pufferspeicher-Volumen prüfen",
-        "description": "Der Funktionsblock „Puffer“ mit mehr als zwei Fühlern meldet ein effektives Volumen. Dort ist es aber kein errechneter Wert, sondern eine Einstellung an der Heizung, ab Werk 1000 l. Deine Heizung meldet: {gemeldet}. Passt das zu deinem Pufferspeicher, lass 0 stehen - dann rechnet die Integration mit dem Wert der Heizung. Sonst trag ein, wie viele Liter er fasst, etwa vom Typenschild oder aus den Unterlagen. Diese Liter gelten dann statt des Werts der Heizung.",
+        "title": "Puffervolumen",
+        "description": "Dein Pufferspeicher führt an der Heizung kein Gesamtvolumen. So ist es beim Funktionsblock „Puffer“. Trag ein, wie viele Liter er fasst - etwa vom Typenschild oder aus den Unterlagen. Damit rechnet die Integration den Energieinhalt, und die Pelletprognose wird genauer. Später änderst du den Wert am Gerät im Feld „Puffervolumen“. 0 heißt: weiß ich nicht.",
         "data": {
           "puffer_volumen": "Pufferspeicher (Liter)",
           "puffer2_volumen": "Pufferspeicher 2 (Liter)",
@@ -500,6 +472,30 @@
       },
       "fremderzeuger_schwelle": {
         "name": "Fremderzeuger Sperrtemperatur"
+      },
+      "puffer_volumen_stellen": {
+        "name": "Puffervolumen"
+      },
+      "puffer2_volumen_stellen": {
+        "name": "Puffer 2 Volumen"
+      },
+      "puffer3_volumen_stellen": {
+        "name": "Puffer 3 Volumen"
+      },
+      "puffer4_volumen_stellen": {
+        "name": "Puffer 4 Volumen"
+      },
+      "puffer5_volumen_stellen": {
+        "name": "Puffer 5 Volumen"
+      },
+      "puffer6_volumen_stellen": {
+        "name": "Puffer 6 Volumen"
+      },
+      "puffer7_volumen_stellen": {
+        "name": "Puffer 7 Volumen"
+      },
+      "puffer8_volumen_stellen": {
+        "name": "Puffer 8 Volumen"
       }
     },
     "select": {
@@ -985,9 +981,6 @@
       "puffer2_ladezustand": {
         "name": "Puffer 2 Ladezustand"
       },
-      "puffer2_volumen": {
-        "name": "Puffer 2 effektives Volumen"
-      },
       "puffer2_zustand": {
         "name": "Puffer 2 Zustand"
       },
@@ -1024,9 +1017,6 @@
       "puffer3_ladezustand": {
         "name": "Puffer 3 Ladezustand"
       },
-      "puffer3_volumen": {
-        "name": "Puffer 3 effektives Volumen"
-      },
       "puffer3_zustand": {
         "name": "Puffer 3 Zustand"
       },
@@ -1035,9 +1025,6 @@
       },
       "puffer4_ladezustand": {
         "name": "Puffer 4 Ladezustand"
-      },
-      "puffer4_volumen": {
-        "name": "Puffer 4 effektives Volumen"
       },
       "puffer4_ladepumpe": {
         "name": "Puffer 4 Ladepumpe"
@@ -1075,9 +1062,6 @@
       "puffer5_ladezustand": {
         "name": "Puffer 5 Ladezustand"
       },
-      "puffer5_volumen": {
-        "name": "Puffer 5 effektives Volumen"
-      },
       "puffer5_ladepumpe": {
         "name": "Puffer 5 Ladepumpe"
       },
@@ -1113,9 +1097,6 @@
       },
       "puffer6_ladezustand": {
         "name": "Puffer 6 Ladezustand"
-      },
-      "puffer6_volumen": {
-        "name": "Puffer 6 effektives Volumen"
       },
       "puffer6_ladepumpe": {
         "name": "Puffer 6 Ladepumpe"
@@ -1153,9 +1134,6 @@
       "puffer7_ladezustand": {
         "name": "Puffer 7 Ladezustand"
       },
-      "puffer7_volumen": {
-        "name": "Puffer 7 effektives Volumen"
-      },
       "puffer7_ladepumpe": {
         "name": "Puffer 7 Ladepumpe"
       },
@@ -1191,9 +1169,6 @@
       },
       "puffer8_ladezustand": {
         "name": "Puffer 8 Ladezustand"
-      },
-      "puffer8_volumen": {
-        "name": "Puffer 8 effektives Volumen"
       },
       "puffer8_ladepumpe": {
         "name": "Puffer 8 Ladepumpe"
@@ -1260,9 +1235,6 @@
       },
       "puffer_ladezustand": {
         "name": "Puffer Ladezustand"
-      },
-      "puffer_volumen": {
-        "name": "Puffer effektives Volumen"
       },
       "puffer_zustand": {
         "name": "Puffer Zustand"

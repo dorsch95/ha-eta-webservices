@@ -1,4 +1,4 @@
-"""Tests für Pufferspeicher: effektives Volumen, Energieinhalt, Ladepumpe, weitere Puffer."""
+"""Tests für Pufferspeicher: Puffervolumen, Energieinhalt, Ladepumpe, weitere Puffer."""
 
 from __future__ import annotations
 
@@ -7,12 +7,16 @@ import pytest
 from .conftest import ohne_objekt
 from .test_sensors import setup_integration
 
-VOLUMEN_URI = "/120/10601/0/0/12499"
-"""Im Menübaum der Tests steht es unter Einstellungen > Leistungsregelung, gesucht wird nach dem Namen."""
+VOLUMEN_URI = "/120/10601/0/0/13520"
+"""Das Gesamtvolumen des PufferFlex steht unter Einstellungen, gesucht wird nach dem Namen.
+
+Die Attrappe meldet dafür 1200 l und für das "Effektive Puffervolumen"
+daneben 825 l - das liest die Integration nicht.
+"""
 
 
 def ohne_volumen_im_menue(menu: str) -> str:
-    return ohne_objekt(menu, "/120/10601/0/0/13196")
+    return ohne_objekt(menu, VOLUMEN_URI)
 
 
 def mit_ladepumpe(menu: str) -> str:
@@ -44,6 +48,7 @@ ZWEITER_PUFFER = (
     '<object uri="/120/10602/0/0/12528" name="Ladezustand"/>'
     "</object>"
     '<object uri="/120/10602/0/0/12421" name="Einstellungen">'
+    '<object uri="/120/10602/0/0/13520" name="Gesamtvolumen"/>'
     '<object uri="/120/10602/0/0/13196" name="Leistungsregelung">'
     '<object uri="/120/10602/0/0/12499" name="Effektives Puffervolumen"/>'
     "</object></object>"
@@ -64,10 +69,7 @@ ALTER_PUFFER = (
     "</object></object>"
     "</fub>"
 )
-"""Der ältere Funktionsblock "Puffer": zwei Fühler, kein Volumen im Menübaum.
-
-Mit zusätzlichen Fühlern meldet er eines, siehe test_puffer_zusatzfuehler.
-"""
+"""Der ältere Funktionsblock "Puffer": zwei Fühler, kein Gesamtvolumen im Menübaum."""
 
 
 def mit_fub(menu: str, fub: str) -> str:
@@ -80,60 +82,71 @@ def _wert(zahl):
     return ETAValue(zahl, str(zahl), "°C", False, 1)
 
 
-async def test_pufferflex_nennt_sein_effektives_volumen(hass, entry, menu_xml):
+async def test_pufferflex_meldet_sein_gesamtvolumen(hass, entry, menu_xml):
+    """Gelesen wird es mit, einen Sensor bekommt es nicht - es steht im Zahlenfeld."""
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.discovered_uris["puffer_volumen"] == VOLUMEN_URI
     assert "puffer_volumen" not in coordinator.ueber_kennung
-    assert coordinator.puffer_volumen == 825
-    volumen = by_name["Puffer effektives Volumen"]
-    assert volumen.native_value == 825
-    assert volumen.native_unit_of_measurement == "L"
-    assert volumen.device_class == "volume_storage"
+    assert coordinator.sensor_defs["puffer_volumen"]["platform"] == "number"
+    assert VOLUMEN_URI in coordinator.abfragbare_uris.values()
+    assert coordinator.puffer_volumen == 1200
+    assert not [name for name in by_name if "olumen" in name]
     assert "Puffer Energieinhalt" in by_name
 
 
 async def test_volumen_auch_ueber_die_kennung(hass, entry, menu_xml):
-    hass.session.menu = menu_xml.replace("Effektives Puffervolumen", "Effective buffer volume")
+    hass.session.menu = menu_xml.replace('name="Gesamtvolumen"', 'name="Total volume"')
     coordinator, _ = await setup_integration(hass, entry)
-    assert coordinator.puffer_volumen == 825
+    assert coordinator.discovered_uris["puffer_volumen"] == VOLUMEN_URI
+    assert coordinator.puffer_volumen == 1200
 
 
-async def test_ohne_volumen_im_menue_kein_platzhalter(hass, entry, menu_xml):
-    """Wie beim älteren Funktionsblock "Puffer": kein "-", kein Energieinhalt, nichts abgefragt."""
+async def test_ohne_gesamtvolumen_im_menue_kein_volumen(hass, entry, menu_xml):
+    """Das "Effektive Puffervolumen" allein zählt nicht: kein Energieinhalt, nichts abgefragt."""
     hass.session.menu = ohne_volumen_im_menue(menu_xml)
+    assert "Effektives Puffervolumen" in hass.session.menu
     coordinator, by_name = await setup_integration(hass, entry)
     assert "puffer_volumen" not in coordinator.discovered_uris
     assert "puffer_volumen" not in coordinator.sensor_defs
     assert coordinator.puffer_volumen is None
-    assert "Puffer effektives Volumen" not in by_name
     assert "Puffer Energieinhalt" not in by_name
-    assert VOLUMEN_URI not in coordinator.abfragbare_uris.values()
+    abgefragt = set(coordinator.abfragbare_uris.values())
+    assert VOLUMEN_URI not in abgefragt
+    assert "/120/10601/0/0/12499" not in abgefragt
 
 
 async def test_eingetragenes_volumen_ohne_volumen_der_anlage(hass, entry, menu_xml):
-    """Die Liter aus der Einrichtung, wenn der Puffer sie nicht meldet."""
+    """Die Liter aus der Einrichtung, wenn der Puffer kein Gesamtvolumen führt."""
     hass.session.menu = ohne_volumen_im_menue(menu_xml)
     entry.data["puffer_volumen"] = 1000
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen == 1000
-    assert coordinator.volumen_quelle("puffer") == "Einstellung"
-    assert "Puffer effektives Volumen" not in by_name
-    assert by_name["Puffer Energieinhalt"].extra_state_attributes["volumen_quelle"] == "Einstellung"
+    assert coordinator.volumen_quelle("puffer") == "Home Assistant"
+    assert by_name["Puffer Energieinhalt"].extra_state_attributes["volumen_quelle"] == "Home Assistant"
 
 
-async def test_volumen_der_anlage_geht_vor(hass, entry):
-    """Beim PufferFlex stört ein früher eingetragener Wert nicht: Die Anlage errechnet ihr Volumen."""
+async def test_schreibt_das_feld_an_die_anlage_zaehlt_nur_ihr_wert(hass, entry):
+    """Ein früher eingetragener Wert stört dann nicht."""
     entry.data["puffer_volumen"] = 1000
     coordinator, _ = await setup_integration(hass, entry)
-    assert coordinator.puffer_volumen == 825
+    assert coordinator.puffer_volumen_an_der_anlage("puffer")
+    assert coordinator.puffer_volumen == 1200
     assert coordinator.volumen_quelle("puffer") == "Anlage"
+
+
+async def test_ohne_schreibzugriff_gehen_eingetragene_liter_vor(hass, entry):
+    entry.data["puffer_volumen"] = 1000
+    entry.data["enable_switches"] = False
+    coordinator, _ = await setup_integration(hass, entry)
+    assert not coordinator.puffer_volumen_an_der_anlage("puffer")
+    assert coordinator.puffer_volumen == 1000
+    assert coordinator.volumen_quelle("puffer") == "Home Assistant"
 
 
 async def test_ohne_puffer_kein_volumen(hass, entry, menu_xml):
     entry.data["components"] = ["kessel", "fwm"]
     coordinator, by_name = await setup_integration(hass, entry)
     assert coordinator.puffer_volumen is None
-    assert "Puffer effektives Volumen" not in by_name
     assert "Puffer Energieinhalt" not in by_name
 
 
@@ -153,11 +166,11 @@ async def test_energieinhalt_aus_volumen_und_fuehlern(hass, entry, menu_xml):
         coordinator.data[key] = _wert(temperatur)
     anzahl = len(fuehler)
     ueber = sum(max(0, t - 30) for t in (70, 60, 50, 40, 30, 20, 20, 20, 20)[:anzahl])
-    assert energie.native_value == pytest.approx(round(ueber / anzahl * 825 * 0.001163, 2))
+    assert energie.native_value == pytest.approx(round(ueber / anzahl * 1200 * 0.001163, 2))
     assert energie.native_unit_of_measurement == "kWh"
     assert energie.device_class == "energy_storage"
     assert energie.extra_state_attributes == {
-        "volumen_liter": 825,
+        "volumen_liter": 1200,
         "volumen_quelle": "Anlage",
         "ab_temperatur": 30.0,
     }
@@ -179,7 +192,8 @@ async def test_diagnose_nennt_das_volumen(hass, entry, menu_xml):
 
     await setup_integration(hass, entry)
     diagnose = await async_get_config_entry_diagnostics(hass, entry)
-    assert diagnose["konfiguration"]["puffer_volumen"] == {"puffer": 825}
+    assert diagnose["konfiguration"]["puffer_volumen"] == {"puffer": 1200}
+    assert "aeltere_puffer" not in diagnose["konfiguration"]
     assert diagnose["konfiguration"]["puffer_volumen_quelle"] == {"puffer": "Anlage"}
     assert diagnose["erkennung"]["pufferfuehler"] == {"puffer": [1, 2, 3, 4, 5]}
 
@@ -199,7 +213,7 @@ async def test_ladepumpe_bei_dezentraler_ladung(hass, entry, menu_xml):
 
 
 async def test_zweiter_puffer_mit_fuehlern_volumen_und_pumpe(hass, entry, menu_xml):
-    """Fühler, Zustand, Ladezustand, effektives Volumen und Ladepumpe - kein Energieinhalt."""
+    """Fühler, Zustand, Ladezustand und Ladepumpe als Sensoren - kein Energieinhalt."""
     hass.session.menu = mit_fub(menu_xml, ZWEITER_PUFFER)
     entry.data["components"] = ["kessel", "puffer", "puffer2"]
     coordinator, by_name = await setup_integration(hass, entry)
@@ -211,10 +225,9 @@ async def test_zweiter_puffer_mit_fuehlern_volumen_und_pumpe(hass, entry, menu_x
         "Puffer 2 Ladepumpe",
         "Puffer 2 Ladezustand",
         "Puffer 2 Zustand",
-        "Puffer 2 effektives Volumen",
     ]
     assert coordinator.discovered_uris["puffer2_fuehler_1"] == "/120/10602/0/11327/0"
-    assert coordinator.volumen("puffer2") == 825
+    assert coordinator.volumen("puffer2") == 1200
     assert coordinator.puffer_mit_volumen == {"puffer", "puffer2"}
     assert by_name["Puffer 2 Fühler 1"].extra_state_attributes["position"] == "oben"
     assert by_name["Puffer 2 Fühler 3"].extra_state_attributes["position"] == "unten"

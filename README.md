@@ -99,11 +99,9 @@ Den Kessel hat jede Anlage, er steht deshalb nicht zur Wahl. Wer nur die Messwer
 
 Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet. Ändern musst du sie nur, wenn die Vorbelegung nicht passt, siehe [Funktionsblock-Namen](#funktionsblock-namen).
 
-**3. Pufferspeicher-Volumen**
+**3. Puffervolumen**
 
-Der Schritt erscheint nur, wenn dein Puffer kein Volumen meldet. So ist es beim älteren Funktionsblock „Puffer“ mit zwei Fühlern. Trag die Liter vom Typenschild oder aus den Unterlagen ein. Beim PufferFlex liest die Integration das Volumen selbst. Das effektive Volumen ist kleiner als das Gesamtvolumen des Puffers: Die Regelung errechnet es daraus. Das Gesamtvolumen ist an der Heizung hinterlegt und dort mit einem Passwort geschützt. Die Integration liest nur und ändert es nicht.
-
-Hat der ältere „Puffer“ mehr als zwei Fühler, meldet auch er ein effektives Volumen. Dort ist es aber kein errechneter Wert, sondern eine Einstellung an der Heizung, ab Werk 1000 l. Die Einrichtung zeigt dir dann in einem eigenen Schritt, was die Heizung meldet. Passt der Wert zu deinem Puffer, lass 0 stehen. Sonst trag die Liter ein, sie gelten dann statt des Werts der Heizung. Am Display steht der Wert unter *Puffer → geforderte Leistung → Effektives Puffervolumen*.
+Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“: Trag die Liter vom Typenschild oder aus den Unterlagen ein. Beim PufferFlex liest die Integration das Gesamtvolumen von der Heizung. Ändern lässt sich beides später im Feld [Puffervolumen](#puffervolumen).
 
 **Weitere Schritte, je nach Anlage**
 
@@ -141,15 +139,15 @@ Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufen
 Alle Entitäten gehören zum Gerät **ETA Heizung**. Drei Regeln gelten überall:
 
 - **Nur gewählte Komponenten** bekommen Entitäten.
-- **Jeder Sensor einer Komponente ist immer da.** Führt deine Anlage den Wert nicht, zeigt er `-`. So bleiben Dashboards, Automatisierungen und Statistiken auf jeder Anlage gleich. Nur wenige Werte entstehen erst, wenn die Anlage sie hat, etwa das effektive Puffervolumen, die Ladepumpe oder die Raumtemperatur eines Heizkreises.
+- **Jeder Sensor einer Komponente ist immer da.** Führt deine Anlage den Wert nicht, zeigt er `-`. So bleiben Dashboards, Automatisierungen und Statistiken auf jeder Anlage gleich. Nur wenige Werte entstehen erst, wenn die Anlage sie hat, etwa die Ladepumpe oder die Raumtemperatur eines Heizkreises.
 - **Die Entitäts-IDs sind in jeder Sprache gleich.** Die Kesseltemperatur heißt auch in einem englischen Home Assistant `sensor.eta_heizung_kesseltemperatur`, nur der angezeigte Name ist übersetzt.
 
 Was eine Erklärung braucht:
 
 - **Pufferfühler:** so viele, wie die Anlage hat. PufferFlex hat 3 bis 9, der ältere Funktionsblock „Puffer“ 2 bis 5. Fühler 1 trägt das Attribut `position: oben`, der letzte `position: unten`.
-- **Effektives Puffervolumen:** Damit rechnen der Energieinhalt und die Prognose. Beim PufferFlex errechnet die Regelung es aus dem Gesamtvolumen. Der ältere „Puffer“ meldet es nur mit mehr als zwei Fühlern, und dort ist es eine Einstellung an der Heizung, ab Werk 1000 l. Beim älteren „Puffer“ kannst du die Liter beim Einrichten selbst eintragen, sie gehen dann vor. Der Sensor zeigt weiter den Wert der Heizung. Mit welchen Litern gerechnet wird und woher sie stammen, steht am Energieinhalt in den Attributen `volumen_liter` und `volumen_quelle`.
+- **Puffervolumen:** ein Zahlenfeld, siehe [Puffervolumen](#puffervolumen). Mit ihm rechnen Energieinhalt und Prognose.
 - **Ladezustand:** PufferFlex meldet ihn, der ältere „Puffer“ nur mit mehr als zwei Fühlern. Sonst rechnet ihn die Integration, siehe [Was deine Anlage liefert](#-was-deine-anlage-liefert). Eine **Ladepumpe** gibt es nur bei einem Puffer, der im ETA-Assistenten als dezentral geladen eingerichtet ist.
-- **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Volumen und Ladepumpe mit, Warmwasser 2 bis 8 die Temperatur und die Zirkulationspumpe. Den Energieinhalt gibt es nur für den ersten Puffer.
+- **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Puffervolumen und Ladepumpe mit, Warmwasser 2 bis 8 die Temperatur und die Zirkulationspumpe. Den Energieinhalt gibt es nur für den ersten Puffer.
 - **Pumpen** (Zirkulation, Ladepumpe, Pufferpumpe, Fernleitung) melden `Ein` oder `Aus`, also ob sie gerade laufen.
 - **Warmwasser:** Der **Zustand** sagt beim Warmwasserspeicher, ob er lädt. Seine **Ladepumpe** läuft, solange dafür Wärme fließt. Das Frischwassermodul hat stattdessen eine **Pufferpumpe**: Sie läuft, solange es Wasser erwärmt, also beim Zapfen und bei laufender Zirkulation. Ihre Anforderung bleibt nach dem Zapfen noch stehen; ob gerade wirklich Wasser fließt, zeigen der **Durchfluss** und die **Drehzahl** der Pufferpumpe. Deren Einheit übernimmt die Integration von der Anlage. Ist am Warmwasserspeicher ein zweiter Fühler unten eingerichtet, etwa für eine Solaranlage, gibt es dazu die **Temperatur unten**. Jeden dieser Werte gibt es nur, wenn deine Anlage ihn führt.
 - **Kombispeicher:** Ist im Pufferspeicher ein Warmwasserbereich eingerichtet, gibt es dessen Temperatur als **Puffer Warmwasser**, beim älteren Funktionsblock „Puffer“ dazu den Zustand. Ohne Kombispeicher entstehen beide nicht.
@@ -193,16 +191,16 @@ Was eine Erklärung braucht:
 | **Pufferspeicher** | | |
 | `sensor.eta_heizung_puffer_ladezustand` | Puffer Ladezustand | % |
 | `sensor.eta_heizung_puffer_zustand` | Puffer Zustand | Text |
-| `sensor.eta_heizung_puffer_effektives_volumen` | Puffer effektives Volumen | L |
+| `number.eta_heizung_puffervolumen` | Puffervolumen zum Einstellen | L |
 | `sensor.eta_heizung_puffer_ladepumpe` | Puffer Ladepumpe | Text |
 | `sensor.eta_heizung_puffer_warmwasser` | Puffer Warmwasser | °C |
 | `sensor.eta_heizung_puffer_warmwasser_zustand` | Puffer Warmwasser Zustand | Text |
-| `sensor.eta_heizung_puffer_energieinhalt` | Wärme im Puffer über 30 °C, nur mit bekanntem Volumen | kWh |
+| `sensor.eta_heizung_puffer_energieinhalt` | Puffer Energieinhalt über 30 °C, nur mit bekanntem Puffervolumen | kWh |
 | `sensor.eta_heizung_puffer_fuhler_1` … `_9` | je vorhandenem Pufferfühler einer | °C |
 | **Pufferspeicher 2 bis 8** (hier für Nummer 2, die weiteren heißen genauso mit ihrer Nummer) | | |
 | `sensor.eta_heizung_puffer_2_zustand` | Puffer 2 Zustand | Text |
 | `sensor.eta_heizung_puffer_2_ladezustand` | Puffer 2 Ladezustand | % |
-| `sensor.eta_heizung_puffer_2_effektives_volumen` | Puffer 2 effektives Volumen | L |
+| `number.eta_heizung_puffer_2_volumen` | Puffer 2 Volumen zum Einstellen | L |
 | `sensor.eta_heizung_puffer_2_ladepumpe` | Puffer 2 Ladepumpe | Text |
 | `sensor.eta_heizung_puffer_2_warmwasser` | Puffer 2 Warmwasser | °C |
 | `sensor.eta_heizung_puffer_2_warmwasser_zustand` | Puffer 2 Warmwasser Zustand | Text |
@@ -500,7 +498,7 @@ Jüngere Tage zählen mehr als alte. Einzelne Ausreißer wie Urlaub, Störung od
 
 **So rechnet sie voraus:** Für die nächsten Tage gilt die Wettervorhersage, danach das langjährige Temperaturmittel in Deutschland (DWD 1991-2020), angepasst an deinen Standort. Damit rechnet sie den Vorrat Tag für Tag herunter.
 
-**Mit Pufferspeicher:** Ist sein Volumen bekannt, rechnet die Prognose heraus, was der Puffer über Mitternacht mitnimmt. Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht. Bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Das macht vor allem den Wert für *morgen* und die Treffsicherheit genauer. Beim PufferFlex folgt das effektive Volumen aus dem Gesamtvolumen, das an der Heizung unter *PufferFlex → Einstellungen* steht, ab Werk 1000 l. Ändern lässt es sich dort nur mit Passwort.
+**Mit Pufferspeicher:** Ist sein Volumen bekannt, rechnet die Prognose heraus, was der Puffer über Mitternacht mitnimmt. Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht. Bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Das macht vor allem den Wert für *morgen* und die Treffsicherheit genauer. Gerechnet wird mit dem [Puffervolumen](#puffervolumen). Beim PufferFlex steht es an der Heizung ab Werk auf 1000 l - prüf, ob das zu deinem Puffer passt.
 
 **So prüft sie sich selbst:** Für jeden der letzten 14 Tage lernt sie nur aus den Tagen davor, schätzt den Verbrauch und vergleicht ihn mit dem, was wirklich verbrannt wurde. Das Ergebnis ist die **Treffsicherheit** (100 % heißt aufs Kilogramm genau).
 
@@ -632,6 +630,20 @@ Die letzten 20 Lieferungen stehen im Attribut `lieferungen` von `number.eta_heiz
 - **Nur in Home Assistant** in allen anderen Fällen: ohne Schreibzugriff und an älteren Regelungen, die kein Fassungsvermögen melden. An der Anlage ändert sich dann nichts. Solange du nichts einträgst, zeigt das Feld den Wert der Anlage. 0 verwirft deinen Wert wieder.
 
 Der Füllstand in Prozent und `sensor.eta_heizung_lager_fassungsvermogen` rechnen mit dem, was im Feld steht. Wohin es schreibt, zeigt sein Attribut `gespeichert`.
+
+### Puffervolumen
+
+Jeder Pufferspeicher hat am Gerät *ETA Heizung* unter **Konfiguration** das Zahlenfeld **Puffervolumen** (`number.eta_heizung_puffervolumen`, weitere Puffer `number.eta_heizung_puffer_2_volumen` usw.). Mit diesen Litern rechnen Energieinhalt und Prognose.
+
+| Puffer | Das Feld zeigt | Eine Änderung geht |
+|---|---|---|
+| PufferFlex, mit Schreibzugriff | das Gesamtvolumen der Heizung (*PufferFlex → Einstellungen → Gesamtvolumen*, ab Werk 1000 l) | an die Heizung, ab 50 l |
+| PufferFlex, ohne Schreibzugriff | das Gesamtvolumen der Heizung | nur an Home Assistant. 0 nimmt wieder den Wert der Heizung |
+| Älterer „Puffer“ | die Liter aus der Einrichtung | nur an Home Assistant. 0 heißt unbekannt, dann gibt es keinen Energieinhalt |
+
+> ⚠️ Mit Schreibzugriff ändert das Feld beim PufferFlex das Gesamtvolumen **an der Heizung**. Home Assistant meldet jede solche Änderung mit dem Wert von vorher.
+
+Wohin das Feld schreibt, zeigt sein Attribut `gespeichert`.
 
 ### Betriebsart je Heizkreis
 

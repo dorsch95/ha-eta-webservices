@@ -262,15 +262,19 @@ DEFAULT_ZEITRAEUME = True
 MAX_PUFFER_VOLUMEN = 100000
 
 
+def puffer_volumen_zahl(komponente):
+    """Der Schlüssel des Zahlenfelds "Puffervolumen" eines Puffers, siehe ZAHLEN."""
+    return f"{komponente}_volumen_stellen"
+
+
 def puffer_volumen_schluessel(komponente):
     """Unter welchem Schlüssel das eingetragene Volumen eines Puffers steht, in Litern.
 
-    Gefragt wird nur beim älteren Funktionsblock "Puffer": Mit zwei
-    Fühlern meldet er kein Volumen, mit zusätzlichen Fühlern einen
-    Einstellwert, dem eingetragene Liter vorgehen. Der erste Puffer heißt
+    Eingetragen wird es bei der Einrichtung - dort fragt sie nur beim
+    älteren Funktionsblock "Puffer", der kein Gesamtvolumen führt - oder
+    im Zahlenfeld "Puffervolumen", siehe ZAHLEN. Der erste Puffer heißt
     "puffer_volumen" wie schon in Version 0.23, ein dort eingetragener
-    Wert gilt also weiter. 0 heißt: unbekannt oder - wenn die Anlage ein
-    Volumen meldet - deren Wert nehmen.
+    Wert gilt also weiter. 0 heißt: nichts eingetragen.
     """
     return f"{komponente}_volumen"
 
@@ -325,10 +329,9 @@ weiteren heißen puffer2_… bis puffer8_…. Die Entitäten heißen
 
 Je Puffer gibt es bewusst nur wenig: die Fühler, den Zustand, den
 Ladezustand (PufferFlex meldet ihn, der ältere Funktionsblock "Puffer"
-nur mit zusätzlichen Fühlern), das effektive Volumen und - bei
-dezentraler Ladung - die
-Ladepumpe. Den Energieinhalt hat nur der erste Puffer, weil es ihn schon
-vorher gab.
+nur mit zusätzlichen Fühlern), das Puffervolumen als Zahlenfeld, siehe
+ZAHLEN, und - bei dezentraler Ladung - die Ladepumpe. Den Energieinhalt
+hat nur der erste Puffer, weil es ihn schon vorher gab.
 """
 
 WARMWASSER_SPEICHER = {
@@ -692,6 +695,21 @@ ZAHLEN = {
         "schritt": 1,
         "grenzen": (0, MAX_LAGER_MAXIMUM),
     },
+    **{
+        puffer_volumen_zahl(komponente): {
+            "component": komponente,
+            "name": f"Puffer{zusatz} Volumen" if zusatz else "Puffervolumen",
+            "translation_key": puffer_volumen_zahl(komponente),
+            "icon": "mdi:storage-tank-outline",
+            "quelle": f"{komponente}_volumen",
+            "einheit": "L",
+            "schritt": 1,
+            "grenzen": (0, MAX_PUFFER_VOLUMEN),
+            "sonst_in_home_assistant": True,
+            "puffer": komponente,
+        }
+        for komponente, zusatz in PUFFER_SPEICHER.items()
+    },
 }
 """Zahlen, die sich an der Anlage einstellen lassen.
 
@@ -702,7 +720,8 @@ Wert wie sein Sensor. grenzen: der Bereich, falls die Anlage keinen
 nennt; nennt sie einen, gilt der engere. sonst_in_home_assistant: Das
 Zahlenfeld gibt es auch, wenn nicht an die Anlage geschrieben werden
 kann - es merkt sich seinen Wert dann in Home Assistant, siehe
-CONF_LAGER_MAXIMUM.
+CONF_LAGER_MAXIMUM und puffer_volumen_schluessel. puffer: die
+Puffer-Komponente, zu der ein Puffervolumen gehört.
 
 Das Fassungsvermögen des Pelletlagers ("Lager > Vorrat > Maximaler
 Vorrat") steht an der Anlage. Eine Anlage meldet es als beschreibbar, von
@@ -714,6 +733,13 @@ einer Lieferung ein. Eine Anlage meldet ihn auch über die Webservices
 als beschreibbar, in kg von -100000 bis 100000; hier gilt 0 als untere
 Grenze. Das Zahlenfeld entsteht nur, wenn die Anlage ihn so meldet. Die
 Aktion "Lieferung eintragen" erhöht ihn dann um die gelieferte Menge.
+
+Das Puffervolumen ist beim PufferFlex das Gesamtvolumen der Anlage, siehe
+uri_discovery.PUFFER_VOLUMEN. Mit Schreibzugriff stellt das Zahlenfeld es
+an der Anlage, und Home Assistant meldet die Änderung eigens - es ist
+eine Einstellung der Anlage. Ohne Schreibzugriff und beim älteren
+Funktionsblock "Puffer", der kein Gesamtvolumen führt, merkt sich das
+Feld die Liter in Home Assistant.
 """
 
 THERMOSTATE = {
@@ -877,16 +903,6 @@ def _weitere_puffer_sensoren():
                     "device_class": None,
                     "state_class": SensorStateClass.MEASUREMENT,
                     "default_unit": "%",
-                },
-                f"{komponente}_volumen": {
-                    "component": komponente,
-                    "name": f"Puffer{zusatz} effektives Volumen",
-                    "translation_key": f"{komponente}_volumen",
-                    "nur_wenn_vorhanden": True,
-                    "icon": "mdi:storage-tank-outline",
-                    "device_class": SensorDeviceClass.VOLUME_STORAGE,
-                    "state_class": SensorStateClass.MEASUREMENT,
-                    "default_unit": "L",
                 },
                 f"{komponente}_ladepumpe": {
                     "component": komponente,
@@ -1171,16 +1187,6 @@ SENSORS = {
         "translation_key": "puffer_zustand",
         "icon": "mdi:storage-tank",
         "is_string": True,
-    },
-    "puffer_volumen": {
-        "component": "puffer",
-        "name": "Puffer effektives Volumen",
-        "translation_key": "puffer_volumen",
-        "nur_wenn_vorhanden": True,
-        "icon": "mdi:storage-tank-outline",
-        "device_class": SensorDeviceClass.VOLUME_STORAGE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "default_unit": "L",
     },
     "puffer_ladepumpe": {
         "component": "puffer",
