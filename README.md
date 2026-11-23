@@ -22,24 +22,21 @@ Bindet **ETA-Heizungen** über die eingebauten Webservices (ETAtouch) in Home As
 
 ![Dieselbe Karte im dunklen Design: am PC als Kacheln, daneben kompakt am Handy](https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/vorschau_dunkel.webp)
 
-Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: als Anlagenbild, als Kacheln und kompakt am Handy, wo ein Tipp auf den Heizkreis Raum Soll und Betriebsart aufklappt. Sie folgt dem hellen oder dunklen Design von Home Assistant. Die Werte sind Beispiele.
+Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) als Anlagenbild, als Kacheln und kompakt am Handy, im hellen und im dunklen Design. Die Werte sind Beispiele.
 
 <details>
 <summary>🇬🇧 <b>English summary</b></summary>
 
-**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with up to eight buffer tanks, up to eight fresh water modules or hot water tanks, heating circuits, solar, PV heating module, pellet store, a second heat source, external heat such as a wood stove connected to the ETA control, a stand-alone heat source outside it and a transfer line to another building) **entirely locally** via the ETAtouch RESTful webservices built into the boiler. Nothing goes to the internet. Read-only by default; switching the boiler and heating circuit modes has to be enabled explicitly.
+**ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tanks, hot water, heating circuits, solar, PV heating module, pellet store and more) **entirely locally** via the ETAtouch webservices built into the boiler. Read-only by default; switching has to be enabled explicitly.
 
-- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080), the number of buffer tanks, hot water units and heating circuits, and tick the other components your system has. The function block names are then pre-filled with what your system reports. A log boiler with pellet unit (SH TWIN) also ticks *TWIN*.
-- Values are found by their **names** in the boiler's menu tree, not by fixed addresses. The search uses the German menu names, which is what practically all systems in Germany, Austria and Switzerland report. If a name doesn't match, measured values are also found by the object's number inside its function block - so with a different display language, enter your function block names as your display shows them. Buttons and switches are only found by name.
-- Entity IDs are the same in every Home Assistant language (e.g. `sensor.eta_heizung_kesseltemperatur`), so the dashboard card works everywhere. Display names are translated.
-- With switching enabled, the card **ETA Zeitprogramm** shows each heating circuit's time program as weekly bars and lets you change it right on the dashboard: tap a day, adjust up to 3 time slots, apply them to other days, save. Buffer loading times and hot water times can be shown too (*Show* in the card editor); hot water temperatures are editable from 0 to 80 °C, buffer loading times only switch loading on and off. Home Assistant loads the card by itself - add it via *Edit dashboard → Add card*.
-- Alternatively, a heating circuit's time program can follow a Home Assistant **schedule helper**: each block becomes one of the system's time windows (at most 3 per day, quarter hours); a temperature is only written if a block carries `temperature` in its additional data.
-- With switching enabled, an optional switch **Lock boiler** pauses the boiler while a device the ETA control does not know is heating, such as a wood stove: it switches the boiler off via its on/off key and on again afterwards, but never switches on a boiler you turned off yourself. A blueprint ties the switch to any entity. A **stand-alone heat source** outside the ETA control (such as a stove with its own control) can be added as a component: Home Assistant recognises from an entity, a temperature sensor with a lock temperature, or both, whether it heats, and can lock the boiler meanwhile; it gets its own tile in the ETA Overview card. The picture of burner, external heat and stand-alone heat source is chosen with the pencil on their tiles.
-- A **self-learning forecast** learns from Home Assistant's long-term statistics how many pellets the house burns at which outside temperature. It predicts tomorrow's consumption and the day the pellet store runs empty or reaches its warning level, optionally using a weather entity's forecast.
-- The card **ETA Overview** needs no YAML: add it like any other card and pick a view - tiles, a system diagram with pipes, or a compact list. It adapts to your system, follows the light or dark theme and animates whatever is working. With several buffer tanks or a transfer line, the options dialog asks which part feeds which. The order of the parts can be dragged in the card settings. A clock button on each part with a time program opens its times for editing.
-- The earlier ready-made dashboard card stays available: **Developer tools → Actions → "ETA Web-Services: Create dashboard card"**, then paste the response as a manual card in a *Panel* view.
-- Tested with webservices 1.2 and with one older control with webservices 1.1. Older controls keep their values elsewhere in the menu tree; the integration finds them there for pellet boiler, older buffer, hot water tank, heating circuits, pellet store, outside temperature and solar, read-only. Where the system reports no buffer state of charge, it is calculated from the buffer sensors (0 % up to 30 °C, 100 % from 80 °C). The pellet store capacity is set with a number entity on the device page: it is written to the heater where that is possible, otherwise kept in Home Assistant. After a delivery, the plus button on the pellet store tile takes date, amount and price: it remembers the delivery, takes over the price and raises the stock at the heater where the heater reports it as writable. Stock, capacity and pellet price are number entities as well; the action `eta_heating_ws.lieferung_eintragen` does the same without the card.
-- Problems or a system that reports different values: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). It contains the complete menu tree, the IP address is redacted.
+- Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and what your system has.
+- Values are found by their names in the boiler's menu tree, not by fixed addresses. The search uses the German menu names. With another display language, enter your function block names as the display shows them.
+- Entity IDs are the same in every language (e.g. `sensor.eta_heizung_kesseltemperatur`), display names are translated.
+- The card **ETA Overview** needs no YAML: add it like any other card and pick tiles, a system diagram or a compact list. The card **ETA Zeitprogramm** shows and edits time programs.
+- With switching enabled: boiler on/off, heating circuit modes, thermostat, time programs, ash box plan, pellet store and buffer tank volume, and locking the boiler while a wood stove heats.
+- A self-learning forecast predicts tomorrow's pellet consumption and the day the pellet store runs empty.
+- Tested with webservices 1.2 and one older control with webservices 1.1 (read-only there).
+- Problems: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). The IP address is redacted.
 
 </details>
 
@@ -47,31 +44,24 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) in ihren drei Ansichten: 
 
 ## 🔧 Vorbereitung an der Heizung
 
-Die Webservices müssen an der Steuerung einmal eingeschaltet werden:
-
 1. Auf der Anlage läuft **Systemsoftware x.20.0 oder neuer**.
 2. Die Anlage ist bei [meinETA](https://meineta.at) registriert.
 3. Am Touch-Display unten links den **Werkzeugkasten** öffnen, dann **Internet & Schnittstellen → meinETA Zugang**.
 4. Dort die **Webservices** aktivieren.
 
-Zur Probe im Browser `http://<IP-der-Heizung>:8080/user/menu` öffnen. Erscheint eine XML-Seite mit dem Menübaum deiner Anlage, ist alles bereit.
+Zur Probe im Browser `http://<IP-der-Heizung>:8080/user/menu` öffnen: Erscheint eine XML-Seite, ist alles bereit.
 
-**Womit die Integration geprüft ist:** an Anlagen mit **Webservices 1.2** und an einer älteren Regelung mit **Webservices 1.1**. Welche Version deine Anlage hat, steht in Home Assistant auf der Seite des Geräts *ETA Heizung* und unter `http://<IP-der-Heizung>:8080/user/api`. Was an einer älteren Regelung anders ist, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert).
+Geprüft ist die Integration mit **Webservices 1.2** und an einer älteren Regelung mit **Webservices 1.1**. Die Version deiner Anlage steht in Home Assistant am Gerät *ETA Heizung*.
 
 ## 🚀 Installation
 
 [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dorsch95&repository=ha-eta-webservices&category=integration)
 
-Der Knopf öffnet die Integration direkt in HACS. Von Hand geht es so:
-
-1. **HACS** öffnen, nach **ETA Web-Services** suchen und **Herunterladen**.
-2. Home Assistant neu starten.
-
-Die Integration steht im Standard-Store von HACS, ein benutzerdefiniertes Repository ist nicht nötig.
+Oder von Hand: **HACS** öffnen, nach **ETA Web-Services** suchen, **Herunterladen**, Home Assistant neu starten.
 
 ## 🧭 Einrichtung
 
-Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die Integration **ETA Web-Services** wählen. Der Dialog führt durch diese Schritte.
+Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die Integration **ETA Web-Services** wählen.
 
 **1. Verbindung und Anlage**
 
@@ -81,23 +71,21 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Pufferspeicher | 1 | Anzahl, PufferFlex und ältere Puffer zusammen, bis 8 |
 | Frischwassermodule und Warmwasserspeicher | 0 | Anzahl zusammen, bis 8 |
 | Heizkreise | 0 | Anzahl, bis 4 |
-| Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fremdwärme, Fremderzeuger, Fernleitung, TWIN. Was dahintersteckt, steht unter [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
-| Abfrageintervall | 30 Sekunden | erlaubt sind 1 bis 600. Die Integration liest alle Messwerte mit einer einzigen Anfrage. Je kürzer, desto öfter muss die Anlage antworten - bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten. Die Störungsliste wird dann nur alle 10 Sekunden gelesen |
-| Schnelle Abfrage | 3 Sekunden | 0 = aus. Liest eine kleine Gruppe öfter als den Rest: alles Schaltbare (Kessel ein/aus, Entaschen, Betriebsart und Raum Soll der Heizkreise), den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation. So zeigt das Dashboard etwa das Zapfen ohne Verzug. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall |
-| Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1. Steht auf dem Lieferschein ein anderer Wert, trag ihn ein |
-| Pelletpreis | 0 | in Euro je Tonne. Mit einem Preis rechnet die Integration auch die Kosten aus. Später änderst du ihn bequemer mit `number.eta_heizung_pelletpreis` oder in der Karte, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung) |
+| Weitere Komponenten | keine | Solaranlage, Pelletlager, PV-Heizmodul, Brenner, Fremdwärme, Fremderzeuger, Fernleitung, TWIN, siehe [Was deine Anlage liefert](#-was-deine-anlage-liefert) |
+| Abfrageintervall | 30 Sekunden | 1 bis 600. Bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten |
+| Schnelle Abfrage | 3 Sekunden | 0 = aus. Liest öfter, was sich schnell ändert: alles Schaltbare, Kessel-Zustand, Raumtemperatur und das Zapfen am Frischwassermodul |
+| Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1 |
+| Pelletpreis | 0 | Euro je Tonne, für die Kosten. Später änderst du ihn mit `number.eta_heizung_pelletpreis` oder in der Karte |
 | Störungsmeldungen auslesen | an | siehe [Störungen](#-störungen) |
 | Kessel und Heizkreise schalten dürfen | aus | der Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen) |
-| Schalter „Kessel sperren“ anlegen | aus | lässt den Kessel pausieren, solange ein Ofen oder ein anderes Gerät heizt, das die ETA-Regelung nicht kennt, siehe [Kessel sperren](#kessel-sperren). Braucht den Schreibzugriff. Mit der Komponente Fremderzeuger entsteht der Schalter von selbst |
+| Schalter „Kessel sperren“ anlegen | aus | siehe [Kessel sperren](#kessel-sperren) |
 | Pelletverbrauch je Zeitraum | an | heute, Woche und Jahr |
 | Pelletprognose und Reichweite des Lagers | an | siehe [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) |
-| Wettervorhersage | automatisch | für die Prognose. Gibt es genau eine Wetter-Entität, ist sie vorausgewählt |
-
-Den Kessel hat jede Anlage, er steht deshalb nicht zur Wahl. Wer nur die Messwerte braucht, wählt Verbrauch je Zeitraum und Prognose ab und bekommt entsprechend weniger Entitäten. Schaltest du den Schreibzugriff ein, folgt ein Hinweis, den du bestätigst.
+| Wettervorhersage | automatisch | für die Prognose |
 
 **2. Funktionsblock-Namen bestätigen**
 
-Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet. Ändern musst du sie nur, wenn die Vorbelegung nicht passt, siehe [Funktionsblock-Namen](#funktionsblock-namen).
+Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, siehe [Funktionsblock-Namen](#funktionsblock-namen).
 
 **3. Puffervolumen**
 
@@ -105,15 +93,15 @@ Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“: Trag die Li
 
 **Weitere Schritte, je nach Anlage**
 
-- **Fremderzeuger**, wenn du ihn angekreuzt hast, siehe [Fremderzeuger](#fremderzeuger).
-- **Raumfühler** und **Zeitprogramm aus Home Assistant**, nur mit Schreibzugriff und passender Anlage, siehe [Thermostat und Raumfühler](#thermostat-und-raumfühler-aus-home-assistant) und [Zeitprogramm aus Home Assistant](#zeitprogramm-aus-home-assistant).
+- **Fremderzeuger**, wenn angekreuzt, siehe [Fremderzeuger](#fremderzeuger).
+- **Raumfühler** und **Zeitprogramm aus Home Assistant**, nur mit Schreibzugriff, siehe [Thermostat und Raumfühler](#thermostat-und-raumfühler-aus-home-assistant) und [Zeitprogramm aus Home Assistant](#zeitprogramm-aus-home-assistant).
 - **Wer hängt woran**, nur mit mehreren Pufferspeichern oder einer Fernleitung, siehe [Neue Karte „ETA Übersicht“](#neue-karte-eta-übersicht).
 
-Alle Einstellungen lassen sich später unter **Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren** ändern. Nur die IP-Adresse steht woanders: im Drei-Punkte-Menü der Integration unter **Neu konfigurieren**.
+Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren** ändern. Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**.
 
 ### Funktionsblock-Namen
 
-Jeder Funktionsblock (FUB) lässt sich an der Steuerung umbenennen und heißt dann auch in den Webservices anders. Die Integration belegt die Felder deshalb mit den Namen vor, die deine Anlage meldet: Pufferspeicher bekommen der Reihe nach erst die PufferFlex, dann die älteren Puffer, Warmwasser erst die FWM, dann die WW. Antwortet die Anlage nicht, stehen dort die Standardnamen:
+Funktionsblöcke (FUB) lassen sich an der Steuerung umbenennen. Die Felder sind deshalb mit den Namen vorbelegt, die deine Anlage meldet. Antwortet sie nicht, stehen dort die Standardnamen:
 
 | Komponente | Standardname |
 |---|---|
@@ -130,30 +118,28 @@ Jeder Funktionsblock (FUB) lässt sich an der Steuerung umbenennen und heißt da
 | Fernleitung | `Fernl` |
 | Außentemperatur | `Sys` |
 
-Liegt ein Funktionsblock auf einem Zusatzmodul, hängt ETA oft Modul- und laufende Nummer an, etwa `HK 1.1` oder `WW 1.1`. Solche Namen und alle selbst vergebenen (etwa „Fußboden“ statt `HK2`) trägst du hier ein. Den genauen Namen zeigt das Display der Heizung als Reiter über dem Funktionsblock.
+Namen von Zusatzmodulen (etwa `HK 1.1`) und selbst vergebene trägst du hier ein. Den genauen Namen zeigt das Display der Heizung als Reiter über dem Funktionsblock.
 
 ---
 
 ## 📊 Entitäten
 
-Alle Entitäten gehören zum Gerät **ETA Heizung**. Drei Regeln gelten überall:
+Alle Entitäten gehören zum Gerät **ETA Heizung**.
 
 - **Nur gewählte Komponenten** bekommen Entitäten.
-- **Jeder Sensor einer Komponente ist immer da.** Führt deine Anlage den Wert nicht, zeigt er `-`. So bleiben Dashboards, Automatisierungen und Statistiken auf jeder Anlage gleich. Nur wenige Werte entstehen erst, wenn die Anlage sie hat, etwa die Ladepumpe oder die Raumtemperatur eines Heizkreises.
-- **Die Entitäts-IDs sind in jeder Sprache gleich.** Die Kesseltemperatur heißt auch in einem englischen Home Assistant `sensor.eta_heizung_kesseltemperatur`, nur der angezeigte Name ist übersetzt.
+- **Führt deine Anlage einen Wert nicht, zeigt der Sensor `-`.** Wenige Werte entstehen erst, wenn die Anlage sie hat, etwa die Ladepumpe.
+- **Die Entitäts-IDs sind in jeder Sprache gleich**, nur der angezeigte Name ist übersetzt.
+- **Was an die Heizung schreibt**, entsteht nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen).
 
-Was eine Erklärung braucht:
+Gut zu wissen:
 
-- **Pufferfühler:** so viele, wie die Anlage hat. PufferFlex hat 3 bis 9, der ältere Funktionsblock „Puffer“ 2 bis 5. Fühler 1 trägt das Attribut `position: oben`, der letzte `position: unten`.
+- **Pufferfühler:** PufferFlex hat 3 bis 9, der ältere Funktionsblock „Puffer“ 2 bis 5. Fühler 1 ist der oberste (Attribut `position`).
 - **Puffervolumen:** ein Zahlenfeld, siehe [Puffervolumen](#puffervolumen). Mit ihm rechnen Energieinhalt und Prognose.
-- **Ladezustand:** PufferFlex meldet ihn, der ältere „Puffer“ nur mit mehr als zwei Fühlern. Sonst rechnet ihn die Integration, siehe [Was deine Anlage liefert](#-was-deine-anlage-liefert). Eine **Ladepumpe** gibt es nur bei einem Puffer, der im ETA-Assistenten als dezentral geladen eingerichtet ist.
-- **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Puffervolumen und Ladepumpe mit, Warmwasser 2 bis 8 die Temperatur und die Zirkulationspumpe. Den Energieinhalt gibt es nur für den ersten Puffer.
-- **Pumpen** (Zirkulation, Ladepumpe, Pufferpumpe, Fernleitung) melden `Ein` oder `Aus`, also ob sie gerade laufen.
-- **Warmwasser:** Der **Zustand** sagt beim Warmwasserspeicher, ob er lädt. Seine **Ladepumpe** läuft, solange dafür Wärme fließt. Das Frischwassermodul hat stattdessen eine **Pufferpumpe**: Sie läuft, solange es Wasser erwärmt, also beim Zapfen und bei laufender Zirkulation. Ihre Anforderung bleibt nach dem Zapfen noch stehen; ob gerade wirklich Wasser fließt, zeigen der **Durchfluss** und die **Drehzahl** der Pufferpumpe. Deren Einheit übernimmt die Integration von der Anlage. Ist am Warmwasserspeicher ein zweiter Fühler unten eingerichtet, etwa für eine Solaranlage, gibt es dazu die **Temperatur unten**. Jeden dieser Werte gibt es nur, wenn deine Anlage ihn führt.
-- **Kombispeicher:** Ist im Pufferspeicher ein Warmwasserbereich eingerichtet, gibt es dessen Temperatur als **Puffer Warmwasser**, beim älteren Funktionsblock „Puffer“ dazu den Zustand. Ohne Kombispeicher entstehen beide nicht.
-- **`sensor.eta_heizung_aschebox_status`** fasst Verbrauch und Schwelle in einem Text zusammen („459/1000kg“), weil die Dashboard-Karte zwei Werte nicht zusammenführen kann.
-- **Komponenten-Marker** (Diagnose): je Komponente eine Entität, an der die Dashboard-Karte erkennt, was vorhanden ist.
-- **Schalter, Betriebsart, Thermostat und Knöpfe**, die an die Heizung schreiben, entstehen nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen).
+- **Ladezustand:** PufferFlex meldet ihn, der ältere „Puffer“ nur mit mehr als zwei Fühlern. Sonst rechnet ihn die Integration aus den Fühlern: 0 % bis 30 °C, 100 % ab 80 °C. Der Sensor trägt dann das Attribut `berechnet`.
+- **Weitere Speicher:** Pufferspeicher 2 bis 8 bringen Fühler, Zustand, Ladezustand, Puffervolumen und Ladepumpe mit, Warmwasser 2 bis 8 dieselben Werte wie das erste. Den Energieinhalt gibt es nur für den ersten Puffer.
+- **Pumpen** melden `Ein` oder `Aus`.
+- **Warmwasser:** Der Warmwasserspeicher hat eine **Ladepumpe**, das Frischwassermodul eine **Pufferpumpe**. Ob gerade Wasser fließt, zeigen **Durchfluss** und **Drehzahl**. Mit einem zweiten Fühler unten gibt es die **Temperatur unten**.
+- **Kombispeicher:** Mit einem Warmwasserbereich im Puffer gibt es **Puffer Warmwasser**.
 
 <details>
 <summary><b>Alle Entitäten im Überblick</b> (aufklappen)</summary>
@@ -320,224 +306,145 @@ Das sagt das Attribut `status` jedes Sensors:
 | `status` | Anzeige | Bedeutung |
 |---|---|---|
 | `ok` | der Wert | alles in Ordnung |
-| `nicht_vorhanden` | `-` | stand schon beim Einrichten nicht im Menübaum, die Anlage hat den Wert nicht |
-| `nicht_erreichbar` | *Nicht verfügbar* | den Wert gibt es, er kam bei den letzten Abfragen aber nicht an |
-| `kein_messwert` | *Unbekannt* | die Anlage zeigt nur `---`, meist ein Fühler mit Unterbrechung oder Kurzschluss |
-
-Ein einzelner Aussetzer ändert nichts, der letzte Wert bleibt stehen. Erst wenn ein Wert zweimal hintereinander ausbleibt, gilt der Sensor als nicht erreichbar. In einer Automatisierung:
-
-```jinja2
-{{ state_attr('sensor.eta_heizung_kesseldruck', 'status') == 'nicht_vorhanden' }}
-```
+| `nicht_vorhanden` | `-` | die Anlage hat den Wert nicht |
+| `nicht_erreichbar` | *Nicht verfügbar* | kam bei den letzten zwei Abfragen nicht an |
+| `kein_messwert` | *Unbekannt* | die Anlage zeigt nur `---`, meist ein Fühlerfehler |
 
 ---
 
 ## 📺 Dashboard-Karte
 
-Eine Karte für alle Anlagen. Sie zeigt die Komponenten, die du gewählt hast, und passt sich an PC, Tablet und Handy an. Die Grafiken bringt die Integration mit.
+Die Integration bringt zwei Karten mit: die fertige Karte aus YAML, um die es hier zuerst geht, und die [neue Karte „ETA Übersicht“](#neue-karte-eta-übersicht), die ohne YAML auskommt. Beide zeigen nur, was du gewählt hast, und passen sich an PC, Tablet und Handy an.
 
 <p>
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard.webp" alt="Die Dashboard-Karte am PC: Kessel, Puffer, Frischwassermodul, zwei Heizkreise, Pelletlager und Solar" width="520">
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/dashboard_handy.webp" alt="Dieselbe Karte am Handy, zweispaltig" width="170">
 </p>
 
-Die Werte stammen von einer nachgebauten Testanlage. Daneben gibt es die [neue Karte ETA Übersicht](#neue-karte-eta-übersicht), die ohne YAML auskommt.
-
 ### Einrichten
 
-1. **Entwicklerwerkzeuge → Aktionen** öffnen, **ETA Web-Services: Dashboard-Karte erzeugen** wählen und **Aktion ausführen**. Die Antwort ist die fertige Karte, zugeschnitten auf deine Anlage. Kopiere sie komplett.
-2. Im Dashboard eine **neue Ansicht** anlegen (Stift oben rechts, dann `+`) und als Layout **Panel (einzelne Karte)** wählen. In der normalen Ansicht begrenzt Home Assistant Karten auf etwa 500 Pixel Breite, die Beschriftungen würden abgeschnitten.
-3. Eine Karte vom Typ **Manuell** einfügen und den Inhalt durch die kopierte Antwort ersetzen.
+1. **Entwicklerwerkzeuge → Aktionen** öffnen, **ETA Web-Services: Dashboard-Karte erzeugen** ausführen und die Antwort kopieren.
+2. Im Dashboard eine neue Ansicht mit dem Layout **Panel (einzelne Karte)** anlegen.
+3. Eine Karte vom Typ **Manuell** einfügen und die Antwort hineinkopieren.
 
-Baust du deine Anlage um oder benennst eine Entität um, führ die Aktion einfach noch einmal aus.
-
-Alternativ gibt es die **universelle Karte** [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml), die ohne Aktion zu fast jeder Anlage passt. Sie ist deutlich länger, weil sie alle Komponenten enthält und das Passende per Bedingung einblendet, und zeigt bis zu drei Pufferspeicher und drei Warmwasser. Hast du mehr, nimm die Aktion.
+Nach einem Umbau der Anlage die Aktion einfach noch einmal ausführen. Ohne Aktion gibt es die universelle Karte [dashboard/eta-karte.yaml](dashboard/eta-karte.yaml), sie zeigt bis zu drei Pufferspeicher und drei Warmwasser.
 
 ### Was die Kacheln zeigen
 
 | Kachel | Anzeige |
 |---|---|
-| Kessel | Die wichtigsten Messwerte. Im Sichtfenster Funken beim Zünden, Flamme beim Heizen, Glut im Glutabbrand, drehender Rost beim Entaschen, Warndreieck bei Störung und Wartung. Mit Schreibzugriff unten die Symbole für Ein/Aus, Entaschen und Aschebox-Plan |
-| Pufferspeicher | Ladezustand, die Fühler in ihrer Höhe und die Ladepumpe, falls vorhanden. Der Rand pulsiert, solange der Puffer Wärme anfordert oder aufnimmt |
-| Warmwasser | Temperatur und Zirkulationspumpe, falls vorhanden |
-| Heizkreis | Vorlauf und Anforderung, das Symbol der geltenden Betriebsart leuchtet, bei Anforderung fließt Wasser durch Heizkörper und Fußbodenschlange. Mit Thermostat die Zeile „Raum · Soll“, Antippen öffnet ihn |
-| Pelletlager | Füllstand in fünf Stufen, drehende Schnecke bei laufender Austragung, Warndreieck unter der Warngrenze, im Dach das Datum, bis wann der Vorrat reicht |
-| Solar, PV-Heizmodul | Sonne und Blitz leuchten, solange Leistung anliegt |
-| Brenner, Fremdwärme, Fernleitung | das gewählte Bild in Bewegung, sobald der Brenner angefordert ist bzw. solange die Fremdwärme heizt, wandernde Pulse bei laufender Fernpumpe |
+| Kessel | Messwerte, im Sichtfenster Zünden, Heizen, Glutabbrand, Entaschen und Störung. Mit Schreibzugriff die Symbole für Ein/Aus, Entaschen und Aschebox-Plan |
+| Pufferspeicher | Ladezustand, die Fühler in ihrer Höhe, Ladepumpe |
+| Warmwasser | Temperatur und Zirkulationspumpe |
+| Heizkreis | Vorlauf, Anforderung und Betriebsart, mit Thermostat „Raum · Soll“ |
+| Pelletlager | Füllstand, Austragung, Warnung unter der Warngrenze, Datum, bis wann der Vorrat reicht |
+| Solar, PV-Heizmodul | leuchten, solange Leistung anliegt |
+| Brenner, Fremdwärme, Fernleitung | bewegen sich, solange sie arbeiten |
 
-Hast du mehrere Pufferspeicher oder Warmwasser, steht über jeder Kachel der Name ihres Funktionsblocks, etwa „PufferFlex 2“ oder „WW“. Werte, die die Anlage nicht führt, lässt die Karte weg.
+Am Gerät *ETA Heizung* unter *Konfiguration* stellst du ein:
 
-**Ohne Bewegung:** `switch.eta_heizung_animationen` ausschalten (Gerät *ETA Heizung*, Bereich *Konfiguration*), etwa für ein Wandtablet. Die Karte zeigt dann Standbilder mit derselben Aussage. Der Schalter wirkt sofort auf allen Dashboards und schreibt nichts in die Heizung.
-
-**Bilder wählen:** Was hinter Brenner und Fremdwärme steht, verrät die Anlage nicht. Du wählst das Bild deshalb einmal selbst, am Gerät *ETA Heizung* im Bereich *Konfiguration*, mit `select.eta_heizung_brenner_bild` und `select.eta_heizung_fremdwarme_bild`:
-
-| Auswahl | Bild | in Bewegung |
-|---|---|---|
-| Gastherme | Wandtherme mit Sichtfenster | blaue Gasflammen |
-| Ölkessel | Kessel mit rotem Brenner und Ölleitung | gelbe Flamme im Sichtglas |
-| Kaminofen | Ofen mit Rauchrohr und Holzfach | Holzfeuer |
-| Allgemein | Gehäuse mit drei Wärmewellen | die Wellen glühen und steigen auf |
-
-Ohne Auswahl zeigt der Brenner die Gastherme und die Fremdwärme den Kaminofen. Dieselbe Auswahl hat der [Fremderzeuger](#fremderzeuger) mit `select.eta_heizung_fremderzeuger_bild`. Beide Karten folgen der Auswahl sofort, auch die neue Karte „ETA Übersicht“. An der Anlage ändert die Auswahl nichts.
-
-Am selben Ort wählst du je Heizkreis, ob die Karte „ETA Übersicht“ ihn als **Heizkörper** oder als **Fußbodenheizung** zeichnet: `select.eta_heizung_heizkreis_1_bild` (bis `_4_`). Ohne Auswahl ist es der Heizkörper.
+- **Animationen:** `switch.eta_heizung_animationen` aus zeigt Standbilder, etwa für ein Wandtablet.
+- **Bild von Brenner, Fremdwärme und Fremderzeuger:** Gastherme, Ölkessel, Kaminofen oder Allgemein, mit `select.eta_heizung_brenner_bild`, `select.eta_heizung_fremdwarme_bild` und `select.eta_heizung_fremderzeuger_bild`.
+- **Heizkörper oder Fußbodenheizung** je Heizkreis, mit `select.eta_heizung_heizkreis_1_bild` (bis `_4_`), für die Karte „ETA Übersicht“.
 
 ### Anpassen
 
-Die Karte wählt die Spaltenzahl nach der Breite der Ansicht:
-
-| Breite | Spalten | Beschriftungen |
-|---|---|---|
-| unter 768 px (Handy) | 2 | gekürzt (`RL:`, `Asche:`, `O₂:`) |
-| 768 bis 1039 px (Tablet) | 3 | vollständig |
-| ab 1040 px (Desktop) | 4 | vollständig |
-
-- **Pufferfühler:** Die Karte zeigt so viele Fühler, wie deine Anlage hat, gleichmäßig über die Speicherhöhe verteilt. Anzupassen ist nichts.
-- **Beschriftungen** stehen als `prefix` im YAML, nicht im Bild. Aus `prefix: 'Kessel: '` wird also einfach `prefix: 'Vorlauf Kessel: '`. Denk daran, die Änderung in allen drei Breiten zu machen.
+Die Karte zeigt je nach Breite 2 (Handy), 3 (Tablet) oder 4 Spalten (ab 1040 px). Beschriftungen stehen als `prefix` im YAML. Ändere sie in allen drei Breiten.
 
 ### Neue Karte „ETA Übersicht“
 
-Daneben gibt es eine zweite Karte, die du wie jede andere über **Karte hinzufügen** findest: **ETA Übersicht**. Der Dialog öffnet mit dem Reiter *Nach Entität*, die Karte steht im Reiter **Nach Karte** - dort nach „ETA“ suchen. Fehlt sie nach einem Update, Home Assistant neu starten und die Seite im Browser neu laden. Sie braucht keine Aktion und kein YAML, passt sich selbst an deine Anlage an und folgt dem hellen oder dunklen Design von Home Assistant. Die bisherige Karte bleibt, wie sie ist - an einem eingerichteten Dashboard ändert sich nichts.
-
-In den Einstellungen der Karte wählst du die **Ansicht**:
+**Karte hinzufügen**, Reiter **Nach Karte**, nach „ETA“ suchen. Fehlt sie nach einem Update, Home Assistant neu starten und die Seite neu laden. In den Einstellungen der Karte wählst du die **Ansicht**:
 
 | Ansicht | Zeigt |
 |---|---|
-| Kacheln | je Teil der Anlage eine Kachel mit Zeichnung, Hauptwert, weiteren Werten und Tasten |
+| Kacheln | je Teil der Anlage eine Kachel mit Zeichnung, Werten und Tasten |
 | Anlagenbild | die Anlage als Schema: links die Erzeuger, dann Puffer und Verbraucher, dazwischen Leitungen |
 | Kompakt | das Wichtigste als Liste, für das Handy oder neben anderen Karten |
 
-Ob ein Heizkreis als Heizkörper oder als **Fußbodenheizung** erscheint, wählst du am Gerät, siehe [Bilder wählen](#was-die-kacheln-zeigen). Hattest du die Fußbodenheizung bisher in den Einstellungen der Karte angekreuzt, zeigt diese Karte sie weiterhin.
-
-Unter **Reihenfolge der Teile** wählst du Teile aus und ziehst sie in die Reihenfolge, die du haben willst. Was du nicht auswählst, folgt dahinter wie gewohnt. In den Kacheln und in der Kompaktansicht gilt die Reihenfolge für alles, im Anlagenbild innerhalb einer Spalte - die Spalten selbst ergeben sich daraus, wer woran hängt.
-
-Mit Schreibzugriff stellst du Heizkreise direkt in der Karte: die **Betriebsart** und, wenn der Heizkreis einen Thermostat hat, **Raum Soll** in Schritten von 0,5 °C. In den Kacheln stehen die Tasten in der Kachel, in der Kompaktansicht und im Anlagenbild klappt ein Tipp auf den Heizkreis sie auf. Mehrere Tipps hintereinander schreiben nur einmal auf die Anlage.
-
-Hat ein Teil ein Zeitprogramm, steht bei ihm ein Knopf mit einer **Uhr**: Heizzeiten am Heizkreis, Ladezeiten am Pufferspeicher, Lade- oder Bereitschaftszeiten und Zirkulation am Warmwasser. Er öffnet die Zeiten zum Ansehen und Ändern in einem Fenster, genau wie in der Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard). Auch das gibt es nur mit Schreibzugriff.
-
-Steht eine **Störung** an, nennt die Karte oben die Meldungen der Anlage. Ein **niedriger Vorrat** im Lager und eine **fällige Aschebox** sind farbig hervorgehoben.
-
-Die Zeichnungen bewegen sich, solange das Teil arbeitet: die Flamme im Kessel, die Strömung im ladenden Puffer, der Fluss in den Leitungen. Der Schalter **Animationen** stellt das ab. Tasten zeigt die Karte nur mit Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen). Kacheln und Anlagenbild brauchen Platz. Das Anlagenbild liegt waagerecht, sobald die Karte breit genug ist: mit einem Pufferspeicher ab etwa 750 Pixeln, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. In einer Ansicht mit Abschnitten stellst du die **Breite** des Abschnitts auf *Volle Breite*. Reicht der Platz nicht, wird das Bild zur Liste von oben nach unten - so auch am Handy und in der Vorschau beim Bearbeiten der Karte.
-
-**Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt deshalb an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten, Solar, PV-Heizmodul, Brenner, Fremdwärme und Fremderzeuger laden in den ersten. Hast du mehrere Pufferspeicher oder eine Fernleitung, fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt. So hängt etwa Heizkreis 1 am ersten Pufferspeicher und Heizkreis 2 und 3 am zweiten. Pufferspeicher und Fernleitung bekommen Wärme und geben sie weiter. Jede Verbindung ist eine Linie, Vor- und Rücklauf zeigt die Karte nicht getrennt.
+- **Reihenfolge der Teile:** Teile auswählen und in die gewünschte Reihenfolge ziehen.
+- **Stellen:** Mit Schreibzugriff stellst du am Heizkreis die Betriebsart und, mit Thermostat, **Raum Soll** in Schritten von 0,5 °C. Im Anlagenbild und in der Kompaktansicht klappt ein Tipp auf den Heizkreis die Tasten auf.
+- **Uhr:** Hat ein Teil ein Zeitprogramm, öffnet der Knopf mit der Uhr seine Zeiten wie in der Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard). Nur mit Schreibzugriff.
+- **Hinweise:** Eine Störung steht oben mit ihrer Meldung. Niedriger Vorrat und fällige Aschebox sind farbig hervorgehoben.
+- **Platz:** Das Anlagenbild liegt waagerecht ab etwa 750 Pixeln Breite, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. Reicht der Platz nicht, wird das Bild zur Liste.
+- **Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten. Mit mehreren Pufferspeichern oder einer Fernleitung fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt.
 
 ---
 
 ## 🪵 Was deine Anlage liefert
 
-Welche Werte ankommen, entscheidet die Anlage. Die Integration sieht im Menübaum nach, und was nicht da ist, zeigt `-`.
+Welche Werte ankommen, entscheidet die Anlage.
 
-- **Pelletkessel** führen einen Gesamtverbrauch. Daraus entstehen der Energiewert, der Verbrauch je Zeitraum und die Prognose.
-- **Hackgut und Stückholz** messen ihren Verbrauch nicht, diese Werte gibt es dort also nicht.
-- **TWIN** kreuzt an, wer einen Stückholzkessel mit angebautem Pelletteil (SH TWIN) hat. Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel.
-- **Abgastemperatur:** `sensor.eta_heizung_abgastemperatur` erscheint, wenn der Kessel einen Abgasfühler im Menübaum führt. In den Karten steht sie nicht.
-- **Puffer-Ladezustand:** PufferFlex meldet ihn selbst, der ältere Funktionsblock „Puffer“ nur mit mehr als zwei Fühlern. Hat der ältere „Puffer“ zwei Fühler, rechnet ihn die Integration aus den Pufferfühlern: Jeder Fühler steht für einen gleich großen Teil des Speichers, 0 % bis 30 °C, 100 % ab 80 °C, dazwischen anteilig. Der Sensor trägt dann das Attribut `berechnet`. Nötig sind mindestens zwei Fühler.
-- **Pelletlager:** Vorrat und Warngrenze kommen von der Anlage, das Fassungsvermögen auch (*Lager → Vorrat → Maximaler Vorrat*). Einstellen lässt es sich in Home Assistant, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
-- **Ältere Regelungen** (belegt mit Webservices 1.1) zeigen ihre Messwerte an anderer Stelle im Menübaum. Die Integration findet sie dort für Pelletkessel, älteren Puffer, Warmwasserspeicher, Heizkreise, Pelletlager, Außentemperatur und Solaranlage. Ladezustand des Puffers und Fassungsvermögen des Lagers meldet so eine Anlage nicht: Den Ladezustand rechnet die Integration, das Fassungsvermögen trägst du im Zahlenfeld ein. Schalten und Einstellen gibt es dort nicht: Dafür muss die Anlage sagen, was sich beschreiben lässt, und das kann sie erst ab Webservices 1.2. Fehlt bei dir etwas, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
-- **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und die Erträge von heute und gestern nur mit Wärmemengenmessung. `sensor.eta_heizung_solar_warmemenge` eignet sich für eine Statistik-Karte, aber nicht fürs Energie-Dashboard: Dessen Bereich *Solarpanel* ist für Strom gedacht.
-- **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom über einen Heizstab ins Wasser. Gelesen werden Leistung, drei Temperaturen, Zustand, Gesamtenergie und die Erträge. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` ist verbrauchter Strom und gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage mit PV-Heizmodul ist die Integration noch nicht geprüft. Hast du eines, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
-- **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Gelesen werden Anforderung, Temperatur, geforderte Leistung und Volllaststunden. Ob er wirklich brennt, meldet er der Regelung nicht zurück.
-- **Fremdwärme:** ein Ofen, der an der ETA-Regelung angeschlossen ist, etwa ein Kaminofen mit Wassertasche. Am Display der Heizung hat er einen eigenen Funktionsblock, ab Werk `F.Wärme`, manchmal umbenannt, etwa in `Ofen`. Die Regelung misst seine Temperatur und startet die Ladepumpe in den Puffer, sobald er warm genug ist. Gelesen werden Temperatur, Speichertemperatur, Zustand (Aus, Heizen, Übertemperatur, Störung) und Ladepumpe. Geprüft ist die Variante mit Temperaturfühler und Ladepumpe; mit Umschaltventil oder Digitaleingang zeigen die fehlenden Werte `-`. An älteren Regelungen findet die Integration die Werte ebenfalls.
-- **Fremderzeuger:** ein Ofen ohne Anschluss an die ETA-Regelung, etwa ein Kaminofen mit eigener Regelung. Am Display der Heizung steht er nicht. Ob er heizt, erkennt Home Assistant an einer Entität oder einem Temperaturfühler, die du angibst; solange kann er den Kessel sperren, siehe [Fremderzeuger](#fremderzeuger).
-
-**Fremdwärme oder Fremderzeuger?** Schau am Display der Heizung nach: Steht dein Ofen dort als eigener Block (ab Werk `F.Wärme`), nimm **Fremdwärme**. Steht er dort nicht, nimm **Fremderzeuger**.
+- **Pelletkessel** führen einen Gesamtverbrauch. Daraus entstehen Energiewert, Verbrauch je Zeitraum und Prognose. **Hackgut und Stückholz** messen ihren Verbrauch nicht.
+- **TWIN:** für einen Stückholzkessel mit angebautem Pelletteil (SH TWIN). Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel.
+- **Abgastemperatur:** nur, wenn der Kessel einen Abgasfühler im Menübaum führt.
+- **Pelletlager:** Vorrat, Warngrenze und Fassungsvermögen kommen von der Anlage, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
+- **Ältere Regelungen** (Webservices 1.1): Die Integration liest Pelletkessel, älteren Puffer, Warmwasserspeicher, Heizkreise, Pelletlager, Außentemperatur und Solaranlage. Den Ladezustand des Puffers rechnet sie selbst, das Fassungsvermögen des Lagers trägst du ein. Schalten und Einstellen geht erst ab Webservices 1.2.
+- **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und Erträge nur mit Wärmemengenmessung. Fürs Energie-Dashboard eignet sich die Wärmemenge nicht.
+- **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom ins Wasser. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage ist das PV-Heizmodul noch nicht geprüft.
+- **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Ob er wirklich brennt, meldet er nicht zurück.
+- **Fremdwärme:** ein Ofen an der ETA-Regelung, etwa ein Kaminofen mit Wassertasche. Gelesen werden Temperatur, Speichertemperatur, Zustand und Ladepumpe.
+- **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft.
+- **Fremdwärme oder Fremderzeuger?** Steht dein Ofen am Display der Heizung als eigener Block (ab Werk `F.Wärme`), nimm **Fremdwärme**. Steht er dort nicht, nimm **Fremderzeuger**.
 
 | | Fremdwärme | Fremderzeuger |
 |---|---|---|
 | Am Display der Heizung | eigener Block, ab Werk `F.Wärme` | steht dort nicht |
-| Wer merkt, dass der Ofen heizt | die ETA-Regelung, über ihren Fühler | Home Assistant, über eine Entität oder einen Temperaturfühler, die du wählst |
-| Was dann passiert | die Regelung lädt selbst in den Puffer | Home Assistant kann den Kessel sperren |
-| Was Home Assistant tut | zeigt Temperatur, Zustand und Ladepumpe an | zeigt an, ob er heizt, und sperrt auf Wunsch den Kessel |
-| Einrichten | Komponente ankreuzen, Name des Blocks bestätigen | Komponente ankreuzen, Entität oder Temperaturfühler und die Kessel wählen |
+| Wer merkt, dass der Ofen heizt | die ETA-Regelung, über ihren Fühler | Home Assistant, über eine Entität oder einen Temperaturfühler |
+| Was dann passiert | die Regelung lädt selbst in den Puffer | Home Assistant kann den Kessel sperren, siehe [Fremderzeuger](#fremderzeuger) |
 
-- **Fernleitung:** die Leitung zu einem Nebengebäude. Gelesen wird, ob die Fernpumpe läuft. Wird sie über einen PufferFlex dezentral geladen, gehört die Pumpe dort zum Puffer (`sensor.eta_heizung_puffer_ladepumpe`).
+Fehlt bei dir etwas, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 
 ---
 
 ## 📈 Verbrauch, Kosten und Energie-Dashboard
 
-Beides gibt es für Kessel mit Gesamtverbrauch, also Pellets und SH TWIN.
+Für Kessel mit Gesamtverbrauch, also Pellets und SH TWIN.
 
-**Je Zeitraum:** Die Integration zählt mit, was **heute**, **diese Woche** (ab Montag) und **dieses Jahr** (ab 1. Januar) verbrannt wurde, in kg und mit eingetragenem Pelletpreis auch in Euro. Gezählt wird ab dem Einrichten, ein Neustart von Home Assistant setzt die Werte nicht zurück. Den Pelletpreis änderst du nach einer neuen Lieferung am bequemsten in der Karte oder mit `number.eta_heizung_pelletpreis`, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung). Die Kosten rechnen ab dann mit dem neuen Preis.
+**Je Zeitraum:** Die Integration zählt, was **heute**, **diese Woche** (ab Montag) und **dieses Jahr** verbrannt wurde, in kg und mit Pelletpreis auch in Euro. Gezählt wird ab dem Einrichten.
 
-**Energie-Dashboard:** `sensor.eta_heizung_pellet_energieverbrauch_gesamt` ist der Gesamtverbrauch der Anlage mal dem eingestellten Heizwert, in kWh. Unter **Einstellungen → Dashboards → Energie → Gasverbrauch hinzufügen** wählst du ihn aus und siehst danach deinen Heizverbrauch je Tag, Monat und Jahr.
+**Energie-Dashboard:** `sensor.eta_heizung_pellet_energieverbrauch_gesamt` ist der Gesamtverbrauch mal dem Heizwert, in kWh. Du wählst ihn unter **Einstellungen → Dashboards → Energie → Gasverbrauch hinzufügen**.
 
-> ⚠️ Ändere den Heizwert möglichst nur beim Einrichten. Bei einer späteren Änderung springt der Wert, und Home Assistant wertet einen Sprung nach unten als Zählerrücksetzung. Der Gesamtverbrauch fällt dadurch einmalig zu hoch aus.
+> ⚠️ Ändere den Heizwert möglichst nur beim Einrichten. Bei einer späteren Änderung springt der Wert, und der Gesamtverbrauch fällt einmalig zu hoch aus.
 
 ---
 
 ## 🔮 Verbrauchsprognose und Reichweite des Lagers
 
-Wie viele Pellets ein Haus braucht, hängt vor allem an der Außentemperatur. Die Integration lernt aus deinem eigenen Verlauf, wie viel dein Haus bei welcher Temperatur verbrennt, und rechnet damit voraus.
+Die Integration lernt aus deinem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und rechnet damit voraus.
 
 | Entität | Bedeutung |
 |---|---|
-| `sensor.eta_heizung_pelletprognose_morgen` | erwarteter Verbrauch morgen in kg, dazu die angenommene Temperatur und ihre Quelle |
+| `sensor.eta_heizung_pelletprognose_morgen` | erwarteter Verbrauch morgen in kg |
 | `sensor.eta_heizung_pelletprognose_treffsicherheit` | wie gut die Prognose die letzten 14 Tage getroffen hat |
-| `sensor.eta_heizung_pelletprognose_status` | „lernt noch (…)“ oder „bereit“, in den Attributen, was sie gelernt hat |
+| `sensor.eta_heizung_pelletprognose_status` | „lernt noch (…)“ oder „bereit“ |
 | `sensor.eta_heizung_lager_reicht_bis` | Tag, an dem das Lager leer ist, mit *frühestens* und *spätestens* |
-| `sensor.eta_heizung_lager_bestellen_bis` | Tag, an dem die Warngrenze der Anlage erreicht ist, also der späteste gute Tag zum Bestellen |
+| `sensor.eta_heizung_lager_bestellen_bis` | Tag, an dem die Warngrenze erreicht ist |
 | `sensor.eta_heizung_lager_reichweite` | Tage, die der Vorrat noch reicht |
 
-Die drei Lager-Werte gibt es nur mit angekreuztem Pelletlager. *Frühestens* gilt, wenn es jenseits der Vorhersage 2 Grad kälter wird als üblich, *spätestens*, wenn es 2 Grad wärmer wird.
+- **Was sie braucht:** einen Kessel mit Gesamtverbrauch, den Recorder von Home Assistant und 14 vollständige Tage, davon 7 mit höchstens 12 °C. Bis dahin steht im Status, worauf sie wartet. Die drei Lager-Werte gibt es nur mit Pelletlager.
+- **Wettervorhersage:** Wähle unter **Konfigurieren** eine Wetter-Entität. Gibt es genau eine, nimmt die Prognose sie von selbst. Ohne Vorhersage rechnet sie mit dem langjährigen Mittel.
+- **Pufferspeicher:** Mit bekanntem [Puffervolumen](#puffervolumen) rechnet sie heraus, was der Puffer über Mitternacht mitnimmt. Beim PufferFlex steht es an der Heizung ab Werk auf 1000 l - prüf, ob das zu deinem Puffer passt.
+- **Genauigkeit:** In einer Simulation mit 120 Häusern lag der geschätzte Leer-Tag ohne Wettervorhersage im Mittel 3 Tage daneben, wenn das Lager in 30 Tagen leer war, und 6 Tage bei 120 Tagen.
 
-**Was sie braucht:** einen Kessel mit Gesamtverbrauch, den Recorder von Home Assistant (ab Werk an) und 14 vollständige Tage. Davon müssen 7 höchstens 12 °C warm sein, und die Tage müssen mindestens 5 Grad auseinanderliegen. Bis dahin steht im Status, worauf sie wartet.
-
-**Wettervorhersage:** Wähle unter **Konfigurieren** eine Wetter-Entität, etwa die von Met.no. Gibt es genau eine, nimmt die Prognose sie von selbst. Ohne Vorhersage rechnet sie nur mit dem langjährigen Mittel. Für *reicht bis* macht das wenig aus, für *morgen* viel.
-
-<details>
-<summary><b>Wie die Prognose rechnet und wie genau sie ist</b> (aufklappen)</summary>
-
-**So lernt sie:** Für jeden vergangenen Tag nimmt sie Verbrauch und mittlere Außentemperatur aus der Langzeitstatistik von Home Assistant und bestimmt daraus drei Dinge:
-
-- die **Grundlast**, die auch an warmen Tagen verbrennt, vor allem für Warmwasser,
-- wie viel **jedes Grad kälter** zusätzlich kostet,
-- die **Heizgrenze**, ab der dein Haus überhaupt heizt.
-
-Jüngere Tage zählen mehr als alte. Einzelne Ausreißer wie Urlaub, Störung oder Besuch verbiegen das Ergebnis nicht.
-
-**So rechnet sie voraus:** Für die nächsten Tage gilt die Wettervorhersage, danach das langjährige Temperaturmittel in Deutschland (DWD 1991-2020), angepasst an deinen Standort. Damit rechnet sie den Vorrat Tag für Tag herunter.
-
-**Mit Pufferspeicher:** Ist sein Volumen bekannt, rechnet die Prognose heraus, was der Puffer über Mitternacht mitnimmt. Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht. Bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Das macht vor allem den Wert für *morgen* und die Treffsicherheit genauer. Gerechnet wird mit dem [Puffervolumen](#puffervolumen). Beim PufferFlex steht es an der Heizung ab Werk auf 1000 l - prüf, ob das zu deinem Puffer passt.
-
-**So prüft sie sich selbst:** Für jeden der letzten 14 Tage lernt sie nur aus den Tagen davor, schätzt den Verbrauch und vergleicht ihn mit dem, was wirklich verbrannt wurde. Das Ergebnis ist die **Treffsicherheit** (100 % heißt aufs Kilogramm genau).
-
-**Wie genau das ist:** In einer Simulation mit 120 Häusern lag der geschätzte Leer-Tag ohne Wettervorhersage im Mittel (Median) so weit daneben:
-
-| Echter Leer-Tag in | Abweichung |
-|---|---|
-| 14 Tagen | 1 Tag |
-| 30 Tagen | 3 Tage |
-| 60 Tagen | 4 Tage |
-| 120 Tagen | 6 Tage |
-
-</details>
-
-Die Prognose rechnet nur in Home Assistant und schreibt nichts in die Heizung. Wer sie nicht möchte, wählt sie unter **Konfigurieren** ab.
+Die Prognose rechnet nur in Home Assistant und schreibt nichts in die Heizung.
 
 ---
 
 ## 🔌 Schalten und Einstellen
 
-Ab Werk liest die Integration nur. Was in diesem Abschnitt in die Heizungssteuerung schreibt, entsteht erst, wenn du beim Einrichten oder unter **Konfigurieren** *Kessel und Heizkreise schalten dürfen* einschaltest. Dabei erscheint ein Hinweis, was das bedeutet. Wo etwas auch ohne diesen Schreibzugriff geht - etwa der Pelletpreis oder die Anzeige des Fremderzeugers -, steht es dabei.
-
-Geschrieben wird nur, was die Integration im Menübaum unter seinem Namen findet und was die Anlage selbst als beschreibbar meldet. Die Werte für Ein und Aus fragt sie von der Anlage ab, statt sie zu raten. Dafür braucht die ETAtouch-Schnittstelle **Version 1.2** oder neuer. Welche deine Anlage meldet, steht als Softwarestand am Gerät *ETA Heizung*.
+Ab Werk liest die Integration nur. Was in die Heizung schreibt, entsteht erst, wenn du beim Einrichten oder unter **Konfigurieren** *Kessel und Heizkreise schalten dürfen* einschaltest. Geschrieben wird nur, was die Anlage selbst als beschreibbar meldet. Dafür braucht sie Webservices **1.2** oder neuer.
 
 > ⚠️ Schalten greift direkt in die Heizung ein. Im Winter einen Heizkreis oder den Kessel per Automation abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage selbst zuständig.
 
 ### Kessel ein und aus
 
-Findet die Integration am Kessel die **Ein/Aus-Taste**, entsteht `switch.eta_heizung_kessel`. Auf der Kessel-Kachel ist das ein antippbares Symbol, das leuchtet, solange der Kessel an ist.
-
-Heizkreise bekommen keinen eigenen Schalter. Dort ist „Aus“ einer der Einträge der Betriebsart.
+`switch.eta_heizung_kessel` bedient die Ein/Aus-Taste des Kessels. Heizkreise haben keinen eigenen Schalter, dort ist „Aus“ eine Betriebsart.
 
 ### Fremderzeuger
 
-Ein Fremderzeuger ist ein Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung** - etwa ein Kaminofen mit eigener Regelung. Am Display der Heizung steht er nicht, die Anlage weiß nichts von ihm. Home Assistant erkennt selbst, ob er heizt, und kann solange den Kessel sperren.
+Ein Ofen oder eine andere Wärmequelle **ohne Anschluss an die ETA-Regelung**, etwa ein Kaminofen mit eigener Regelung. Home Assistant erkennt, ob er heizt, und kann solange den Kessel sperren. Steht dein Ofen am Display als eigener Block, nimm stattdessen Fremdwärme, siehe [Was deine Anlage liefert](#-was-deine-anlage-liefert).
 
-Steht dein Ofen dagegen am Display als eigener Block (ab Werk `F.Wärme`), ist er an der Regelung angeschlossen: Dann ist die Komponente **Fremdwärme** richtig, siehe [Fremdwärme oder Fremderzeuger?](#-was-deine-anlage-liefert).
-
-**Einrichten:** Beim Einrichten oder später unter **Konfigurieren** bei **Weitere Komponenten** den **Fremderzeuger** ankreuzen. Im Schritt **Fremderzeuger** gibst du einen Namen an und woran Home Assistant erkennt, dass er heizt - mit einer Entität, einem Temperaturfühler oder beidem. Eines von beiden muss angegeben sein.
+**Einrichten:** Unter **Weitere Komponenten** den **Fremderzeuger** ankreuzen. Im Schritt **Fremderzeuger** gibst du an, woran Home Assistant erkennt, dass er heizt:
 
 | Du gibst an | Er gilt als heizend | Gesperrt wird |
 |---|---|---|
@@ -545,91 +452,59 @@ Steht dein Ofen dagegen am Display als eigener Block (ab Werk `F.Wärme`), ist e
 | nur einen **Temperaturfühler** | sobald die Sperrtemperatur erreicht ist | sofort |
 | **beides** | wenn die Entität an ist und die Sperrtemperatur erreicht ist | sofort |
 
-Mit Schreibzugriff kreuzt du im selben Schritt im Feld **Sperren, solange er heizt** den Kessel an. Ab Werk sperrt er nichts und wird nur angezeigt.
-
-**Sperrtemperatur:** Ab Werk 60 °C. Du stellst sie direkt in der Karte unter **Sperrt ab** mit Minus und Plus oder mit `number.eta_heizung_fremderzeuger_sperrtemperatur`. Damit der Zustand nicht flattert, gilt er erst wieder als aus, wenn der Fühler 5 °C unter die Sperrtemperatur gefallen ist.
+Mit Schreibzugriff kreuzt du im Feld **Sperren, solange er heizt** den Kessel an. Ab Werk sperrt er nichts und wird nur angezeigt. Die **Sperrtemperatur** (ab Werk 60 °C) stellst du in der Karte unter **Sperrt ab** oder mit `number.eta_heizung_fremderzeuger_sperrtemperatur`. Als aus gilt er erst wieder 5 °C darunter.
 
 **Was dann passiert:**
 
-- Heizt der Fremderzeuger, schaltet Home Assistant den gewählten Kessel über dessen Ein/Aus-Taste aus. Heizt er die Wartezeit „Freigeben nach“ lang nicht mehr (ab Werk 5 Minuten), schaltet es ihn wieder ein. Das läuft über dieselbe Sperre wie [Kessel sperren](#kessel-sperren): Ein Kessel, den du selbst ausgeschaltet hattest, bleibt aus.
-- Geprüft und, wenn nötig, gesperrt oder freigegeben wird außerdem nach dem Start von Home Assistant und sobald die Heizung nach einer Unterbrechung wieder erreichbar ist.
-- **Fällt die Entität oder der Fühler aus**, etwa weil eine Batterie leer ist, wird der Kessel nach der Wartezeit „Freigeben nach“ freigegeben. Von sich aus gesperrt wird in dieser Lage nie.
-- **Nimmt die Heizung das Sperren oder Freigeben nicht an**, versucht Home Assistant es jede Minute wieder. Lässt sich der Kessel fünfmal hintereinander nicht freigeben, erscheint eine Meldung in Home Assistant.
-- **Wählst du den Fremderzeuger oder das Sperren ab, während der Kessel gesperrt ist**, schaltet Home Assistant den Kessel wieder ein und meldet das.
-- Den Schalter `switch.eta_heizung_kessel_sperren` gibt es dann von selbst. Schaltest du den gesperrten Kessel von Hand wieder ein, bleibt er an, bis der Fremderzeuger das nächste Mal anfängt zu heizen - oder bis Home Assistant neu startet oder die Heizung nach einer Unterbrechung wieder erreichbar ist, während er noch heizt.
+- Heizt er, schaltet Home Assistant den Kessel über dessen Ein/Aus-Taste aus. Heizt er die Wartezeit „Freigeben nach“ lang nicht mehr (ab Werk 5 Minuten), schaltet es ihn wieder ein. Ein Kessel, den du selbst ausgeschaltet hattest, bleibt aus.
+- Fällt die Entität oder der Fühler aus, wird der Kessel nach derselben Wartezeit freigegeben.
+- Nimmt die Heizung das Sperren oder Freigeben nicht an, versucht Home Assistant es jede Minute wieder. Nach fünf Fehlversuchen beim Freigeben erscheint eine Meldung.
+- Schaltest du den gesperrten Kessel von Hand ein, bleibt er an, bis der Fremderzeuger das nächste Mal anfängt zu heizen - oder bis Home Assistant neu startet, während er noch heizt.
+- Wählst du den Fremderzeuger ab, während der Kessel gesperrt ist, schaltet Home Assistant ihn wieder ein und meldet das.
 
-**In der Karte** [ETA Übersicht](#neue-karte-eta-übersicht) bekommt der Fremderzeuger eine eigene Kachel, im Anlagenbild lädt er wie Brenner und Fremdwärme in den ersten Pufferspeicher. Die ältere fertige Karte zeigt ihn nicht.
-
-- Die Kachel zeigt, ob er heizt, mit Fühler auch seine Temperatur, und ob der Kessel gesperrt ist. Am Kessel steht dann **Kesselsperre: Gesperrt**.
-- Eine gewählte Entität zeigt die Kachel nur an. Schalten lässt sie sich dort nicht.
-- Hast du nur einen Temperaturfühler angegeben, bringt die Integration einen eigenen Ein/Aus-Schalter mit (`switch.eta_heizung_fremderzeuger`), auch als Knopf in der Karte. Er schaltet nicht den Ofen, sondern nur, ob Home Assistant ihn beachtet: Aus heißt, der Fremderzeuger gilt nie als heizend und der Kessel bleibt frei.
-- Mit Fühler steht in der Karte **Sperrt ab** mit Minus und Plus: die Sperrtemperatur in Schritten von 1 °C. Ein Tipp auf die Zahl öffnet das Zahlenfeld, für größere Sprünge. Sperrt der Fremderzeuger nichts, heißt die Zeile **Heizt ab**.
-- In den Kacheln stehen Sperrtemperatur und Knopf in der Kachel. Im Anlagenbild und in der kompakten Ansicht klappt ein Tipp auf den Fremderzeuger sie auf, wie bei einem Heizkreis.
-- Sein Bild wählst du am Gerät unter *Konfiguration*, siehe [Bilder wählen](#was-die-kacheln-zeigen).
-
-**Ohne Karte:** `binary_sensor.eta_heizung_fremderzeuger_heizt` sagt, ob er nach diesen Regeln heizt - etwa für eigene Automationen. Wer die Komponente gar nicht will, nimmt `switch.eta_heizung_kessel_sperren` in einer eigenen Automation oder den Blueprint [Kessel sperren](#-blueprints).
+In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) hat er eine eigene Kachel. Hast du nur einen Temperaturfühler angegeben, gibt es `switch.eta_heizung_fremderzeuger`: Aus heißt, Home Assistant beachtet den Ofen nicht. Für eigene Automationen sagt `binary_sensor.eta_heizung_fremderzeuger_heizt`, ob er heizt.
 
 > ⚠️ Fällt Home Assistant aus, während der Kessel gesperrt ist, bleibt er aus. Im Notfall schaltest du ihn am Display der Heizung wieder ein.
 
 ### Kessel sperren
 
-Soll der Kessel pausieren, solange ein Ofen oder ein anderes Gerät heizt, das die ETA-Regelung nicht kennt, gibt es dafür `switch.eta_heizung_kessel_sperren`. Du legst ihn unter **Konfigurieren** mit **Schalter „Kessel sperren“ anlegen** an; er braucht den Schreibzugriff. An der Heizung ist nichts einzurichten. Das Häkchen ist für eigene Automationen und den Blueprint gedacht - mit der Komponente [Fremderzeuger](#fremderzeuger) entsteht der Schalter von selbst, und sie sperrt ohne Automation.
+`switch.eta_heizung_kessel_sperren` lässt den Kessel pausieren, etwa per Automation. Du legst ihn unter **Konfigurieren** mit **Schalter „Kessel sperren“ anlegen** an, er braucht den Schreibzugriff. Mit der Komponente [Fremderzeuger](#fremderzeuger) entsteht er von selbst.
 
-Der Schalter bedient die Ein/Aus-Taste des Kessels:
+- **Ein** schaltet den Kessel über seine Ein/Aus-Taste aus.
+- **Aus** schaltet ihn wieder ein, aber nur, wenn der Schalter ihn ausgeschaltet hat. War der Kessel beim Sperren schon aus, bleibt er aus.
+- Schaltest du den gesperrten Kessel selbst wieder ein, ist die Sperre aufgehoben.
 
-- **Ein** schaltet den Kessel aus.
-- **Aus** schaltet ihn wieder ein - aber nur, wenn der Schalter ihn auch ausgeschaltet hat. War der Kessel beim Sperren schon aus, etwa über den Sommer, bleibt er aus. Ohne Sperre schreibt Aus gar nichts.
-- Schaltest du den gesperrten Kessel selbst wieder ein, am Display der Heizung oder über `switch.eta_heizung_kessel`, ist die Sperre damit aufgehoben.
+Was der Schalter sich gemerkt hat, übersteht einen Neustart. Nimmst du das Häkchen weg, während der Kessel gesperrt ist, schaltet Home Assistant ihn wieder ein und meldet das. Der Blueprint [Kessel sperren](#-blueprints) verbindet den Schalter mit einer Entität.
 
-Was der Schalter sich gemerkt hat, übersteht einen Neustart von Home Assistant. Das Attribut `schaltet_kessel_wieder_ein` sagt, ob das Freigeben den Kessel einschaltet.
-
-Nimmst du das Häkchen weg, während der Kessel gesperrt ist, schaltet Home Assistant ihn wieder ein, wenn es ihn ausgeschaltet hatte, und meldet das. Ist auch der Schreibzugriff weg, bittet eine Meldung darum, den Kessel an der Heizung einzuschalten.
-
-> ⚠️ Der Kessel bleibt aus, bis der Schalter wieder aus ist - auch wenn Home Assistant in der Zeit ausfällt. **Im Notfall schaltest du den Kessel am Display der Heizung wieder ein.** An der Heizung selbst steht er nur als ausgeschaltet da; dass Home Assistant ihn gesperrt hat, zeigt allein der Schalter.
-
-Den Schalter mit einer Entität zu verbinden, übernimmt der Blueprint [Kessel sperren](#-blueprints). Er schreibt nur, wenn der Schalter anders steht als verlangt, und holt das Sperren oder Freigeben nach, wenn die Heizung zwischendurch nicht erreichbar war.
+> ⚠️ Der Kessel bleibt aus, bis der Schalter wieder aus ist - auch wenn Home Assistant in der Zeit ausfällt. **Im Notfall schaltest du den Kessel am Display der Heizung wieder ein.** An der Heizung steht er nur als ausgeschaltet da.
 
 ### Entaschen und Aschebox leeren
 
-Findet die Integration zusätzlich die **Entaschentaste** (am Display unter *Sonstiges*), kommen zwei Dinge dazu:
+Findet die Integration die **Entaschentaste** (am Display unter *Sonstiges*), gibt es:
 
-- **`button.eta_heizung_kessel_entaschen`** drückt die Entaschentaste wie am Display. Der Kessel geht in den Glutabbrand und entascht danach. Auf der Kachel ist das der Besen, er fragt vorher nach.
-- **Der Aschebox-Plan:** Die Aschebox darf nur bei ausgeschaltetem Kessel abgenommen werden. Unter `datetime.eta_heizung_aschebox_leeren_um` (das Uhr-Symbol auf der Kachel) stellst du ein, wann du leeren willst. Den Rest erledigt Home Assistant:
-  1. Es schaltet den Kessel so früh aus, dass Glutabbrand und Entaschung bis dahin durch sind. Beim ersten Mal 30 Minuten vorher, danach mit der gemessenen Dauer vom letzten Mal plus 5 Minuten.
-  2. Meldet der Kessel *Bereit* oder *Ausgeschaltet*, drückt es die Entaschentaste, auch wenn der Kessel schon von selbst entascht hat.
-  3. Ist die Entaschung durch, kommt die Meldung, dass die Aschebox geleert werden kann.
-  4. Sobald die Box abgenommen und wieder eingesetzt ist, schaltet es den Kessel wieder ein. Nach 2 Stunden geht der Kessel auch ohne Leeren wieder an, damit das Haus im Winter nicht auskühlt.
+- **`button.eta_heizung_kessel_entaschen`** drückt die Entaschentaste. Der Kessel geht in den Glutabbrand und entascht danach.
+- **Den Aschebox-Plan:** Die Aschebox darf nur bei ausgeschaltetem Kessel abgenommen werden. Unter `datetime.eta_heizung_aschebox_leeren_um` stellst du ein, wann du leeren willst. Home Assistant
+  1. schaltet den Kessel rechtzeitig aus - beim ersten Mal 30 Minuten vorher, danach nach der gemessenen Dauer plus 5 Minuten,
+  2. drückt die Entaschentaste, sobald der Kessel *Bereit* oder *Ausgeschaltet* meldet,
+  3. meldet, wenn die Aschebox geleert werden kann,
+  4. schaltet den Kessel wieder ein, sobald die Box wieder eingesetzt ist - nach 2 Stunden auch ohne Leeren.
 
-**Ist der Kessel gesperrt** ([Kessel sperren](#kessel-sperren) oder [Fremderzeuger](#fremderzeuger)), vertragen sich Plan und Sperre: Am Ende des Plans bleibt ein gesperrter Kessel aus und geht an, sobald die Sperre endet. Endet die Sperre mitten im Plan, schaltet erst der Plan den Kessel wieder ein.
-
-`sensor.eta_heizung_aschebox_plan` zeigt den Schritt, auf der Kachel steht er oben rechts. Antippen bricht den Plan nach einer Rückfrage ab. Hat er den Kessel schon ausgeschaltet, geht der dabei wieder an. Schaltest du den Kessel selbst ein, endet der Plan ebenfalls - in jedem Schritt. Endet er während des Entaschens, stellt Home Assistant die Entaschentaste zurück, sobald die Entaschung durch ist. Er übersteht einen Neustart von Home Assistant. Kann er danach nicht weiterlaufen, erscheint eine Meldung, dass der Kessel von Hand einzuschalten ist. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
+`sensor.eta_heizung_aschebox_plan` zeigt den Schritt, `button.eta_heizung_aschebox_plan_abbrechen` bricht ab. Schaltest du den Kessel selbst ein, endet der Plan. Er übersteht einen Neustart von Home Assistant. Ein gesperrter Kessel bleibt am Ende des Plans aus, bis die Sperre endet. Jeder Schritt löst das Ereignis `eta_heating_ws_aschebox` aus (mit `phase` und `nachricht`), etwa für eine Nachricht aufs Handy.
 
 ### Pelletlager: Vorrat, Fassungsvermögen, Preis und Lieferung
 
-Nach einer Lieferung ändern sich Vorrat und Preis. Beides stellst du in Home Assistant ein, ohne die Einstellungen der Integration zu öffnen: auf der Seite des Geräts *ETA Heizung* unter **Konfiguration** oder in der Karte [ETA Übersicht](#neue-karte-eta-übersicht).
-
-**In der Karte** trägt das Pelletlager oben rechts zwei kleine Knöpfe:
-
-- **Plus - Lieferung eintragen:** Datum, Menge in kg und Preis je Tonne. Home Assistant merkt sich die Lieferung, übernimmt den Preis und erhöht den Vorrat an der Heizung um die Menge. Vor dem OK steht, ob der Vorrat dabei auch an der Bedieneinheit der Heizung geändert wird und auf welchen Wert. Meldet die Heizung einen Vorrat unter null, zählt das Lager als leer.
-- **Stift - Lager einstellen:** Vorrat, Fassungsvermögen und Pelletpreis. Geschrieben wird nur, was du änderst.
-
-**Ohne Karte** gibt es dasselbe als Zahlenfelder und als Aktion:
+In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) hat das Pelletlager zwei Knöpfe: **Plus** trägt eine Lieferung ein (Datum, Menge, Preis je Tonne) und erhöht den Vorrat an der Heizung. **Stift** stellt Vorrat, Fassungsvermögen und Pelletpreis. Ohne Karte:
 
 | | Was | Wohin |
 |---|---|---|
-| `number.eta_heizung_lager_vorrat` | Vorrat in kg | an die Anlage (*Lager → Vorrat*). Das Feld gibt es nur mit Schreibzugriff und wenn die Anlage den Vorrat als beschreibbar meldet |
-| `number.eta_heizung_lager_fassungsvermogen` | Fassungsvermögen in kg | an die Anlage oder nur in Home Assistant, siehe unten |
-| `number.eta_heizung_pelletpreis` | Preis in Euro je Tonne | nur in Home Assistant. Derselbe Wert wie unter **Konfigurieren**; 0 schaltet die Kosten ab |
-| Aktion `eta_heating_ws.lieferung_eintragen` | `datum` (ohne Angabe heute), `menge` in kg, `preis` in Euro je Tonne (ohne Angabe bleibt der bisherige) | merkt sich die Lieferung, übernimmt den Preis, erhöht den Vorrat an der Anlage |
+| `number.eta_heizung_lager_vorrat` | Vorrat in kg | an die Anlage. Nur mit Schreibzugriff und wenn die Anlage den Vorrat als beschreibbar meldet |
+| `number.eta_heizung_lager_fassungsvermogen` | Fassungsvermögen in kg | an die Anlage, sonst nur in Home Assistant |
+| `number.eta_heizung_pelletpreis` | Preis in Euro je Tonne | nur in Home Assistant. 0 schaltet die Kosten ab |
+| Aktion `eta_heating_ws.lieferung_eintragen` | `datum`, `menge` in kg, `preis` in Euro je Tonne | merkt sich die Lieferung, übernimmt den Preis, erhöht den Vorrat an der Anlage |
 
-Die letzten 20 Lieferungen stehen im Attribut `lieferungen` von `number.eta_heizung_pelletpreis`, die neueste zuerst. Meldet deine Anlage den Vorrat nicht als beschreibbar oder fehlt der Schreibzugriff, wird die Lieferung gemerkt und ihr Preis übernommen; den Vorrat stellst du dann wie bisher am Display ein.
+Die letzten 20 Lieferungen stehen im Attribut `lieferungen` von `number.eta_heizung_pelletpreis`. Lässt sich der Vorrat nicht schreiben, wird die Lieferung gemerkt und der Preis übernommen. Den Vorrat stellst du dann am Display.
 
-**Fassungsvermögen.** Das Feld gibt es immer, wenn ein Pelletlager gewählt ist. Wohin es den Wert schreibt, hängt von deiner Anlage ab:
-
-- **An die Anlage** (*Lager → Vorrat → Maximaler Vorrat*), wenn der Schreibzugriff freigegeben ist und die Anlage den Wert als beschreibbar meldet. Die Grenzen nennt sie selbst, an einer Anlage sind es 0 bis 100.000 kg.
-- **Nur in Home Assistant** in allen anderen Fällen: ohne Schreibzugriff und an älteren Regelungen, die kein Fassungsvermögen melden. An der Anlage ändert sich dann nichts. Solange du nichts einträgst, zeigt das Feld den Wert der Anlage. 0 verwirft deinen Wert wieder.
-
-Der Füllstand in Prozent und `sensor.eta_heizung_lager_fassungsvermogen` rechnen mit dem, was im Feld steht. Wohin es schreibt, zeigt sein Attribut `gespeichert`.
+Das **Fassungsvermögen** geht an die Anlage (*Lager → Vorrat → Maximaler Vorrat*), wenn der Schreibzugriff frei ist und sie den Wert als beschreibbar meldet. Sonst merkt es sich Home Assistant, 0 verwirft deinen Wert wieder. Wohin das Feld schreibt, zeigt sein Attribut `gespeichert`.
 
 ### Puffervolumen
 
@@ -656,67 +531,55 @@ Findet die Integration am Heizkreis die Tasten **Auto**, **Heizen** und **Absenk
 | ECO | dauerhaft Absenkbetrieb | `absenken` |
 | Aus | Der Heizkreis wird über seine Ein/Aus-Taste abgeschaltet | `aus` |
 
-Die Bezeichnungen folgen dem Display der Anlage. Auf der Heizkreis-Kachel sind es vier Symbole, das geltende leuchtet. Wählst du aus „Aus“ heraus eine Betriebsart, schaltet die Integration den Heizkreis vorher ein.
-
 Ob das Zeitprogramm gerade eine Heizzeit oder eine Absenkzeit hat, zeigt `sensor.eta_heizung_heizkreis_zeitprogramm` (bis `_4_`) als **Tag** oder **Absenk**, in Automatisierungen `heizzeit` oder `absenkzeit`.
 
 ### Thermostat und Raumfühler aus Home Assistant
 
-Ist ein Heizkreis im ETA-Assistenten mit **„Raumfühler ext. Schnittstelle“** eingerichtet, kann Home Assistant der Anlage die Raumtemperatur liefern, etwa von einem Zigbee-Thermometer. Die Integration erkennt das am Menübaum. Dann entsteht:
+Ist ein Heizkreis im ETA-Assistenten mit **„Raumfühler ext. Schnittstelle“** eingerichtet, kann Home Assistant der Anlage die Raumtemperatur liefern, etwa von einem Zigbee-Thermometer. Dann entsteht:
 
-- **`climate.eta_heizung_heizkreis_1_thermostat`** (bis `_4_`). Istwert ist „Raum“, also der Wert, mit dem die Anlage regelt. Sollwert ist „Raum Soll“, einstellbar von 10 bis 30 °C in halben Grad. Er folgt im Auto-Modus dem Zeitprogramm und zeigt in der Absenkzeit die Absenktemperatur. Stellst du ihn um, ändert das wie am Display die Temperatur der Heizzeiten für alle Tage. Die Modi sind die Betriebsarten: *Automatik*, *Heizen*, *Aus*, dazu die Voreinstellung *Eco* für Absenken.
+- **`climate.eta_heizung_heizkreis_1_thermostat`** (bis `_4_`): Istwert ist „Raum“, Sollwert „Raum Soll“ von 10 bis 30 °C in halben Grad. Stellst du ihn um, ändert das wie am Display die Temperatur der Heizzeiten für alle Tage.
 - **Der Schritt „Raumfühler aus Home Assistant“** unter **Konfigurieren**: je Heizkreis ein Thermometer und die **Zeitüberwachung** (1 bis 60 Minuten).
 
-Die Integration schreibt den Wert des Thermometers alle 30 Sekunden und bei jeder Änderung in die Anlage. Was du dazu wissen solltest:
+Die Integration schreibt den Wert des Thermometers alle 30 Sekunden und bei jeder Änderung in die Anlage.
 
-- **Zeitüberwachung:** Kommt in dieser Zeit kein neuer Wert, verwirft die Anlage den alten und meldet „Raumfühler: Keine Verbindung“. Fällt Home Assistant aus, regelt sie also nicht mit einem alten Wert weiter. Ab Werk steht sie auf 1 Minute, dann meldet die Anlage das bei jedem Neustart von Home Assistant. **10 Minuten** überbrücken einen Neustart. Steht sie an der Anlage auf 0, schreibt die Integration gar nichts.
-- **Thermometer nicht verfügbar:** Die Integration schreibt nichts, auch keinen Ersatzwert.
-- **Thermometer mit leerer Batterie:** Es bleibt in Home Assistant oft auf seinem letzten Wert stehen, und den schreibt die Integration weiter. Hat es sich **12 Stunden** nicht gemeldet, erscheint deshalb ein Hinweis unter **Einstellungen → Reparaturen**. Er verschwindet, sobald es wieder sendet.
-
-`sensor.eta_heizung_heizkreis_raumtemperatur` zeigt jederzeit, welchen Raumwert die Anlage gerade verwendet.
+- **Zeitüberwachung:** Kommt in dieser Zeit kein neuer Wert, verwirft die Anlage den alten und meldet „Raumfühler: Keine Verbindung“. Ab Werk steht sie auf 1 Minute. **10 Minuten** überbrücken einen Neustart von Home Assistant.
+- **Thermometer nicht verfügbar:** Die Integration schreibt nichts.
+- **Thermometer mit leerer Batterie:** Hat es sich **12 Stunden** nicht gemeldet, erscheint ein Hinweis unter **Einstellungen → Reparaturen**.
 
 ### Zeitprogramm auf dem Dashboard
 
-Die Karte **ETA Zeitprogramm** zeigt die Heizzeiten jedes Heizkreises als Wochenbalken, und du änderst sie direkt dort, am PC wie in der Handy-App.
+Die Karte **ETA Zeitprogramm** zeigt die Heizzeiten jedes Heizkreises als Wochenbalken, und du änderst sie direkt dort.
 
 <p>
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm.webp" alt="Die Karte ETA Zeitprogramm mit den Heizzeiten einer Woche" width="400">
 <img src="https://raw.githubusercontent.com/dorsch95/ha-eta-webservices/main/bilder/zeitprogramm_bearbeiten.webp" alt="Die Karte ETA Zeitprogramm, Montag zum Bearbeiten geöffnet" width="330">
 </p>
 
-1. **Dashboard bearbeiten → Karte hinzufügen**, Reiter **Nach Karte**, und **ETA Zeitprogramm** wählen. Home Assistant lädt die Karte von selbst, ein Eintrag unter *Ressourcen* ist nicht nötig.
+1. **Dashboard bearbeiten → Karte hinzufügen**, Reiter **Nach Karte**, **ETA Zeitprogramm** wählen.
 2. **Einen Tag antippen.** Darunter öffnen sich seine Zeitfenster mit Beginn, Ende und Temperatur, dazu die Temperatur außerhalb der Zeitfenster (die Absenkung).
 3. Unter **Gilt für** weitere Tage wählen, etwa **Mo–Fr**.
-4. **Speichern.** Die Integration schreibt nur, was sich ändert, und liest es zur Kontrolle von der Heizung nach.
+4. **Speichern.** Die Integration schreibt nur, was sich ändert, und liest es zur Kontrolle nach.
 
-Gut zu wissen:
-
-- **Grenzen der Heizung:** höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden, Temperaturen von 10 bis 30 °C. Ein Tag ohne Zeitfenster heißt den ganzen Tag Absenkung.
-- **⟳** liest das Programm neu von der Heizung, etwa nach einer Änderung am Display.
-- Folgt ein Heizkreis einem **Zeitplan** aus Home Assistant (nächster Abschnitt), zeigt die Karte sein Programm nur an.
-- **Farben:** ab Werk die ETA-Farben Melonengelb und Graphitgrau. Unter **Karte bearbeiten** lassen sich *Farbe Heizzeit* und *Farbe Absenkzeit* ändern.
-
-Unter **Karte bearbeiten → Anzeigen** lassen sich weitere Zeitprogramme einblenden. Zur Auswahl steht nur, was es an der Anlage gibt, und jedes weitere Programm kostet beim Öffnen der Karte ein paar Sekunden.
+Die Heizung erlaubt höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden und Temperaturen von 10 bis 30 °C. **⟳** liest das Programm neu von der Heizung. Folgt ein Heizkreis einem Zeitplan aus Home Assistant (nächster Abschnitt), zeigt die Karte sein Programm nur an. Unter **Karte bearbeiten → Anzeigen** lassen sich weitere Zeitprogramme einblenden:
 
 | Anzeigen | Was es ist | Temperatur |
 |---|---|---|
 | Heizzeiten | Zeitprogramm der Heizkreise, ab Werk gewählt | 10 bis 30 °C |
 | Ladezeiten Puffer | wann der Puffer geladen wird | keine |
-| Warmwasser | Ladezeiten des Warmwasserspeichers, Warmwasserbereich eines Kombi-Puffers, Bereitschaftszeiten des Frischwassermoduls | Frischwassermodul 0 bis 80 °C, Warmwasserspeicher bis „Warmwasserspeicher max.“, Kombi-Puffer im Bereich, den die Heizung meldet |
-| Zirkulation | wann die Zirkulationspumpe läuft, nur mit aktivierter Zirkulation | keine |
+| Warmwasser | Ladezeiten des Warmwasserspeichers, Warmwasserbereich eines Kombi-Puffers, Bereitschaftszeiten des Frischwassermoduls | Frischwassermodul 0 bis 80 °C, sonst im Bereich, den die Heizung meldet |
+| Zirkulation | wann die Zirkulationspumpe läuft | keine |
 
-Beim Warmwasser weist die Karte vor dem Speichern darauf hin, dass über 60 °C **zwingend ein Verbrühschutz** verbaut sein muss, beim Frischwassermodul außerdem, dass unter 40 °C keine gleichmäßige Regelung mehr gewährleistet ist.
+> ⚠️ Beim Warmwasser muss über 60 °C **zwingend ein Verbrühschutz** verbaut sein. Beim Frischwassermodul ist unter 40 °C keine gleichmäßige Regelung mehr gewährleistet. Die Karte weist vor dem Speichern darauf hin.
 
 ### Zeitprogramm aus Home Assistant
 
-Statt über die Karte kann das Zeitprogramm eines Heizkreises einem **Zeitplan** aus Home Assistant folgen. Lege unter **Einstellungen → Geräte & Dienste → Helfer** einen Zeitplan an und wähle ihn unter **Konfigurieren** im Schritt **„Zeitprogramm aus Home Assistant“** beim Heizkreis aus. Jeder Block wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung. Die Heizung läuft danach selbstständig nach ihrem Programm, auch wenn Home Assistant einmal nicht läuft.
+Statt über die Karte kann das Zeitprogramm eines Heizkreises einem **Zeitplan** aus Home Assistant folgen. Lege unter **Einstellungen → Geräte & Dienste → Helfer** einen Zeitplan an und wähle ihn unter **Konfigurieren** im Schritt **„Zeitprogramm aus Home Assistant“** beim Heizkreis aus. Jeder Block wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung.
 
-- **Auswählen:** Der Schritt erscheint nur für Heizkreise, deren Zeitprogramm die Heizung als beschreibbar meldet. Er zeigt, was gerade an der Heizung steht, etwa „Montag bis Freitag: 05:30 - 22:30 20,0“. Zeichne den Zeitplan am besten genau so, dann ändert sich beim Einschalten nichts.
-- **Beim ersten Mal fragt die Integration nach:** Weicht der Zeitplan von der Heizung ab, schreibt sie nichts, sondern zeigt unter **Einstellungen → Reparaturen** die geplanten Änderungen. Erst mit **Absenden** überträgt sie sie. Wählst du später einen anderen Zeitplan, fragt sie erneut.
-- **Danach** schreibt sie ohne Rückfrage, sobald du den Zeitplan änderst, und beim Start der Integration. Was jemand am Display ändert, gilt bis zur nächsten Änderung des Zeitplans oder bis zum nächsten Neustart.
-- **Grenzen der Heizung:** höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden. Hat ein Tag mehr Blöcke, bleibt er an der Heizung, wie er ist, und unter **Reparaturen** erscheint ein Hinweis.
-- **Temperatur:** Sie wird nur geschrieben, wenn ein Block sie in seinen zusätzlichen Daten mitbringt (`temperatur: 21`), begrenzt auf 10 bis 30 °C. Sonst behält jedes Zeitfenster die Temperatur der Heizung. Die Absenktemperatur stellst du weiter an der Heizung ein.
-- **Nie geschrieben** wird ein Zeitplan ganz ohne Blöcke. Das hieße Dauerabsenkung, und dafür gibt es die Betriebsart *ECO*.
+- **Beim ersten Mal fragt die Integration nach:** Weicht der Zeitplan von der Heizung ab, zeigt sie unter **Einstellungen → Reparaturen** die geplanten Änderungen und schreibt erst mit **Absenden**.
+- **Danach** schreibt sie ohne Rückfrage, sobald du den Zeitplan änderst, und beim Start. Was jemand am Display ändert, gilt bis dahin.
+- **Grenzen der Heizung:** höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden. Hat ein Tag mehr Blöcke, bleibt er, wie er ist, und unter **Reparaturen** erscheint ein Hinweis.
+- **Temperatur:** Sie wird nur geschrieben, wenn ein Block sie in seinen zusätzlichen Daten mitbringt (`temperatur: 21`). Die Absenktemperatur stellst du an der Heizung ein.
+- **Nie geschrieben** wird ein Zeitplan ganz ohne Blöcke. Dafür gibt es die Betriebsart *ECO*.
 
 Das Zeitprogramm wirkt nur in der Betriebsart *Auto*. Stehen Temperaturen im Zeitplan, überschreibt der nächste Abgleich, was du am Thermostat verstellt hast.
 
@@ -735,20 +598,13 @@ fehler:
     hinweis: Heizungswasser nachfüllen!
 ```
 
-Für Automatisierungen genügt meist `binary_sensor.eta_heizung_storung`. Er ist an, sobald etwas ansteht. Den Klartext liefert dieser Ausdruck:
-
-```jinja2
-{{ state_attr('sensor.eta_heizung_aktive_fehler', 'fehler')
-   | map(attribute='meldung') | join(', ') }}
-```
-
-Fertig verpackt gibt es das als Blueprint **Störung melden**.
+Für Automatisierungen genügt meist `binary_sensor.eta_heizung_storung`. Fertig verpackt gibt es das als Blueprint **Störung melden**.
 
 ---
 
 ## 🧩 Blueprints
 
-Fünf gebrauchsfertige Automatisierungen. **Importieren** öffnet Home Assistant und übernimmt den Blueprint. Danach wählst du ihn unter **Einstellungen → Automatisierungen & Szenen → Blueprints** aus und füllst seine Felder aus, bei den Meldungen etwa die Benachrichtigung.
+**Importieren** öffnet Home Assistant und übernimmt den Blueprint. Danach wählst du ihn unter **Einstellungen → Automatisierungen & Szenen → Blueprints** aus.
 
 | Blueprint | Wofür | |
 |---|---|---|
@@ -764,25 +620,13 @@ Die Dateien liegen unter [`blueprints/automation/eta_webservices`](blueprints/au
 
 ## 🩺 Fehlersuche
 
-Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen, denn die unterscheiden sich von Anlage zu Anlage. Passt ein Name nicht, sucht sie Messwerte zusätzlich über die Nummer des Objekts im selben Funktionsblock. Fehlt dann noch etwas, ist es an deiner Anlage meist nicht verbaut.
+Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Fehlt etwas, ist es an deiner Anlage meist nicht verbaut.
 
-**Eine ganze Komponente ohne Werte** meldet Home Assistant unter **Einstellungen → Reparaturen**. Der Hinweis nennt die Komponente und führt zu **Konfigurieren**, wo du den tatsächlichen Funktionsblock-Namen einträgst. Er verschwindet, sobald die Werte gefunden werden.
+**Eine ganze Komponente ohne Werte** meldet Home Assistant unter **Einstellungen → Reparaturen**. Der Hinweis führt zu **Konfigurieren**, wo du den tatsächlichen Funktionsblock-Namen einträgst.
 
-**Ein einzelner Wert fehlt oder stimmt nicht:** Lade die Diagnose-Datei herunter (**Einstellungen → Geräte & Dienste → ETA Web-Services → Gerät „ETA Heizung“ → Diagnose herunterladen**). Sie enthält alles, was nötig ist, um die Integration an eine abweichende Anlage anzupassen:
+**Ein einzelner Wert fehlt oder stimmt nicht:** Lade die Diagnose-Datei herunter (**Einstellungen → Geräte & Dienste → ETA Web-Services → Gerät „ETA Heizung“ → Diagnose herunterladen**) und häng sie an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose). Sie enthält den vollständigen Menübaum, die IP-Adresse ist geschwärzt.
 
-| Abschnitt | Inhalt |
-|---|---|
-| `messwerte` | je Messwert die abgefragte Adresse und der zuletzt angekommene Wert |
-| `nicht_gefunden` | alles ohne Treffer im Menübaum |
-| `ueber_kennung_gefunden` | Werte, die über ihre Nummer statt über ihren Namen gefunden wurden |
-| `schreibzugriff` | erkannte Schalter, Betriebsarten, Thermostate und Zeitprogramme |
-| `zustandstexte` | alle Texte, die etwa der Kessel-Zustand annehmen kann |
-| `prognose` | was die Verbrauchsprognose gelernt hat |
-| `menuebaum` | der vollständige Menübaum deiner Anlage |
-
-Die IP-Adresse ist darin geschwärzt. Die Datei kann also an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) angehängt werden, das Formular dort fragt nach allem Nötigen.
-
-**Ein Schalter erscheint nicht,** obwohl der Schreibzugriff freigegeben ist: Das Debug-Protokoll nennt für jeden Kandidaten den Grund (*nicht beschreibbar*, *hat N Zustände statt zwei*, *unklar, welcher Zustand „aus“ bedeutet*). Dafür in der `configuration.yaml`:
+**Ein Schalter erscheint nicht,** obwohl der Schreibzugriff freigegeben ist: Das Debug-Protokoll nennt den Grund. Dafür in der `configuration.yaml`:
 
 ```yaml
 logger:
@@ -790,19 +634,17 @@ logger:
     custom_components.eta_heating_ws: debug
 ```
 
-**Die Integration lässt sich gar nicht einrichten:** Dann gibt es keine Diagnose-Datei. [`tools/eta_bericht.py`](tools/eta_bericht.py) fragt die Anlage direkt. Herunterladen, auf einem Rechner im selben Netz ablegen und starten. Nötig ist nur Python, keine Zusatzpakete:
+**Die Integration lässt sich gar nicht einrichten:** [`tools/eta_bericht.py`](tools/eta_bericht.py) fragt die Anlage direkt. Nötig ist nur Python auf einem Rechner im selben Netz:
 
 ```bash
 python3 eta_bericht.py <IP-der-Heizung>
 ```
 
-Heraus kommt `eta_bericht.txt` mit Webservice-Version, allen Funktionsblöcken, den Zeitprogrammen, den aktiven Störungen und dem vollständigen Menübaum, die IP-Adresse ebenfalls geschwärzt. Das Skript liest nur. Einzige Ausnahme ist ein Variablensatz, den es zur Probe anlegt und am Ende wieder entfernt.
+Heraus kommt `eta_bericht.txt` mit dem vollständigen Menübaum, die IP-Adresse ebenfalls geschwärzt. Das Skript liest nur.
 
 ---
 
 ## 🧪 Entwicklung
-
-Die Tests laufen gegen ein echtes Home Assistant, aber ohne laufende Instanz und ohne echte Heizung. Die Anlage wird durch aufgezeichnete Menübäume ersetzt:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -810,7 +652,7 @@ pip install -r requirements_test.txt
 pytest
 ```
 
-Dieselben Tests laufen zusammen mit `hassfest` und der HACS-Validierung bei jedem Push in GitHub Actions. Ein Teil prüft dieses README: dass jede genannte Entität wirklich entsteht und dass die Entitätsübersicht vollständig ist.
+Dieselben Tests laufen bei jedem Push in GitHub Actions, zusammen mit `hassfest` und der HACS-Validierung.
 
 ---
 
