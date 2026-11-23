@@ -101,7 +101,7 @@ Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet. Ändern m
 
 **3. Pufferspeicher-Volumen**
 
-Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“. Er zeigt sein effektives Volumen am Display, gibt es aber nicht an die Webservices weiter. Trag die Liter vom Display, vom Typenschild oder aus den Unterlagen ein. Beim PufferFlex liest die Integration das Volumen selbst. Das effektive Volumen ist kleiner als das Gesamtvolumen des Puffers: Die Regelung errechnet es daraus. Ändern lässt es sich deshalb nur an der Anlage, am Display unter *Puffer → Einstellungen → Gesamtvolumen*.
+Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“. Er zeigt sein effektives Volumen am Display, gibt es aber nicht an die Webservices weiter. Trag die Liter vom Display, vom Typenschild oder aus den Unterlagen ein. Beim PufferFlex liest die Integration das Volumen selbst. Das effektive Volumen ist kleiner als das Gesamtvolumen des Puffers: Die Regelung errechnet es daraus. Das Gesamtvolumen ist an der Heizung hinterlegt und dort mit einem Passwort geschützt. Die Integration liest nur und ändert es nicht.
 
 **Weitere Schritte, je nach Anlage**
 
@@ -498,7 +498,7 @@ Jüngere Tage zählen mehr als alte. Einzelne Ausreißer wie Urlaub, Störung od
 
 **So rechnet sie voraus:** Für die nächsten Tage gilt die Wettervorhersage, danach das langjährige Temperaturmittel in Deutschland (DWD 1991-2020), angepasst an deinen Standort. Damit rechnet sie den Vorrat Tag für Tag herunter.
 
-**Mit Pufferspeicher:** Ist sein Volumen bekannt, rechnet die Prognose heraus, was der Puffer über Mitternacht mitnimmt. Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht. Bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Das macht vor allem den Wert für *morgen* und die Treffsicherheit genauer. Beim PufferFlex folgt das effektive Volumen aus dem Gesamtvolumen, das an der Heizung unter *PufferFlex → Einstellungen* steht, ab Werk 1000 l. Hat dein Speicher eine andere Größe, lohnt ein Blick dorthin.
+**Mit Pufferspeicher:** Ist sein Volumen bekannt, rechnet die Prognose heraus, was der Puffer über Mitternacht mitnimmt. Lädt der Kessel abends voll, sind die Pellets heute verbrannt, die Wärme wird aber erst morgen gebraucht. Bei 1000 Litern und 20 Grad Unterschied sind das gut 5 kg. Das macht vor allem den Wert für *morgen* und die Treffsicherheit genauer. Beim PufferFlex folgt das effektive Volumen aus dem Gesamtvolumen, das an der Heizung unter *PufferFlex → Einstellungen* steht, ab Werk 1000 l. Ändern lässt es sich dort nur mit Passwort.
 
 **So prüft sie sich selbst:** Für jeden der letzten 14 Tage lernt sie nur aus den Tagen davor, schätzt den Verbrauch und vergleicht ihn mit dem, was wirklich verbrannt wurde. Das Ergebnis ist die **Treffsicherheit** (100 % heißt aufs Kilogramm genau).
 
