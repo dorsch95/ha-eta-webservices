@@ -359,9 +359,17 @@
       },
       "weitere_werte": {
         "title": "Weitere Werte",
-        "description": "Hier wählst du Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Tipp einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Die Werte werden nur gelesen, nie geschrieben.\n\nJe Abfrage liest die Integration höchstens {je_abfrage} dieser Werte. Wählst du mehr, kommen sie reihum dran: Bis {je_abfrage} Werte wird jeder alle {intervall} Sekunden gelesen, je weitere {je_abfrage} dauert es {intervall} Sekunden länger. Höchstens {hoechstens} Werte.",
+        "description": "Hier wählst du Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Tipp einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Die Werte werden nur gelesen, nie geschrieben.\n\nMit den beiden Reglern stellst du ein, wie viele dieser Werte die Integration je Abfrage liest und in welchem Abstand. Sind mehr Werte gewählt, als in eine Abfrage passen, kommen sie reihum dran. Zurzeit sind {gewaehlt} Werte gewählt, jeder wird alle {dauer} Sekunden gelesen. Höchstens {hoechstens} Werte, davon höchstens {schnell_hoechstens} mit der schnellen Abfrage.",
         "data": {
-          "weitere_werte": "Werte"
+          "weitere_werte": "Werte",
+          "weitere_schnell": "Davon mit der schnellen Abfrage",
+          "weitere_je_abfrage": "Werte je Abfrage",
+          "weitere_intervall": "Abstand der Abfragen"
+        },
+        "data_description": {
+          "weitere_schnell": "Diese Werte liest zusätzlich die schnelle Abfrage, im Abstand aus den Einstellungen der Anlage. Was du hier wählst, gilt auch oben als gewählt.",
+          "weitere_je_abfrage": "Weniger schont die Heizung, dafür kommt jeder Wert seltener dran.",
+          "weitere_intervall": "Die festen Werte und die schnelle Abfrage laufen unabhängig davon."
         }
       }
     },
@@ -370,7 +378,8 @@
       "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt.",
       "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt.",
       "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
-      "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt."
+      "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt.",
+      "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}."
     },
     "abort": {
       "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal."

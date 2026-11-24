@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
@@ -40,6 +40,8 @@ from .const import (
     KESSEL_SPERRE,
     PELLET_PREIS_ZAHL,
     CONF_PROGNOSE,
+    CONF_WEITERE_INTERVALL,
+    CONF_WEITERE_JE_ABFRAGE,
     CONF_WEITERE_WERTE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
@@ -158,7 +160,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         komponente: float(config.get(puffer_volumen_schluessel(komponente)) or 0)
         for komponente in PUFFER_SPEICHER
     }
-    coordinator.weitere_werte_setzen(config.get(CONF_WEITERE_WERTE))
+    coordinator.weitere_werte_setzen(
+        config.get(CONF_WEITERE_WERTE),
+        config.get(CONF_WEITERE_JE_ABFRAGE),
+        config.get(CONF_WEITERE_INTERVALL),
+    )
     coordinator.mit_prognose = config.get(CONF_PROGNOSE, DEFAULT_PROGNOSE)
     coordinator.mit_zeitraeumen = config.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
@@ -213,8 +219,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     _raumfuehler_starten(hass, entry, coordinator, config)
     _zeitplaene_starten(hass, entry, coordinator, config)
     _schnelle_abfrage_starten(hass, entry, coordinator)
+    _weitere_abfrage_starten(hass, entry, coordinator)
     coordinator.zeitprogramme_im_hintergrund_pruefen()
     return True
+
+
+def _weitere_abfrage_starten(
+    hass: HomeAssistant, entry: ETAConfigEntry, coordinator: ETADataUpdateCoordinator
+) -> None:
+    """Liest die frei gewählten Werte im eigenen Takt, Portion für Portion, siehe weitere_werte.py.
+
+    Jede Abfrage bestellt die nächste: Der Abstand ist nach dem Start
+    kürzer als danach, siehe ETADataUpdateCoordinator.weitere_abstand.
+    """
+    if not coordinator.weitere_werte:
+        return
+
+    lauf: dict = {}
+
+    def stoppen() -> None:
+        lauf["beendet"] = True
+        abmelden = lauf.pop("abmelden", None)
+        if abmelden is not None:
+            abmelden()
+
+    def planen() -> None:
+        if not lauf.get("beendet"):
+            lauf["abmelden"] = async_call_later(hass, coordinator.weitere_abstand, takt)
+
+    async def takt(_jetzt) -> None:
+        """Ein unerwarteter Fehler beendet die Abfrage - sonst stünde er bei jedem Takt im Protokoll."""
+        lauf.pop("abmelden", None)
+        try:
+            await coordinator.async_weitere_lesen()
+        except Exception:
+            _LOGGER.exception(
+                "ETA: Die Abfrage der weiteren Werte ist an einem Fehler gescheitert und ruht "
+                "bis zum nächsten Laden der Integration"
+            )
+            return
+        planen()
+
+    planen()
+    entry.async_on_unload(stoppen)
 
 
 def _schnelle_abfrage_starten(

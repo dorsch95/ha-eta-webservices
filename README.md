@@ -316,7 +316,8 @@ Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an ei
 
 - **Suchen:** Tipp einen Teil des Namens ein. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
 - **Nur lesen:** Geschrieben wird nie. Einheit und Text kommen von der Heizung.
-- **Zeitversetzt:** Je Abfrage liest die Integration höchstens 25 dieser Werte. Wählst du mehr, kommen sie reihum dran: Bei 30 Sekunden Abfrageintervall wird jeder Wert bis 25 Stück alle 30 Sekunden gelesen, bis 50 alle 60 Sekunden und so fort. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
+- **Takt:** Die weiteren Werte werden getrennt von den festen gelesen. Mit zwei Reglern stellst du ein, wie viele je Abfrage gelesen werden (ab Werk 25) und in welchem Abstand (ab Werk dein Abfrageintervall). Sind mehr gewählt, als in eine Abfrage passen, kommen sie reihum dran. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
+- **Schnell:** Bis zu 10 dieser Werte kannst du zusätzlich in die schnelle Abfrage nehmen. Sie kommen dann in deren Abstand, ab Werk alle 3 Sekunden.
 
 ---
 

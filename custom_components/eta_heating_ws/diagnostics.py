@@ -266,6 +266,8 @@ async def async_get_config_entry_diagnostics(
         },
         "messwerte": messwerte,
         "weitere_werte": {
+            "je_abfrage": coordinator.weitere_je_abfrage,
+            "abstand": coordinator.weitere_intervall,
             "abfrage_alle": coordinator.weitere_abfrage_alle,
             "werte": [
                 {
@@ -273,6 +275,7 @@ async def async_get_config_entry_diagnostics(
                     "adresse": eintrag["uri"],
                     "art": "Zahl" if eintrag.get("zahl") else "Text",
                     "einheit": eintrag.get("einheit") or "",
+                    "schnell": bool(eintrag.get("schnell")),
                     "wert": weitere_werte.zustand(
                         (coordinator.data or {}).get(key), bool(eintrag.get("zahl"))
                     ),

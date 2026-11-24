@@ -6,6 +6,7 @@ import asyncio
 import logging
 import time
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -312,11 +313,18 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         """
         self.weitere_werte: dict[str, dict] = {}
         """Die frei gewählten Werte nach Schlüssel, siehe weitere_werte.py."""
+        self.weitere_je_abfrage = weitere.JE_ABFRAGE
+        """So viele weitere Werte liest eine Abfrage höchstens."""
+        self.weitere_intervall = float(weitere.INTERVALL_GRENZEN[0])
+        """Sekunden zwischen zwei Abfragen der weiteren Werte."""
         self._weitere_portionen: list[dict[str, str]] = []
         self._weitere_dran = 0
         """Welche Portion der weiteren Werte als nächste gelesen wird."""
+        self._weitere_gelesen: set[int] = set()
+        """Die Portionen, die seit dem Start schon einmal gelesen wurden."""
         self._weitere_saetze: set[int] = set()
         """Die Portionen, deren Variablensatz auf der Anlage steht."""
+        self._weitere_beendet = False
         self._schnell_name = f"hs{entry.entry_id}"[:32]
         self._schnell_uris: set[str] | None = None
         """Die Werte, mit denen der Variablensatz der schnellen Gruppe auf der Anlage steht."""
@@ -377,8 +385,18 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Wirkung der Kessel-Zustand und die Raumtemperatur. Vom
         Frischwassermodul nur, woran sich das Zapfen zeigt:
         Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und
-        Zirkulationspumpe.
+        Zirkulationspumpe. Dazu die frei gewählten Werte, die der Nutzer
+        ausdrücklich schnell lesen lässt, siehe weitere_werte.py.
         """
+        return self._schnelle_feste_uris | {
+            key: eintrag["uri"]
+            for key, eintrag in self.weitere_werte.items()
+            if eintrag.get("schnell")
+        }
+
+    @property
+    def _schnelle_feste_uris(self) -> dict[str, str]:
+        """Der feste Teil der schnellen Gruppe, siehe schnelle_uris."""
         return {
             key: info["uri"]
             for key, info in self.sensor_defs.items()
@@ -533,6 +551,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         letzter Takt ihren Satz gleich wieder an.
         """
         self._schnell_beendet = True
+        self._weitere_beendet = True
         if self._varset_bereit:
             await self.client.async_delete_varset(self._varset_name)
             self._varset_bereit = False
@@ -1604,34 +1623,85 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
 
         merged = dict(self.data or {})
         merged.update(values)
-        merged.update(await self._weitere_lesen())
+        if self.data is None:
+            merged.update(await self._weitere_portion())
         return merged
 
-    def weitere_werte_setzen(self, eintraege: list[dict] | None) -> None:
-        """Übernimmt die frei gewählten Werte aus der Einrichtung, siehe weitere_werte.py."""
+    def weitere_werte_setzen(
+        self, eintraege: list[dict] | None, je_abfrage: Any = None, abstand: Any = None
+    ) -> None:
+        """Übernimmt die frei gewählten Werte und ihren Takt aus der Einrichtung, siehe weitere_werte.py."""
         self.weitere_werte = {
             weitere.schluessel(eintrag["uri"]): eintrag
             for eintrag in eintraege or []
             if isinstance(eintrag, dict) and eintrag.get("uri")
         }
+        self.weitere_je_abfrage = weitere.je_abfrage(je_abfrage)
+        abfrageintervall = self.update_interval.total_seconds() if self.update_interval else 0
+        self.weitere_intervall = float(weitere.intervall(abstand, abfrageintervall))
         self._weitere_portionen = weitere.portionen(
-            {key: eintrag["uri"] for key, eintrag in self.weitere_werte.items()}
+            {key: eintrag["uri"] for key, eintrag in self.weitere_werte.items()},
+            self.weitere_je_abfrage,
         )
         self._weitere_dran = 0
+        self._weitere_gelesen = set()
 
     @property
-    def weitere_abfrage_alle(self) -> float | None:
-        """Alle wie viele Sekunden ein weiterer Wert gelesen wird - None ohne Abfrageintervall."""
-        if self.update_interval is None:
-            return None
-        return weitere.abfrage_alle(len(self.weitere_werte), self.update_interval.total_seconds())
+    def weitere_abfrage_alle(self) -> float:
+        """Alle wie viele Sekunden ein weiterer Wert gelesen wird."""
+        return weitere.abfrage_alle(
+            len(self.weitere_werte), self.weitere_intervall, self.weitere_je_abfrage
+        )
+
+    def weiterer_wert_alle(self, key: str) -> float:
+        """Alle wie viele Sekunden dieser eine weitere Wert gelesen wird.
+
+        Ein schnell gelesener kommt im Takt der schnellen Abfrage, solange
+        sie läuft - also kürzer eingestellt ist als das Abfrageintervall.
+        """
+        schnell = float(self.schnell_intervall or 0)
+        voll = self.update_interval.total_seconds() if self.update_interval else 0
+        if self.weitere_werte.get(key, {}).get("schnell") and 0 < schnell < voll:
+            return schnell
+        return self.weitere_abfrage_alle
+
+    @property
+    def weitere_abstand(self) -> float:
+        """Sekunden bis zur nächsten Abfrage der weiteren Werte.
+
+        Bis nach dem Start jede Portion einmal gelesen ist, kommen sie im
+        Abstand von weitere_werte.ANLAUF - sonst bliebe ein Sensor der
+        letzten Portion ein Vielfaches des eingestellten Abstands ohne Wert.
+        """
+        if len(self._weitere_gelesen) < len(self._weitere_portionen):
+            return min(float(weitere.ANLAUF), self.weitere_intervall)
+        return self.weitere_intervall
 
     def _weitere_name(self, nummer: int) -> str:
         """So heißt der Variablensatz einer Portion weiterer Werte auf der Anlage."""
         return f"hw{nummer}{self.config_entry.entry_id}"[:32]
 
-    async def _weitere_lesen(self) -> dict[str, ETAValue]:
-        """Liest die nächste Portion der weiteren Werte, reihum eine je Abfragezyklus.
+    async def async_weitere_lesen(self) -> None:
+        """Liest die nächste Portion der weiteren Werte und gibt sie an die Sensoren weiter.
+
+        Im eigenen Takt, siehe weitere_abstand. Ist die Anlage gerade nicht
+        erreichbar, ruht die Abfrage: Die volle Abfrage merkt, wenn sie
+        wieder da ist.
+        """
+        if self.data is None or self._weitere_beendet or not self._weitere_portionen:
+            return
+        if not self.last_update_success:
+            return
+        gelesen = await self._weitere_portion()
+        self.data = {**self.data, **gelesen}
+        self.volle_abfrage = False
+        try:
+            self.async_update_listeners()
+        finally:
+            self.volle_abfrage = True
+
+    async def _weitere_portion(self) -> dict[str, ETAValue]:
+        """Liest die Portion, die reihum dran ist.
 
         Getrennt von den festen Werten: Scheitert eine Portion, bleiben
         die festen davon unberührt. Was ausbleibt, zählt wie bei ihnen -
@@ -1645,6 +1715,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         portion = self._weitere_portionen[nummer]
         async with self._lese_sperre:
             gelesen = await self._portion_lesen(nummer, portion)
+        self._weitere_gelesen.add(nummer)
         for key in portion:
             if key in gelesen:
                 self.fehlzyklen.pop(key, None)

@@ -260,7 +260,7 @@ class ETAWeitererWert(ETABaseSensor):
         return {
             "status": self.coordinator.sensor_status(self._key),
             "adresse": self._uri,
-            "abfrage_alle": self.coordinator.weitere_abfrage_alle,
+            "abfrage_alle": self.coordinator.weiterer_wert_alle(self._key),
         }
 
     @property

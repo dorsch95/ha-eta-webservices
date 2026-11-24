@@ -702,6 +702,11 @@ class FakeHass:
         self.schnelltakt = None
         """Der Takt der schnellen Abfrage - ein Test ruft ihn selbst auf."""
         self.schnelltakt_beendet: list = []
+        self.weitere_abstaende: list = []
+        """Die Abstände, mit denen die Abfrage der weiteren Werte bestellt wurde."""
+        self.weitere_takt = None
+        """Die bestellte Abfrage der weiteren Werte - ein Test ruft sie selbst auf."""
+        self.weitere_abbestellt: list = []
         self.is_stopping = False
         self.ereignisse: list[tuple[str, dict]] = []
         self.bus = SimpleNamespace(
@@ -764,6 +769,13 @@ def hass(menu_xml, tmp_path, monkeypatch) -> FakeHass:
         return lambda: instance.schnelltakt_beendet.append(abstand)
 
     monkeypatch.setattr("eta_heating_ws.async_track_time_interval", zeitgeber)
+
+    def spaeter(_hass, abstand, takt):
+        instance.weitere_abstaende.append(abstand)
+        instance.weitere_takt = takt
+        return lambda: instance.weitere_abbestellt.append(abstand)
+
+    monkeypatch.setattr("eta_heating_ws.async_call_later", spaeter)
     return instance
 
 

@@ -55,6 +55,9 @@ from .const import (
     CONF_KESSEL_SPERRE,
     CONF_LAGER_MAXIMUM,
     CONF_LIEFERUNGEN,
+    CONF_WEITERE_INTERVALL,
+    CONF_WEITERE_JE_ABFRAGE,
+    CONF_WEITERE_SCHNELL,
     CONF_WEITERE_WERTE,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
@@ -558,23 +561,53 @@ def _options_schema(current: dict[str, Any], wetter: str | None = None) -> vol.S
     return vol.Schema(_einstellung_felder(current, wetter))
 
 
-def _weitere_schema(auswahl: dict[str, str], vorgabe: list[str]) -> vol.Schema:
-    """Ein Feld mit allen wählbaren Werten der Anlage, Adresse und Name je Wert.
+def _schieberegler(grenzen: tuple[int, int], einheit: str | None = None) -> NumberSelector:
+    """Ein Schieberegler zwischen zwei Grenzen, in Schritten von weitere_werte.SCHRITT."""
+    angaben: dict[str, Any] = {"unit_of_measurement": einheit} if einheit else {}
+    return NumberSelector(
+        NumberSelectorConfig(
+            min=grenzen[0],
+            max=grenzen[1],
+            step=weitere.SCHRITT,
+            mode=NumberSelectorMode.SLIDER,
+            **angaben,
+        )
+    )
 
-    Als Liste mit Suche: Der Menübaum einer Anlage führt über tausend
-    Objekte, gefunden wird ein Wert über einen Teil seines Namens.
+
+def _weitere_schema(
+    auswahl: dict[str, str],
+    vorgabe: list[str],
+    schnell: list[str],
+    je_abfrage: int,
+    abstand: int,
+) -> vol.Schema:
+    """Die wählbaren Werte der Anlage, dazu zwei Schieberegler für ihren Takt.
+
+    Die Werte als Liste mit Suche: Der Menübaum einer Anlage führt über
+    tausend Objekte, gefunden wird ein Wert über einen Teil seines Namens.
+    Ein zweites Feld derselben Art nennt die Werte, die zusätzlich mit der
+    schnellen Abfrage gelesen werden. Darunter, wie viele Werte eine
+    Abfrage liest und in welchem Abstand die Abfragen kommen, siehe
+    weitere_werte.py.
     """
+    werte = SelectSelector(
+        SelectSelectorConfig(
+            options=[SelectOptionDict(value=uri, label=name) for uri, name in auswahl.items()],
+            multiple=True,
+            mode=SelectSelectorMode.DROPDOWN,
+        )
+    )
     return vol.Schema(
         {
-            vol.Optional(CONF_WEITERE_WERTE, default=vorgabe): SelectSelector(
-                SelectSelectorConfig(
-                    options=[
-                        SelectOptionDict(value=uri, label=name) for uri, name in auswahl.items()
-                    ],
-                    multiple=True,
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            )
+            vol.Optional(CONF_WEITERE_WERTE, default=vorgabe): werte,
+            vol.Optional(CONF_WEITERE_SCHNELL, default=schnell): werte,
+            vol.Required(CONF_WEITERE_JE_ABFRAGE, default=je_abfrage): _schieberegler(
+                weitere.JE_ABFRAGE_GRENZEN
+            ),
+            vol.Required(CONF_WEITERE_INTERVALL, default=abstand): _schieberegler(
+                weitere.INTERVALL_GRENZEN, "s"
+            ),
         }
     )
 
@@ -1029,7 +1062,8 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         gefragt hat - beim PufferFlex steht es nur im Zahlenfeld. Ebenso
         die eingetragenen Pelletlieferungen, die Sperrtemperatur des
         Fremderzeugers - solange er einen Fühler hat -, die frei gewählten
-        weiteren Werte und dass Home Assistant den Kessel gesperrt hält.
+        weiteren Werte samt ihrem Takt und dass Home Assistant den Kessel
+        gesperrt hält.
         Gibt es nach dem Speichern
         keine Kesselsperre mehr, räumt das Einrichten das Gemerkte auf,
         siehe switch.verwaiste_sperre_aufloesen.
@@ -1054,8 +1088,9 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         if self._current.get(CONF_LIEFERUNGEN):
             daten = {CONF_LIEFERUNGEN: self._current[CONF_LIEFERUNGEN], **daten}
-        if self._current.get(CONF_WEITERE_WERTE):
-            daten = {CONF_WEITERE_WERTE: self._current[CONF_WEITERE_WERTE], **daten}
+        for schluessel in (CONF_WEITERE_WERTE, CONF_WEITERE_JE_ABFRAGE, CONF_WEITERE_INTERVALL):
+            if self._current.get(schluessel):
+                daten = {schluessel: self._current[schluessel], **daten}
         if self._current.get(CONF_FREMDERZEUGER_SCHWELLE) is not None and daten.get(
             CONF_FREMDERZEUGER_FUEHLER
         ):
@@ -1084,8 +1119,12 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         die Integration schon als feste Sensoren führt. Jeden neu gewählten
         Wert liest der Schritt einmal: So steht fest, ob er eine Zahl mit
         Einheit oder ein Text ist - und was die Anlage gar nicht lesbar
-        liefert, wird nicht angenommen. Gespeichert wird nur die Auswahl,
-        alle anderen Einstellungen bleiben, wie sie sind.
+        liefert, wird nicht angenommen. Zwei Schieberegler stellen den Takt:
+        wie viele Werte eine Abfrage liest und in welchem Abstand die
+        Abfragen kommen. Was im zweiten Feld steht, liest zusätzlich die
+        schnelle Abfrage - und gilt damit auch als gewählt. Gespeichert
+        werden nur Auswahl und Takt, alle anderen Einstellungen bleiben, wie
+        sie sind.
         """
         host, port = self._adresse()
         client = ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port)
@@ -1106,49 +1145,73 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             for uri, eintrag in {**bisher, **self._menue_werte}.items()
             if uri in bisher or uri not in fest
         }
-        intervall = self._current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        je_abfrage = weitere.je_abfrage(self._current.get(CONF_WEITERE_JE_ABFRAGE))
+        abstand = weitere.intervall(
+            self._current.get(CONF_WEITERE_INTERVALL),
+            self._current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        )
         platzhalter = {
-            "je_abfrage": str(weitere.JE_ABFRAGE),
+            "gewaehlt": str(len(bisher)),
+            "dauer": f"{weitere.abfrage_alle(len(bisher), abstand, je_abfrage):g}",
             "hoechstens": str(weitere.HOECHSTENS),
-            "intervall": f"{intervall:g}",
+            "schnell_hoechstens": str(weitere.SCHNELL_HOECHSTENS),
             "ohne": "",
         }
         errors: dict[str, str] = {}
         vorgabe = list(bisher)
+        schnell = [uri for uri, eintrag in bisher.items() if eintrag.get("schnell")]
         if user_input is not None:
+            je_abfrage = weitere.je_abfrage(user_input.get(CONF_WEITERE_JE_ABFRAGE))
+            abstand = weitere.intervall(user_input.get(CONF_WEITERE_INTERVALL), abstand)
+            schnell = [
+                uri
+                for uri in dict.fromkeys(user_input.get(CONF_WEITERE_SCHNELL) or [])
+                if uri in auswahl
+            ]
             gewaehlt = [
                 uri
-                for uri in dict.fromkeys(user_input.get(CONF_WEITERE_WERTE) or [])
+                for uri in dict.fromkeys([*(user_input.get(CONF_WEITERE_WERTE) or []), *schnell])
                 if uri in auswahl
             ]
             vorgabe = gewaehlt
             neu = {uri: uri for uri in gewaehlt if uri not in bisher}
             if len(gewaehlt) > weitere.HOECHSTENS:
                 errors["base"] = "zu_viele_werte"
+            elif len(schnell) > weitere.SCHNELL_HOECHSTENS:
+                errors["base"] = "zu_viele_schnelle_werte"
             else:
                 gelesen = await client.async_get_values(neu) if neu else {}
                 eintraege = []
                 ohne = []
                 for uri in gewaehlt:
                     if uri in bisher:
-                        eintraege.append(bisher[uri])
-                        continue
-                    art = weitere.einordnen(gelesen.get(uri))
-                    if art is None:
-                        ohne.append(uri)
-                        continue
-                    eintraege.append({"uri": uri, **self._menue_werte[uri], **art})
+                        eintrag = {k: v for k, v in bisher[uri].items() if k != "schnell"}
+                    else:
+                        art = weitere.einordnen(gelesen.get(uri))
+                        if art is None:
+                            ohne.append(uri)
+                            continue
+                        eintrag = {"uri": uri, **self._menue_werte[uri], **art}
+                    if uri in schnell:
+                        eintrag["schnell"] = True
+                    eintraege.append(eintrag)
                 if not ohne:
                     return self.async_create_entry(
                         title="",
-                        data={**self.config_entry.options, CONF_WEITERE_WERTE: eintraege},
+                        data={
+                            **self.config_entry.options,
+                            CONF_WEITERE_WERTE: eintraege,
+                            CONF_WEITERE_JE_ABFRAGE: je_abfrage,
+                            CONF_WEITERE_INTERVALL: abstand,
+                        },
                     )
                 errors["base"] = "werte_nicht_lesbar"
                 platzhalter["ohne"] = ", ".join(auswahl[uri] for uri in ohne[:5])
                 vorgabe = [uri for uri in gewaehlt if uri not in ohne]
+                schnell = [uri for uri in schnell if uri not in ohne]
         return self.async_show_form(
             step_id="weitere_werte",
-            data_schema=_weitere_schema(auswahl, vorgabe),
+            data_schema=_weitere_schema(auswahl, vorgabe, schnell, je_abfrage, abstand),
             errors=errors,
             description_placeholders=platzhalter,
         )

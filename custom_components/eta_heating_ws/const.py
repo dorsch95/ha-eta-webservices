@@ -122,8 +122,22 @@ CONF_WEITERE_WERTE = "weitere_werte"
 
 Je Wert ein Eintrag mit "uri", "fub" und "pfad" - Funktionsblock und Weg
 im Menübaum, wie beim Auswählen gelesen -, dazu "zahl" und bei Zahlen
-"einheit" und "stellen". Sie stehen in den Optionen der Einrichtung.
+"einheit" und "stellen". "schnell" trägt ein Wert, der zusätzlich mit der
+schnellen Abfrage gelesen wird. Sie stehen in den Optionen der Einrichtung.
 """
+
+CONF_WEITERE_SCHNELL = "weitere_schnell"
+"""Das Feld im Dialog, in dem die schnell gelesenen weiteren Werte gewählt werden.
+
+Gespeichert wird es nicht eigens: Die Wahl steht als "schnell" an den
+Einträgen von CONF_WEITERE_WERTE.
+"""
+
+CONF_WEITERE_JE_ABFRAGE = "weitere_je_abfrage"
+"""Wie viele der weiteren Werte eine Abfrage liest, siehe weitere_werte.je_abfrage."""
+
+CONF_WEITERE_INTERVALL = "weitere_intervall"
+"""Abstand der Abfragen der weiteren Werte in Sekunden, siehe weitere_werte.intervall."""
 
 CONF_LIEFERUNGEN = "lieferungen"
 """Die eingetragenen Pelletlieferungen, die neueste zuletzt.
