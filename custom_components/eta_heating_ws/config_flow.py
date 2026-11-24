@@ -24,12 +24,14 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
 )
 
 from . import uebernahme
+from . import weitere_werte as weitere
 from .api import ETAApiClient, ETAApiError, ETAValue
 from .prognose_koordinator import einzige_wetter_entitaet
 from .uri_discovery import async_discover_uris, fub_namen_im_menue, fub_namen_vorschlagen
@@ -53,6 +55,7 @@ from .const import (
     CONF_KESSEL_SPERRE,
     CONF_LAGER_MAXIMUM,
     CONF_LIEFERUNGEN,
+    CONF_WEITERE_WERTE,
     CONF_PELLET_KWH_PER_KG,
     CONF_PELLET_PREIS,
     CONF_PROGNOSE,
@@ -555,6 +558,27 @@ def _options_schema(current: dict[str, Any], wetter: str | None = None) -> vol.S
     return vol.Schema(_einstellung_felder(current, wetter))
 
 
+def _weitere_schema(auswahl: dict[str, str], vorgabe: list[str]) -> vol.Schema:
+    """Ein Feld mit allen wählbaren Werten der Anlage, Adresse und Name je Wert.
+
+    Als Liste mit Suche: Der Menübaum einer Anlage führt über tausend
+    Objekte, gefunden wird ein Wert über einen Teil seines Namens.
+    """
+    return vol.Schema(
+        {
+            vol.Optional(CONF_WEITERE_WERTE, default=vorgabe): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        SelectOptionDict(value=uri, label=name) for uri, name in auswahl.items()
+                    ],
+                    multiple=True,
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            )
+        }
+    )
+
+
 def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
     """Formular zur Bestätigung/Änderung der Funktionsblock-Namen.
 
@@ -982,6 +1006,8 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
+        self._menue_werte: dict[str, dict[str, Any]] | None = None
+        """Die wählbaren Werte aus dem Menübaum, einmal je Dialog gelesen."""
 
     @property
     def _current(self) -> dict[str, Any]:
@@ -1002,8 +1028,9 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         das Puffervolumen eines Puffers, nach dem dieser Durchlauf nicht
         gefragt hat - beim PufferFlex steht es nur im Zahlenfeld. Ebenso
         die eingetragenen Pelletlieferungen, die Sperrtemperatur des
-        Fremderzeugers - solange er einen Fühler hat - und dass Home
-        Assistant den Kessel gesperrt hält. Gibt es nach dem Speichern
+        Fremderzeugers - solange er einen Fühler hat -, die frei gewählten
+        weiteren Werte und dass Home Assistant den Kessel gesperrt hält.
+        Gibt es nach dem Speichern
         keine Kesselsperre mehr, räumt das Einrichten das Gemerkte auf,
         siehe switch.verwaiste_sperre_aufloesen.
 
@@ -1027,6 +1054,8 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         if self._current.get(CONF_LIEFERUNGEN):
             daten = {CONF_LIEFERUNGEN: self._current[CONF_LIEFERUNGEN], **daten}
+        if self._current.get(CONF_WEITERE_WERTE):
+            daten = {CONF_WEITERE_WERTE: self._current[CONF_WEITERE_WERTE], **daten}
         if self._current.get(CONF_FREMDERZEUGER_SCHWELLE) is not None and daten.get(
             CONF_FREMDERZEUGER_FUEHLER
         ):
@@ -1041,6 +1070,92 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """Konfigurieren beginnt mit der Wahl: Einstellungen der Anlage oder weitere Werte."""
+        if user_input is not None:
+            return await self.async_step_einstellungen(user_input)
+        return self.async_show_menu(step_id="init", menu_options=["einstellungen", "weitere_werte"])
+
+    async def async_step_weitere_werte(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wählt Werte aus dem Menübaum, die als Sensoren erscheinen, siehe weitere_werte.py.
+
+        Zur Wahl steht jedes Objekt des Menübaums außer den Messwerten, die
+        die Integration schon als feste Sensoren führt. Jeden neu gewählten
+        Wert liest der Schritt einmal: So steht fest, ob er eine Zahl mit
+        Einheit oder ein Text ist - und was die Anlage gar nicht lesbar
+        liefert, wird nicht angenommen. Gespeichert wird nur die Auswahl,
+        alle anderen Einstellungen bleiben, wie sie sind.
+        """
+        host, port = self._adresse()
+        client = ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port)
+        if self._menue_werte is None:
+            try:
+                self._menue_werte = weitere.menue_werte(await client.async_get_menu())
+            except ETAApiError:
+                return self.async_abort(reason="cannot_connect")
+        bisher = {
+            eintrag["uri"]: eintrag
+            for eintrag in self._current.get(CONF_WEITERE_WERTE) or []
+            if isinstance(eintrag, dict) and eintrag.get("uri")
+        }
+        koordinator = getattr(self.config_entry, "runtime_data", None)
+        fest = set(koordinator.abfragbare_uris.values()) if koordinator is not None else set()
+        auswahl = {
+            uri: weitere.bezeichnung(eintrag)
+            for uri, eintrag in {**bisher, **self._menue_werte}.items()
+            if uri in bisher or uri not in fest
+        }
+        intervall = self._current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        platzhalter = {
+            "je_abfrage": str(weitere.JE_ABFRAGE),
+            "hoechstens": str(weitere.HOECHSTENS),
+            "intervall": f"{intervall:g}",
+            "ohne": "",
+        }
+        errors: dict[str, str] = {}
+        vorgabe = list(bisher)
+        if user_input is not None:
+            gewaehlt = [
+                uri
+                for uri in dict.fromkeys(user_input.get(CONF_WEITERE_WERTE) or [])
+                if uri in auswahl
+            ]
+            vorgabe = gewaehlt
+            neu = {uri: uri for uri in gewaehlt if uri not in bisher}
+            if len(gewaehlt) > weitere.HOECHSTENS:
+                errors["base"] = "zu_viele_werte"
+            else:
+                gelesen = await client.async_get_values(neu) if neu else {}
+                eintraege = []
+                ohne = []
+                for uri in gewaehlt:
+                    if uri in bisher:
+                        eintraege.append(bisher[uri])
+                        continue
+                    art = weitere.einordnen(gelesen.get(uri))
+                    if art is None:
+                        ohne.append(uri)
+                        continue
+                    eintraege.append({"uri": uri, **self._menue_werte[uri], **art})
+                if not ohne:
+                    return self.async_create_entry(
+                        title="",
+                        data={**self.config_entry.options, CONF_WEITERE_WERTE: eintraege},
+                    )
+                errors["base"] = "werte_nicht_lesbar"
+                platzhalter["ohne"] = ", ".join(auswahl[uri] for uri in ohne[:5])
+                vorgabe = [uri for uri in gewaehlt if uri not in ohne]
+        return self.async_show_form(
+            step_id="weitere_werte",
+            data_schema=_weitere_schema(auswahl, vorgabe),
+            errors=errors,
+            description_placeholders=platzhalter,
+        )
+
+    async def async_step_einstellungen(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         if user_input is not None:
             self._data = {
                 **_einstellungen(user_input, components_from_config(self._current)),
@@ -1053,7 +1168,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             return await self.async_step_fub_names()
 
         return self.async_show_form(
-            step_id="init",
+            step_id="einstellungen",
             data_schema=_options_schema(
                 self._current, wetter_vorschlag(self.hass, self._current)
             ),

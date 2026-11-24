@@ -196,6 +196,13 @@
     "step": {
       "init": {
         "title": "Edit ETA heating system",
+        "menu_options": {
+          "einstellungen": "System settings",
+          "weitere_werte": "Select additional values"
+        }
+      },
+      "einstellungen": {
+        "title": "Edit ETA heating system",
         "data": {
           "anzahl_puffer": "Buffer tanks",
           "anzahl_warmwasser": "Fresh water modules and hot water tanks",
@@ -349,12 +356,24 @@
           "verbindung_fremdwaerme": "External heat charges",
           "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
+      },
+      "weitere_werte": {
+        "title": "Additional values",
+        "description": "Pick values from your heating system's menu tree that should appear as additional sensors. Type part of a name to search, for example 'Volllast' - the names are those shown on the controller. The values are only read, never written.\n\nPer poll the integration reads at most {je_abfrage} of these values. If you pick more, they take turns: up to {je_abfrage} values, each one is read every {intervall} seconds, and every further {je_abfrage} add another {intervall} seconds. At most {hoechstens} values.",
+        "data": {
+          "weitere_werte": "Values"
+        }
       }
     },
     "error": {
       "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written.",
       "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round.",
-      "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating."
+      "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating.",
+      "zu_viele_werte": "Too many values. Pick at most {hoechstens}.",
+      "werte_nicht_lesbar": "The heating system does not return a readable value for: {ohne}. They have been deselected."
+    },
+    "abort": {
+      "cannot_connect": "The heating system cannot be reached right now. Please try again later."
     }
   },
   "selector": {

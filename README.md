@@ -35,6 +35,7 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) als Anlagenbild, als Kach
 - The card **ETA Overview** needs no YAML: add it like any other card and pick tiles, a system diagram or a compact list. The card **ETA Zeitprogramm** shows and edits time programs.
 - With switching enabled: boiler on/off, heating circuit modes, thermostat, time programs, ash box plan, pellet store and buffer tank volume, and locking the boiler while a wood stove heats.
 - A self-learning forecast predicts tomorrow's pellet consumption and the day the pellet store runs empty.
+- Any other value from the boiler's menu tree can be added as a read-only sensor under **Configure → Select additional values**.
 - Tested with webservices 1.2 and one older control with webservices 1.1 (read-only there).
 - Problems: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). The IP address is redacted.
 
@@ -97,7 +98,7 @@ Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“: Trag die Li
 - **Raumfühler** und **Zeitprogramm aus Home Assistant**, nur mit Schreibzugriff, siehe [Thermostat und Raumfühler](#thermostat-und-raumfühler-aus-home-assistant) und [Zeitprogramm aus Home Assistant](#zeitprogramm-aus-home-assistant).
 - **Wer hängt woran**, nur mit mehreren Pufferspeichern oder einer Fernleitung, siehe [Neue Karte „ETA Übersicht“](#neue-karte-eta-übersicht).
 
-Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren** ändern. Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**.
+Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren → Einstellungen der Anlage** ändern. Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**.
 
 ### Funktionsblock-Namen
 
@@ -309,6 +310,14 @@ Das sagt das Attribut `status` jedes Sensors:
 | `nicht_erreichbar` | *Nicht verfügbar* | kam bei den letzten zwei Abfragen nicht an |
 | `kein_messwert` | *Unbekannt* | die Anlage zeigt nur `---`, meist ein Fühlerfehler |
 
+### Weitere Werte
+
+Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an einer echten Anlage über tausend. Unter **Konfigurieren → Weitere Werte auswählen** suchst du dir daraus aus, was du zusätzlich als Sensor haben willst, etwa Betriebsstunden oder die Werte eines Partikelabscheiders.
+
+- **Suchen:** Tipp einen Teil des Namens ein. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
+- **Nur lesen:** Geschrieben wird nie. Einheit und Text kommen von der Heizung.
+- **Zeitversetzt:** Je Abfrage liest die Integration höchstens 25 dieser Werte. Wählst du mehr, kommen sie reihum dran: Bei 30 Sekunden Abfrageintervall wird jeder Wert bis 25 Stück alle 30 Sekunden gelesen, bis 50 alle 60 Sekunden und so fort. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
+
 ---
 
 ## 📺 Dashboard-Karte
@@ -391,7 +400,7 @@ Welche Werte ankommen, entscheidet die Anlage.
 | Wer merkt, dass der Ofen heizt | die ETA-Regelung, über ihren Fühler | Home Assistant, über eine Entität oder einen Temperaturfühler |
 | Was dann passiert | die Regelung lädt selbst in den Puffer | Home Assistant kann den Kessel sperren, siehe [Fremderzeuger](#fremderzeuger) |
 
-Fehlt bei dir etwas, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
+Einzelne Werte, die fehlen, holst du dir selbst über [Weitere Werte](#weitere-werte). Fehlt mehr, hilft ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) mit der Diagnose-Datei.
 
 ---
 

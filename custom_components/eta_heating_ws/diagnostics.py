@@ -23,6 +23,7 @@ from homeassistant.core import HomeAssistant
 
 from .api import ETAApiError
 from .const import CONF_COMPONENTS, CONF_FUB_NAMES, PUFFER_SPEICHER
+from . import weitere_werte
 from .coordinator import ETAConfigEntry, puffer_fuehler_schluessel
 from .zeitplan import als_text
 from .zeitprogramm import absenkung_lesen
@@ -264,6 +265,22 @@ async def async_get_config_entry_diagnostics(
             ),
         },
         "messwerte": messwerte,
+        "weitere_werte": {
+            "abfrage_alle": coordinator.weitere_abfrage_alle,
+            "werte": [
+                {
+                    "name": weitere_werte.bezeichnung(eintrag),
+                    "adresse": eintrag["uri"],
+                    "art": "Zahl" if eintrag.get("zahl") else "Text",
+                    "einheit": eintrag.get("einheit") or "",
+                    "wert": weitere_werte.zustand(
+                        (coordinator.data or {}).get(key), bool(eintrag.get("zahl"))
+                    ),
+                    "status": coordinator.sensor_status(key),
+                }
+                for key, eintrag in coordinator.weitere_werte.items()
+            ],
+        },
         "zustandstexte": zustandstexte,
         "prognose": prognose_diagnose(coordinator),
         "menuebaum": menuebaum,

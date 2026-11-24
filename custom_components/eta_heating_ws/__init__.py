@@ -40,6 +40,7 @@ from .const import (
     KESSEL_SPERRE,
     PELLET_PREIS_ZAHL,
     CONF_PROGNOSE,
+    CONF_WEITERE_WERTE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
     CONF_WETTER,
@@ -71,6 +72,7 @@ from .const import (
     raumfuehler_schluessel,
     zeitplan_schluessel,
 )
+from . import weitere_werte
 from .aschebox import AscheboxPlan, verwaisten_plan_melden
 from .fremderzeuger import Fremderzeuger
 from .switch import kesselsperre_anlegen, verwaiste_sperre_aufloesen
@@ -156,6 +158,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         komponente: float(config.get(puffer_volumen_schluessel(komponente)) or 0)
         for komponente in PUFFER_SPEICHER
     }
+    coordinator.weitere_werte_setzen(config.get(CONF_WEITERE_WERTE))
     coordinator.mit_prognose = config.get(CONF_PROGNOSE, DEFAULT_PROGNOSE)
     coordinator.mit_zeitraeumen = config.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
@@ -430,6 +433,7 @@ def entitaet_vorgesehen(
     kessel_sperre: bool = False,
     ofenfuehler: bool = False,
     ofenschalter: bool = False,
+    weitere: frozenset[str] | set[str] = frozenset(),
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -441,6 +445,8 @@ def entitaet_vorgesehen(
     aktiv = set(components)
     if key in _ENTFALLEN:
         return False
+    if weitere_werte.gewaehlt(key):
+        return key in weitere
     if key in SENSORS:
         return SENSORS[key]["component"] in aktiv
     if key in SWITCHES:
@@ -516,6 +522,7 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.kessel_sperre,
             coordinator.fremderzeuger is not None and bool(coordinator.fremderzeuger.fuehler),
             coordinator.fremderzeuger is not None and coordinator.fremderzeuger.eigener_schalter,
+            set(coordinator.weitere_werte),
         )
         if vorgesehen is False:
             _LOGGER.info(

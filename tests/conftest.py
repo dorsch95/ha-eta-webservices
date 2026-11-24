@@ -38,10 +38,13 @@ def entity_name(entity, sprache: str = "de") -> str:
     Home Assistant setzt den Namen zur Laufzeit aus translation_key und der
     Sprachdatei zusammen. Die Tests laufen ohne laufende Instanz, bilden das
     hier also nach - sonst ließe sich nicht prüfen, welche Entity-IDs bei
-    einer Installation tatsächlich entstehen.
+    einer Installation tatsächlich entstehen. Ein frei gewählter Wert trägt
+    seinen Namen selbst, siehe weitere_werte.py.
     """
     import json
 
+    if entity.translation_key is None:
+        return entity._attr_name
     daten = json.loads(
         (UEBERSETZUNGEN / f"{sprache}.json").read_text(encoding="utf-8")
     )

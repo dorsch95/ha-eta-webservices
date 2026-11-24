@@ -117,6 +117,14 @@ Optionen der Einrichtung, in keinem Formular.
 """
 MAX_LAGER_MAXIMUM = 100000
 
+CONF_WEITERE_WERTE = "weitere_werte"
+"""Die frei aus dem Menübaum gewählten Werte, siehe weitere_werte.py.
+
+Je Wert ein Eintrag mit "uri", "fub" und "pfad" - Funktionsblock und Weg
+im Menübaum, wie beim Auswählen gelesen -, dazu "zahl" und bei Zahlen
+"einheit" und "stellen". Sie stehen in den Optionen der Einrichtung.
+"""
+
 CONF_LIEFERUNGEN = "lieferungen"
 """Die eingetragenen Pelletlieferungen, die neueste zuletzt.
 

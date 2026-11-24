@@ -22,6 +22,7 @@ from .const import ASCHEBOX_PHASEN
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import ids_vorschlagen
 from . import prognose
+from . import weitere_werte as weitere
 from .prognose_koordinator import ETAPrognoseKoordinator
 
 
@@ -70,6 +71,10 @@ async def async_setup_entry(
     )
 
     ids_vorschlagen(coordinator.deutsche_namen, "sensor", entities)
+    entities.extend(
+        ETAWeitererWert(coordinator, key, eintrag)
+        for key, eintrag in coordinator.weitere_werte.items()
+    )
     async_add_entities(entities)
 
 
@@ -220,6 +225,47 @@ class ETAMeasurementSensor(ETABaseSensor):
         if self._zustaende:
             return self.coordinator.zustand(self._key)
         return reading.display
+
+
+class ETAWeitererWert(ETABaseSensor):
+    """Ein frei aus dem Menübaum gewählter Wert, siehe weitere_werte.py.
+
+    Die Integration kennt ihn nicht: Name, Art und Einheit stammen von der
+    Anlage, so wie sie beim Auswählen gelesen wurden. Der Name ist der Weg
+    im Menübaum und damit in jeder Sprache von Home Assistant gleich. Eine
+    Zahl führt Langzeitstatistik, ein Text zeigt, was die Anlage anzeigt.
+    """
+
+    def __init__(self, coordinator: ETADataUpdateCoordinator, key: str, eintrag: dict) -> None:
+        super().__init__(coordinator, key)
+        self._attr_name = weitere.bezeichnung(eintrag)
+        self._uri = eintrag["uri"]
+        self._zahl = bool(eintrag.get("zahl"))
+        if self._zahl:
+            self._attr_native_unit_of_measurement = eintrag.get("einheit") or None
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+            if eintrag.get("stellen") is not None:
+                self._attr_suggested_display_precision = max(0, min(int(eintrag["stellen"]), 3))
+
+    @property
+    def available(self) -> bool:
+        """Ein Wert, der mehrfach ausbleibt, gilt als nicht erreichbar."""
+        if not super().available:
+            return False
+        return self.coordinator.sensor_status(self._key) != "nicht_erreichbar"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Status, Adresse an der Anlage und wie oft der Wert gelesen wird, in Sekunden."""
+        return {
+            "status": self.coordinator.sensor_status(self._key),
+            "adresse": self._uri,
+            "abfrage_alle": self.coordinator.weitere_abfrage_alle,
+        }
+
+    @property
+    def native_value(self) -> float | str | None:
+        return weitere.zustand(self.coordinator.data.get(self._key), self._zahl)
 
 
 class ETAPlaceholderSensor(ETAMeasurementSensor):

@@ -49,6 +49,7 @@ from .const import (
     absenkwert_schluessel,
     zeitfenster_schluessel,
 )
+from . import weitere_werte as weitere
 from .entitaets_ids import Namen
 from .repairs import async_check_components
 from .uri_discovery import async_discover_uris
@@ -309,6 +310,13 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         So kommen die Werte in der Reihenfolge an, in der sie gelesen
         wurden, und ein älterer überschreibt keinen neueren.
         """
+        self.weitere_werte: dict[str, dict] = {}
+        """Die frei gewählten Werte nach Schlüssel, siehe weitere_werte.py."""
+        self._weitere_portionen: list[dict[str, str]] = []
+        self._weitere_dran = 0
+        """Welche Portion der weiteren Werte als nächste gelesen wird."""
+        self._weitere_saetze: set[int] = set()
+        """Die Portionen, deren Variablensatz auf der Anlage steht."""
         self._schnell_name = f"hs{entry.entry_id}"[:32]
         self._schnell_uris: set[str] | None = None
         """Die Werte, mit denen der Variablensatz der schnellen Gruppe auf der Anlage steht."""
@@ -341,7 +349,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         "kein_messwert": kam an, die Anlage zeigt aber nur Striche - etwa
         bei einem Fühler mit Unterbrechung.
         """
-        info = self.sensor_defs.get(key)
+        info = self.sensor_defs.get(key) or self.weitere_werte.get(key)
         if info is None or not info.get("uri"):
             return "nicht_vorhanden"
         if self.fehlzyklen.get(key, 0) >= VERALTET_AB:
@@ -531,6 +539,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         if self._schnell_uris is not None:
             await self.client.async_delete_varset(self._schnell_name)
             self._schnell_uris = None
+        for nummer in sorted(self._weitere_saetze):
+            await self.client.async_delete_varset(self._weitere_name(nummer))
+        self._weitere_saetze = set()
 
     async def _schalter_pruefen(self) -> None:
         """Prüft die gefundenen Schalt-Kandidaten an der Anlage nach.
@@ -1593,7 +1604,87 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
 
         merged = dict(self.data or {})
         merged.update(values)
+        merged.update(await self._weitere_lesen())
         return merged
+
+    def weitere_werte_setzen(self, eintraege: list[dict] | None) -> None:
+        """Übernimmt die frei gewählten Werte aus der Einrichtung, siehe weitere_werte.py."""
+        self.weitere_werte = {
+            weitere.schluessel(eintrag["uri"]): eintrag
+            for eintrag in eintraege or []
+            if isinstance(eintrag, dict) and eintrag.get("uri")
+        }
+        self._weitere_portionen = weitere.portionen(
+            {key: eintrag["uri"] for key, eintrag in self.weitere_werte.items()}
+        )
+        self._weitere_dran = 0
+
+    @property
+    def weitere_abfrage_alle(self) -> float | None:
+        """Alle wie viele Sekunden ein weiterer Wert gelesen wird - None ohne Abfrageintervall."""
+        if self.update_interval is None:
+            return None
+        return weitere.abfrage_alle(len(self.weitere_werte), self.update_interval.total_seconds())
+
+    def _weitere_name(self, nummer: int) -> str:
+        """So heißt der Variablensatz einer Portion weiterer Werte auf der Anlage."""
+        return f"hw{nummer}{self.config_entry.entry_id}"[:32]
+
+    async def _weitere_lesen(self) -> dict[str, ETAValue]:
+        """Liest die nächste Portion der weiteren Werte, reihum eine je Abfragezyklus.
+
+        Getrennt von den festen Werten: Scheitert eine Portion, bleiben
+        die festen davon unberührt. Was ausbleibt, zählt wie bei ihnen -
+        nach VERALTET_AB Malen in Folge gilt der Sensor als nicht
+        erreichbar.
+        """
+        if not self._weitere_portionen:
+            return {}
+        nummer = self._weitere_dran % len(self._weitere_portionen)
+        self._weitere_dran = nummer + 1
+        portion = self._weitere_portionen[nummer]
+        async with self._lese_sperre:
+            gelesen = await self._portion_lesen(nummer, portion)
+        for key in portion:
+            if key in gelesen:
+                self.fehlzyklen.pop(key, None)
+            else:
+                self.fehlzyklen[key] = self.fehlzyklen.get(key, 0) + 1
+        return gelesen
+
+    async def _portion_lesen(self, nummer: int, portion: dict[str, str]) -> dict[str, ETAValue]:
+        """Liest eine Portion mit einer Anfrage über ihren eigenen Variablensatz.
+
+        Er wird beim ersten Mal angelegt und neu, wenn die Anlage ihn nicht
+        mehr kennt - sie hält ihn nur im Arbeitsspeicher. Geht es über den
+        Variablensatz nicht, wird die Portion einzeln gelesen und der Satz
+        beim nächsten Mal neu versucht.
+        """
+        name = self._weitere_name(nummer)
+        try:
+            if nummer not in self._weitere_saetze:
+                await self._satz_anlegen(name, list(portion.values()))
+                self._weitere_saetze.add(nummer)
+            try:
+                nach_uri = await self.client.async_get_varset(name)
+            except ETANotFoundError:
+                await self._satz_anlegen(name, list(portion.values()))
+                nach_uri = await self.client.async_get_varset(name)
+        except ETAApiError as err:
+            self._weitere_saetze.discard(nummer)
+            _LOGGER.debug("ETA: weitere Werte, Portion %d einzeln gelesen (%s)", nummer + 1, err)
+            return await self.client.async_get_values(portion)
+        return {key: nach_uri[uri] for key, uri in portion.items() if uri in nach_uri}
+
+    async def _satz_anlegen(self, name: str, uris: list[str]) -> None:
+        """Legt einen Variablensatz an, wenn er nicht schon mit genau diesen Werten auf der Anlage steht."""
+        try:
+            vorhanden = set(await self.client.async_get_varset(name))
+        except ETAApiError:
+            vorhanden = set()
+        if vorhanden != set(uris):
+            await self.client.async_delete_varset(name)
+            await self.client.async_create_varset(name, uris)
 
     async def _werte_lesen(self, uris: dict[str, str]) -> dict[str, ETAValue]:
         """Liest alle Messwerte, wenn möglich mit einer einzigen Anfrage.

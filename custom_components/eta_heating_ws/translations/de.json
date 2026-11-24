@@ -196,6 +196,13 @@
     "step": {
       "init": {
         "title": "ETA Heizung bearbeiten",
+        "menu_options": {
+          "einstellungen": "Einstellungen der Anlage",
+          "weitere_werte": "Weitere Werte auswählen"
+        }
+      },
+      "einstellungen": {
+        "title": "ETA Heizung bearbeiten",
         "data": {
           "anzahl_puffer": "Pufferspeicher",
           "anzahl_warmwasser": "Frischwassermodule und Warmwasserspeicher",
@@ -349,12 +356,24 @@
           "verbindung_fremdwaerme": "Fremdwärme lädt in",
           "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
+      },
+      "weitere_werte": {
+        "title": "Weitere Werte",
+        "description": "Hier wählst du Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Tipp einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Die Werte werden nur gelesen, nie geschrieben.\n\nJe Abfrage liest die Integration höchstens {je_abfrage} dieser Werte. Wählst du mehr, kommen sie reihum dran: Bis {je_abfrage} Werte wird jeder alle {intervall} Sekunden gelesen, je weitere {je_abfrage} dauert es {intervall} Sekunden länger. Höchstens {hoechstens} Werte.",
+        "data": {
+          "weitere_werte": "Werte"
+        }
       }
     },
     "error": {
       "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden.",
       "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt.",
-      "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt."
+      "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt.",
+      "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
+      "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt."
+    },
+    "abort": {
+      "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal."
     }
   },
   "selector": {
