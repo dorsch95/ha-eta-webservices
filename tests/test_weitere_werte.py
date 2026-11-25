@@ -68,16 +68,24 @@ def flow_fuer(monkeypatch, hass, entry):
     return flow
 
 
-def angebot(schritt) -> dict[str, str]:
-    """Adresse und Name der Werte, die der Schritt zur Wahl stellt."""
-    feld = schritt["data_schema"].schema[CONF_WEITERE_WERTE]
-    return {eintrag["value"]: eintrag["label"] for eintrag in feld.config["options"]}
+def angebot(schritt) -> dict[str, dict[str, str]]:
+    """Je Auswahlfeld des Schritts Adresse und Name der Werte, die es zur Wahl stellt."""
+    return {
+        str(feld): {eintrag["value"]: eintrag["label"] for eintrag in auswahl.config["options"]}
+        for feld, auswahl in schritt["data_schema"].schema.items()
+        if "options" in auswahl.config
+    }
 
 
-def vorgabe(schritt, name: str = CONF_WEITERE_WERTE):
+def vorgabe(schritt, name: str):
     """Womit ein Feld des Schritts vorbelegt ist."""
     [feld] = [feld for feld in schritt["data_schema"].schema if feld == name]
     return feld.default()
+
+
+def vorgaben(schritt) -> dict:
+    """Die Vorbelegung aller Felder eines Schritts - so, als bestätigte man ihn unverändert."""
+    return {str(feld): feld.default() for feld in schritt["data_schema"].schema}
 
 
 def regler(schritt, name: str) -> dict:
@@ -495,36 +503,27 @@ async def test_konfigurieren_beginnt_mit_einer_wahl(monkeypatch, hass, entry):
     assert einstellungen["step_id"] == "einstellungen"
 
 
-async def test_schritt_bietet_den_menuebaum_ohne_die_festen_sensoren(monkeypatch, hass, entry):
+async def test_schritt_zeigt_je_funktionsblock_ein_feld_ohne_die_festen_sensoren(monkeypatch, hass, entry):
+    """Das Feld heißt wie der Funktionsblock, die Werte darin wie ihr Weg im Menübaum."""
     coordinator, _ = await setup_integration(hass, entry)
     flow = flow_fuer(monkeypatch, hass, entry)
 
     schritt = await flow.async_step_weitere_werte()
 
     assert schritt["step_id"] == "weitere_werte"
+    assert schritt["last_step"] is False
     zur_wahl = angebot(schritt)
-    assert zur_wahl[EFFEKTIV] == "PufferFlex › Einstellungen › Leistungsregelung › Effektives Puffervolumen"
-    assert coordinator.discovered_uris["kessel_temperatur"] not in zur_wahl
-    assert coordinator.discovered_uris["puffer_volumen"] not in zur_wahl
-    assert vorgabe(schritt) == []
-    assert schritt["description_placeholders"] == {
-        "gewaehlt": "0",
-        "dauer": "30",
-        "hoechstens": "100",
-        "schnell_hoechstens": "10",
-        "ohne": "",
-    }
-    assert vorgabe(schritt, CONF_WEITERE_SCHNELL) == []
-    assert vorgabe(schritt, CONF_WEITERE_JE_ABFRAGE) == 25
-    assert vorgabe(schritt, CONF_WEITERE_INTERVALL) == 30
-    je_abfrage = regler(schritt, CONF_WEITERE_JE_ABFRAGE)
-    assert (je_abfrage["min"], je_abfrage["max"], je_abfrage["step"], je_abfrage["mode"]) == (20, 100, 5, "slider")
-    abstand = regler(schritt, CONF_WEITERE_INTERVALL)
-    assert (abstand["min"], abstand["max"], abstand["step"], abstand["mode"]) == (10, 600, 5, "slider")
-    assert abstand["unit_of_measurement"] == "s"
+    assert "PufferFlex" in zur_wahl and "Kessel" in zur_wahl
+    assert zur_wahl["PufferFlex"][EFFEKTIV] == "Einstellungen › Leistungsregelung › Effektives Puffervolumen"
+    alle = {uri for werte in zur_wahl.values() for uri in werte}
+    assert coordinator.discovered_uris["kessel_temperatur"] not in alle
+    assert coordinator.discovered_uris["puffer_volumen"] not in alle
+    assert all(wert == [] for wert in vorgaben(schritt).values())
+    assert schritt["description_placeholders"] == {"hoechstens": "100", "ohne": ""}
 
 
-async def test_auswahl_merkt_sich_art_und_einheit_und_laesst_alles_andere_stehen(monkeypatch, hass, entry):
+async def test_auswahl_fuehrt_zum_takt_und_merkt_sich_art_und_einheit(monkeypatch, hass, entry):
+    """Gespeichert wird erst im zweiten Schritt - alle anderen Einstellungen bleiben, wie sie sind."""
     hass.session.texte[ZUSTAND] = "Bereit"
     hass.session.menu = hass.session.menu.replace(
         '<object uri="/120/10601/0/0/12421" name="Einstellungen">',
@@ -532,11 +531,30 @@ async def test_auswahl_merkt_sich_art_und_einheit_und_laesst_alles_andere_stehen
     )
     entry.options = {"puffer_volumen": 900.0, "scan_interval": 60}
     flow = flow_fuer(monkeypatch, hass, entry)
-    schritt = await flow.async_step_weitere_werte()
-    assert schritt["description_placeholders"]["dauer"] == "60"
-    assert vorgabe(schritt, CONF_WEITERE_INTERVALL) == 60, "ab Werk der Abstand der festen Werte"
+    await flow.async_step_weitere_werte()
 
-    fertig = await flow.async_step_weitere_werte({CONF_WEITERE_WERTE: [EFFEKTIV, ZUSTAND]})
+    takt = await flow.async_step_weitere_werte({"PufferFlex": [EFFEKTIV, ZUSTAND]})
+
+    assert takt["step_id"] == "weitere_takt"
+    assert takt["description_placeholders"] == {"gewaehlt": "2", "dauer": "60", "schnell_hoechstens": "10"}
+    assert angebot(takt) == {
+        CONF_WEITERE_SCHNELL: {
+            EFFEKTIV: "PufferFlex › Einstellungen › Leistungsregelung › Effektives Puffervolumen",
+            ZUSTAND: "PufferFlex › Ergänzung",
+        }
+    }, "für die schnelle Abfrage stehen nur die eben gewählten Werte zur Wahl"
+    assert vorgaben(takt) == {
+        CONF_WEITERE_SCHNELL: [],
+        CONF_WEITERE_JE_ABFRAGE: 25,
+        CONF_WEITERE_INTERVALL: 60,
+    }, "ab Werk 25 Werte im Abstand der festen Werte"
+    je_abfrage = regler(takt, CONF_WEITERE_JE_ABFRAGE)
+    assert (je_abfrage["min"], je_abfrage["max"], je_abfrage["step"], je_abfrage["mode"]) == (20, 100, 5, "slider")
+    abstand = regler(takt, CONF_WEITERE_INTERVALL)
+    assert (abstand["min"], abstand["max"], abstand["step"], abstand["mode"]) == (10, 600, 5, "slider")
+    assert abstand["unit_of_measurement"] == "s"
+
+    fertig = await flow.async_step_weitere_takt(vorgaben(takt))
 
     assert fertig["type"] == "create_entry"
     assert fertig["data"] == {
@@ -561,69 +579,61 @@ async def test_auswahl_merkt_sich_art_und_einheit_und_laesst_alles_andere_stehen
 async def test_die_regler_werden_gespeichert_und_stehen_danach_vorbelegt(monkeypatch, hass, entry):
     entry.options = {CONF_WEITERE_WERTE: viele(60)}
     flow = flow_fuer(monkeypatch, hass, entry)
-    schritt = await flow.async_step_weitere_werte()
-    assert schritt["description_placeholders"]["gewaehlt"] == "60"
-    assert schritt["description_placeholders"]["dauer"] == "90", "drei Portionen zu 25 im Abstand von 30 Sekunden"
+    auswahl = await flow.async_step_weitere_werte()
+    takt = await flow.async_step_weitere_werte(vorgaben(auswahl))
+    assert takt["description_placeholders"]["gewaehlt"] == "60"
+    assert takt["description_placeholders"]["dauer"] == "90", "drei Portionen zu 25 im Abstand von 30 Sekunden"
 
-    fertig = await flow.async_step_weitere_werte(
-        {
-            CONF_WEITERE_WERTE: [eintrag["uri"] for eintrag in viele(60)],
-            CONF_WEITERE_JE_ABFRAGE: 50.0,
-            CONF_WEITERE_INTERVALL: 120.0,
-        }
+    fertig = await flow.async_step_weitere_takt(
+        {CONF_WEITERE_SCHNELL: [], CONF_WEITERE_JE_ABFRAGE: 50.0, CONF_WEITERE_INTERVALL: 120.0}
     )
 
     assert fertig["data"][CONF_WEITERE_JE_ABFRAGE] == 50
     assert fertig["data"][CONF_WEITERE_INTERVALL] == 120
+    assert len(fertig["data"][CONF_WEITERE_WERTE]) == 60
 
     entry.options = fertig["data"]
-    wieder = await flow_fuer(monkeypatch, hass, entry).async_step_weitere_werte()
-    assert vorgabe(wieder, CONF_WEITERE_JE_ABFRAGE) == 50
-    assert vorgabe(wieder, CONF_WEITERE_INTERVALL) == 120
-    assert wieder["description_placeholders"]["dauer"] == "240"
+    wieder = flow_fuer(monkeypatch, hass, entry)
+    auswahl = await wieder.async_step_weitere_werte()
+    takt = await wieder.async_step_weitere_werte(vorgaben(auswahl))
+    assert vorgabe(takt, CONF_WEITERE_JE_ABFRAGE) == 50
+    assert vorgabe(takt, CONF_WEITERE_INTERVALL) == 120
+    assert takt["description_placeholders"]["dauer"] == "240"
 
 
-async def test_schnell_waehlen_merkt_es_am_wert_und_waehlt_ihn_mit(monkeypatch, hass, entry):
-    """Was im zweiten Feld steht, gilt auch als gewählt - niemand muss es zweimal ankreuzen."""
+async def test_schnell_waehlen_merkt_es_am_wert(monkeypatch, hass, entry):
     entry.options = {CONF_WEITERE_WERTE: [{**VOLUMEN, "schnell": True}, viele(1)[0]]}
     flow = flow_fuer(monkeypatch, hass, entry)
-    schritt = await flow.async_step_weitere_werte()
-    assert vorgabe(schritt, CONF_WEITERE_SCHNELL) == [EFFEKTIV]
-    assert angebot(schritt) == {
-        eintrag["value"]: eintrag["label"]
-        for eintrag in schritt["data_schema"].schema[CONF_WEITERE_SCHNELL].config["options"]
-    }
+    auswahl = await flow.async_step_weitere_werte()
+    assert vorgaben(auswahl)["PufferFlex"] == [EFFEKTIV]
+    assert vorgaben(auswahl)["Test"] == ["/9/9/0/0/1"]
 
-    fertig = await flow.async_step_weitere_werte(
-        {
-            CONF_WEITERE_WERTE: [EFFEKTIV, "/9/9/0/0/1"],
-            CONF_WEITERE_SCHNELL: ["/9/9/0/0/1", "/120/10601/0/0/12421"],
-        }
+    takt = await flow.async_step_weitere_werte(vorgaben(auswahl))
+    assert vorgabe(takt, CONF_WEITERE_SCHNELL) == [EFFEKTIV]
+
+    fertig = await flow.async_step_weitere_takt(
+        {**vorgaben(takt), CONF_WEITERE_SCHNELL: ["/9/9/0/0/1", "/nicht/gewaehlt"]}
     )
 
     gespeichert = {eintrag["uri"]: eintrag for eintrag in fertig["data"][CONF_WEITERE_WERTE]}
-    assert list(gespeichert) == [EFFEKTIV, "/9/9/0/0/1", "/120/10601/0/0/12421"]
+    assert list(gespeichert) == [EFFEKTIV, "/9/9/0/0/1"]
     assert "schnell" not in gespeichert[EFFEKTIV], "abgewählt"
     assert gespeichert["/9/9/0/0/1"]["schnell"] is True
-    assert gespeichert["/120/10601/0/0/12421"]["schnell"] is True, "nur schnell gewählt - damit auch gewählt"
     assert CONF_WEITERE_SCHNELL not in fertig["data"], "steht an den Werten, nicht eigens"
 
 
 async def test_mehr_als_zehn_schnelle_werte_werden_nicht_angenommen(monkeypatch, hass, entry):
     entry.options = {CONF_WEITERE_WERTE: viele(20)}
     flow = flow_fuer(monkeypatch, hass, entry)
-    await flow.async_step_weitere_werte()
+    auswahl = await flow.async_step_weitere_werte()
+    takt = await flow.async_step_weitere_werte(vorgaben(auswahl))
     alle = [eintrag["uri"] for eintrag in viele(20)]
 
-    schritt = await flow.async_step_weitere_werte(
-        {CONF_WEITERE_WERTE: alle, CONF_WEITERE_SCHNELL: alle[:11]}
-    )
+    schritt = await flow.async_step_weitere_takt({**vorgaben(takt), CONF_WEITERE_SCHNELL: alle[:11]})
     assert schritt["errors"] == {"base": "zu_viele_schnelle_werte"}
     assert vorgabe(schritt, CONF_WEITERE_SCHNELL) == alle[:11], "die Auswahl bleibt zum Kürzen stehen"
 
-    fertig = await flow.async_step_weitere_werte(
-        {CONF_WEITERE_WERTE: alle, CONF_WEITERE_SCHNELL: alle[:10]}
-    )
+    fertig = await flow.async_step_weitere_takt({**vorgaben(takt), CONF_WEITERE_SCHNELL: alle[:10]})
     assert fertig["type"] == "create_entry"
     assert sum(1 for eintrag in fertig["data"][CONF_WEITERE_WERTE] if eintrag.get("schnell")) == 10
 
@@ -635,16 +645,27 @@ async def test_bisher_gewaehlte_werte_stehen_vorbelegt_und_werden_nicht_neu_gele
     flow = flow_fuer(monkeypatch, hass, entry)
 
     schritt = await flow.async_step_weitere_werte()
-    assert vorgabe(schritt) == [EFFEKTIV, "/9/9/0/0/1"]
-    assert angebot(schritt)["/9/9/0/0/1"] == "Alt › Früher"
+    assert vorgaben(schritt)["PufferFlex"] == [EFFEKTIV]
+    assert vorgaben(schritt)["Alt"] == ["/9/9/0/0/1"], "sein Funktionsblock bekommt ein eigenes Feld"
+    assert angebot(schritt)["Alt"] == {"/9/9/0/0/1": "Früher"}
 
     hass.session.count = 0
-    fertig = await flow.async_step_weitere_werte({CONF_WEITERE_WERTE: [EFFEKTIV, "/9/9/0/0/1"]})
+    takt = await flow.async_step_weitere_werte(vorgaben(schritt))
+    fertig = await flow.async_step_weitere_takt(vorgaben(takt))
     assert hass.session.count == 0
     assert fertig["data"][CONF_WEITERE_WERTE] == [VOLUMEN, verschwunden]
 
-    leer = await flow.async_step_weitere_werte({CONF_WEITERE_WERTE: []})
-    assert leer["data"][CONF_WEITERE_WERTE] == []
+
+async def test_ohne_auswahl_wird_gleich_gespeichert(monkeypatch, hass, entry):
+    """Ohne Werte gibt es keinen Takt zu stellen - der bisherige bleibt für später stehen."""
+    entry.options = {CONF_WEITERE_WERTE: [VOLUMEN], CONF_WEITERE_JE_ABFRAGE: 50, CONF_WEITERE_INTERVALL: 120}
+    flow = flow_fuer(monkeypatch, hass, entry)
+    schritt = await flow.async_step_weitere_werte()
+
+    leer = await flow.async_step_weitere_werte({fub: [] for fub in vorgaben(schritt)})
+
+    assert leer["type"] == "create_entry"
+    assert leer["data"] == {CONF_WEITERE_WERTE: [], CONF_WEITERE_JE_ABFRAGE: 50, CONF_WEITERE_INTERVALL: 120}
 
 
 async def test_was_die_anlage_nicht_lesbar_liefert_wird_nicht_angenommen(monkeypatch, hass, entry):
@@ -652,27 +673,24 @@ async def test_was_die_anlage_nicht_lesbar_liefert_wird_nicht_angenommen(monkeyp
     await flow.async_step_weitere_werte()
     hass.session.fail_uris = ["/user/var/120/10601/0/0/12421"]
 
-    schritt = await flow.async_step_weitere_werte(
-        {CONF_WEITERE_WERTE: [EFFEKTIV, "/120/10601/0/0/12421"]}
-    )
+    schritt = await flow.async_step_weitere_werte({"PufferFlex": [EFFEKTIV, "/120/10601/0/0/12421"]})
 
     assert schritt["type"] == "form"
+    assert schritt["step_id"] == "weitere_werte"
     assert schritt["errors"] == {"base": "werte_nicht_lesbar"}
     assert schritt["description_placeholders"]["ohne"] == "PufferFlex › Einstellungen"
-    assert vorgabe(schritt) == [EFFEKTIV], "der lesbare Wert bleibt gewählt"
+    assert vorgaben(schritt)["PufferFlex"] == [EFFEKTIV], "der lesbare Wert bleibt gewählt"
 
 
 async def test_mehr_als_hundert_werte_werden_nicht_angenommen(monkeypatch, hass, entry):
     entry.options = {CONF_WEITERE_WERTE: viele(100)}
     flow = flow_fuer(monkeypatch, hass, entry)
-    await flow.async_step_weitere_werte()
+    schritt = await flow.async_step_weitere_werte()
     hass.session.count = 0
 
-    schritt = await flow.async_step_weitere_werte(
-        {CONF_WEITERE_WERTE: [*(eintrag["uri"] for eintrag in viele(100)), EFFEKTIV]}
-    )
+    zu_viele = await flow.async_step_weitere_werte({**vorgaben(schritt), "PufferFlex": [EFFEKTIV]})
 
-    assert schritt["errors"] == {"base": "zu_viele_werte"}
+    assert zu_viele["errors"] == {"base": "zu_viele_werte"}
     assert hass.session.count == 0, "gelesen wird dann gar nichts"
 
 

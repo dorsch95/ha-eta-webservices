@@ -314,10 +314,10 @@ Das sagt das Attribut `status` jedes Sensors:
 
 Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an einer echten Anlage über tausend. Unter **Konfigurieren → Weitere Werte auswählen** suchst du dir daraus aus, was du zusätzlich als Sensor haben willst, etwa Betriebsstunden oder die Werte eines Partikelabscheiders.
 
-- **Suchen:** Tipp einen Teil des Namens ein. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
+- **Auswählen:** Jeder Funktionsblock deiner Heizung hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
 - **Nur lesen:** Geschrieben wird nie. Einheit und Text kommen von der Heizung.
-- **Takt:** Die weiteren Werte werden getrennt von den festen gelesen. Mit zwei Reglern stellst du ein, wie viele je Abfrage gelesen werden (ab Werk 25) und in welchem Abstand (ab Werk dein Abfrageintervall). Sind mehr gewählt, als in eine Abfrage passen, kommen sie reihum dran. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
-- **Schnell:** Bis zu 10 dieser Werte kannst du zusätzlich in die schnelle Abfrage nehmen. Sie kommen dann in deren Abstand, ab Werk alle 3 Sekunden.
+- **Takt:** Die weiteren Werte werden getrennt von den festen gelesen. Im zweiten Schritt stellst du mit zwei Reglern ein, wie viele je Abfrage gelesen werden (ab Werk 25) und in welchem Abstand (ab Werk dein Abfrageintervall). Passen nicht alle in eine Abfrage, kommen sie reihum dran. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
+- **Schnell:** Bis zu 10 der gewählten Werte kannst du dort zusätzlich in die schnelle Abfrage nehmen. Sie kommen dann in deren Abstand, ab Werk alle 3 Sekunden.
 
 ---
 

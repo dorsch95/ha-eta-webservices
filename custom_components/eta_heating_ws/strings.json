@@ -359,15 +359,18 @@
       },
       "weitere_werte": {
         "title": "Additional values",
-        "description": "Pick values from your heating system's menu tree that should appear as additional sensors. Type part of a name to search, for example 'Volllast' - the names are those shown on the controller. The values are only read, never written.\n\nThe two sliders set how many of these values the integration reads per poll and how far apart the polls are. If more values are picked than fit into one poll, they take turns. Currently {gewaehlt} values are picked, each one is read every {dauer} seconds. At most {hoechstens} values, of which at most {schnell_hoechstens} with fast polling.",
+        "description": "Pick values from your heating system's menu tree that should appear as additional sensors. Each function block has its own field. Type part of a name there to search, for example 'Volllast' - the names are those shown on the controller. The values are only read, never written. At most {hoechstens} values."
+      },
+      "weitere_takt": {
+        "title": "Polling of the additional values",
+        "description": "You picked {gewaehlt} values. The two sliders set how many of them the integration reads per poll and how far apart the polls are. If they do not all fit into one poll, they take turns. With the current setting each value is read every {dauer} seconds.",
         "data": {
-          "weitere_werte": "Values",
           "weitere_schnell": "Of these, with fast polling",
           "weitere_je_abfrage": "Values per poll",
           "weitere_intervall": "Time between polls"
         },
         "data_description": {
-          "weitere_schnell": "These values are also read by the fast polling, at the interval from the system settings. Whatever you pick here also counts as picked above.",
+          "weitere_schnell": "These values are also read by the fast polling, at the interval from the system settings. At most {schnell_hoechstens}.",
           "weitere_je_abfrage": "Fewer is easier on the heating system, but each value is read less often.",
           "weitere_intervall": "The fixed values and the fast polling run independently of this."
         }
