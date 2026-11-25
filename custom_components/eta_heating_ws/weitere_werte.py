@@ -64,6 +64,19 @@ jeder Wert darin kostet die Anlage ein Vielfaches eines Werts im normalen Takt.
 ANLAUF = 5
 """Sekunden zwischen zwei Abfragen, bis nach dem Start jede Portion einmal gelesen ist."""
 
+GESPERRT = ("10911",)
+"""Funktionsblöcke, aus denen sich nichts wählen lässt - nach der Nummer am Ende ihrer Adresse.
+
+10911 ist der Block Diagnose, am Menübaum einer echten Anlage unter
+/264/10911. Am Display der Heizung steht er erst nach Eingabe eines
+Passworts. Was dort gesperrt ist, zeigt die Integration nicht: Der Block
+steht nicht zur Wahl, und ein Wert daraus, der schon gewählt war,
+entfällt samt seinem Sensor, siehe gewaehlte.
+"""
+
+GESPERRTE_NAMEN = ("Diagnose",)
+"""Dieselben Blöcke nach ihrem Namen, falls eine Anlage sie unter einer anderen Nummer führt."""
+
 TRENNER = " › "
 """Trennt Funktionsblock und Stufen des Menübaums im Namen eines Werts."""
 
@@ -87,6 +100,29 @@ def _liste(knoten: Any) -> list:
     return knoten if isinstance(knoten, list) else [knoten]
 
 
+def gesperrt(fub: dict) -> bool:
+    """Steht aus diesem Funktionsblock nichts zur Wahl? Siehe GESPERRT."""
+    nummer = (fub.get("@uri") or "").strip("/").split("/")[-1]
+    return nummer in GESPERRT or (fub.get("@name") or "").strip() in GESPERRTE_NAMEN
+
+
+def gewaehlte(eintraege: Any) -> list[dict[str, Any]]:
+    """Die gewählten Werte, wie sie in der Einrichtung stehen - ohne die aus einem gesperrten Block.
+
+    Die Nummer des Funktionsblocks steht an zweiter Stelle der Adresse:
+    /264/10911/0/0/2 gehört zum Block 10911.
+    """
+
+    def erlaubt(eintrag: Any) -> bool:
+        if not isinstance(eintrag, dict) or not eintrag.get("uri"):
+            return False
+        teile = str(eintrag["uri"]).strip("/").split("/")
+        block = teile[1] if len(teile) > 1 else ""
+        return block not in GESPERRT and (eintrag.get("fub") or "").strip() not in GESPERRTE_NAMEN
+
+    return [eintrag for eintrag in eintraege or [] if erlaubt(eintrag)]
+
+
 def menue_werte(parsed: Any) -> dict[str, dict[str, Any]]:
     """Alle Objekte des Menübaums mit Adresse, in der Reihenfolge der Anlage.
 
@@ -94,6 +130,7 @@ def menue_werte(parsed: Any) -> dict[str, dict[str, Any]]:
     mehrfach im Menübaum, zählt die erste Stelle. Führt der Menübaum an
     einer Stelle zwei Objekte desselben Namens mit verschiedenen Adressen,
     bekommt das zweite eine Nummer - sonst hießen zwei Sensoren gleich.
+    Gesperrte Funktionsblöcke fehlen, siehe GESPERRT.
     """
     wurzel = parsed.get("eta", {}).get("menu", {}) if isinstance(parsed, dict) else {}
     werte: dict[str, dict[str, Any]] = {}
@@ -115,7 +152,7 @@ def menue_werte(parsed: Any) -> dict[str, dict[str, Any]]:
             sammeln(kind, fub, pfad)
 
     for fub in _liste(wurzel.get("fub") if isinstance(wurzel, dict) else None):
-        if isinstance(fub, dict):
+        if isinstance(fub, dict) and not gesperrt(fub):
             sammeln(fub, (fub.get("@name") or "").strip(), [])
     return werte
 

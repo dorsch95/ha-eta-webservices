@@ -1632,9 +1632,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     ) -> None:
         """Übernimmt die frei gewählten Werte und ihren Takt aus der Einrichtung, siehe weitere_werte.py."""
         self.weitere_werte = {
-            weitere.schluessel(eintrag["uri"]): eintrag
-            for eintrag in eintraege or []
-            if isinstance(eintrag, dict) and eintrag.get("uri")
+            weitere.schluessel(eintrag["uri"]): eintrag for eintrag in weitere.gewaehlte(eintraege)
         }
         self.weitere_je_abfrage = weitere.je_abfrage(je_abfrage)
         abfrageintervall = self.update_interval.total_seconds() if self.update_interval else 0

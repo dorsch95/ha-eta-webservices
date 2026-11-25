@@ -115,6 +115,60 @@ def test_menuebaum_ohne_inhalt_gibt_nichts_zur_wahl():
     assert weitere.menue_werte(None) == {}
 
 
+def test_der_block_diagnose_steht_nicht_zur_wahl():
+    """Am Display steht er erst nach einem Passwort - belegt unter /264/10911."""
+    baum = {
+        "eta": {
+            "menu": {
+                "fub": [
+                    {"@name": "Kessel", "@uri": "/264/10891", "object": {"@name": "Abgas", "@uri": "/264/10891/0/0/1"}},
+                    {"@name": "Diagnose", "@uri": "/264/10911", "object": {"@name": "Eingänge", "@uri": "/264/10911/0/0/2"}},
+                    {"@name": "Anders benannt", "@uri": "/40/10911", "object": {"@name": "Eingänge", "@uri": "/40/10911/0/0/3"}},
+                    {"@name": "Diagnose", "@uri": "/264/99999", "object": {"@name": "Ausgänge", "@uri": "/264/99999/0/0/4"}},
+                    {"@name": "Sys", "@uri": "/120/10241", "object": {"@name": "Außentemperatur", "@uri": "/120/10241/0/0/5"}},
+                ]
+            }
+        }
+    }
+    werte = weitere.menue_werte(baum)
+    assert {eintrag["fub"] for eintrag in werte.values()} == {"Kessel", "Sys"}
+    assert list(werte) == ["/264/10891/0/0/1", "/120/10241/0/0/5"]
+
+
+DIAGNOSE = {"uri": "/264/10911/0/0/2", "fub": "Diagnose", "pfad": ["Eingänge"], "zahl": False}
+
+
+def test_schon_gewaehlte_werte_aus_der_diagnose_zaehlen_nicht():
+    anders = {"uri": "/40/10911/0/0/3", "fub": "Anders benannt", "pfad": ["Eingänge"], "zahl": False}
+    nach_namen = {"uri": "/264/99999/0/0/4", "fub": "Diagnose", "pfad": ["Ausgänge"], "zahl": False}
+    assert weitere.gewaehlte([DIAGNOSE, VOLUMEN, anders, nach_namen, TEXT, "kaputt", {}, None]) == [VOLUMEN, TEXT]
+    assert weitere.gewaehlte(None) == []
+
+
+async def test_ein_gewaehlter_wert_aus_der_diagnose_wird_kein_sensor(hass, entry):
+    """Wer ihn in einer früheren Fassung gewählt hat, verliert ihn - gelesen wird er auch nicht mehr."""
+    entry.options = {CONF_WEITERE_WERTE: [DIAGNOSE, VOLUMEN]}
+
+    coordinator, by_name = await setup_integration(hass, entry)
+
+    assert list(coordinator.weitere_werte) == ["wert_120_10601_0_0_12499"]
+    assert not [name for name in by_name if "Diagnose" in name]
+    gewaehlt = set(coordinator.weitere_werte)
+    assert entitaet_vorgesehen("wert_264_10911_0_0_2", ["kessel"], False, False, weitere=gewaehlt) is False
+    assert entitaet_vorgesehen("wert_120_10601_0_0_12499", ["kessel"], False, False, weitere=gewaehlt) is True
+
+
+async def test_der_dialog_zeigt_einen_gewaehlten_wert_aus_der_diagnose_nicht(monkeypatch, hass, entry):
+    hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_WEITERE_WERTE: [DIAGNOSE, VOLUMEN]})
+    flow = flow_fuer(monkeypatch, hass, entry)
+    flow._menue_werte = {EFFEKTIV: {"fub": "PufferFlex", "pfad": VOLUMEN["pfad"]}}
+
+    schritt = await flow.async_step_weitere_werte()
+
+    assert list(angebot(schritt)) == ["PufferFlex"]
+    assert vorgabe(schritt, "PufferFlex") == [EFFEKTIV]
+
+
 def test_dieselbe_adresse_zaehlt_an_ihrer_ersten_stelle():
     baum = {
         "eta": {

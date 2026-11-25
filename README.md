@@ -316,6 +316,7 @@ Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an ei
 
 - **Auswählen:** Jeder Funktionsblock deiner Heizung hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
 - **Nur lesen:** Geschrieben wird nie. Einheit und Text kommen von der Heizung.
+- **Diagnose:** Den Funktionsblock „Diagnose“ zeigt die Integration nicht. Am Display der Heizung ist er erst nach Eingabe eines Passworts zu sehen.
 - **Takt:** Die weiteren Werte werden getrennt von den festen gelesen. Im zweiten Schritt stellst du mit zwei Reglern ein, wie viele je Abfrage gelesen werden (ab Werk 25) und in welchem Abstand (ab Werk dein Abfrageintervall). Passen nicht alle in eine Abfrage, kommen sie reihum dran. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
 - **Schnell:** Bis zu 10 der gewählten Werte kannst du dort zusätzlich in die schnelle Abfrage nehmen. Sie kommen dann in deren Abstand, ab Werk alle 3 Sekunden.
 

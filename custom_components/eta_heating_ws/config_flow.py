@@ -1132,7 +1132,8 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
 
         Je Funktionsblock ein Feld, in der Reihenfolge der Anlage. Zur Wahl
         steht jedes Objekt des Menübaums außer den Messwerten, die die
-        Integration schon als feste Sensoren führt. Jeden neu gewählten Wert liest der Schritt einmal:
+        Integration schon als feste Sensoren führt, und außer dem Block
+        Diagnose, siehe weitere_werte.GESPERRT. Jeden neu gewählten Wert liest der Schritt einmal:
         So steht fest, ob er eine Zahl mit Einheit oder ein Text ist - und
         was die Anlage gar nicht lesbar liefert, wird nicht angenommen.
         Danach folgt der Takt, siehe async_step_weitere_takt. Ist nichts
@@ -1203,11 +1204,10 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         )
 
     def _weitere_bisher(self) -> dict[str, dict[str, Any]]:
-        """Die bisher gewählten weiteren Werte nach Adresse."""
+        """Die bisher gewählten weiteren Werte nach Adresse, siehe weitere_werte.gewaehlte."""
         return {
             eintrag["uri"]: eintrag
-            for eintrag in self._current.get(CONF_WEITERE_WERTE) or []
-            if isinstance(eintrag, dict) and eintrag.get("uri")
+            for eintrag in weitere.gewaehlte(self._current.get(CONF_WEITERE_WERTE))
         }
 
     def _weitere_takt(self) -> tuple[int, int]:
