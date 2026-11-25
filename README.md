@@ -372,6 +372,7 @@ Die Karte zeigt je nach Breite 2 (Handy), 3 (Tablet) oder 4 Spalten (ab 1040 px)
 
 - **Reihenfolge der Teile:** Teile auswählen und in die gewünschte Reihenfolge ziehen.
 - **Stellen:** Mit Schreibzugriff stellst du am Heizkreis die Betriebsart und, mit Thermostat, **Raum Soll** in Schritten von 0,5 °C. Im Anlagenbild und in der Kompaktansicht klappt ein Tipp auf den Heizkreis die Tasten auf.
+- **Eigene Werte:** Unter **Eigene Werte** wählst du je Teil bis zu drei Entitäten, die dort zusätzlich stehen, etwa die Volllaststunden am Kessel oder einen der [weiteren Werte](#weitere-werte). In Kacheln und Kompaktansicht stehen sie immer da, im Anlagenbild wahlweise immer oder erst nach einem Tipp auf das Teil. Ein Tipp auf den Wert öffnet seinen Verlauf.
 - **Uhr:** Hat ein Teil ein Zeitprogramm, öffnet der Knopf mit der Uhr seine Zeiten wie in der Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard). Nur mit Schreibzugriff.
 - **Hinweise:** Eine Störung steht oben mit ihrer Meldung. Niedriger Vorrat und fällige Aschebox sind farbig hervorgehoben.
 - **Platz:** Das Anlagenbild liegt waagerecht ab etwa 750 Pixeln Breite, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. Reicht der Platz nicht, wird das Bild zur Liste.
