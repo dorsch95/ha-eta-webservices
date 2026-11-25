@@ -1111,6 +1111,16 @@ function teilName(teil, teile, t) {
 const EIGENE_HOECHSTENS = 3;
 
 /**
+ * Unter diesem Namen stehen die eigenen Werte eines Teils in den
+ * Einstellungen der Karte: eigene_kessel, eigene_hk1. Flach neben den
+ * übrigen Einstellungen und nicht ineinander - ein Feld in einer
+ * Gruppe, die es in den Einstellungen noch nicht gibt, bekommt von
+ * älteren Oberflächen (Home Assistant 2025.8) einen leeren Wert, an dem
+ * die Auswahl der Entitäten scheitert.
+ */
+const eigeneFeld = (teilId) => `eigene_${teilId}`;
+
+/**
  * Wie die Karte den Stand einer Entität zeigt: als Text mit Einheit, dazu
  * die Zahl allein und der Rohwert. null, wenn es die Entität nicht gibt
  * oder die Anlage dafür "-" meldet - dann fehlt die Zeile. Meldet die
@@ -1454,7 +1464,7 @@ class EtaUebersichtKarte extends HTMLElement {
     }
     const auswahl = (name, optionen) => ({ name, selector: { select: { mode: "dropdown", options: optionen } } });
     const teile = [...new Map(anlagen.flatMap((a) => a.teile.map((teil) => [teil.id, { value: teil.id, label: teilName(teil, a.teile, t) }]))).values()];
-    const teilNamen = Object.fromEntries(teile.map((teil) => [teil.value, teil.label]));
+    const teilNamen = Object.fromEntries(teile.map((teil) => [eigeneFeld(teil.value), teil.label]));
     return {
       schema: [
         { name: "titel", selector: { text: {} } },
@@ -1463,7 +1473,7 @@ class EtaUebersichtKarte extends HTMLElement {
         ...(teile.length > 1 ? [{ name: "reihenfolge", selector: { select: { multiple: true, reorder: true, options: teile } } }] : []),
         ...(teile.length
           ? [
-              { type: "expandable", name: "eigene", title: t.feld_eigene, schema: teile.map((teil) => ({ name: teil.value, selector: { entity: { multiple: true } } })) },
+              { type: "expandable", name: "eigene", flatten: true, title: t.feld_eigene, schema: teile.map((teil) => ({ name: eigeneFeld(teil.value), selector: { entity: { multiple: true } } })) },
               auswahl("eigene_im_bild", ["antippen", "immer"].map((wert) => ({ value: wert, label: t[`eigene_${wert}`] }))),
             ]
           : []),
@@ -1618,9 +1628,9 @@ class EtaUebersichtKarte extends HTMLElement {
 
   /** Die Entitäten, die der Nutzer in den Einstellungen der Karte zu den Teilen gewählt hat. */
   _gewaehlteIds() {
-    const gewaehlt = this._konfig.eigene;
-    if (!gewaehlt || typeof gewaehlt !== "object") return [];
-    return Object.values(gewaehlt).flatMap((ids) => (Array.isArray(ids) ? ids.slice(0, EIGENE_HOECHSTENS) : []));
+    return Object.entries(this._konfig)
+      .filter(([name, ids]) => name.startsWith(eigeneFeld("")) && Array.isArray(ids))
+      .flatMap(([, ids]) => ids.slice(0, EIGENE_HOECHSTENS));
   }
 
   _html() {
@@ -1629,8 +1639,7 @@ class EtaUebersichtKarte extends HTMLElement {
     if (!this._struktur.entitaeten) return `<div class="eta"><div class="eta-meldung">${e(this._struktur.fehlt ? t.anlage_fehlt : t.keine_anlage)}</div></div>`;
     const fussboden = Array.isArray(this._konfig.fussboden) ? this._konfig.fussboden : [];
     const anlage = this._geordnet(anlageLesen(this._hass, this._struktur, t, fussboden));
-    const gewaehlt = this._konfig.eigene && typeof this._konfig.eigene === "object" ? this._konfig.eigene : {};
-    for (const teil of anlage.teile) teil.eigene = eigeneWerte(this._hass, gewaehlt[teil.id], teil);
+    for (const teil of anlage.teile) teil.eigene = eigeneWerte(this._hass, this._konfig[eigeneFeld(teil.id)], teil);
     const inhalt = this._ansicht === "anlagenbild" ? this._bild(anlage) : this._ansicht === "kompakt" ? this._kompakt(anlage) : this._kacheln(anlage);
     return `<div class="eta" ${anlage.ruhe ? "data-ruhe" : ""}>${DEFS}${inhalt}</div>`;
   }
