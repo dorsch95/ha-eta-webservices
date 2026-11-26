@@ -115,7 +115,7 @@ const TEXTE = {
     liefert: "Liefert",
     pvm: "PV-Heizmodul",
     partikelabscheider: "Partikelabscheider",
-    brennwert: "Brennwert-Wärmetauscher",
+    brennwert: "Brennwert-WT",
     hochspannung: "Hochspannung",
     strom: "Strom",
     netzteil: "Netzteil",
@@ -258,7 +258,7 @@ const TEXTE = {
     liefert: "Delivering",
     pvm: "PV heating module",
     partikelabscheider: "Particle separator",
-    brennwert: "Condensing heat exchanger",
+    brennwert: "Condensing exchanger",
     hochspannung: "High voltage",
     strom: "Current",
     netzteil: "Power supply",
@@ -584,6 +584,9 @@ const STIL = `
   [data-aktiv] .p-blitz { fill: #ffcf33; animation: eta-blitz 1.3s ease-in-out infinite; }
   [data-aktiv] .p-zelle { animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
 
+  .eta-figur { position: relative; }
+  .eta-anbau { position: absolute; left: calc(100% - 5px); bottom: 0; width: 30%; cursor: pointer; }
+  .eta-buehne .eta-figur[data-anbau] { margin-right: calc(var(--b, 110px) * .3 - 3px); }
   .w-gehaeuse { fill: var(--metall); }
   .w-stutzen { fill: var(--metall-dunkel); }
   .w-kammer { fill: var(--kammer); }
@@ -591,10 +594,10 @@ const STIL = `
   .w-ablauf { fill: none; stroke: var(--metall-dunkel); stroke-width: 6; stroke-linecap: round; }
   .w-platte { fill: var(--metall-dunkel); }
   .w-tropfen, .w-kondensat { fill: var(--kalt); opacity: 0; }
-  [data-aktiv] .w-platte { fill: url(#eta-boden); animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
-  [data-aktiv] .w-kondensat, [data-spuelt] .w-kondensat { animation: eta-tropfen 1.6s ease-in infinite; }
-  [data-spuelt] .w-platte { fill: var(--kalt); fill-opacity: .55; }
-  [data-spuelt] .w-tropfen { animation: eta-spuelen 1.1s linear infinite; animation-delay: calc(var(--i) * -.22s); }
+  .eta-anbau[data-aktiv] .w-platte { fill: url(#eta-boden); animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
+  .eta-anbau[data-aktiv] .w-kondensat, .eta-anbau[data-spuelt] .w-kondensat { animation: eta-tropfen 1.6s ease-in infinite; }
+  .eta-anbau[data-spuelt] .w-platte { fill: var(--kalt); fill-opacity: .55; }
+  .eta-anbau[data-spuelt] .w-tropfen { animation: eta-spuelen 1.1s linear infinite; animation-delay: calc(var(--i) * -.22s); }
 
   .a-rohr { fill: var(--metall); }
   .a-stutzen { fill: var(--metall-dunkel); }
@@ -1028,7 +1031,8 @@ const abscheiderBild = (netzteile, bauform = "kurz") => {
  * Innen stehen die Platten, über ihnen die Düsen zum Spülen, unten der
  * Ablauf für das Kondensat. In Betrieb färben sich die Platten von heiß
  * nach kalt, und am Ablauf tropft es. Beim Spülen fällt Wasser aus den
- * Düsen. Welcher Zustand gilt, steht am Teil (data-aktiv, data-spuelt).
+ * Düsen. Die Karte zeigt ihn klein am Kessel, siehe _kesselFigur; welcher
+ * Zustand gilt, steht an seinem Rahmen (data-aktiv, data-spuelt).
  */
 const brennwertBild = () => `<svg class="eta-svg" viewBox="0 0 120 132" aria-hidden="true">
   <rect class="w-stutzen" x="49" y="2" width="22" height="16" rx="3"/><rect class="w-stutzen" x="8" y="82" width="22" height="16" rx="3"/>
@@ -1340,7 +1344,17 @@ function anlageLesen(hass, struktur, t, fussboden) {
   const ueber = (w) => Boolean(w) && w.n !== null && w.n > LEISTUNG_AB;
 
   const lesen = {
+    /**
+     * brennwert: der Brennwert-Wärmetauscher, wenn die Anlage einen hat.
+     * Er ist kein eigenes Teil - die Karte zeigt ihn klein am Kessel
+     * und nennt seinen Zustand in den Worten der Anlage. spuelt: Er
+     * spült gerade, dann läuft in der Zeichnung Wasser. heizt: Er ist
+     * in Betrieb. stoerung: Störung oder volle Kondensatwanne. Alles
+     * andere - Bereit, Aus, Spülpause, Verriegelt - ist Ruhe.
+     */
     kessel() {
+      const tauscher = wert("brennwert_zustand"), wort = tauscher?.roh || "";
+      const brennwert = tauscher ? { zustand: tauscher, spuelt: BRENNWERT_SPUELT.includes(wort), heizt: BRENNWERT_HEIZT.includes(wort), stoerung: BRENNWERT_STOERUNG.includes(wort) } : null;
       const zustand = wert("kessel_zustand");
       const bild = kesselArt(zustand?.roh);
       const schalter = stand("kessel_schalter");
@@ -1352,8 +1366,9 @@ function anlageLesen(hass, struktur, t, fussboden) {
         bild,
         temperatur: wert("kessel_temperatur"),
         soll: wert("kessel_soll"),
-        zeilen: [[t.kessel_sperre, gesperrt ? { id: sperre.entity_id, text: t.gesperrt } : null], [t.ruecklauf, wert("ruecklauf_temperatur")], [t.druck, wert("kessel_druck")], [t.o2, wert("restsauerstoff")], [t.behaelter, wert("pellet_tagesbehälter")]].filter(([, w]) => w),
+        zeilen: [[t.kessel_sperre, gesperrt ? { id: sperre.entity_id, text: t.gesperrt } : null], [t.ruecklauf, wert("ruecklauf_temperatur")], [t.druck, wert("kessel_druck")], [t.o2, wert("restsauerstoff")], [t.behaelter, wert("pellet_tagesbehälter")], [t.brennwert, brennwert ? { ...tauscher, html: brennwert.stoerung ? `<span class="eta-warnzeichen">${ICON.warn}</span> ${e(tauscher.text)}` : "" } : null]].filter(([, w]) => w),
         gesperrt,
+        brennwert,
         asche,
         ascheStatus: wert("aschebox_status"),
         ascheAnteil: asche && schwelle && asche.n !== null && schwelle.n ? Math.min(asche.n / schwelle.n, 1) : null,
@@ -1486,18 +1501,6 @@ function anlageLesen(hass, struktur, t, fussboden) {
         return { name: `${t.netzteil}${zusatz === null ? ` ${t.rechts}` : zusatz || " 1"}`, spannung, strom, leistung, glut };
       }).filter(Boolean);
       return { netzteile, bauform: wahl === "lang" || wahl === "kurz" ? wahl : teil.bauform === "lang" ? "lang" : "kurz", aktiv: netzteile.some((netzteil) => netzteil.glut > 0), zustand, stoerung: zustand === PARTIKEL_STOERUNG, spannung: netzteile[0]?.spannung || null, strom: netzteile[0]?.strom || null };
-    },
-    /**
-     * Der Brennwert-Wärmetauscher: nur sein Zustand, in den Worten der
-     * Anlage. spuelt: Er spült gerade - dann läuft in der Zeichnung
-     * Wasser. heizt: Er ist in Betrieb. stoerung: Störung oder volle
-     * Kondensatwanne. Alles andere - Bereit, Aus, Spülpause, Verriegelt
-     * - ist Ruhe.
-     */
-    brennwert() {
-      const zustand = wert("brennwert_zustand"), wort = zustand?.roh || "";
-      const spuelt = BRENNWERT_SPUELT.includes(wort), heizt = BRENNWERT_HEIZT.includes(wort);
-      return { zustand, spuelt, heizt, aktiv: spuelt || heizt, stoerung: BRENNWERT_STOERUNG.includes(wort) };
     },
     brenner() {
       const anforderung = wert("brenner_anforderung");
@@ -1895,6 +1898,18 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<div class="eta-figur" style="--b:${breite}px;${stil}">${inhalt}</div>`;
   }
 
+  /**
+   * Der Kessel - mit dem Brennwert-Wärmetauscher klein an seiner Seite,
+   * wenn die Anlage einen hat. Ein Tipp auf den Wärmetauscher öffnet
+   * seinen Zustand.
+   */
+  _kesselFigur(kessel, breite) {
+    const b = kessel.brennwert;
+    if (!b) return this._figur(kesselBild(), breite);
+    const anbau = `<div class="eta-anbau" title="${e(`${this._t.brennwert}: ${b.zustand.text}`)}" ${b.heizt ? "data-aktiv" : ""} ${b.spuelt ? "data-spuelt" : ""} ${b.stoerung ? "data-stoerung" : ""} ${this._info(b.zustand)}>${brennwertBild()}</div>`;
+    return `<div class="eta-figur" data-anbau style="--b:${breite}px;">${kesselBild()}${anbau}</div>`;
+  }
+
   _kopf(anlage) {
     const t = this._t;
     const kessel = anlage.teile.find((teil) => teil.art === "kessel");
@@ -2039,7 +2054,7 @@ class EtaUebersichtKarte extends HTMLElement {
     const kachel = (teil, merkmale, kopf, inhalt) => `<article class="eta-kachel" data-art="${teil.art}" ${merkmale}><header class="eta-kachelkopf"><h3>${e(teil.name)}</h3><span class="eta-kopf-rechts">${kopf}${this._knoepfe(teil)}</span></header>${inhalt}</article>`;
     const zeichnen = {
       kessel: (k) => kachel(k, `data-zustand="${k.bild}"`, k.zustand ? this._chip(k.zustand.text, k.bild !== "aus" && k.bild !== "stoerung", k.bild === "stoerung" ? "stoer" : "") : "", `
-        <div class="eta-buehne" ${this._info(k.temperatur)}>${this._figur(kesselBild(), 90)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
+        <div class="eta-buehne" ${this._info(k.temperatur)}>${this._kesselFigur(k, 90)}${this._haupt(t.kesseltemperatur, k.temperatur, k.soll ? `${t.soll} ${k.soll.text}` : "")}</div>
         ${this._zeilen(k.zeilen, k)}
         ${k.asche ? `<div class="eta-messung" ${this._info(k.ascheStatus || k.asche)}><div class="eta-messung-kopf"><span>${e(t.aschebox)}</span><b>${k.ascheFaellig ? `<span class="eta-warnzeichen">${ICON.warn}</span>` : ""}${e((k.ascheStatus || k.asche).text)}</b></div>${k.ascheAnteil === null ? "" : `<div class="eta-balken" ${k.ascheFaellig ? 'data-art="warn"' : ""}><i style="width:${(k.ascheAnteil * 100).toFixed(1)}%"></i></div>`}</div>` : ""}
         ${this._bedienung(k, anlage)}`),
@@ -2067,9 +2082,6 @@ class EtaUebersichtKarte extends HTMLElement {
       partikelabscheider: (a) => kachel(a, a.aktiv ? "data-aktiv" : "", this._chip(a.zustand || (a.aktiv ? t.in_betrieb : t.ruht), a.aktiv, a.stoerung ? "stoer" : ""), `
         <div class="eta-buehne" ${this._info(a.spannung || a.strom)}>${this._figur(abscheiderBild(a.netzteile, a.bauform), 104)}${this._haupt(t.hochspannung, a.spannung)}</div>
         ${this._zeilen(a.netzteile.length > 1 ? a.netzteile.map((n) => [n.name, n.spannung || n.strom ? { ...(n.spannung || n.strom), text: [n.spannung?.text, n.strom?.text].filter(Boolean).join(" · ") } : null]) : [[t.strom, a.strom]], a)}`),
-      brennwert: (b) => kachel(b, `${b.heizt ? "data-aktiv" : ""} ${b.spuelt ? "data-spuelt" : ""}`, this._chip(b.zustand?.text || t.unbekannt, b.aktiv, b.stoerung ? "stoer" : ""), `
-        <div class="eta-buehne" ${this._info(b.zustand)}>${this._figur(brennwertBild(), 104)}${this._haupt(t.zustand, b.zustand ? { zahl: b.zustand.text, einheit: "" } : null, "", true)}</div>
-        ${this._zeilen([], b)}`),
       brenner: (b) => kachel(b, b.aktiv ? "data-aktiv" : "", this._chip(b.aktiv ? t.heizt : t.ruht, b.aktiv), `
         <div class="eta-buehne" ${this._info(b.temperatur || b.anforderung)}>${this._figur(b.erzeuger.bild(), 96)}${this._haupt(t.temperatur, b.temperatur)}</div>
         ${this._zeilen([[t.anforderung, b.anforderung], [t.leistung_soll, b.leistung]], b)}`),
@@ -2112,7 +2124,7 @@ class EtaUebersichtKarte extends HTMLElement {
       return (erzeugt(teil) ? von.art === "puffer" : Boolean(AUS[von.art]) && !erzeugt(von) && von.art !== "lager") ? teil.von : null;
     };
     const tiefe = (teil, schutz = 0) => {
-      if (teil.art === "kessel" || teil.art === "partikelabscheider" || teil.art === "brennwert" || schutz > 20) return 0;
+      if (teil.art === "kessel" || teil.art === "partikelabscheider" || schutz > 20) return 0;
       if (teil.art === "lager") return -1;
       const von = quelle(teil);
       if (erzeugt(teil)) return von ? tiefe(nachId[von], schutz + 1) - 1 : 0;
@@ -2134,15 +2146,14 @@ class EtaUebersichtKarte extends HTMLElement {
       const tipp = inhalt ? `data-aktion="aufklappen" data-teil="${teil.id}" tabindex="0" role="button" aria-expanded="${offen}"` : info;
       return `<div class="eta-station ${klasse}" data-id="${teil.id}" data-art="${teil.art}" ${merkmale} ${tipp}>${bild}${text}</div>${inhalt && offen ? `<div class="eta-klappe eta-inline">${inhalt}</div>` : ""}`;
     };
-    const rang = { solar: 1, kessel: 0, partikelabscheider: 0.5, brennwert: 0.6, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
+    const rang = { solar: 1, kessel: 0, partikelabscheider: 0.5, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
-      kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.gesperrt ? t.gesperrt : "", k.zustand?.text, k.soll && !k.gesperrt ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
+      kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._kesselFigur(k, 100), schild(k, k.temperatur, [k.gesperrt ? t.gesperrt : "", k.zustand?.text, k.soll && !k.gesperrt ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
       solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "))),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       partikelabscheider: (a) => station(a, "quer links", a.aktiv ? "data-aktiv" : "", this._info(a.spannung || a.strom), this._figur(abscheiderBild(a.netzteile, a.bauform), 66), schild(a, a.spannung, [a.zustand, a.strom ? `${t.strom} ${a.strom.text}` : ""].filter(Boolean).join(" · "))),
-      brennwert: (b) => station(b, "quer links", `${b.heizt ? "data-aktiv" : ""} ${b.spuelt ? "data-spuelt" : ""}`, this._info(b.zustand), this._figur(brennwertBild(), 66), schild(b, null, "", b.zustand ? b.zustand.text : "–", true)),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
       fremderzeuger: (w) => {
@@ -2307,7 +2318,6 @@ class EtaUebersichtKarte extends HTMLElement {
       lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet"), this._knoepfe(l)),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       partikelabscheider: (a) => zeile("blitz", a.aktiv, a.name, [a.zustand, a.strom ? `${t.strom} ${a.strom.text}` : ""].filter(Boolean).join(" · "), a.spannung),
-      brennwert: (b) => zeile("tropfen", b.aktiv, b.name, "", b.zustand),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur, "", this._knoepfe(b)),
       fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur, "", this._knoepfe(w)),
@@ -2330,7 +2340,7 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<section class="eta-kachel eta-kompakt" data-zustand="${kessel ? kessel.bild : "aus"}">
       ${this._banner(anlage)}
       <header class="eta-kompakt-kopf"><h3>${e(titel)}</h3>${kessel?.zustand ? this._chip(`${t.kessel}: ${kessel.zustand.text}`, kessel.bild !== "aus" && kessel.bild !== "stoerung", kessel.bild === "stoerung" ? "stoer" : "") : ""}</header>
-      ${kessel || pufferTeil ? `<div class="eta-buehne">${kessel ? `<div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._figur(kesselBild(), 46)}${this._haupt(t.kessel, kessel.temperatur, [kessel.gesperrt ? t.gesperrt : "", anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : ""].filter(Boolean).join(" · "))}</div>` : ""}${pufferTeil}</div>` : ""}
+      ${kessel || pufferTeil ? `<div class="eta-buehne">${kessel ? `<div class="eta-gruppe" ${this._info(kessel.temperatur)}>${this._kesselFigur(kessel, 46)}${this._haupt(t.kessel, kessel.temperatur, [kessel.gesperrt ? t.gesperrt : "", anlage.aussen ? `${t.aussen} ${anlage.aussen.text}` : ""].filter(Boolean).join(" · "))}</div>` : ""}${pufferTeil}</div>` : ""}
       <div class="eta-liste">${liste}</div>
       ${this._bedienung(kessel, anlage)}
     </section>`;

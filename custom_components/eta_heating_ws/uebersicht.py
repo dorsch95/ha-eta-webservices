@@ -39,10 +39,10 @@ from .const import (
 from .karte import VERSION
 from .verbindungen import verbindungen
 
-OHNE_KACHEL = ("twin",)
-"""Komponenten, die kein eigenes Teil der Anlage sind - der TWIN gehört zum Kessel."""
+OHNE_KACHEL = ("twin", "brennwert")
+"""Komponenten, die kein eigenes Teil der Anlage sind: Der TWIN gehört zum Kessel, und den Brennwert-Wärmetauscher zeigt die Karte klein an ihm."""
 
-BEIM_KESSEL = ("partikelabscheider", "brennwert")
+BEIM_KESSEL = ("partikelabscheider",)
 """Teile, die am Kessel sitzen: Die Karte zeigt sie gleich hinter ihm, nicht an ihrer Stelle in COMPONENTS."""
 
 

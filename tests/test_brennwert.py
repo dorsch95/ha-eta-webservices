@@ -100,18 +100,14 @@ async def test_die_uebrigen_werte_des_blocks_bleiben_waehlbar(hass):
     assert block["/264/10851/0/0/14063"]["pfad"] == ["Zählerstände", "Spülwassermenge gesamt"]
 
 
-async def test_die_karte_zeigt_ihn_hinter_dem_kessel(hass):
-    """Er hängt an keiner Leitung; mit Partikelabscheider stehen beide gleich hinter dem Kessel."""
-    from .test_partikelabscheider import ABSCHEIDER
-
-    hass.session.menu = menu_mit_tauscher().replace("</menu>", f"{ABSCHEIDER}</menu>")
-    entry = eintrag("hk1", "lager", "partikelabscheider")
+async def test_er_ist_kein_eigenes_teil_der_karte(hass):
+    """Die Karte zeigt ihn klein am Kessel: Sie bekommt seinen Zustand, aber kein Teil dafür."""
+    hass.session.menu = menu_mit_tauscher()
+    entry = eintrag("hk1", "lager")
     coordinator, _ = await setup_integration(hass, entry)
     entry.runtime_data = coordinator
     teile = anlage(hass, entry)["teile"]
-    assert [teil["id"] for teil in teile][:3] == ["kessel", "partikelabscheider", "brennwert"]
-    tauscher = teile[2]
-    assert tauscher["art"] == "brennwert"
-    assert tauscher["von"] is None
-    assert tauscher["block"] == "Brennwert-WT"
+    assert "brennwert" not in [teil["id"] for teil in teile]
+    assert "brennwert" in coordinator.components
+    assert "brennwert_zustand" in coordinator.sensor_defs
     assert "brennwert" not in vorgabe(["kessel", "puffer", "hk1", "brennwert"])
