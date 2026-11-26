@@ -449,6 +449,12 @@ COMPONENTS = {
         "roles": ["partikelabscheider"],
         "discovery_prefixes": ["partikelabscheider"],
     },
+    "brennwert": {
+        "name": "Brennwert-Wärmetauscher",
+        "image": None,
+        "roles": ["brennwert"],
+        "discovery_prefixes": ["brennwert_"],
+    },
     "brenner": {
         "name": "Brenner",
         "image": "brenner",
@@ -1705,6 +1711,13 @@ SENSORS = {
         "is_string": True,
     },
     **_partikel_sensoren(),
+    "brennwert_zustand": {
+        "component": "brennwert",
+        "name": "Brennwert-Wärmetauscher Zustand",
+        "translation_key": "brennwert_zustand",
+        "icon": "mdi:water-sync",
+        "is_string": True,
+    },
 }
 """Alle Messwerte, die die Integration kennt.
 
@@ -1777,6 +1790,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "solar": ["Solar"],
     "pvm": ["PVM"],
     "partikelabscheider": ["Part.-Absch.", "Partikelabscheider"],
+    "brennwert": ["Brennwert-WT", "Brennwertwärmetauscher"],
     "brenner": ["Brenner"],
     "fremdwaerme": ["F.Wärme", "Fremdwärme", "Fremdw", "Ofen"],
     "fernleitung": ["Fernl", "Fernleitung"],

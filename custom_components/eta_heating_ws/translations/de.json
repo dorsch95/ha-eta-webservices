@@ -64,6 +64,7 @@
           "solar": "FUB-Name: Solaranlage (Solar)",
           "pvm": "FUB-Name: PV-Heizmodul (PVM)",
           "partikelabscheider": "FUB-Name: Partikelabscheider (Part.-Absch.)",
+          "brennwert": "FUB-Name: Brennwert-Wärmetauscher (Brennwert-WT)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
           "lager": "FUB-Name: Pelletlager (Lager)",
@@ -251,6 +252,7 @@
           "solar": "FUB-Name: Solaranlage (Solar)",
           "pvm": "FUB-Name: PV-Heizmodul (PVM)",
           "partikelabscheider": "FUB-Name: Partikelabscheider (Part.-Absch.)",
+          "brennwert": "FUB-Name: Brennwert-Wärmetauscher (Brennwert-WT)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
           "lager": "FUB-Name: Pelletlager (Lager)",
@@ -397,6 +399,7 @@
         "solar": "Solaranlage",
         "pvm": "PV-Heizmodul (PVM)",
         "partikelabscheider": "Partikelabscheider",
+        "brennwert": "Brennwert-Wärmetauscher (ePE-BW, PC)",
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
         "fremdwaerme": "Fremdwärme (Ofen, der an der ETA-Regelung angeschlossen ist: am Display ein eigener Block, ab Werk „F.Wärme“)",
@@ -927,6 +930,9 @@
       "komponente_partikelabscheider": {
         "name": "Komponente Partikelabscheider"
       },
+      "komponente_brennwert": {
+        "name": "Komponente Brennwert-Wärmetauscher"
+      },
       "komponente_solar": {
         "name": "Komponente Solar"
       },
@@ -1346,6 +1352,9 @@
       },
       "partikelabscheider_rechts_leistung": {
         "name": "Partikelabscheider Netzteil rechts Leistung"
+      },
+      "brennwert_zustand": {
+        "name": "Brennwert-Wärmetauscher Zustand"
       },
       "pvm_ertrag_heute": {
         "name": "PV-Heizmodul Ertrag heute"

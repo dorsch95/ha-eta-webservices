@@ -1,0 +1,100 @@
+<fub uri="/264/10851" name="Brennwert-WT">
+  <object uri="/264/10851/0/0/10990" name="Eingänge">
+    <object uri="/264/10851/0/11160/0" name="Rücklauf">
+      <object uri="/264/10851/0/11160/2002" name="Zustand" />
+      <object uri="/264/10851/0/11160/2011" name="Sensor Typ" />
+      <object uri="/264/10851/0/11160/2019" name="Sensor Typ" />
+      <object uri="/264/10851/0/11160/2049" name="Kalibrierwert" />
+      <object uri="/264/10851/0/11160/2015" name="ADC-Offset" />
+      <object uri="/264/10851/0/11160/2054" name="Fixwert" />
+    </object>
+    <object uri="/264/10851/12380/0/0" name="Durchfluss">
+      <object uri="/264/10851/12380/0/1071" name="Lag x" />
+      <object uri="/264/10851/12380/0/1072" name="Lag Tf" />
+      <object uri="/264/10851/12380/0/1074" name="Lag Tf" />
+      <object uri="/264/10851/12380/0/1073" name="Lag y" />
+      <object uri="/264/10851/0/2310/0" name="Durchflusssensor" />
+      <object uri="/264/10851/0/0/2011" name="Sensor Typ" />
+      <object uri="/264/10851/0/0/12477" name="Impulse pro Liter" />
+    </object>
+    <object uri="/264/10851/0/11700/0" name="Kondensatwanne">
+      <object uri="/264/10851/0/11700/2012" name="Einschalt Verzögerung" />
+      <object uri="/264/10851/0/11700/2013" name="Ausschalt Verzögerung" />
+      <object uri="/264/10851/0/11700/2016" name="Eingang" />
+      <object uri="/264/10851/0/11700/2017" name="Eingang" />
+    </object>
+    <object uri="/264/10851/0/0/13534" name="Differenzdruck" />
+  </object>
+  <object uri="/264/10851/0/0/10991" name="Ausgänge">
+    <object uri="/264/10851/0/11471/0" name="Spülwasserventil">
+      <object uri="/264/10851/0/11471/2001" name="Anforderung" />
+    </object>
+  </object>
+  <object uri="/264/10851/0/0/12010" name="Zählerstände">
+    <object uri="/264/10851/0/0/14063" name="Spülwassermenge gesamt" />
+    <object uri="/264/10851/0/0/15005" name="Aktuelle Spülwassermenge" />
+    <object uri="/264/10851/0/0/15007" name="Spülwassermenge seit" />
+    <object uri="/264/10851/0/0/15008" name="Spülwassermenge zurücksetzen" />
+  </object>
+  <object uri="/264/10851/0/0/19457" name="Brennwertwärmetauscher">
+    <object uri="/264/10851/0/0/12731" name="Brennwertwärmetauscher-Zustand detailliert" />
+    <object uri="/264/10851/14016/0/0" name="Wassermenge pro Reinigungsvorgang">
+      <object uri="/264/10851/14016/0/1050" name="Lin x" />
+      <object uri="/264/10851/14016/0/1051" name="Lin x1" />
+      <object uri="/264/10851/14016/0/1052" name="Lin y1" />
+      <object uri="/264/10851/14016/0/1053" name="Lin x2" />
+      <object uri="/264/10851/14016/0/1054" name="Lin y2" />
+      <object uri="/264/10851/14016/0/1056" name="Extrapol" />
+      <object uri="/264/10851/14016/0/1055" name="Lin y" />
+    </object>
+    <object uri="/264/10851/0/0/14017" name="Anzahl Spülvorgänge" />
+    <object uri="/264/10851/0/0/14018" name="Spülpause" />
+    <object uri="/264/10851/0/0/14005" name="Mindestdurchfluss" />
+    <object uri="/264/10851/0/0/14938" name="Kondensatwanne">
+      <object uri="/264/10851/0/0/14939" name="Dauer bis Fehler" />
+      <object uri="/264/10851/0/0/14940" name="Anzahl Versuche" />
+    </object>
+    <object uri="/264/10851/14020/0/0" name="Tiefpass Verbraucher-Rücklauf">
+      <object uri="/264/10851/14020/0/1071" name="Lag x" />
+      <object uri="/264/10851/14020/0/1072" name="Lag Tf" />
+      <object uri="/264/10851/14020/0/1074" name="Lag Tf" />
+      <object uri="/264/10851/14020/0/1073" name="Lag y" />
+    </object>
+    <object uri="/264/10851/0/0/14021" name="Spülwassermenge nach Reset" />
+    <object uri="/264/10851/0/0/14022" name="Zwangsspülung nach" />
+    <object uri="/264/10851/0/0/14277" name="Wöchentliche Spülung" />
+    <object uri="/264/10851/0/0/12748" name="Spülen nach Volllaststunden">
+      <object uri="/264/10851/0/0/12742" name="Spülen nach min." />
+      <object uri="/264/10851/0/0/12743" name="Spülen nach max." />
+      <object uri="/264/10851/0/0/12744" name="Laufzeit seit Spülung" />
+    </object>
+    <object uri="/264/10851/0/0/12838" name="Abgas Eintritt">
+      <object uri="/264/10851/0/0/12100" name="Freigabe Temperatur" />
+      <object uri="/264/10851/0/0/12325" name="Hysterese" />
+      <object uri="/264/10851/0/0/12307" name="Maximale Temperatur" />
+    </object>
+    <object uri="/264/10851/0/0/12839" name="Abgas Austritt" />
+    <object uri="/264/10851/0/0/13534" name="Differenzdruck">
+      <object uri="/264/10851/0/0/13531" name="Differenzdruck min." />
+      <object uri="/264/10851/0/0/13623" name="Differenzdruck max." />
+      <object uri="/264/10851/15248/0/0" name="Differenzdruck Soll">
+        <object uri="/264/10851/15248/0/1050" name="Lin x" />
+        <object uri="/264/10851/15248/0/1051" name="Lin x1" />
+        <object uri="/264/10851/15248/0/1052" name="Lin y1" />
+        <object uri="/264/10851/15248/0/1053" name="Lin x2" />
+        <object uri="/264/10851/15248/0/1054" name="Lin y2" />
+        <object uri="/264/10851/15248/0/1056" name="Extrapol" />
+        <object uri="/264/10851/15248/0/1055" name="Lin y" />
+      </object>
+      <object uri="/264/10851/0/0/15413" name="Maximalstellung Regelbetrieb" />
+    </object>
+    <object uri="/264/10851/0/0/13857" name="Abgas Bypassklappe" />
+    <object uri="/264/10851/0/0/13131" name="Ladepumpe">
+      <object uri="/264/10851/0/0/12258" name="Pumpendrehzahl" />
+    </object>
+    <object uri="/264/10851/0/0/13300" name="Rücklaufanhebung">
+      <object uri="/264/10851/0/0/12220" name="Rücklauf" />
+      <object uri="/264/10851/0/0/12221" name="Rücklauf Soll" />
+    </object>
+  </object>
+</fub>

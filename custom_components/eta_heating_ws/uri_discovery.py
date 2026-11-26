@@ -154,6 +154,10 @@ DISCOVERY_PATHS = {
         for anhang, (zusatz, _nummer) in PARTIKEL_NETZTEILE.items()
         for art, _bezeichnung, name, _kennung, _symbol in PARTIKEL_WERTE
     },
+    "brennwert_zustand": (
+        "brennwert",
+        ["Brennwertwärmetauscher", "Brennwertwärmetauscher-Zustand detailliert"],
+    ),
     "brenner_anforderung": ("brenner", ["Ausgänge", "Anforderung Brenner"]),
     "brenner_temperatur": ("brenner", ["Brenner", "Brennertemperatur"]),
     "brenner_leistung_soll": ("brenner", ["Ausgänge", "Leistung Soll"]),
@@ -303,6 +307,7 @@ KENNUNGEN = {
         for anhang, (_zusatz, nummer) in PARTIKEL_NETZTEILE.items()
         for art, _bezeichnung, _name, kennung, _symbol in PARTIKEL_WERTE
     },
+    "brennwert_zustand": "0/0/12731",
     "pvm_heizstab": "0/0/14120",
     "pvm_temperatur_oben": "0/11718/0",
     "pvm_temperatur_mitte": "0/11719/0",

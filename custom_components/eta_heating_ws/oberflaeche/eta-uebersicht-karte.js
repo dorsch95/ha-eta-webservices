@@ -115,6 +115,7 @@ const TEXTE = {
     liefert: "Liefert",
     pvm: "PV-Heizmodul",
     partikelabscheider: "Partikelabscheider",
+    brennwert: "Brennwert-Wärmetauscher",
     hochspannung: "Hochspannung",
     strom: "Strom",
     netzteil: "Netzteil",
@@ -257,6 +258,7 @@ const TEXTE = {
     liefert: "Delivering",
     pvm: "PV heating module",
     partikelabscheider: "Particle separator",
+    brennwert: "Condensing heat exchanger",
     hochspannung: "High voltage",
     strom: "Current",
     netzteil: "Power supply",
@@ -420,6 +422,7 @@ const STIL = `
   .eta-label { font-size: 12px; color: var(--text-2); }
   .eta-zahl { font-size: 34px; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .eta-zahl small { font-size: .5em; font-weight: 500; color: var(--text-2); margin-left: .25em; }
+  .eta-zahl.wort { font-size: 22px; line-height: 1.15; white-space: normal; overflow-wrap: anywhere; }
   .eta-neben { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
   .eta-zeilen { margin: 0; display: flex; flex-direction: column; }
   .eta-zeilen div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-top: 1px solid var(--rand); }
@@ -581,6 +584,18 @@ const STIL = `
   [data-aktiv] .p-blitz { fill: #ffcf33; animation: eta-blitz 1.3s ease-in-out infinite; }
   [data-aktiv] .p-zelle { animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
 
+  .w-gehaeuse { fill: var(--metall); }
+  .w-stutzen { fill: var(--metall-dunkel); }
+  .w-kammer { fill: var(--kammer); }
+  .w-duese { fill: none; stroke: var(--metall-hell); stroke-width: 3; stroke-linecap: round; }
+  .w-ablauf { fill: none; stroke: var(--metall-dunkel); stroke-width: 6; stroke-linecap: round; }
+  .w-platte { fill: var(--metall-dunkel); }
+  .w-tropfen, .w-kondensat { fill: var(--kalt); opacity: 0; }
+  [data-aktiv] .w-platte { fill: url(#eta-boden); animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
+  [data-aktiv] .w-kondensat, [data-spuelt] .w-kondensat { animation: eta-tropfen 1.6s ease-in infinite; }
+  [data-spuelt] .w-platte { fill: var(--kalt); fill-opacity: .55; }
+  [data-spuelt] .w-tropfen { animation: eta-spuelen 1.1s linear infinite; animation-delay: calc(var(--i) * -.22s); }
+
   .a-rohr { fill: var(--metall); }
   .a-stutzen { fill: var(--metall-dunkel); }
   .a-kammer { fill: var(--kammer); }
@@ -636,6 +651,7 @@ const STIL = `
   .eta-station:not(.quer) .eta-schild { max-width: 168px; }
   .eta-name { font-size: 14px; font-weight: 500; }
   .eta-schild .eta-zahl { font-size: 24px; }
+  .eta-schild .eta-zahl.wort, .eta-bild[data-dicht] .eta-schild .eta-zahl.wort { font-size: 17px; max-width: 150px; }
   .eta-schild .eta-neben { font-size: 12.5px; }
   .eta-szenenfuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; padding-top: 16px; border-top: 1px solid var(--rand); }
   .eta-kennzahlen { margin: 0; display: flex; flex-wrap: wrap; gap: 12px 28px; }
@@ -720,6 +736,7 @@ const STIL = `
   @keyframes eta-schnecke { to { transform: translateX(12px); } }
   @keyframes eta-drehen { to { transform: rotate(360deg); } }
   @keyframes eta-leuchten { 0%, 100% { fill-opacity: .78; } 50% { fill-opacity: 1; } }
+  @keyframes eta-spuelen { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(58px); opacity: 0; } }
   @keyframes eta-korona { 0%, 100% { opacity: calc(.25 + .5 * var(--glut)); } 45% { opacity: calc(.45 + .55 * var(--glut)); } 60% { opacity: calc(.3 + .5 * var(--glut)); } }
 
   @media (hover: hover) {
@@ -933,6 +950,19 @@ const pvmBild = () => `<svg class="eta-svg" viewBox="0 0 150 118" aria-hidden="t
   ${paneel("p-zelle")}
 </svg>`;
 
+const BRENNWERT_SPUELT = ["Spülen", "Spülen (Test)"];
+const BRENNWERT_HEIZT = ["Heizen"];
+const BRENNWERT_STOERUNG = ["Störung", "Kondensatwanne voll"];
+/**
+ * Was die Zustände des Brennwert-Wärmetauschers für die Zeichnung
+ * heißen. Eine echte Anlage nennt als mögliche Zustände: Aus, Bereit,
+ * Heizen, Spülen, Spülpause, Füllen, Störung, Verriegelt,
+ * Kondensatwanne voll und Spülen (Test).
+ */
+
+const PARTIKEL_STOERUNG = "Störung";
+/** So nennt eine echte Anlage die Störung des Partikelabscheiders - "Verriegelt" ist keine. */
+
 const NETZTEILE = [["", ""], ["_2", " 2"], ["_3", " 3"], ["_4", " 4"], ["_5", " 5"], ["_6", " 6"], ["_rechts", null]];
 /** Die Netzteile eines Partikelabscheiders: Anhang im Schlüssel der Entitäten und Zusatz im Namen - ohne Zusatz heißt es "rechts". */
 
@@ -992,6 +1022,24 @@ const abscheiderBild = (netzteile, bauform = "kurz") => {
     ${inhalt}
   </svg>`;
 };
+
+/**
+ * Der Brennwert-Wärmetauscher: ein Gehäuse am Abgasweg, aufgeschnitten.
+ * Innen stehen die Platten, über ihnen die Düsen zum Spülen, unten der
+ * Ablauf für das Kondensat. In Betrieb färben sich die Platten von heiß
+ * nach kalt, und am Ablauf tropft es. Beim Spülen fällt Wasser aus den
+ * Düsen. Welcher Zustand gilt, steht am Teil (data-aktiv, data-spuelt).
+ */
+const brennwertBild = () => `<svg class="eta-svg" viewBox="0 0 120 132" aria-hidden="true">
+  <rect class="w-stutzen" x="49" y="2" width="22" height="16" rx="3"/><rect class="w-stutzen" x="8" y="82" width="22" height="16" rx="3"/>
+  <path class="w-ablauf" d="M60 114v12"/>
+  <rect class="w-gehaeuse" x="24" y="12" width="72" height="104" rx="12"/>
+  <rect class="w-kammer" x="32" y="22" width="56" height="84" rx="8"/>
+  <path class="w-duese" d="M39 30H81M46 30v4M60 30v4M74 30v4"/>
+  ${reihe(6, (i) => `<rect class="w-platte" style="--i:${i}" x="${39.5 + i * 7.5}" y="44" width="4.5" height="52" rx="2.25"/>`)}
+  ${reihe(5, (i) => `<path class="w-tropfen" style="--i:${i}" d="M${[42.5, 51.2, 60, 68.8, 77.5][i]} 34c1.6 2.3 2.7 3.5 2.7 5a2.7 2.7 0 0 1-5.4 0c0-1.5 1.1-2.7 2.7-5z"/>`)}
+  <path class="w-kondensat" d="M60 116c1.8 2.6 3 4 3 5.6a3 3 0 0 1-6 0c0-1.6 1.2-3 3-5.6z"/>
+</svg>`;
 
 const fwmBild = () => `<svg class="eta-svg" viewBox="0 0 150 112" aria-hidden="true">
   <path class="f-vor" d="M6 34h26"/><path class="f-rueck" d="M6 80h26"/>
@@ -1416,9 +1464,10 @@ function anlageLesen(hass, struktur, t, fussboden) {
      * Maximum, ohne Maximum an ihrem Soll - beide stehen als Attribute
      * am Sensor der Leistung. Fehlt beides, genügt es, dass Leistung
      * fließt. zustand: wie die Anlage den Zustand nennt, als Attribut
-     * am Sensor der Leistung - die Karte zeigt ihn als Schildchen, nie
-     * als Störung: Verriegelt ist ein Abscheider oft, dann leuchtet nur
-     * nichts. Nennt die Anlage keinen, steht "In Betrieb" oder "Ruht".
+     * am Sensor der Leistung - die Karte zeigt ihn als Schildchen. Rot
+     * wird es nur, wenn die Anlage selbst "Störung" meldet: Verriegelt
+     * ist ein Abscheider oft, dann leuchtet nur nichts. Nennt die Anlage
+     * keinen Zustand, steht "In Betrieb" oder "Ruht".
      * Bricht bei einem Überschlag die Leistung kurz ein, wird der Schein
      * eben kurz schwächer.
      */
@@ -1436,7 +1485,19 @@ function anlageLesen(hass, struktur, t, fussboden) {
         const glut = !an ? 0 : watt !== null && grenze ? Math.min(1, Math.max(0.15, watt / grenze)) : 0.7;
         return { name: `${t.netzteil}${zusatz === null ? ` ${t.rechts}` : zusatz || " 1"}`, spannung, strom, leistung, glut };
       }).filter(Boolean);
-      return { netzteile, bauform: wahl === "lang" || wahl === "kurz" ? wahl : teil.bauform === "lang" ? "lang" : "kurz", aktiv: netzteile.some((netzteil) => netzteil.glut > 0), zustand, spannung: netzteile[0]?.spannung || null, strom: netzteile[0]?.strom || null };
+      return { netzteile, bauform: wahl === "lang" || wahl === "kurz" ? wahl : teil.bauform === "lang" ? "lang" : "kurz", aktiv: netzteile.some((netzteil) => netzteil.glut > 0), zustand, stoerung: zustand === PARTIKEL_STOERUNG, spannung: netzteile[0]?.spannung || null, strom: netzteile[0]?.strom || null };
+    },
+    /**
+     * Der Brennwert-Wärmetauscher: nur sein Zustand, in den Worten der
+     * Anlage. spuelt: Er spült gerade - dann läuft in der Zeichnung
+     * Wasser. heizt: Er ist in Betrieb. stoerung: Störung oder volle
+     * Kondensatwanne. Alles andere - Bereit, Aus, Spülpause, Verriegelt
+     * - ist Ruhe.
+     */
+    brennwert() {
+      const zustand = wert("brennwert_zustand"), wort = zustand?.roh || "";
+      const spuelt = BRENNWERT_SPUELT.includes(wort), heizt = BRENNWERT_HEIZT.includes(wort);
+      return { zustand, spuelt, heizt, aktiv: spuelt || heizt, stoerung: BRENNWERT_STOERUNG.includes(wort) };
     },
     brenner() {
       const anforderung = wert("brenner_anforderung");
@@ -1825,8 +1886,9 @@ class EtaUebersichtKarte extends HTMLElement {
     return `<dl class="eta-zeilen">${zeilen.map(([name, w]) => `<div ${this._info(w)}><dt>${e(name)}</dt><dd>${w.html || e(w.text)}</dd></div>`).join("")}</dl>`;
   }
 
-  _haupt(label, w, neben = "") {
-    return `<div class="eta-haupt"><span class="eta-label">${e(label)}</span><span class="eta-zahl">${e(w ? w.zahl : "–")}<small>${e(w ? w.einheit : "")}</small></span>${neben ? `<span class="eta-neben">${e(neben)}</span>` : ""}</div>`;
+  /** Der große Wert einer Kachel. wort: Er ist ein Text der Anlage, der lang sein kann - dann kleiner und mit Umbruch. */
+  _haupt(label, w, neben = "", wort = false) {
+    return `<div class="eta-haupt"><span class="eta-label">${e(label)}</span><span class="eta-zahl${wort ? " wort" : ""}">${e(w ? w.zahl : "–")}<small>${e(w ? w.einheit : "")}</small></span>${neben ? `<span class="eta-neben">${e(neben)}</span>` : ""}</div>`;
   }
 
   _figur(inhalt, breite, stil = "") {
@@ -2002,9 +2064,12 @@ class EtaUebersichtKarte extends HTMLElement {
       pvm: (p) => kachel(p, p.aktiv ? "data-aktiv" : "", this._chip(p.zustand?.text || (p.aktiv ? t.heizt : t.ruht), p.aktiv), `
         <div class="eta-buehne" ${this._info(p.leistung)}>${this._figur(pvmBild(), 132)}${this._haupt(t.heizstab, p.leistung)}</div>
         ${this._zeilen([[t.speicher_oben, p.oben], [t.ertrag_heute, p.heute]], p)}`),
-      partikelabscheider: (a) => kachel(a, a.aktiv ? "data-aktiv" : "", this._chip(a.zustand || (a.aktiv ? t.in_betrieb : t.ruht), a.aktiv), `
+      partikelabscheider: (a) => kachel(a, a.aktiv ? "data-aktiv" : "", this._chip(a.zustand || (a.aktiv ? t.in_betrieb : t.ruht), a.aktiv, a.stoerung ? "stoer" : ""), `
         <div class="eta-buehne" ${this._info(a.spannung || a.strom)}>${this._figur(abscheiderBild(a.netzteile, a.bauform), 104)}${this._haupt(t.hochspannung, a.spannung)}</div>
         ${this._zeilen(a.netzteile.length > 1 ? a.netzteile.map((n) => [n.name, n.spannung || n.strom ? { ...(n.spannung || n.strom), text: [n.spannung?.text, n.strom?.text].filter(Boolean).join(" · ") } : null]) : [[t.strom, a.strom]], a)}`),
+      brennwert: (b) => kachel(b, `${b.heizt ? "data-aktiv" : ""} ${b.spuelt ? "data-spuelt" : ""}`, this._chip(b.zustand?.text || t.unbekannt, b.aktiv, b.stoerung ? "stoer" : ""), `
+        <div class="eta-buehne" ${this._info(b.zustand)}>${this._figur(brennwertBild(), 104)}${this._haupt(t.zustand, b.zustand ? { zahl: b.zustand.text, einheit: "" } : null, "", true)}</div>
+        ${this._zeilen([], b)}`),
       brenner: (b) => kachel(b, b.aktiv ? "data-aktiv" : "", this._chip(b.aktiv ? t.heizt : t.ruht, b.aktiv), `
         <div class="eta-buehne" ${this._info(b.temperatur || b.anforderung)}>${this._figur(b.erzeuger.bild(), 96)}${this._haupt(t.temperatur, b.temperatur)}</div>
         ${this._zeilen([[t.anforderung, b.anforderung], [t.leistung_soll, b.leistung]], b)}`),
@@ -2047,7 +2112,7 @@ class EtaUebersichtKarte extends HTMLElement {
       return (erzeugt(teil) ? von.art === "puffer" : Boolean(AUS[von.art]) && !erzeugt(von) && von.art !== "lager") ? teil.von : null;
     };
     const tiefe = (teil, schutz = 0) => {
-      if (teil.art === "kessel" || teil.art === "partikelabscheider" || schutz > 20) return 0;
+      if (teil.art === "kessel" || teil.art === "partikelabscheider" || teil.art === "brennwert" || schutz > 20) return 0;
       if (teil.art === "lager") return -1;
       const von = quelle(teil);
       if (erzeugt(teil)) return von ? tiefe(nachId[von], schutz + 1) - 1 : 0;
@@ -2062,14 +2127,14 @@ class EtaUebersichtKarte extends HTMLElement {
     const eigenZeilen = (teil) => teil.eigene.map(([name, w]) => `<span class="eta-neben eta-eigen" ${this._info(w)}>${e(name)} <b>${e(w.text)}</b></span>`).join("");
     const eigenListe = (teil) => (teil.eigene.length ? `<dl class="eta-kennzahlen eta-eigen">${teil.eigene.map(([name, w]) => `<div ${this._info(w)}><dt>${e(name)}</dt><dd>${e(w.text)}</dd></div>`).join("")}</dl>` : "");
     const klappe = (teil) => `${teil.art === "heizkreis" || teil.art === "fremderzeuger" ? this._stellen(teil, anlage) : ""}${immer ? "" : eigenListe(teil)}`;
-    const schild = (teil, w, neben, text = null) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}${this._knoepfe(teil)}</span><span class="eta-zahl">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span>${immer ? eigenZeilen(teil) : ""}</div>`;
+    const schild = (teil, w, neben, text = null, wort = false) => `<div class="eta-schild"><span class="eta-name">${e(teil.name)}${this._knoepfe(teil)}</span><span class="eta-zahl${wort ? " wort" : ""}">${e(text ?? (w ? w.zahl : "–"))}<small>${e(text === null && w ? w.einheit : "")}</small></span><span class="eta-neben">${e(neben)}${erzeugt(teil) ? "" : anschluss(teil)}</span>${immer ? eigenZeilen(teil) : ""}</div>`;
     const station = (teil, klasse, merkmale, info, bild, text) => {
       const inhalt = info.includes('data-aktion="aufklappen"') ? "" : klappe(teil);
       const offen = this._offen === teil.id;
       const tipp = inhalt ? `data-aktion="aufklappen" data-teil="${teil.id}" tabindex="0" role="button" aria-expanded="${offen}"` : info;
       return `<div class="eta-station ${klasse}" data-id="${teil.id}" data-art="${teil.art}" ${merkmale} ${tipp}>${bild}${text}</div>${inhalt && offen ? `<div class="eta-klappe eta-inline">${inhalt}</div>` : ""}`;
     };
-    const rang = { solar: 1, kessel: 0, partikelabscheider: 0.5, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
+    const rang = { solar: 1, kessel: 0, partikelabscheider: 0.5, brennwert: 0.6, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
@@ -2077,6 +2142,7 @@ class EtaUebersichtKarte extends HTMLElement {
       solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "))),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
       partikelabscheider: (a) => station(a, "quer links", a.aktiv ? "data-aktiv" : "", this._info(a.spannung || a.strom), this._figur(abscheiderBild(a.netzteile, a.bauform), 66), schild(a, a.spannung, [a.zustand, a.strom ? `${t.strom} ${a.strom.text}` : ""].filter(Boolean).join(" · "))),
+      brennwert: (b) => station(b, "quer links", `${b.heizt ? "data-aktiv" : ""} ${b.spuelt ? "data-spuelt" : ""}`, this._info(b.zustand), this._figur(brennwertBild(), 66), schild(b, null, "", b.zustand ? b.zustand.text : "–", true)),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
       fremderzeuger: (w) => {
@@ -2241,6 +2307,7 @@ class EtaUebersichtKarte extends HTMLElement {
       lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet"), this._knoepfe(l)),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
       partikelabscheider: (a) => zeile("blitz", a.aktiv, a.name, [a.zustand, a.strom ? `${t.strom} ${a.strom.text}` : ""].filter(Boolean).join(" · "), a.spannung),
+      brennwert: (b) => zeile("tropfen", b.aktiv, b.name, "", b.zustand),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur, "", this._knoepfe(b)),
       fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur, "", this._knoepfe(w)),

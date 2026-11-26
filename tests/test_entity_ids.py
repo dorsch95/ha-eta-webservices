@@ -117,6 +117,7 @@ ERWARTETE_IDS = {
     "partikelabscheider_rechts_strom": "sensor.eta_heizung_partikelabscheider_netzteil_rechts_strom",
     "partikelabscheider_spannung": "sensor.eta_heizung_partikelabscheider_hochspannung",
     "partikelabscheider_strom": "sensor.eta_heizung_partikelabscheider_strom",
+    "brennwert_zustand": "sensor.eta_heizung_brennwert_warmetauscher_zustand",
     "pvm_ertrag_gestern": "sensor.eta_heizung_pv_heizmodul_ertrag_gestern",
     "pvm_ertrag_heute": "sensor.eta_heizung_pv_heizmodul_ertrag_heute",
     "pvm_gesamtenergie": "sensor.eta_heizung_pv_heizmodul_gesamtenergie",

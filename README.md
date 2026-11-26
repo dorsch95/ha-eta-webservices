@@ -115,6 +115,7 @@ Funktionsblöcke (FUB) lassen sich an der Steuerung umbenennen. Die Felder sind 
 | Solaranlage | `Solar` |
 | PV-Heizmodul | `PVM` |
 | Partikelabscheider | `Part.-Absch.` |
+| Brennwert-Wärmetauscher | `Brennwert-WT` |
 | Brenner | `Brenner` |
 | Fremdwärme | `F.Wärme`, auch `Fremdwärme` oder `Ofen` |
 | Fernleitung | `Fernl` |
@@ -268,6 +269,8 @@ Gut zu wissen:
 | `sensor.eta_heizung_partikelabscheider_netzteil_2_strom` | Partikelabscheider Netzteil 2 Strom | von der Anlage |
 | `sensor.eta_heizung_partikelabscheider_netzteil_2_leistung` | Partikelabscheider Netzteil 2 Leistung | von der Anlage |
 | `select.eta_heizung_partikelabscheider_bild` | Partikelabscheider Bild in der Karte „ETA Übersicht“: automatisch, kurze oder lange Elektrode | Auswahl |
+| **Brennwert-Wärmetauscher** | | |
+| `sensor.eta_heizung_brennwert_warmetauscher_zustand` | Brennwert-Wärmetauscher Zustand | Text |
 | **PV-Heizmodul** | | |
 | `sensor.eta_heizung_pv_heizmodul_ertrag_gestern` | PV-Heizmodul Ertrag gestern | kWh |
 | `sensor.eta_heizung_pv_heizmodul_ertrag_heute` | PV-Heizmodul Ertrag heute | kWh |
@@ -401,6 +404,7 @@ Welche Werte ankommen, entscheidet die Anlage.
 - **Ältere Regelungen** (Webservices 1.1): Die Integration liest Pelletkessel, älteren Puffer, Warmwasserspeicher, Heizkreise, Pelletlager, Außentemperatur und Solaranlage. Den Ladezustand des Puffers rechnet sie selbst, das Fassungsvermögen des Lagers trägst du ein. Schalten und Einstellen geht erst ab Webservices 1.2.
 - **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und Erträge nur mit Wärmemengenmessung. Fürs Energie-Dashboard eignet sich die Wärmemenge nicht.
 - **Partikelabscheider:** je Netzteil Hochspannung, Strom und Leistung, sonst nichts aus diesem Block. Die Integration liest dort nur und schreibt nie, er arbeitet mit Hochspannung. Das erste Netzteil ist von Anfang an da. Die Sensoren der übrigen (`_netzteil_2_`, dann `_netzteil_3_` bis `_netzteil_6_` und `_netzteil_rechts_`) sind ausgeschaltet, weil der Menübaum alle aufführt, gleich wie viele eingebaut sind: Schalte in Home Assistant die ein, die deine Anlage hat. Die Karte „ETA Übersicht“ zeichnet die Elektrode und lässt ihre Zacken umso heller leuchten, je mehr Leistung fließt. Am Hackgutkessel ist sie lang, an Pellet- und Stückholzkesseln kurz. Liegt die Karte daneben, etwa bei einem großen Pelletkessel, wählst du die Form am Gerät mit `select.eta_heizung_partikelabscheider_bild`. Ist der Abscheider verriegelt, leuchtet nichts - eine Störung ist das nicht.
+- **Brennwert-Wärmetauscher:** an ePE-BW und PC. Die Integration führt seinen Zustand, so wie die Heizung ihn nennt, etwa „Bereit“, „Heizen“ oder „Spülen“. Die Karte „ETA Übersicht“ zeigt ihn als eigenes Teil hinter dem Kessel und lässt beim Spülen Wasser laufen. Weitere Werte des Blocks, etwa die Spülwassermenge, holst du dir bei Bedarf über [Weitere Werte](#weitere-werte).
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom ins Wasser. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage ist das PV-Heizmodul noch nicht geprüft.
 - **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Ob er wirklich brennt, meldet er nicht zurück.
 - **Fremdwärme:** ein Ofen an der ETA-Regelung, etwa ein Kaminofen mit Wassertasche. Gelesen werden Temperatur, Speichertemperatur, Zustand und Ladepumpe.

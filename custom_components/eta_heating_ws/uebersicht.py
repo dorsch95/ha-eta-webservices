@@ -42,7 +42,7 @@ from .verbindungen import verbindungen
 OHNE_KACHEL = ("twin",)
 """Komponenten, die kein eigenes Teil der Anlage sind - der TWIN gehört zum Kessel."""
 
-BEIM_KESSEL = ("partikelabscheider",)
+BEIM_KESSEL = ("partikelabscheider", "brennwert")
 """Teile, die am Kessel sitzen: Die Karte zeigt sie gleich hinter ihm, nicht an ihrer Stelle in COMPONENTS."""
 
 
