@@ -44,6 +44,7 @@ ERWARTET = {
     "partikelabscheider_2_leistung": f"{BLOCK}/14909/0/14530",
     "partikelabscheider_6_leistung": f"{BLOCK}/14921/0/14530",
     "partikelabscheider_rechts_spannung": f"{BLOCK}/14913/0/13125",
+    "partikelabscheider_zustand": f"{BLOCK}/0/0/12733",
     "partikelabscheider_leistung_soll": f"{BLOCK}/0/11318/2328",
     "partikelabscheider_leistung_max": f"{BLOCK}/14912/0/15424",
 }
@@ -92,7 +93,7 @@ async def test_werte_werden_ueber_ihre_namen_gefunden(hass):
 
     assert {key: uris.get(key) for key in ERWARTET} == ERWARTET
     assert not ueber_kennung & set(ERWARTET)
-    assert len([key for key in uris if key.startswith("partikelabscheider")]) == 7 * 3 + 2
+    assert len([key for key in uris if key.startswith("partikelabscheider")]) == 7 * 3 + 3
 
 
 async def test_ohne_passende_namen_greift_die_kennung(hass):
@@ -103,6 +104,7 @@ async def test_ohne_passende_namen_greift_die_kennung(hass):
         .replace("Hochspannung Ist", "Voltage")
         .replace("Strom Ist", "Current")
         .replace("Aktuelle Leistung", "Power")
+        .replace("Part.Abscheider-Zustand detailliert", "State")
     )
     ueber_kennung: set = set()
     uris = await suchen(hass, menu_mit_abscheider(fremd), ueber_kennung)
@@ -165,6 +167,7 @@ async def test_sensoren_und_attribute(hass):
             ERWARTET["partikelabscheider_leistung_max"]: (300, "30,0", "W", 10),
         },
     )
+    hass.session.texte[ERWARTET["partikelabscheider_zustand"]] = "Verriegelt"
     coordinator, by_name = await setup_integration(hass, eintrag(enable_switches=True))
 
     spannung = by_name["Partikelabscheider Hochspannung"]
@@ -177,6 +180,7 @@ async def test_sensoren_und_attribute(hass):
     assert leistung.native_value == 9.9
     assert leistung.extra_state_attributes["soll"] == 12.0
     assert leistung.extra_state_attributes["maximum"] == 30.0
+    assert leistung.extra_state_attributes["zustand"] == "Verriegelt", "in den Worten der Anlage"
 
     zweites = by_name["Partikelabscheider Netzteil 2 Hochspannung"]
     assert zweites.entity_registry_enabled_default is False
@@ -216,13 +220,54 @@ def test_der_block_steht_unter_weitere_werte_nicht_zur_wahl():
     assert weitere.gewaehlte([alt]) == []
 
 
+HACKGUT = """<object uri="/264/10891/0/0/19999" name="Austragung">
+  <object uri="/264/10891/0/0/19998" name="Füllgrad" />
+</object>"""
+"""So führt ein Hackgutkessel seine Austragung: im Funktionsblock des Kessels, auf der ersten Ebene.
+
+Die Adressen sind ausgedacht - von einer echten Hackgutanlage gibt es
+noch keinen Menübaum.
+"""
+
+
+def menu_hackgut() -> str:
+    """Der Menübaum mit Abscheider, der Kessel als Hackgutkessel."""
+    menu = menu_mit_abscheider()
+    anfang = menu.index('name="Kessel"')
+    ende = menu.index(">", anfang) + 1
+    return menu[:ende] + HACKGUT + menu[ende:]
+
+
+async def test_am_hackgutkessel_ist_die_elektrode_lang_sonst_kurz(hass):
+    """Automatisch: Hackgut lang, Pellets und Stückholz kurz."""
+    hass.session.menu = menu_mit_abscheider()
+    entry = eintrag()
+    coordinator, _ = await setup_integration(hass, entry)
+    entry.runtime_data = coordinator
+    assert coordinator.hackgut is False
+    [teil] = [teil for teil in anlage(hass, entry)["teile"] if teil["id"] == "partikelabscheider"]
+    assert teil["bauform"] == "kurz"
+
+
+async def test_der_hackgutkessel_wird_an_seiner_austragung_erkannt(hass):
+    hass.session.menu = menu_hackgut()
+    entry = eintrag()
+    coordinator, by_name = await setup_integration(hass, entry)
+    entry.runtime_data = coordinator
+    assert coordinator.hackgut is True
+    assert "kessel_austragung" not in coordinator.sensor_defs, "nur ein Merkmal, gelesen wird es nicht"
+    assert not [name for name in by_name if "Austragung" in name]
+    [teil] = [teil for teil in anlage(hass, entry)["teile"] if teil["id"] == "partikelabscheider"]
+    assert teil["bauform"] == "lang"
+
+
 async def test_die_bauform_der_elektrode_ist_am_geraet_waehlbar(hass):
-    """Kurz bei ePE, eSH und eTWIN, lang bei eHACK und ePE-K - an der Anlage ändert die Auswahl nichts."""
+    """Ab Werk automatisch, von Hand kurz oder lang - an der Anlage ändert die Auswahl nichts."""
     from eta_heating_ws import select
     from eta_heating_ws.const import BILD_AUSWAHLEN, PARTIKEL_BILDER
 
-    assert PARTIKEL_BILDER == ["kurz", "lang"]
-    assert BILD_AUSWAHLEN["partikelabscheider_bild"]["vorgabe"] == "kurz"
+    assert PARTIKEL_BILDER == ["automatisch", "kurz", "lang"]
+    assert BILD_AUSWAHLEN["partikelabscheider_bild"]["vorgabe"] == "automatisch"
 
     hass.session.menu = menu_mit_abscheider()
     entry = eintrag()
@@ -231,8 +276,8 @@ async def test_die_bauform_der_elektrode_ist_am_geraet_waehlbar(hass):
     angelegt: list = []
     await select.async_setup_entry(hass, entry, angelegt.extend)
     [auswahl] = [e for e in angelegt if e.unique_id.endswith("partikelabscheider_bild")]
-    assert auswahl.options == ["kurz", "lang"]
-    assert auswahl.current_option == "kurz"
+    assert auswahl.options == ["automatisch", "kurz", "lang"]
+    assert auswahl.current_option == "automatisch"
     assert not hass.session.gesetzte_werte
 
 

@@ -86,6 +86,8 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     beiden es ist, sagt ETADataUpdateCoordinator.frischwassermodul.
     programme: die beschreibbaren Zeitprogramme dieses Teils - für sie
     zeigt die Karte einen Knopf, der die Zeiten zum Einstellen öffnet.
+    bauform: nur beim Partikelabscheider - lang am Hackgutkessel, sonst
+    kurz, solange der Nutzer am Gerät nichts anderes wählt.
 
     Der Fremderzeuger steht nicht im Menübaum: Statt Messwerten bekommt
     die Karte seinen Namen, die Entität, die sagt, ob er heizt, seinen
@@ -102,6 +104,8 @@ def _teil(coordinator, komponente: str, quelle: str | None) -> dict:
     }
     if komponente in WARMWASSER_SPEICHER:
         teil["bauart"] = "fwm" if coordinator.frischwassermodul(komponente) else "speicher"
+    if komponente == "partikelabscheider":
+        teil["bauform"] = "lang" if coordinator.hackgut else "kurz"
     if komponente == "fremderzeuger":
         einstellungen = {**coordinator.config_entry.data, **coordinator.config_entry.options}
         teil["bezeichnung"] = (

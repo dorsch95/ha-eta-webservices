@@ -117,11 +117,12 @@ def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
     from eta_heating_ws.uri_discovery import (
         BETRIEBSART_ROLES,
         DISCOVERY_PATHS,
+        MERKMALE,
         PUMPEN,
         SWITCH_ROLES,
     )
 
-    mitgelesen = {f"partikelabscheider_{art}" for art in PARTIKEL_BEIWERTE}
+    mitgelesen = {f"partikelabscheider_{art}" for art in PARTIKEL_BEIWERTE} | set(MERKMALE)
     assert set(SENSORS) | mitgelesen == set(DISCOVERY_PATHS) | set(PUMPEN)
     assert not mitgelesen & set(SENSORS), "Beiwerte stehen als Attribute an der Leistung, nicht als Sensoren"
     volumen = {f"{k}_volumen" for k in PUFFER_SPEICHER}

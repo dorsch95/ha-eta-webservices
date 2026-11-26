@@ -572,8 +572,9 @@
       "partikelabscheider_bild": {
         "name": "Partikelabscheider Bild",
         "state": {
-          "kurz": "Kurze Elektrode (ePE, eSH, eTWIN)",
-          "lang": "Lange Elektrode (eHACK, ePE-K)"
+          "automatisch": "Automatisch (Hackgut lang, sonst kurz)",
+          "kurz": "Kurze Elektrode (Pellets, Stückholz)",
+          "lang": "Lange Elektrode (Hackgut, große Pelletkessel)"
         }
       },
       "brenner_bild": {

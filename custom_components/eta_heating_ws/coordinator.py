@@ -815,6 +815,16 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return info.get("maximum_uri")
 
+    @property
+    def hackgut(self) -> bool:
+        """Ist der Kessel ein Hackgutkessel? Dann führt er die Austragung im eigenen Funktionsblock.
+
+        Danach richtet sich das Bild der Elektrode am Partikelabscheider,
+        siehe const.PARTIKEL_BILDER. An einer echten Hackgutanlage ist das
+        Merkmal nicht belegt.
+        """
+        return "kessel_austragung" in self.discovered_uris
+
     def frischwassermodul(self, komponente: str) -> bool:
         """Ist dieses Warmwasser ein Frischwassermodul und kein Warmwasserspeicher?
 

@@ -52,6 +52,7 @@ DISCOVERY_PATHS = {
         ["Kessel", "Pelletsbehälter", "Inhalt Pelletsbehälter"],
     ),
     "kessel_soll": ("kessel", ["Kessel", "Kessel", "Kessel Soll"]),
+    "kessel_austragung": ("kessel", ["Austragung"]),
     "restsauerstoff": ("kessel", ["Eingänge", "Restsauerstoff", "Restsauerstoff"]),
     "abgas_temperatur": ("kessel", ["Eingänge", "Abgas"]),
     "pellet_gesamtverbrauch": ("kessel", ["Zählerstände", "Gesamtverbrauch"]),
@@ -133,6 +134,10 @@ DISCOVERY_PATHS = {
     "pvm_gesamtenergie": ("pvm", ["Zählerstände", "Gesamtenergie Heizstab"]),
     "pvm_ertrag_heute": ("pvm", ["Zählerstände", "Ertrag heute"]),
     "pvm_ertrag_gestern": ("pvm", ["Zählerstände", "Ertrag gestern"]),
+    "partikelabscheider_zustand": (
+        "partikelabscheider",
+        ["Partikelabscheider", "Part.Abscheider-Zustand detailliert"],
+    ),
     "partikelabscheider_leistung_soll": (
         "partikelabscheider",
         ["Ausgänge", "Abscheider Netzteil", "Leistung-Soll"],
@@ -158,6 +163,15 @@ DISCOVERY_PATHS = {
     "fremdwaerme_zustand": ("fremdwaerme", ["Fremdwärme", "Fremdwärme-Zustand detailliert"]),
     "fremdwaerme_ladepumpe": ("fremdwaerme", ["Ausgänge", "Ladepumpe", "Anforderung"]),
 }
+
+MERKMALE = ("kessel_austragung",)
+"""Suchpfade, hinter denen kein Sensor steht: Sie sagen nur, ob die Anlage das Objekt führt.
+
+kessel_austragung: Ein Hackgutkessel führt seine Austragung im
+Funktionsblock des Kessels, gleich auf der ersten Ebene. Ein Pelletkessel
+hat dafür den Block Lager, ein Stückholzkessel gar keine. Gelesen wird
+das Objekt nicht.
+"""
 
 PUMPEN = {
     "fwm_zirkulationspumpe": ("fwm", "zirkulation"),
@@ -281,6 +295,7 @@ KENNUNGEN = {
     "solar_waermemenge": "0/0/12349",
     "solar_ertrag_heute": "0/0/12350",
     "solar_ertrag_gestern": "0/0/12769",
+    "partikelabscheider_zustand": "0/0/12733",
     "partikelabscheider_leistung_soll": "0/11318/2328",
     "partikelabscheider_leistung_max": "14912/0/15424",
     **{

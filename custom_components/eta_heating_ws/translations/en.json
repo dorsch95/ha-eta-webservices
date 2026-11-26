@@ -572,8 +572,9 @@
       "partikelabscheider_bild": {
         "name": "Particle separator picture",
         "state": {
-          "kurz": "Short electrode (ePE, eSH, eTWIN)",
-          "lang": "Long electrode (eHACK, ePE-K)"
+          "automatisch": "Automatic (wood chips long, otherwise short)",
+          "kurz": "Short electrode (pellets, logs)",
+          "lang": "Long electrode (wood chips, large pellet boilers)"
         }
       },
       "brenner_bild": {

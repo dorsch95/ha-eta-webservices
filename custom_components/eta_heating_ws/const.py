@@ -653,13 +653,16 @@ Was verbaut ist, weiß die Anlage nicht - der Nutzer wählt es je Heizkreis,
 siehe BILD_AUSWAHLEN.
 """
 
-PARTIKEL_BILDER = ["kurz", "lang"]
+PARTIKEL_BILDER = ["automatisch", "kurz", "lang"]
 """Wie die Karte "ETA Übersicht" die Elektrode eines Partikelabscheiders zeichnet.
 
-Kurz ist der eckige Bügel mit Zacken unter dem Isolator, wie ihn ePE, eSH
-und eTWIN haben, lang der hohe Rahmen mit Sprossen von eHACK und ePE-K.
-Welcher Kessel dahintersteht, sagt der Menübaum nicht - der Nutzer wählt
-es, siehe BILD_AUSWAHLEN.
+Kurz ist der eckige Bügel mit Zacken unter dem Isolator, wie ihn Pellet-
+und Stückholzkessel haben, lang der hohe Stab mit Ästen nach beiden
+Seiten der Hackgutkessel. Automatisch heißt: lang am Hackgutkessel, sonst
+kurz, siehe ETADataUpdateCoordinator.hackgut. Woran die Integration den
+Hackgutkessel erkennt, ist an keiner echten Anlage belegt, und ein großer
+Pelletkessel hat ebenfalls die lange - deshalb lässt sich das Bild auch
+von Hand wählen, siehe BILD_AUSWAHLEN.
 """
 
 BILD_AUSWAHLEN = {
@@ -1125,13 +1128,14 @@ PARTIKEL_WERTE = (
 """Was je Netzteil gelesen wird: Art, Name des Sensors, Name im Menübaum, Kennung am Ende der Adresse, Symbol."""
 
 
-PARTIKEL_BEIWERTE = {"leistung_soll": "soll", "leistung_max": "maximum"}
+PARTIKEL_BEIWERTE = {"leistung_soll": "soll", "leistung_max": "maximum", "zustand": "zustand"}
 """Was am Partikelabscheider mitgelesen wird, ohne eigener Sensor zu sein.
 
 Soll und Maximum der Leistung stehen als Attribute "soll" und "maximum"
 an den Sensoren der Leistung: Die Karte misst daran, wie stark die
-Elektrode leuchtet. Schlüssel hinter "partikelabscheider_" und Name des
-Attributs.
+Elektrode leuchtet. Dazu "zustand": der Zustand des Abscheiders in den
+Worten der Anlage - die Karte zeigt ihn als Schildchen. Schlüssel hinter
+"partikelabscheider_" und Name des Attributs.
 """
 
 

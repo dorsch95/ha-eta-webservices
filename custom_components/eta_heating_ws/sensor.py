@@ -275,8 +275,9 @@ class ETAWeitererWert(ETABaseSensor):
 class ETAPartikelLeistungSensor(ETAMeasurementSensor):
     """Die Leistung eines Netzteils am Partikelabscheider.
 
-    Als Attribute dazu "soll" und "maximum", soweit die Anlage sie führt,
-    siehe PARTIKEL_BEIWERTE - eigene Sensoren sind sie nicht.
+    Als Attribute dazu "soll", "maximum" und "zustand", soweit die Anlage
+    sie führt, siehe PARTIKEL_BEIWERTE - eigene Sensoren sind sie nicht.
+    Der Zustand steht da, wie die Anlage ihn nennt.
     """
 
     @property
@@ -284,7 +285,12 @@ class ETAPartikelLeistungSensor(ETAMeasurementSensor):
         attribute = dict(super().extra_state_attributes)
         for art, name in PARTIKEL_BEIWERTE.items():
             wert = (self.coordinator.data or {}).get(f"partikelabscheider_{art}")
-            if wert is not None and not wert.is_text and wert.value is not None:
+            if wert is None:
+                continue
+            if wert.is_text:
+                if wert.text.strip():
+                    attribute[name] = wert.text.strip()
+            elif wert.value is not None:
                 attribute[name] = wert.value
         return attribute
 
