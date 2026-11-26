@@ -1,0 +1,155 @@
+<fub uri="/264/10571" name="Part.-Absch.">
+  <object uri="/264/10571/0/0/10990" name="Eingänge">
+    <object uri="/264/10571/0/0/14439" name="Verriegelung Abscheider Netzteil" />
+    <object uri="/264/10571/0/0/14440" name="Verriegelung Abscheider Netzteil 2" />
+    <object uri="/264/10571/0/0/14441" name="Verriegelung Abscheider Netzteil 3" />
+    <object uri="/264/10571/0/0/14922" name="Verriegelung Abscheider Netzteil 4" />
+    <object uri="/264/10571/0/0/14923" name="Verriegelung Abscheider Netzteil 5" />
+    <object uri="/264/10571/0/0/14924" name="Verriegelung Abscheider Netzteil 6" />
+    <object uri="/264/10571/0/0/14453" name="Verriegelung Abscheider Netzteil rechts" />
+  </object>
+  <object uri="/264/10571/0/0/10991" name="Ausgänge">
+    <object uri="/264/10571/0/11318/0" name="Abscheider Netzteil">
+      <object uri="/264/10571/0/11318/2001" name="Anforderung" />
+      <object uri="/264/10571/0/11318/2330" name="Spannung-Soll" />
+      <object uri="/264/10571/0/11318/2327" name="Strom-Soll" />
+      <object uri="/264/10571/0/11318/2328" name="Leistung-Soll" />
+    </object>
+  </object>
+  <object uri="/264/10571/0/0/12010" name="Zählerstände">
+    <object uri="/264/10571/0/0/12944" name="Betriebsstunden Kessel" />
+    <object uri="/264/10571/0/0/12017" name="Zähler Heizbetriebe" />
+  </object>
+  <object uri="/264/10571/0/0/19439" name="Partikelabscheider">
+    <object uri="/264/10571/0/0/12733" name="Part.Abscheider-Zustand detailliert" />
+    <object uri="/264/10571/0/0/15108" name="Isolatortyp" />
+    <object uri="/264/10571/0/0/15128" name="Sollwert Feuerungsleistung" />
+    <object uri="/264/10571/14912/0/0" name="Abscheider Netzteil">
+      <object uri="/264/10571/14912/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14912/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14912/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14912/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14912/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14912/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14912/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14912/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14912/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14912/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14912/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14912/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14912/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+    <object uri="/264/10571/14909/0/0" name="Abscheider Netzteil 2">
+      <object uri="/264/10571/14909/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14909/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14909/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14909/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14909/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14909/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14909/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14909/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14909/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14909/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14909/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14909/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14909/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+    <object uri="/264/10571/14914/0/0" name="Abscheider Netzteil 3">
+      <object uri="/264/10571/14914/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14914/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14914/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14914/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14914/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14914/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14914/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14914/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14914/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14914/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14914/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14914/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14914/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+    <object uri="/264/10571/14919/0/0" name="Abscheider Netzteil 4">
+      <object uri="/264/10571/14919/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14919/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14919/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14919/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14919/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14919/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14919/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14919/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14919/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14919/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14919/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14919/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14919/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+    <object uri="/264/10571/14920/0/0" name="Abscheider Netzteil 5">
+      <object uri="/264/10571/14920/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14920/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14920/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14920/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14920/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14920/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14920/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14920/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14920/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14920/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14920/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14920/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14920/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+    <object uri="/264/10571/14921/0/0" name="Abscheider Netzteil 6">
+      <object uri="/264/10571/14921/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14921/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14921/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14921/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14921/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14921/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14921/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14921/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14921/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14921/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14921/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14921/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14921/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+    <object uri="/264/10571/14913/0/0" name="Abscheider Netzteil rechts">
+      <object uri="/264/10571/14913/0/12010" name="Zählerstände">
+        <object uri="/264/10571/14913/0/13148" name="Überschläge pro Stunde" />
+        <object uri="/264/10571/14913/0/13149" name="Überschläge gesamt" />
+        <object uri="/264/10571/14913/0/12945" name="Betriebsstunden" />
+        <object uri="/264/10571/14913/0/12946" name="Relative Laufzeit" />
+      </object>
+      <object uri="/264/10571/14913/0/14452" name="Hochspannung Soll" />
+      <object uri="/264/10571/14913/0/13125" name="Hochspannung Ist" />
+      <object uri="/264/10571/14913/0/13127" name="Strom Ist" />
+      <object uri="/264/10571/14913/0/15424" name="Leistung Max" />
+      <object uri="/264/10571/14913/0/14530" name="Aktuelle Leistung" />
+      <object uri="/264/10571/14913/0/14040" name="Referenzwerte">
+        <object uri="/264/10571/14913/0/14041" name="Referenz Spannung" />
+        <object uri="/264/10571/14913/0/14042" name="Referenz Strom" />
+      </object>
+    </object>
+  </object>
+  <object uri="/264/10571/0/0/14092" name="Laufzeitmessung">
+    <object uri="/264/10571/0/0/14047" name="Referenz Spannung" />
+    <object uri="/264/10571/0/0/14048" name="Referenz Strom" />
+    <object uri="/264/10571/0/0/12944" name="Betriebsstunden Kessel" />
+    <object uri="/264/10571/0/0/14161" name="Betriebsstunden Filter gesamt nach FAQ38" />
+    <object uri="/264/10571/0/0/14162" name="Relative Laufzeit gesamt" />
+    <object uri="/264/10571/0/0/12017" name="Zähler Heizbetriebe" />
+  </object>
+</fub>

@@ -63,6 +63,7 @@
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
           "pvm": "FUB-Name: PV-Heizmodul (PVM)",
+          "partikelabscheider": "FUB-Name: Partikelabscheider (Part.-Absch.)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
           "lager": "FUB-Name: Pelletlager (Lager)",
@@ -249,6 +250,7 @@
           "hk2": "FUB-Name: Heizkreis 2 (HK2)",
           "solar": "FUB-Name: Solaranlage (Solar)",
           "pvm": "FUB-Name: PV-Heizmodul (PVM)",
+          "partikelabscheider": "FUB-Name: Partikelabscheider (Part.-Absch.)",
           "hk3": "FUB-Name: Heizkreis 3 (HK3)",
           "hk4": "FUB-Name: Heizkreis 4 (HK4)",
           "lager": "FUB-Name: Pelletlager (Lager)",
@@ -394,6 +396,7 @@
         "twin": "TWIN (Pelletteil am Stückholzkessel)",
         "solar": "Solaranlage",
         "pvm": "PV-Heizmodul (PVM)",
+        "partikelabscheider": "Partikelabscheider",
         "lager": "Pelletlager",
         "brenner": "Brenner (zweiter Wärmeerzeuger, z. B. Gastherme)",
         "fremdwaerme": "Fremdwärme (Ofen, der an der ETA-Regelung angeschlossen ist: am Display ein eigener Block, ab Werk „F.Wärme“)",
@@ -564,6 +567,13 @@
           "automatik": "Auto",
           "heizen": "Dauer",
           "absenken": "ECO"
+        }
+      },
+      "partikelabscheider_bild": {
+        "name": "Partikelabscheider Bild",
+        "state": {
+          "kurz": "Kurze Elektrode (ePE, eSH, eTWIN)",
+          "lang": "Lange Elektrode (eHACK, ePE-K)"
         }
       },
       "brenner_bild": {
@@ -912,6 +922,9 @@
       },
       "komponente_pvm": {
         "name": "Komponente PV-Heizmodul"
+      },
+      "komponente_partikelabscheider": {
+        "name": "Komponente Partikelabscheider"
       },
       "komponente_solar": {
         "name": "Komponente Solar"
@@ -1269,6 +1282,69 @@
       },
       "pvm_ertrag_gestern": {
         "name": "PV-Heizmodul Ertrag gestern"
+      },
+      "partikelabscheider_spannung": {
+        "name": "Partikelabscheider Hochspannung"
+      },
+      "partikelabscheider_strom": {
+        "name": "Partikelabscheider Strom"
+      },
+      "partikelabscheider_leistung": {
+        "name": "Partikelabscheider Leistung"
+      },
+      "partikelabscheider_2_spannung": {
+        "name": "Partikelabscheider Netzteil 2 Hochspannung"
+      },
+      "partikelabscheider_2_strom": {
+        "name": "Partikelabscheider Netzteil 2 Strom"
+      },
+      "partikelabscheider_2_leistung": {
+        "name": "Partikelabscheider Netzteil 2 Leistung"
+      },
+      "partikelabscheider_3_spannung": {
+        "name": "Partikelabscheider Netzteil 3 Hochspannung"
+      },
+      "partikelabscheider_3_strom": {
+        "name": "Partikelabscheider Netzteil 3 Strom"
+      },
+      "partikelabscheider_3_leistung": {
+        "name": "Partikelabscheider Netzteil 3 Leistung"
+      },
+      "partikelabscheider_4_spannung": {
+        "name": "Partikelabscheider Netzteil 4 Hochspannung"
+      },
+      "partikelabscheider_4_strom": {
+        "name": "Partikelabscheider Netzteil 4 Strom"
+      },
+      "partikelabscheider_4_leistung": {
+        "name": "Partikelabscheider Netzteil 4 Leistung"
+      },
+      "partikelabscheider_5_spannung": {
+        "name": "Partikelabscheider Netzteil 5 Hochspannung"
+      },
+      "partikelabscheider_5_strom": {
+        "name": "Partikelabscheider Netzteil 5 Strom"
+      },
+      "partikelabscheider_5_leistung": {
+        "name": "Partikelabscheider Netzteil 5 Leistung"
+      },
+      "partikelabscheider_6_spannung": {
+        "name": "Partikelabscheider Netzteil 6 Hochspannung"
+      },
+      "partikelabscheider_6_strom": {
+        "name": "Partikelabscheider Netzteil 6 Strom"
+      },
+      "partikelabscheider_6_leistung": {
+        "name": "Partikelabscheider Netzteil 6 Leistung"
+      },
+      "partikelabscheider_rechts_spannung": {
+        "name": "Partikelabscheider Netzteil rechts Hochspannung"
+      },
+      "partikelabscheider_rechts_strom": {
+        "name": "Partikelabscheider Netzteil rechts Strom"
+      },
+      "partikelabscheider_rechts_leistung": {
+        "name": "Partikelabscheider Netzteil rechts Leistung"
       },
       "pvm_ertrag_heute": {
         "name": "PV-Heizmodul Ertrag heute"

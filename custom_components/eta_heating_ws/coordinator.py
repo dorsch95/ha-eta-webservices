@@ -35,6 +35,7 @@ from .const import (
     DOMAIN,
     HEIZKREISE,
     PUFFER_FUEHLER_MINDEST,
+    PARTIKEL_BEIWERTE,
     PUFFER_SPEICHER,
     SENSORS,
     THERMOSTATE,
@@ -134,7 +135,9 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
 
     Das Gesamtvolumen eines Puffers wird mitgelesen, bekommt aber keinen
     Sensor: Es steht im Zahlenfeld "Puffervolumen", daher der Vermerk
-    "platform": "number".
+    "platform": "number". Ebenso Soll und Maximum der Leistung am
+    Partikelabscheider: Sie stehen als Attribute an seinen Sensoren der
+    Leistung, Vermerk "platform": "attribut", siehe PARTIKEL_BEIWERTE.
     """
     aktiv = set(normalize_components(components))
     sensor_defs = {
@@ -173,6 +176,18 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
                 "default_unit": "L",
                 "platform": "number",
             }
+
+    if "partikelabscheider" in aktiv:
+        for art in PARTIKEL_BEIWERTE:
+            key = f"partikelabscheider_{art}"
+            if discovered_uris.get(key):
+                sensor_defs[key] = {
+                    "component": "partikelabscheider",
+                    "name": f"Partikelabscheider {art}",
+                    "translation_key": key,
+                    "uri": discovered_uris[key],
+                    "platform": "attribut",
+                }
 
     return sensor_defs
 

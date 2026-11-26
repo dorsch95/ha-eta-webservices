@@ -63,6 +63,7 @@
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
           "pvm": "FUB name: PV heating module (PVM)",
+          "partikelabscheider": "FUB name: Particle separator (Part.-Absch.)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
           "hk4": "FUB name: heating circuit 4 (HK4)",
           "lager": "FUB name: pellet store (Lager)",
@@ -249,6 +250,7 @@
           "hk2": "FUB name: heating circuit 2 (HK2)",
           "solar": "FUB name: Solar thermal system (Solar)",
           "pvm": "FUB name: PV heating module (PVM)",
+          "partikelabscheider": "FUB name: Particle separator (Part.-Absch.)",
           "hk3": "FUB name: heating circuit 3 (HK3)",
           "hk4": "FUB name: heating circuit 4 (HK4)",
           "lager": "FUB name: pellet store (Lager)",
@@ -394,6 +396,7 @@
         "twin": "TWIN (pellet unit on the log wood boiler)",
         "solar": "Solar thermal system",
         "pvm": "PV heating module (PVM)",
+        "partikelabscheider": "Particle separator",
         "lager": "Pellet store",
         "brenner": "Burner (second heat source, e.g. gas boiler)",
         "fremdwaerme": "External heat (stove connected to the ETA control: its own block at the display, \"F.Wärme\" by default)",
@@ -564,6 +567,13 @@
           "automatik": "Auto",
           "heizen": "Continuous",
           "absenken": "ECO"
+        }
+      },
+      "partikelabscheider_bild": {
+        "name": "Particle separator picture",
+        "state": {
+          "kurz": "Short electrode (ePE, eSH, eTWIN)",
+          "lang": "Long electrode (eHACK, ePE-K)"
         }
       },
       "brenner_bild": {
@@ -912,6 +922,9 @@
       },
       "komponente_pvm": {
         "name": "PV heating module component"
+      },
+      "komponente_partikelabscheider": {
+        "name": "Particle separator component"
       },
       "komponente_solar": {
         "name": "Solar component"
@@ -1269,6 +1282,69 @@
       },
       "pvm_ertrag_gestern": {
         "name": "PV heating module yield yesterday"
+      },
+      "partikelabscheider_spannung": {
+        "name": "Particle separator high voltage"
+      },
+      "partikelabscheider_strom": {
+        "name": "Particle separator current"
+      },
+      "partikelabscheider_leistung": {
+        "name": "Particle separator power"
+      },
+      "partikelabscheider_2_spannung": {
+        "name": "Particle separator power supply 2 high voltage"
+      },
+      "partikelabscheider_2_strom": {
+        "name": "Particle separator power supply 2 current"
+      },
+      "partikelabscheider_2_leistung": {
+        "name": "Particle separator power supply 2 power"
+      },
+      "partikelabscheider_3_spannung": {
+        "name": "Particle separator power supply 3 high voltage"
+      },
+      "partikelabscheider_3_strom": {
+        "name": "Particle separator power supply 3 current"
+      },
+      "partikelabscheider_3_leistung": {
+        "name": "Particle separator power supply 3 power"
+      },
+      "partikelabscheider_4_spannung": {
+        "name": "Particle separator power supply 4 high voltage"
+      },
+      "partikelabscheider_4_strom": {
+        "name": "Particle separator power supply 4 current"
+      },
+      "partikelabscheider_4_leistung": {
+        "name": "Particle separator power supply 4 power"
+      },
+      "partikelabscheider_5_spannung": {
+        "name": "Particle separator power supply 5 high voltage"
+      },
+      "partikelabscheider_5_strom": {
+        "name": "Particle separator power supply 5 current"
+      },
+      "partikelabscheider_5_leistung": {
+        "name": "Particle separator power supply 5 power"
+      },
+      "partikelabscheider_6_spannung": {
+        "name": "Particle separator power supply 6 high voltage"
+      },
+      "partikelabscheider_6_strom": {
+        "name": "Particle separator power supply 6 current"
+      },
+      "partikelabscheider_6_leistung": {
+        "name": "Particle separator power supply 6 power"
+      },
+      "partikelabscheider_rechts_spannung": {
+        "name": "Particle separator power supply right high voltage"
+      },
+      "partikelabscheider_rechts_strom": {
+        "name": "Particle separator power supply right current"
+      },
+      "partikelabscheider_rechts_leistung": {
+        "name": "Particle separator power supply right power"
       },
       "pvm_ertrag_heute": {
         "name": "PV heating module yield today"

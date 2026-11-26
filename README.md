@@ -114,6 +114,7 @@ Funktionsblöcke (FUB) lassen sich an der Steuerung umbenennen. Die Felder sind 
 | Pelletlager | `Lager` |
 | Solaranlage | `Solar` |
 | PV-Heizmodul | `PVM` |
+| Partikelabscheider | `Part.-Absch.` |
 | Brenner | `Brenner` |
 | Fremdwärme | `F.Wärme`, auch `Fremdwärme` oder `Ofen` |
 | Fernleitung | `Fernl` |
@@ -259,6 +260,14 @@ Gut zu wissen:
 | `sensor.eta_heizung_solar_kollektortemperatur` | Solar Kollektortemperatur | °C |
 | `sensor.eta_heizung_solar_leistung` | Solar Leistung | kW |
 | `sensor.eta_heizung_solar_warmemenge` | Solar Wärmemenge | kWh |
+| **Partikelabscheider** | | |
+| `sensor.eta_heizung_partikelabscheider_hochspannung` | Partikelabscheider Hochspannung | von der Anlage |
+| `sensor.eta_heizung_partikelabscheider_strom` | Partikelabscheider Strom | von der Anlage |
+| `sensor.eta_heizung_partikelabscheider_leistung` | Partikelabscheider Leistung | von der Anlage |
+| `sensor.eta_heizung_partikelabscheider_netzteil_2_hochspannung` | Partikelabscheider Netzteil 2 Hochspannung | von der Anlage |
+| `sensor.eta_heizung_partikelabscheider_netzteil_2_strom` | Partikelabscheider Netzteil 2 Strom | von der Anlage |
+| `sensor.eta_heizung_partikelabscheider_netzteil_2_leistung` | Partikelabscheider Netzteil 2 Leistung | von der Anlage |
+| `select.eta_heizung_partikelabscheider_bild` | Partikelabscheider Bild in der Karte „ETA Übersicht“: kurze oder lange Elektrode | Auswahl |
 | **PV-Heizmodul** | | |
 | `sensor.eta_heizung_pv_heizmodul_ertrag_gestern` | PV-Heizmodul Ertrag gestern | kWh |
 | `sensor.eta_heizung_pv_heizmodul_ertrag_heute` | PV-Heizmodul Ertrag heute | kWh |
@@ -312,11 +321,11 @@ Das sagt das Attribut `status` jedes Sensors:
 
 ### Weitere Werte
 
-Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an einer echten Anlage über tausend. Unter **Konfigurieren → Weitere Werte auswählen** suchst du dir daraus aus, was du zusätzlich als Sensor haben willst, etwa Betriebsstunden oder die Werte eines Partikelabscheiders.
+Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an einer echten Anlage über tausend. Unter **Konfigurieren → Weitere Werte auswählen** suchst du dir daraus aus, was du zusätzlich als Sensor haben willst, etwa Betriebsstunden oder Zählerstände.
 
 - **Auswählen:** Jeder Funktionsblock deiner Heizung hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
 - **Nur lesen:** Geschrieben wird nie. Einheit und Text kommen von der Heizung.
-- **Diagnose:** Den Funktionsblock „Diagnose“ zeigt die Integration nicht. Am Display der Heizung ist er erst nach Eingabe eines Passworts zu sehen.
+- **Nicht zur Wahl:** der Funktionsblock „Diagnose“, weil er am Display der Heizung erst nach Eingabe eines Passworts zu sehen ist, und der Partikelabscheider, von dem die Integration nur Spannung, Strom und Leistung führt.
 - **Takt:** Die weiteren Werte werden getrennt von den festen gelesen. Im zweiten Schritt stellst du mit zwei Reglern ein, wie viele je Abfrage gelesen werden (ab Werk 25) und in welchem Abstand (ab Werk dein Abfrageintervall). Passen nicht alle in eine Abfrage, kommen sie reihum dran. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
 - **Schnell:** Bis zu 10 der gewählten Werte kannst du dort zusätzlich in die schnelle Abfrage nehmen. Sie kommen dann in deren Abstand, ab Werk alle 3 Sekunden.
 
@@ -391,6 +400,7 @@ Welche Werte ankommen, entscheidet die Anlage.
 - **Pelletlager:** Vorrat, Warngrenze und Fassungsvermögen kommen von der Anlage, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
 - **Ältere Regelungen** (Webservices 1.1): Die Integration liest Pelletkessel, älteren Puffer, Warmwasserspeicher, Heizkreise, Pelletlager, Außentemperatur und Solaranlage. Den Ladezustand des Puffers rechnet sie selbst, das Fassungsvermögen des Lagers trägst du ein. Schalten und Einstellen geht erst ab Webservices 1.2.
 - **Solaranlage:** Die Kollektortemperatur gibt es immer, Leistung, Wärmemenge und Erträge nur mit Wärmemengenmessung. Fürs Energie-Dashboard eignet sich die Wärmemenge nicht.
+- **Partikelabscheider:** je Netzteil Hochspannung, Strom und Leistung, sonst nichts aus diesem Block. Die Integration liest dort nur und schreibt nie, er arbeitet mit Hochspannung. Das erste Netzteil ist von Anfang an da. Die Sensoren der übrigen (`_netzteil_2_`, dann `_netzteil_3_` bis `_netzteil_6_` und `_netzteil_rechts_`) sind ausgeschaltet, weil der Menübaum alle aufführt, gleich wie viele eingebaut sind: Schalte in Home Assistant die ein, die deine Anlage hat. Die Karte „ETA Übersicht“ zeichnet die Elektrode und lässt ihre Zacken umso heller leuchten, je mehr Leistung fließt. Ob sie kurz ist (ePE, eSH, eTWIN) oder lang (eHACK, ePE-K), wählst du am Gerät mit `select.eta_heizung_partikelabscheider_bild`. Ist der Abscheider verriegelt, leuchtet nichts - eine Störung ist das nicht.
 - **PV-Heizmodul (PVM):** heizt mit überschüssigem PV-Strom ins Wasser. `sensor.eta_heizung_pv_heizmodul_gesamtenergie` gehört im Energie-Dashboard unter **Einzelne Geräte**. An einer echten Anlage ist das PV-Heizmodul noch nicht geprüft.
 - **Brenner:** ein zweiter Wärmeerzeuger wie Gastherme, Ölkessel oder Wärmepumpe, den die ETA-Regelung freigibt oder sperrt. Ob er wirklich brennt, meldet er nicht zurück.
 - **Fremdwärme:** ein Ofen an der ETA-Regelung, etwa ein Kaminofen mit Wassertasche. Gelesen werden Temperatur, Speichertemperatur, Zustand und Ladepumpe.

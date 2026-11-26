@@ -42,6 +42,9 @@ from .verbindungen import verbindungen
 OHNE_KACHEL = ("twin",)
 """Komponenten, die kein eigenes Teil der Anlage sind - der TWIN gehört zum Kessel."""
 
+BEIM_KESSEL = ("partikelabscheider",)
+"""Teile, die am Kessel sitzen: Die Karte zeigt sie gleich hinter ihm, nicht an ihrer Stelle in COMPONENTS."""
+
 
 def karte_adresse() -> str:
     """Die Adresse der Karte, mit der Version als Anhang - wie bei den Kachelgrafiken."""
@@ -173,11 +176,20 @@ def anlage(hass: HomeAssistant, eintrag) -> dict:
     wege = verbindungen(
         komponenten, {**eintrag.data, **eintrag.options}.get(CONF_VERBINDUNGEN)
     )
-    gezeigt = [
+    vorhanden = [
         komponente
         for komponente in komponenten
         if komponente not in OHNE_KACHEL and _vorhanden(coordinator, komponente)
     ]
+    am_kessel = [komponente for komponente in vorhanden if komponente in BEIM_KESSEL]
+    gezeigt = []
+    for komponente in vorhanden:
+        if komponente in BEIM_KESSEL:
+            continue
+        gezeigt.append(komponente)
+        if komponente == "kessel":
+            gezeigt.extend(am_kessel)
+    gezeigt.extend(komponente for komponente in am_kessel if komponente not in gezeigt)
     return {
         "eintrag": eintrag.entry_id,
         "titel": eintrag.title,

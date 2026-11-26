@@ -385,6 +385,27 @@ def weitere_speicher() -> set[str]:
     return {*komponenten, *(rolle for k in komponenten for rolle in COMPONENTS[k]["roles"])}
 
 
+def weitere_netzteile() -> set[str]:
+    """Die Sensoren der Netzteile ab dem dritten am Partikelabscheider.
+
+    Das README führt das erste und das zweite Netzteil auf und nennt, wie
+    es weitergeht - fünf weitere gleichlautende Blöcke läse niemand.
+    """
+    from eta_heating_ws.const import PARTIKEL_NETZTEILE, PARTIKEL_WERTE
+
+    return {
+        f"partikelabscheider{anhang}_{art}"
+        for anhang in list(PARTIKEL_NETZTEILE)[2:]
+        for art, *_ in PARTIKEL_WERTE
+    }
+
+
+def test_readme_nennt_die_weiteren_netzteile():
+    text = readme_text()
+    assert "`_netzteil_3_` bis `_netzteil_6_` und `_netzteil_rechts_`" in text
+    assert len(weitere_netzteile()) == 15
+
+
 def test_readme_nennt_die_hoechste_nummer():
     text = readme_text()
     assert f"Pufferspeicher 2 bis {len(PUFFER_SPEICHER)}" in text
@@ -548,8 +569,8 @@ def entitaetstabelle() -> list[str]:
             or ("von der Anlage" if info.get("einheit_der_anlage") else None)
             or ("Text" if info.get("is_string") else "–"),
         )
-        for info in SENSORS.values()
-        if info["component"] not in weitere_speicher()
+        for key, info in SENSORS.items()
+        if info["component"] not in weitere_speicher() and key not in weitere_netzteile()
     ]
     zeilen += [
         zeile("switch", i["translation_key"], "Schalter")

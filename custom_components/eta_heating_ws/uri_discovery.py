@@ -17,6 +17,8 @@ from .const import (
     COMPONENTS,
     ENTASCHEN_TASTE,
     FUB_ROLE_DEFAULT_NAMES,
+    PARTIKEL_NETZTEILE,
+    PARTIKEL_WERTE,
     PUFFER_FUEHLER_MAX,
     PUFFER_SPEICHER,
     THERMOSTATE,
@@ -131,6 +133,22 @@ DISCOVERY_PATHS = {
     "pvm_gesamtenergie": ("pvm", ["Zählerstände", "Gesamtenergie Heizstab"]),
     "pvm_ertrag_heute": ("pvm", ["Zählerstände", "Ertrag heute"]),
     "pvm_ertrag_gestern": ("pvm", ["Zählerstände", "Ertrag gestern"]),
+    "partikelabscheider_leistung_soll": (
+        "partikelabscheider",
+        ["Ausgänge", "Abscheider Netzteil", "Leistung-Soll"],
+    ),
+    "partikelabscheider_leistung_max": (
+        "partikelabscheider",
+        ["Partikelabscheider", "Abscheider Netzteil", "Leistung Max"],
+    ),
+    **{
+        f"partikelabscheider{anhang}_{art}": (
+            "partikelabscheider",
+            ["Partikelabscheider", f"Abscheider Netzteil{zusatz}", name],
+        )
+        for anhang, (zusatz, _nummer) in PARTIKEL_NETZTEILE.items()
+        for art, _bezeichnung, name, _kennung, _symbol in PARTIKEL_WERTE
+    },
     "brenner_anforderung": ("brenner", ["Ausgänge", "Anforderung Brenner"]),
     "brenner_temperatur": ("brenner", ["Brenner", "Brennertemperatur"]),
     "brenner_leistung_soll": ("brenner", ["Ausgänge", "Leistung Soll"]),
@@ -263,6 +281,13 @@ KENNUNGEN = {
     "solar_waermemenge": "0/0/12349",
     "solar_ertrag_heute": "0/0/12350",
     "solar_ertrag_gestern": "0/0/12769",
+    "partikelabscheider_leistung_soll": "0/11318/2328",
+    "partikelabscheider_leistung_max": "14912/0/15424",
+    **{
+        f"partikelabscheider{anhang}_{art}": f"{nummer}/0/{kennung}"
+        for anhang, (_zusatz, nummer) in PARTIKEL_NETZTEILE.items()
+        for art, _bezeichnung, _name, kennung, _symbol in PARTIKEL_WERTE
+    },
     "pvm_heizstab": "0/0/14120",
     "pvm_temperatur_oben": "0/11718/0",
     "pvm_temperatur_mitte": "0/11719/0",

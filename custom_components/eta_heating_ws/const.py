@@ -443,6 +443,12 @@ COMPONENTS = {
         "roles": ["pvm"],
         "discovery_prefixes": ["pvm_"],
     },
+    "partikelabscheider": {
+        "name": "Partikelabscheider",
+        "image": None,
+        "roles": ["partikelabscheider"],
+        "discovery_prefixes": ["partikelabscheider"],
+    },
     "brenner": {
         "name": "Brenner",
         "image": "brenner",
@@ -647,7 +653,24 @@ Was verbaut ist, weiß die Anlage nicht - der Nutzer wählt es je Heizkreis,
 siehe BILD_AUSWAHLEN.
 """
 
+PARTIKEL_BILDER = ["kurz", "lang"]
+"""Wie die Karte "ETA Übersicht" die Elektrode eines Partikelabscheiders zeichnet.
+
+Kurz ist der eckige Bügel mit Zacken unter dem Isolator, wie ihn ePE, eSH
+und eTWIN haben, lang der hohe Rahmen mit Sprossen von eHACK und ePE-K.
+Welcher Kessel dahintersteht, sagt der Menübaum nicht - der Nutzer wählt
+es, siehe BILD_AUSWAHLEN.
+"""
+
 BILD_AUSWAHLEN = {
+    "partikelabscheider_bild": {
+        "component": "partikelabscheider",
+        "name": "Partikelabscheider Bild",
+        "translation_key": "partikelabscheider_bild",
+        "icon": "mdi:image-edit-outline",
+        "vorgabe": PARTIKEL_BILDER[0],
+        "optionen": PARTIKEL_BILDER,
+    },
     "brenner_bild": {
         "component": "brenner",
         "name": "Brenner Bild",
@@ -1069,6 +1092,71 @@ def _weitere_warmwasser_sensoren():
                 },
             }
         )
+    return sensoren
+
+
+PARTIKEL_NETZTEILE = {
+    "": ("", "14912"),
+    "_2": (" 2", "14909"),
+    "_3": (" 3", "14914"),
+    "_4": (" 4", "14919"),
+    "_5": (" 5", "14920"),
+    "_6": (" 6", "14921"),
+    "_rechts": (" rechts", "14913"),
+}
+"""Die Netzteile eines Partikelabscheiders.
+
+Je Netzteil der Anhang in den Schlüsseln, der Zusatz hinter "Abscheider
+Netzteil" im Menübaum und die Nummer in der Mitte seiner Adressen. So
+führt der Menübaum einer echten Anlage sie unter "Partikelabscheider":
+"Abscheider Netzteil", "Abscheider Netzteil 2" bis "6" und "Abscheider
+Netzteil rechts" - alle sieben, gleich wie viele eingebaut sind. Die
+meisten Anlagen haben eines, große mit zwei Elektroden zwei, Kaskaden
+mehr. Welche es gibt, verrät der Menübaum also nicht: Die Sensoren des
+ersten Netzteils sind deshalb von Anfang an da, die der übrigen ab Werk
+ausgeschaltet ("ab_werk_aus").
+"""
+
+PARTIKEL_WERTE = (
+    ("spannung", "Hochspannung", "Hochspannung Ist", "13125", "mdi:flash-triangle-outline"),
+    ("strom", "Strom", "Strom Ist", "13127", "mdi:current-dc"),
+    ("leistung", "Leistung", "Aktuelle Leistung", "14530", "mdi:lightning-bolt-outline"),
+)
+"""Was je Netzteil gelesen wird: Art, Name des Sensors, Name im Menübaum, Kennung am Ende der Adresse, Symbol."""
+
+
+PARTIKEL_BEIWERTE = {"leistung_soll": "soll", "leistung_max": "maximum"}
+"""Was am Partikelabscheider mitgelesen wird, ohne eigener Sensor zu sein.
+
+Soll und Maximum der Leistung stehen als Attribute "soll" und "maximum"
+an den Sensoren der Leistung: Die Karte misst daran, wie stark die
+Elektrode leuchtet. Schlüssel hinter "partikelabscheider_" und Name des
+Attributs.
+"""
+
+
+def _partikel_sensoren():
+    """Die Sensoren des Partikelabscheiders: je Netzteil Hochspannung, Strom und Leistung.
+
+    Mehr führt die Integration aus diesem Funktionsblock nicht, und sie
+    schreibt dort nie - er arbeitet mit Hochspannung. Auch unter "Weitere
+    Werte" steht er nicht zur Wahl, siehe weitere_werte.GESPERRT.
+
+    Die Einheiten sind an keinem Bericht belegt und kommen deshalb von
+    der Anlage (einheit_der_anlage).
+    """
+    sensoren = {}
+    for anhang, (zusatz, _nummer) in PARTIKEL_NETZTEILE.items():
+        for art, bezeichnung, _name, _kennung, symbol in PARTIKEL_WERTE:
+            key = f"partikelabscheider{anhang}_{art}"
+            sensoren[key] = {
+                "component": "partikelabscheider",
+                "name": f"Partikelabscheider{' Netzteil' + zusatz if anhang else ''} {bezeichnung}",
+                "translation_key": key,
+                "icon": symbol,
+                "einheit_der_anlage": True,
+                **({"nur_wenn_vorhanden": True, "ab_werk_aus": True} if anhang else {}),
+            }
     return sensoren
 
 
@@ -1612,6 +1700,7 @@ SENSORS = {
         "icon": "mdi:pump",
         "is_string": True,
     },
+    **_partikel_sensoren(),
 }
 """Alle Messwerte, die die Integration kennt.
 
@@ -1623,6 +1712,10 @@ geladenen Puffers, und ein dauerhaftes "-" wäre dort bloß Ballast.
 "zustaende" übersetzt den Klartext der Anlage in feste Zustände, die
 Home Assistant in der Sprache der Oberfläche zeigt - aus "Ein" wird so
 "heizzeit", auf Deutsch angezeigt als "Tag".
+
+"ab_werk_aus": Die Entität gibt es, sie ist aber ausgeschaltet, bis der
+Nutzer sie einschaltet - für Werte, von denen der Menübaum nicht verrät,
+ob die Anlage sie wirklich führt.
 """
 
 PUFFER_FUEHLER_MAX = 9
@@ -1679,6 +1772,7 @@ FUB_ROLE_DEFAULT_NAMES = {
     "lager": ["Lager"],
     "solar": ["Solar"],
     "pvm": ["PVM"],
+    "partikelabscheider": ["Part.-Absch.", "Partikelabscheider"],
     "brenner": ["Brenner"],
     "fremdwaerme": ["F.Wärme", "Fremdwärme", "Fremdw", "Ofen"],
     "fernleitung": ["Fernl", "Fernleitung"],

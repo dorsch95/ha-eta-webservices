@@ -115,6 +115,12 @@ const TEXTE = {
     heute: "Heute",
     liefert: "Liefert",
     pvm: "PV-Heizmodul",
+    partikelabscheider: "Partikelabscheider",
+    hochspannung: "Hochspannung",
+    strom: "Strom",
+    netzteil: "Netzteil",
+    rechts: "rechts",
+    arbeitet: "Arbeitet",
     heizstab: "Heizstab",
     speicher_oben: "Speicher oben",
     brenner: "Brenner",
@@ -252,6 +258,12 @@ const TEXTE = {
     heute: "Today",
     liefert: "Delivering",
     pvm: "PV heating module",
+    partikelabscheider: "Particle separator",
+    hochspannung: "High voltage",
+    strom: "Current",
+    netzteil: "Power supply",
+    rechts: "right",
+    arbeitet: "Working",
     heizstab: "Heating rod",
     speicher_oben: "Tank top",
     brenner: "Burner",
@@ -571,6 +583,20 @@ const STIL = `
   [data-aktiv] .p-blitz { fill: #ffcf33; animation: eta-blitz 1.3s ease-in-out infinite; }
   [data-aktiv] .p-zelle { animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
 
+  .a-rohr { fill: var(--metall); }
+  .a-stutzen { fill: var(--metall-dunkel); }
+  .a-kammer { fill: var(--kammer); }
+  .a-isolator { fill: #f1eee6; }
+  .a-ring { fill: #c9a94a; }
+  .a-raendel { fill: none; stroke: #9c7d2c; stroke-width: 1.1; stroke-linecap: round; }
+  .a-arm { fill: none; stroke: var(--metall-hell); stroke-width: 3; stroke-linecap: square; stroke-linejoin: miter; }
+  .a-arm.duenn { stroke-width: 2; }
+  .a-spitze { fill: var(--metall-hell); }
+  .a-halo { fill: url(#eta-korona); opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .a-elektrode[data-glut] .a-arm { stroke: #e3eeff; }
+  .a-elektrode[data-glut] .a-spitze { fill: #ffffff; }
+  .a-elektrode[data-glut] .a-halo { opacity: calc(.45 + .55 * var(--glut)); transform: scale(calc(.5 + .7 * var(--glut))); animation: eta-korona 1.7s ease-in-out infinite; animation-delay: calc(var(--i) * -.23s); }
+
   .b-anzeige { fill: var(--metall-dunkel); }
   .b-flamme { display: none; }
   [data-aktiv] .b-flamme { display: inline; }
@@ -696,6 +722,7 @@ const STIL = `
   @keyframes eta-schnecke { to { transform: translateX(12px); } }
   @keyframes eta-drehen { to { transform: rotate(360deg); } }
   @keyframes eta-leuchten { 0%, 100% { fill-opacity: .78; } 50% { fill-opacity: 1; } }
+  @keyframes eta-korona { 0%, 100% { opacity: calc(.25 + .5 * var(--glut)); } 45% { opacity: calc(.45 + .55 * var(--glut)); } 60% { opacity: calc(.3 + .5 * var(--glut)); } }
 
   @media (hover: hover) {
     .eta-knopf:hover, .eta-rund:hover, .eta-frage button:hover, button.eta-chip:hover { filter: brightness(.95); }
@@ -774,6 +801,7 @@ const ICON = {
 const DEFS = `<svg class="eta-defs" aria-hidden="true"><defs>
   <radialGradient id="eta-schein" cx=".5" cy="1" r=".95"><stop offset="0" stop-color="#ff9b00" stop-opacity=".8"/><stop offset="1" stop-color="#ff9b00" stop-opacity="0"/></radialGradient>
   <linearGradient id="eta-boden" gradientUnits="userSpaceOnUse" x1="0" y1="46" x2="0" y2="94"><stop offset="0" style="stop-color:var(--heiss)"/><stop offset="1" style="stop-color:var(--kalt)"/></linearGradient>
+  <radialGradient id="eta-korona"><stop offset="0" stop-color="#f2f8ff"/><stop offset=".3" stop-color="#9cc4ff" stop-opacity=".9"/><stop offset="1" stop-color="#7d5cff" stop-opacity="0"/></radialGradient>
   <pattern id="eta-pellets" width="24" height="15" patternUnits="userSpaceOnUse">
     <rect width="24" height="15" fill="var(--pellet)"/>
     <rect x="2" y="2" width="8.5" height="3.4" rx="1.7" fill="var(--pellet-hell)"/>
@@ -906,6 +934,56 @@ const pvmBild = () => `<svg class="eta-svg" viewBox="0 0 150 118" aria-hidden="t
   <path class="p-blitz" d="M40 4 24 30h10l-5 20 18-27H36l6-19z"/>
   ${paneel("p-zelle")}
 </svg>`;
+
+const NETZTEILE = [["", ""], ["_2", " 2"], ["_3", " 3"], ["_4", " 4"], ["_5", " 5"], ["_6", " 6"], ["_rechts", null]];
+/** Die Netzteile eines Partikelabscheiders: Anhang im Schlüssel der Entitäten und Zusatz im Namen - ohne Zusatz heißt es "rechts". */
+
+/**
+ * Der Partikelabscheider: ein Stück Abgasrohr, aufgeschnitten. Oben
+ * sitzt der Isolator aus weißer Keramik mit seinem Messingring, daran
+ * hängt die Elektrode. Zwei Bauformen: kurz ein eckiger Bügel aus
+ * Blech, dessen Enden hochgebogen sind, mit kleinen Zacken - so bei
+ * ePE, eSH und eTWIN; lang ein hoher Rahmen mit Sprossen - so bei eHACK
+ * und ePE-K. Welche es ist, wählt der Nutzer am Gerät.
+ *
+ * Arbeitet die Elektrode, liegt um jede Zacke ein Schein, umso heller,
+ * je mehr Leistung durch den Abscheider geht (glut von 0 bis 1). Ohne
+ * Leistung bleibt sie dunkel - verriegelt ist ein Abscheider oft, und
+ * das ist keine Störung.
+ *
+ * Elektroden hängen einzeln oder als Paar: Mit mehr als einem Netzteil
+ * zeichnet die Karte zwei.
+ */
+const ELEKTRODEN = {
+  kurz: {
+    isolator: '<rect class="a-isolator" x="53" y="20" width="14" height="48" rx="5"/><rect class="a-ring" x="47" y="30" width="26" height="11" rx="3"/><path class="a-raendel" d="M51 31.5v8M55 31.5v8M59 31.5v8M63 31.5v8M67 31.5v8"/>',
+    arme: '<path class="a-arm" d="M60 68V86M36 62V86H84V62M36 63H30M36 73H30M84 63H90M84 73H90M44 86V94M52 86V94M68 86V94M76 86V94"/>',
+    spitzen: [[30, 63], [30, 73], [90, 63], [90, 73], [44, 94], [52, 94], [68, 94], [76, 94]],
+  },
+  lang: {
+    isolator: '<rect class="a-isolator" x="54" y="20" width="12" height="17" rx="4"/><rect class="a-ring" x="49" y="24" width="22" height="8" rx="2.5"/><path class="a-raendel" d="M53 25.5v5M57 25.5v5M60 25.5v5M63 25.5v5M67 25.5v5"/>',
+    arme: '<path class="a-arm" d="M60 37V44"/><path class="a-arm duenn" d="M48 44H72V106H48ZM48 52H72M48 60H72M48 68H72M48 76H72M48 84H72M48 92H72M48 100H72M48 52H43M48 68H43M48 84H43M48 100H43M72 60H77M72 76H77M72 92H77M72 106H77"/>',
+    spitzen: [[43, 52], [43, 68], [43, 84], [43, 100], [77, 60], [77, 76], [77, 92], [77, 106]],
+  },
+};
+
+const abscheiderBild = (netzteile, bauform = "kurz") => {
+  const paar = netzteile.length > 1;
+  const form = ELEKTRODEN[bauform] || ELEKTRODEN.kurz;
+  const elektrode = (netzteil, mitte, mass) => {
+    const glut = netzteil?.glut || 0;
+    return `<g class="a-elektrode" ${glut > 0 ? `data-glut style="--glut:${glut.toFixed(2)}"` : ""} transform="translate(${(mitte - 60 * mass).toFixed(2)} ${(20 - 20 * mass).toFixed(2)}) scale(${mass})">
+      ${form.isolator}${form.arme}
+      ${form.spitzen.map(([x, y], i) => `<circle class="a-halo" style="--i:${i}" cx="${x}" cy="${y}" r="7.5"/><circle class="a-spitze" cx="${x}" cy="${y}" r="1.5"/>`).join("")}
+    </g>`;
+  };
+  return `<svg class="eta-svg" viewBox="0 0 120 132" data-bauform="${form === ELEKTRODEN.lang ? "lang" : "kurz"}" aria-hidden="true">
+    <rect class="a-stutzen" x="49" y="2" width="22" height="16" rx="3"/><rect class="a-stutzen" x="49" y="114" width="22" height="16" rx="3"/>
+    <rect class="a-rohr" x="20" y="12" width="80" height="108" rx="14"/>
+    <rect class="a-kammer" x="28" y="20" width="64" height="92" rx="9"/>
+    ${paar ? elektrode(netzteile[0], 44.5, 0.5) + elektrode(netzteile[1], 75.5, 0.5) : elektrode(netzteile[0], 60, 1)}
+  </svg>`;
+};
 
 const fwmBild = () => `<svg class="eta-svg" viewBox="0 0 150 112" aria-hidden="true">
   <path class="f-vor" d="M6 34h26"/><path class="f-rueck" d="M6 80h26"/>
@@ -1320,6 +1398,31 @@ function anlageLesen(hass, struktur, t, fussboden) {
     pvm() {
       const leistung = wert("pvm_heizstab");
       return { leistung, aktiv: ueber(leistung), oben: wert("pvm_temperatur_oben"), heute: wert("pvm_ertrag_heute") };
+    },
+    /**
+     * Der Partikelabscheider: je Netzteil, dessen Sensoren es gibt, eine
+     * Elektrode mit Hochspannung, Strom und Leistung. bauform: kurz oder
+     * lang, wie am Gerät gewählt, siehe abscheiderBild. glut sagt von 0 bis
+     * 1, wie stark ihre Spitzen leuchten: die Leistung gemessen an ihrem
+     * Maximum, ohne Maximum an ihrem Soll - beide stehen als Attribute
+     * am Sensor der Leistung. Fehlt beides, genügt es, dass Leistung
+     * fließt. Einen Zustand zeigt die Karte nicht: Verriegelt ist ein
+     * Abscheider oft, und das ist keine Störung - dann leuchtet nichts.
+     * Bricht bei einem Überschlag die Leistung kurz ein, wird der Schein
+     * eben kurz schwächer.
+     */
+    partikelabscheider() {
+      const netzteile = NETZTEILE.map(([anhang, zusatz]) => {
+        const spannung = wert(`partikelabscheider${anhang}_spannung`), strom = wert(`partikelabscheider${anhang}_strom`), leistung = wert(`partikelabscheider${anhang}_leistung`);
+        if (!spannung && !strom && !leistung) return null;
+        const beiwerte = stand(`partikelabscheider${anhang}_leistung`)?.attributes || {};
+        const grenze = [beiwerte.maximum, beiwerte.soll].map(Number).find((zahl) => zahl > 0) || null;
+        const watt = leistung && leistung.n !== null ? leistung.n : null;
+        const an = watt !== null ? watt > 0 : Boolean(spannung) && spannung.n !== null && spannung.n > 0;
+        const glut = !an ? 0 : watt !== null && grenze ? Math.min(1, Math.max(0.15, watt / grenze)) : 0.7;
+        return { name: `${t.netzteil}${zusatz === null ? ` ${t.rechts}` : zusatz || " 1"}`, spannung, strom, leistung, glut };
+      }).filter(Boolean);
+      return { netzteile, bauform: stand("partikelabscheider_bild")?.state === "lang" ? "lang" : "kurz", aktiv: netzteile.some((netzteil) => netzteil.glut > 0), spannung: netzteile[0]?.spannung || null, strom: netzteile[0]?.strom || null };
     },
     brenner() {
       const anforderung = wert("brenner_anforderung");
@@ -1885,6 +1988,9 @@ class EtaUebersichtKarte extends HTMLElement {
       pvm: (p) => kachel(p, p.aktiv ? "data-aktiv" : "", this._chip(p.aktiv ? t.heizt : t.ruht, p.aktiv), `
         <div class="eta-buehne" ${this._info(p.leistung)}>${this._figur(pvmBild(), 132)}${this._haupt(t.heizstab, p.leistung)}</div>
         ${this._zeilen([[t.speicher_oben, p.oben], [t.ertrag_heute, p.heute]], p)}`),
+      partikelabscheider: (a) => kachel(a, a.aktiv ? "data-aktiv" : "", this._chip(a.aktiv ? t.arbeitet : t.ruht, a.aktiv), `
+        <div class="eta-buehne" ${this._info(a.spannung || a.strom)}>${this._figur(abscheiderBild(a.netzteile, a.bauform), 104)}${this._haupt(t.hochspannung, a.spannung)}</div>
+        ${this._zeilen(a.netzteile.length > 1 ? a.netzteile.map((n) => [n.name, n.spannung || n.strom ? { ...(n.spannung || n.strom), text: [n.spannung?.text, n.strom?.text].filter(Boolean).join(" · ") } : null]) : [[t.strom, a.strom]], a)}`),
       brenner: (b) => kachel(b, b.aktiv ? "data-aktiv" : "", this._chip(b.aktiv ? t.heizt : t.ruht, b.aktiv), `
         <div class="eta-buehne" ${this._info(b.temperatur || b.anforderung)}>${this._figur(b.erzeuger.bild(), 96)}${this._haupt(t.temperatur, b.temperatur)}</div>
         ${this._zeilen([[t.anforderung, b.anforderung], [t.leistung_soll, b.leistung]], b)}`),
@@ -1927,7 +2033,7 @@ class EtaUebersichtKarte extends HTMLElement {
       return (erzeugt(teil) ? von.art === "puffer" : Boolean(AUS[von.art]) && !erzeugt(von) && von.art !== "lager") ? teil.von : null;
     };
     const tiefe = (teil, schutz = 0) => {
-      if (teil.art === "kessel" || schutz > 20) return 0;
+      if (teil.art === "kessel" || teil.art === "partikelabscheider" || schutz > 20) return 0;
       if (teil.art === "lager") return -1;
       const von = quelle(teil);
       if (erzeugt(teil)) return von ? tiefe(nachId[von], schutz + 1) - 1 : 0;
@@ -1949,13 +2055,14 @@ class EtaUebersichtKarte extends HTMLElement {
       const tipp = inhalt ? `data-aktion="aufklappen" data-teil="${teil.id}" tabindex="0" role="button" aria-expanded="${offen}"` : info;
       return `<div class="eta-station ${klasse}" data-id="${teil.id}" data-art="${teil.art}" ${merkmale} ${tipp}>${bild}${text}</div>${inhalt && offen ? `<div class="eta-klappe eta-inline">${inhalt}</div>` : ""}`;
     };
-    const rang = { solar: 1, kessel: 0, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
+    const rang = { solar: 1, kessel: 0, partikelabscheider: 0.5, brenner: 2, fremdwaerme: 2, fremderzeuger: 2, pvm: 3, lager: 0, fernleitung: 0, puffer: 1, heizkreis: 2, warmwasser: 3 };
 
     const zeichnen = {
       lager: (l) => station(l, "", l.foerdert ? 'data-foerdert data-fluss="pellets"' : "", this._info(l.vorrat), this._figur(lagerBild(l.anteil ?? 0), 128), schild(l, l.vorrat, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "))),
       kessel: (k) => station(k, "", `data-zustand="${k.bild}" ${k.bild === "flamme" ? "data-fluss" : ""}`, this._info(k.temperatur), this._figur(kesselBild(), 100), schild(k, k.temperatur, [k.gesperrt ? t.gesperrt : "", k.zustand?.text, k.soll && !k.gesperrt ? `${t.soll} ${k.soll.text}` : ""].filter(Boolean).join(" · "))),
       solar: (s, frei) => station(s, `quer links ${frei ? "oben" : ""}`, s.aktiv ? "data-aktiv data-fluss" : "", this._info(s.leistung), this._figur(solarBild(), 92), schild(s, s.leistung, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "))),
       pvm: (p) => station(p, "quer links", p.aktiv ? 'data-aktiv data-fluss="strom"' : "", this._info(p.leistung), this._figur(pvmBild(), 92), schild(p, p.leistung, p.heute ? `${t.heute} ${p.heute.text}` : "")),
+      partikelabscheider: (a) => station(a, "quer links", a.aktiv ? "data-aktiv" : "", this._info(a.spannung || a.strom), this._figur(abscheiderBild(a.netzteile, a.bauform), 66), schild(a, a.spannung, a.strom ? `${t.strom} ${a.strom.text}` : "")),
       brenner: (b) => station(b, "quer links", b.aktiv ? "data-aktiv data-fluss" : "", this._info(b.temperatur || b.anforderung), this._figur(b.erzeuger.bild(), 72), schild(b, b.temperatur, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "")),
       fremdwaerme: (w) => station(w, "quer links", `${w.heizt ? "data-aktiv" : ""} ${w.aktiv ? "data-fluss" : ""}`, this._info(w.temperatur || w.zustand), this._figur(w.erzeuger.bild(), 72), schild(w, w.temperatur, w.zustand ? w.zustand.text : "")),
       fremderzeuger: (w) => {
@@ -2119,6 +2226,7 @@ class EtaUebersichtKarte extends HTMLElement {
       },
       lager: (l) => zeile("lager", l.foerdert, l.name, [l.niedrig ? t.vorrat_niedrig : "", l.reichtBis ? `${t.reicht_bis} ${l.reichtBis.text}` : ""].filter(Boolean).join(" · "), l.vorrat, balken(l.anteil, l.niedrig ? "warn" : "pellet"), this._knoepfe(l)),
       solar: (s) => zeile("sonne", s.aktiv, s.name, [s.kollektor ? `${t.kollektor} ${s.kollektor.text}` : "", s.heute ? `${t.heute} ${s.heute.text}` : ""].filter(Boolean).join(" · "), s.leistung),
+      partikelabscheider: (a) => zeile("blitz", a.aktiv, a.name, a.strom ? `${t.strom} ${a.strom.text}` : "", a.spannung),
       pvm: (p) => zeile("blitz", p.aktiv, p.name, [p.oben ? `${t.speicher_oben} ${p.oben.text}` : "", p.heute ? `${t.heute} ${p.heute.text}` : ""].filter(Boolean).join(" · "), p.leistung),
       brenner: (b) => zeile("flamme", b.aktiv, b.name, b.anforderung ? `${t.anforderung} ${b.anforderung.text}` : "", b.temperatur, "", this._knoepfe(b)),
       fremdwaerme: (w) => zeile("flamme", w.heizt, w.name, w.zustand ? w.zustand.text : "", w.temperatur, "", this._knoepfe(w)),

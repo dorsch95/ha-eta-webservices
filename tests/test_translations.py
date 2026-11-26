@@ -106,7 +106,14 @@ def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
     landet, verschmilzt deshalb mit ihm - der Eintrag verschwindet lautlos,
     ohne Syntaxfehler und ohne dass sich die Anzahl der Einträge ändert.
     """
-    from eta_heating_ws.const import PUFFER_SPEICHER, SELECTS, SENSORS, SWITCHES, ZAHLEN
+    from eta_heating_ws.const import (
+        PARTIKEL_BEIWERTE,
+        PUFFER_SPEICHER,
+        SELECTS,
+        SENSORS,
+        SWITCHES,
+        ZAHLEN,
+    )
     from eta_heating_ws.uri_discovery import (
         BETRIEBSART_ROLES,
         DISCOVERY_PATHS,
@@ -114,7 +121,9 @@ def test_jeder_tabellenschluessel_hat_seinen_suchpfad():
         SWITCH_ROLES,
     )
 
-    assert set(SENSORS) == set(DISCOVERY_PATHS) | set(PUMPEN)
+    mitgelesen = {f"partikelabscheider_{art}" for art in PARTIKEL_BEIWERTE}
+    assert set(SENSORS) | mitgelesen == set(DISCOVERY_PATHS) | set(PUMPEN)
+    assert not mitgelesen & set(SENSORS), "Beiwerte stehen als Attribute an der Leistung, nicht als Sensoren"
     volumen = {f"{k}_volumen" for k in PUFFER_SPEICHER}
     assert {zahl["quelle"] for zahl in ZAHLEN.values() if zahl.get("puffer")} == volumen
     assert set(SWITCHES) == set(SWITCH_ROLES)

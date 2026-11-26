@@ -64,17 +64,22 @@ jeder Wert darin kostet die Anlage ein Vielfaches eines Werts im normalen Takt.
 ANLAUF = 5
 """Sekunden zwischen zwei Abfragen, bis nach dem Start jede Portion einmal gelesen ist."""
 
-GESPERRT = ("10911",)
+GESPERRT = ("10911", "10571")
 """Funktionsblöcke, aus denen sich nichts wählen lässt - nach der Nummer am Ende ihrer Adresse.
 
 10911 ist der Block Diagnose, am Menübaum einer echten Anlage unter
 /264/10911. Am Display der Heizung steht er erst nach Eingabe eines
-Passworts. Was dort gesperrt ist, zeigt die Integration nicht: Der Block
-steht nicht zur Wahl, und ein Wert daraus, der schon gewählt war,
-entfällt samt seinem Sensor, siehe gewaehlte.
+Passworts. Was dort gesperrt ist, zeigt die Integration nicht.
+
+10571 ist der Partikelabscheider, am selben Menübaum unter /264/10571.
+Er arbeitet mit Hochspannung. Die Integration führt von ihm Spannung,
+Strom und Leistung als feste Sensoren und sonst nichts.
+
+Ein gesperrter Block steht nicht zur Wahl, und ein Wert daraus, der
+schon gewählt war, entfällt samt seinem Sensor, siehe gewaehlte.
 """
 
-GESPERRTE_NAMEN = ("Diagnose",)
+GESPERRTE_NAMEN = ("Diagnose", "Part.-Absch.", "Partikelabscheider")
 """Dieselben Blöcke nach ihrem Namen, falls eine Anlage sie unter einer anderen Nummer führt."""
 
 TRENNER = " › "

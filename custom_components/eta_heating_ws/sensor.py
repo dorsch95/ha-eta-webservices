@@ -18,7 +18,7 @@ from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import ASCHEBOX_PHASEN
+from .const import ASCHEBOX_PHASEN, PARTIKEL_BEIWERTE
 from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
 from .entitaets_ids import ids_vorschlagen
 from . import prognose
@@ -86,6 +86,8 @@ def _messwert(coordinator: ETADataUpdateCoordinator, key: str, info: dict) -> Se
     """
     if key == "lager_maximum":
         return ETALagerMaximumSensor(coordinator, info)
+    if info.get("uri") and info["component"] == "partikelabscheider" and key.endswith("_leistung"):
+        return ETAPartikelLeistungSensor(coordinator, key, info)
     return (ETAMeasurementSensor if info.get("uri") else ETAPlaceholderSensor)(
         coordinator, key, info
     )
@@ -175,6 +177,8 @@ class ETAMeasurementSensor(ETABaseSensor):
         self._attr_icon = info["icon"]
         self._attr_device_class = info.get("device_class")
         self._attr_state_class = info.get("state_class")
+        if info.get("ab_werk_aus"):
+            self._attr_entity_registry_enabled_default = False
 
         if info.get("einheit_der_anlage"):
             self._attr_native_unit_of_measurement = _einheit_der_anlage(coordinator, key)
@@ -266,6 +270,23 @@ class ETAWeitererWert(ETABaseSensor):
     @property
     def native_value(self) -> float | str | None:
         return weitere.zustand(self.coordinator.data.get(self._key), self._zahl)
+
+
+class ETAPartikelLeistungSensor(ETAMeasurementSensor):
+    """Die Leistung eines Netzteils am Partikelabscheider.
+
+    Als Attribute dazu "soll" und "maximum", soweit die Anlage sie führt,
+    siehe PARTIKEL_BEIWERTE - eigene Sensoren sind sie nicht.
+    """
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        attribute = dict(super().extra_state_attributes)
+        for art, name in PARTIKEL_BEIWERTE.items():
+            wert = (self.coordinator.data or {}).get(f"partikelabscheider_{art}")
+            if wert is not None and not wert.is_text and wert.value is not None:
+                attribute[name] = wert.value
+        return attribute
 
 
 class ETAPlaceholderSensor(ETAMeasurementSensor):
