@@ -101,7 +101,7 @@ async def test_die_uebrigen_werte_des_blocks_bleiben_waehlbar(hass):
 
 
 async def test_er_ist_kein_eigenes_teil_der_karte(hass):
-    """Die Karte zeigt ihn klein am Kessel: Sie bekommt seinen Zustand, aber kein Teil dafür."""
+    """Die Karte zeigt ihn als Fenster im Kessel: Sie bekommt seinen Zustand, aber kein Teil dafür."""
     hass.session.menu = menu_mit_tauscher()
     entry = eintrag("hk1", "lager")
     coordinator, _ = await setup_integration(hass, entry)

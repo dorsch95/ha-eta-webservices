@@ -585,19 +585,18 @@ const STIL = `
   [data-aktiv] .p-zelle { animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
 
   .eta-figur { position: relative; }
-  .eta-anbau { position: absolute; left: calc(100% - 5px); bottom: 0; width: 30%; cursor: pointer; }
-  .eta-buehne .eta-figur[data-anbau] { margin-right: calc(var(--b, 110px) * .3 - 3px); }
-  .w-gehaeuse { fill: var(--metall); }
-  .w-stutzen { fill: var(--metall-dunkel); }
+  .w-tauscher { cursor: pointer; }
+  .w-rahmen { fill: var(--kessel-dunkel); }
   .w-kammer { fill: var(--kammer); }
-  .w-duese { fill: none; stroke: var(--metall-hell); stroke-width: 3; stroke-linecap: round; }
-  .w-ablauf { fill: none; stroke: var(--metall-dunkel); stroke-width: 6; stroke-linecap: round; }
+  .w-duese { fill: none; stroke: var(--metall-hell); stroke-width: 1.5; stroke-linecap: round; }
   .w-platte { fill: var(--metall-dunkel); }
   .w-tropfen, .w-kondensat { fill: var(--kalt); opacity: 0; }
-  .eta-anbau[data-aktiv] .w-platte { fill: url(#eta-boden); animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
-  .eta-anbau[data-aktiv] .w-kondensat, .eta-anbau[data-spuelt] .w-kondensat { animation: eta-tropfen 1.6s ease-in infinite; }
-  .eta-anbau[data-spuelt] .w-platte { fill: var(--kalt); fill-opacity: .55; }
-  .eta-anbau[data-spuelt] .w-tropfen { animation: eta-spuelen 1.1s linear infinite; animation-delay: calc(var(--i) * -.22s); }
+  .w-warnung { fill: none; stroke: var(--heiss); stroke-width: 1.8; opacity: 0; }
+  [data-tauscher="heizt"] .w-platte { fill: url(#eta-tauscher); animation: eta-leuchten 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.2s); }
+  [data-tauscher="heizt"] .w-kondensat, [data-tauscher="spuelt"] .w-kondensat { opacity: .85; }
+  [data-tauscher="spuelt"] .w-platte { fill: var(--kalt); fill-opacity: .55; }
+  [data-tauscher="spuelt"] .w-tropfen { animation: eta-spuelen 1.1s linear infinite; animation-delay: calc(var(--i) * -.22s); }
+  [data-tauscher="stoerung"] .w-warnung { opacity: 1; animation: eta-blinken 1s steps(2, jump-none) infinite; }
 
   .a-rohr { fill: var(--metall); }
   .a-stutzen { fill: var(--metall-dunkel); }
@@ -739,7 +738,7 @@ const STIL = `
   @keyframes eta-schnecke { to { transform: translateX(12px); } }
   @keyframes eta-drehen { to { transform: rotate(360deg); } }
   @keyframes eta-leuchten { 0%, 100% { fill-opacity: .78; } 50% { fill-opacity: 1; } }
-  @keyframes eta-spuelen { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(58px); opacity: 0; } }
+  @keyframes eta-spuelen { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(24px); opacity: 0; } }
   @keyframes eta-korona { 0%, 100% { opacity: calc(.25 + .5 * var(--glut)); } 45% { opacity: calc(.45 + .55 * var(--glut)); } 60% { opacity: calc(.3 + .5 * var(--glut)); } }
 
   @media (hover: hover) {
@@ -819,6 +818,7 @@ const ICON = {
 const DEFS = `<svg class="eta-defs" aria-hidden="true"><defs>
   <radialGradient id="eta-schein" cx=".5" cy="1" r=".95"><stop offset="0" stop-color="#ff9b00" stop-opacity=".8"/><stop offset="1" stop-color="#ff9b00" stop-opacity="0"/></radialGradient>
   <linearGradient id="eta-boden" gradientUnits="userSpaceOnUse" x1="0" y1="46" x2="0" y2="94"><stop offset="0" style="stop-color:var(--heiss)"/><stop offset="1" style="stop-color:var(--kalt)"/></linearGradient>
+  <linearGradient id="eta-tauscher" gradientUnits="userSpaceOnUse" x1="0" y1="54" x2="0" y2="78"><stop offset="0" style="stop-color:var(--heiss)"/><stop offset="1" style="stop-color:var(--kalt)"/></linearGradient>
   <radialGradient id="eta-korona"><stop offset="0" stop-color="#f2f8ff"/><stop offset=".3" stop-color="#9cc4ff" stop-opacity=".9"/><stop offset="1" stop-color="#7d5cff" stop-opacity="0"/></radialGradient>
   <pattern id="eta-pellets" width="24" height="15" patternUnits="userSpaceOnUse">
     <rect width="24" height="15" fill="var(--pellet)"/>
@@ -837,8 +837,11 @@ const reihe = (anzahl, zeichnen) => Array.from({ length: anzahl }, (_, i) => zei
  * im Heizraum. Ein Sichtfenster in der Front zeigt, was im Brennraum
  * geschieht; das gibt es am echten Kessel nicht, die Karte braucht es für
  * Flamme, Zündung, Glut und Entaschen.
+ *
+ * tauscher ist das Sichtfenster des Brennwert-Wärmetauschers, wenn die
+ * Anlage einen hat, siehe tauscherFenster. Es sitzt über dem Brennraum.
  */
-const kesselBild = () => `<svg class="eta-svg" viewBox="0 0 104 180" aria-hidden="true">
+const kesselBild = (tauscher = "") => `<svg class="eta-svg" viewBox="0 0 104 180" aria-hidden="true">
   <rect x="68" y="17" width="16" height="7" rx="1.5" fill="var(--kessel-dunkel)"/>
   <g transform="translate(62 1) skewX(-9)">
     <rect width="38" height="21" rx="2.5" fill="var(--kessel-dunkel)"/>
@@ -853,6 +856,7 @@ const kesselBild = () => `<svg class="eta-svg" viewBox="0 0 104 180" aria-hidden
   <rect class="k-front" x="19" y="22" width="83" height="144" rx="5"/>
   <rect x="23" y="27" width="7" height="134" rx="3.5" fill="#fff" opacity=".16"/>
   <rect x="4" y="166" width="98" height="8" rx="2" fill="var(--kessel-sockel)"/>
+  ${tauscher}
   <g transform="translate(4.5 56.8) scale(.7)">
   <rect x="31" y="56" width="98" height="68" rx="9" fill="var(--kessel-dunkel)"/>
   <rect x="37" y="62" width="86" height="56" rx="6" fill="var(--kammer)"/>
@@ -1027,23 +1031,27 @@ const abscheiderBild = (netzteile, bauform = "kurz") => {
 };
 
 /**
- * Der Brennwert-Wärmetauscher: ein Gehäuse am Abgasweg, aufgeschnitten.
- * Innen stehen die Platten, über ihnen die Düsen zum Spülen, unten der
- * Ablauf für das Kondensat. In Betrieb färben sich die Platten von heiß
- * nach kalt, und am Ablauf tropft es. Beim Spülen fällt Wasser aus den
- * Düsen. Die Karte zeigt ihn klein am Kessel, siehe _kesselFigur; welcher
- * Zustand gilt, steht an seinem Rahmen (data-aktiv, data-spuelt).
+ * Der Brennwert-Wärmetauscher: ein zweites Sichtfenster in der Front des
+ * Kessels, über dem Brennraum und so groß wie dieser. Er ist am echten
+ * Kessel eingebaut, deshalb steht er in der Karte nicht daneben. Innen
+ * stehen die Platten, über ihnen die Düsen zum Spülen, unten sammelt sich
+ * das Kondensat. In Betrieb färben sich die Platten von heiß nach kalt.
+ * Beim Spülen fällt Wasser aus den Düsen. Bei einer Störung blinkt der
+ * Rahmen.
+ *
+ * zustand ist "heizt", "spuelt", "stoerung" oder "ruht". angaben sind die
+ * Merkmale für den Tipp auf das Fenster, titel der Text beim Überfahren.
  */
-const brennwertBild = () => `<svg class="eta-svg" viewBox="0 0 120 132" aria-hidden="true">
-  <rect class="w-stutzen" x="49" y="2" width="22" height="16" rx="3"/><rect class="w-stutzen" x="8" y="82" width="22" height="16" rx="3"/>
-  <path class="w-ablauf" d="M60 114v12"/>
-  <rect class="w-gehaeuse" x="24" y="12" width="72" height="104" rx="12"/>
-  <rect class="w-kammer" x="32" y="22" width="56" height="84" rx="8"/>
-  <path class="w-duese" d="M39 30H81M46 30v4M60 30v4M74 30v4"/>
-  ${reihe(6, (i) => `<rect class="w-platte" style="--i:${i}" x="${39.5 + i * 7.5}" y="44" width="4.5" height="52" rx="2.25"/>`)}
-  ${reihe(5, (i) => `<path class="w-tropfen" style="--i:${i}" d="M${[42.5, 51.2, 60, 68.8, 77.5][i]} 34c1.6 2.3 2.7 3.5 2.7 5a2.7 2.7 0 0 1-5.4 0c0-1.5 1.1-2.7 2.7-5z"/>`)}
-  <path class="w-kondensat" d="M60 116c1.8 2.6 3 4 3 5.6a3 3 0 0 1-6 0c0-1.6 1.2-3 3-5.6z"/>
-</svg>`;
+const tauscherFenster = (zustand, angaben, titel) => `<g class="w-tauscher" data-tauscher="${zustand}" ${angaben}>
+  <title>${titel}</title>
+  <rect class="w-rahmen" x="26.2" y="38" width="68.6" height="48" rx="6.3"/>
+  <rect class="w-kammer" x="30.4" y="42.2" width="60.2" height="39.6" rx="4.2"/>
+  <path class="w-duese" d="M35 47.6H86${reihe(5, (i) => `M${40.5 + i * 10} 47.6v2.6`)}"/>
+  ${reihe(8, (i) => `<rect class="w-platte" style="--i:${i}" x="${(37.4 + i * 6.2).toFixed(1)}" y="54.5" width="3.2" height="22.5" rx="1.6"/>`)}
+  ${reihe(5, (i) => `<path class="w-tropfen" style="--i:${i}" d="M${40.5 + i * 10} 51c.9 1.3 1.5 2 1.5 2.9a1.5 1.5 0 0 1-3 0c0-.9.6-1.6 1.5-2.9z"/>`)}
+  <rect class="w-kondensat" x="34.4" y="78.3" width="52.2" height="1.7" rx=".85"/>
+  <rect class="w-warnung" x="26.2" y="38" width="68.6" height="48" rx="6.3"/>
+</g>`;
 
 const fwmBild = () => `<svg class="eta-svg" viewBox="0 0 150 112" aria-hidden="true">
   <path class="f-vor" d="M6 34h26"/><path class="f-rueck" d="M6 80h26"/>
@@ -1346,7 +1354,7 @@ function anlageLesen(hass, struktur, t, fussboden) {
   const lesen = {
     /**
      * brennwert: der Brennwert-Wärmetauscher, wenn die Anlage einen hat.
-     * Er ist kein eigenes Teil - die Karte zeigt ihn klein am Kessel
+     * Er ist kein eigenes Teil - die Karte zeigt ihn als Fenster im Kessel
      * und nennt seinen Zustand in den Worten der Anlage. spuelt: Er
      * spült gerade, dann läuft in der Zeichnung Wasser. heizt: Er ist
      * in Betrieb. stoerung: Störung oder volle Kondensatwanne. Alles
@@ -1899,15 +1907,15 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
-   * Der Kessel - mit dem Brennwert-Wärmetauscher klein an seiner Seite,
-   * wenn die Anlage einen hat. Ein Tipp auf den Wärmetauscher öffnet
-   * seinen Zustand.
+   * Der Kessel - mit dem Brennwert-Wärmetauscher als Sichtfenster in
+   * seiner Front, wenn die Anlage einen hat. Ein Tipp auf das Fenster
+   * öffnet den Zustand des Wärmetauschers.
    */
   _kesselFigur(kessel, breite) {
     const b = kessel.brennwert;
     if (!b) return this._figur(kesselBild(), breite);
-    const anbau = `<div class="eta-anbau" title="${e(`${this._t.brennwert}: ${b.zustand.text}`)}" ${b.heizt ? "data-aktiv" : ""} ${b.spuelt ? "data-spuelt" : ""} ${b.stoerung ? "data-stoerung" : ""} ${this._info(b.zustand)}>${brennwertBild()}</div>`;
-    return `<div class="eta-figur" data-anbau style="--b:${breite}px;">${kesselBild()}${anbau}</div>`;
+    const zustand = b.stoerung ? "stoerung" : b.spuelt ? "spuelt" : b.heizt ? "heizt" : "ruht";
+    return this._figur(kesselBild(tauscherFenster(zustand, this._info(b.zustand), e(`${this._t.brennwert}: ${b.zustand.text}`))), breite);
   }
 
   _kopf(anlage) {
