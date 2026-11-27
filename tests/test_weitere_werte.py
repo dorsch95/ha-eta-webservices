@@ -551,14 +551,15 @@ async def test_konfigurieren_beginnt_mit_einer_wahl(monkeypatch, hass, entry):
     assert schritt == {
         "type": "menu",
         "step_id": "init",
-        "menu_options": ["einstellungen", "weitere_werte", "fehlende_werte"],
+        "menu_options": ["anlage", "abfrage", "pellets", "schalten", "weitere_werte", "fehlende_werte"],
     }
 
     from eta_heating_ws import config_flow as modul
 
     monkeypatch.setattr(modul, "wetter_vorschlag", lambda *_: None)
-    einstellungen = await flow.async_step_einstellungen()
-    assert einstellungen["step_id"] == "einstellungen"
+    for abschnitt in ("anlage", "abfrage", "pellets", "schalten"):
+        formular = await getattr(flow, f"async_step_{abschnitt}")()
+        assert (formular["type"], formular["step_id"]) == ("form", abschnitt)
 
 
 async def test_schritt_zeigt_je_funktionsblock_ein_feld_ohne_die_festen_sensoren(monkeypatch, hass, entry):
@@ -761,7 +762,7 @@ async def test_ist_die_anlage_nicht_erreichbar_bricht_der_schritt_ab(monkeypatch
     assert schritt == {"type": "abort", "reason": "cannot_connect"}
 
 
-async def test_einstellungen_speichern_behaelt_die_gewaehlten_werte(monkeypatch):
+async def test_anlage_speichern_behaelt_die_gewaehlten_werte(monkeypatch):
     """Die Optionen werden beim Speichern ersetzt - die Auswahl steht in keinem der anderen Formulare."""
     bisher = {
         **optionen(),

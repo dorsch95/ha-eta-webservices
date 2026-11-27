@@ -139,7 +139,7 @@
       },
       "switch_warning": {
         "title": "Schalten schreibt in deine Heizung",
-        "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
+        "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren → Schalten wieder abschalten."
       },
       "zeitplaene": {
         "title": "Zeitprogramm aus Home Assistant",
@@ -205,7 +205,7 @@
           "weitere_intervall": "Abstand der Abfragen"
         },
         "data_description": {
-          "weitere_schnell": "Diese Werte liest zusätzlich die schnelle Abfrage, im Abstand aus den Einstellungen der Anlage. Höchstens {schnell_hoechstens}.",
+          "weitere_schnell": "Diese Werte liest zusätzlich die schnelle Abfrage, in ihrem Abstand aus Konfigurieren → Abfrage. Höchstens {schnell_hoechstens}.",
           "weitere_je_abfrage": "Weniger schont die Heizung, dafür kommt jeder Wert seltener dran.",
           "weitere_intervall": "Die festen Werte und die schnelle Abfrage laufen unabhängig davon."
         }
@@ -246,39 +246,70 @@
     "step": {
       "init": {
         "title": "ETA Heizung bearbeiten",
+        "description": "Was möchtest du ändern? Alles andere bleibt, wie es ist.",
         "menu_options": {
-          "einstellungen": "Einstellungen der Anlage",
+          "anlage": "Anlage: Puffer, Heizkreise, Komponenten",
+          "abfrage": "Abfrage: Intervalle, Störungsmeldungen",
+          "pellets": "Pellets: Preis, Verbrauch, Prognose",
+          "schalten": "Schalten: Freigabe, Raumfühler, Zeitplan",
+          "fremderzeuger": "Fremderzeuger: Name, Erkennung, Sperren",
+          "verbindungen": "Anlagenbild: Wer hängt woran",
           "weitere_werte": "Weitere Werte auswählen",
           "fehlende_werte": "Fehlende Werte zuordnen"
         }
       },
-      "einstellungen": {
-        "title": "ETA Heizung bearbeiten",
+      "anlage": {
+        "title": "Anlage",
+        "description": "Was an deiner Heizung vorhanden ist. Im nächsten Schritt stehen die Namen der Funktionsblöcke.",
         "data": {
           "anzahl_puffer": "Pufferspeicher",
           "anzahl_warmwasser": "Frischwassermodule und Warmwasserspeicher",
           "anzahl_heizkreise": "Heizkreise",
           "components": "Weitere Komponenten an deiner Anlage",
+          "fehlende_ausblenden": "Fehlende Werte ausblenden"
+        },
+        "data_description": {
+          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
+          "fehlende_ausblenden": "Was deine Heizung nicht führt, bekommt keinen Sensor - etwa der Pelletverbrauch an einem Stückholzkessel. Ohne Haken entsteht dafür ein Sensor, der „-“ zeigt. Setzt du den Haken, verschwinden diese Sensoren sofort. Nutzt du die ältere Dashboard-Karte aus der Aktion, erzeuge sie danach neu."
+        }
+      },
+      "abfrage": {
+        "title": "Abfrage",
+        "description": "Wie oft Home Assistant deine Heizung fragt.",
+        "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
           "schnell_intervall": "Schnelle Abfrage (Sekunden, 0 = aus)",
+          "enable_errors": "Störungsmeldungen der Anlage auslesen"
+        },
+        "data_description": {
+          "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
+          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall."
+        }
+      },
+      "pellets": {
+        "title": "Pellets",
+        "description": "Heizwert und Preis deiner Pellets und was die Integration daraus berechnet.",
+        "data": {
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
-          "enable_errors": "Störungsmeldungen der Anlage auslesen",
-          "fehlende_ausblenden": "Fehlende Werte ausblenden",
-          "enable_switches": "Kessel und Heizkreise schalten dürfen",
-          "kessel_sperre": "Schalter „Kessel sperren“ anlegen",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
           "prognose": "Pelletprognose und Reichweite des Lagers",
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
-          "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
-          "fehlende_ausblenden": "Was deine Heizung nicht führt, bekommt keinen Sensor - etwa der Pelletverbrauch an einem Stückholzkessel. Ohne Haken entsteht dafür ein Sensor, der „-“ zeigt. Setzt du den Haken, verschwinden diese Sensoren sofort. Nutzt du die ältere Dashboard-Karte aus der Aktion, erzeuge sie danach neu.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
-          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
-          "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
-          "schnell_intervall": "Liest alles Schaltbare, den Kessel-Zustand, die Raumtemperatur und am Frischwassermodul Warmwassertemperatur, Durchfluss, Drehzahl der Pufferpumpe und Zirkulation öfter als den Rest. Wirkt nur, wenn der Wert kleiner ist als das Abfrageintervall.",
+          "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
+        }
+      },
+      "schalten": {
+        "title": "Schalten",
+        "description": "Ab Werk liest die Integration nur. Hier gibst du frei, was Home Assistant an deiner Heizung schalten darf. Mit Schreibzugriff folgen Raumfühler und Zeitplan, wenn deine Heizkreise dafür eingerichtet sind.",
+        "data": {
+          "enable_switches": "Kessel und Heizkreise schalten dürfen",
+          "kessel_sperre": "Schalter „Kessel sperren“ anlegen"
+        },
+        "data_description": {
           "kessel_sperre": "Für einen Ofen oder ein anderes Gerät, das die ETA-Regelung nicht kennt: Solange der Schalter ein ist, ist der Kessel über seine Ein/Aus-Taste ausgeschaltet; danach schaltet Home Assistant ihn wieder ein. Im Notfall lässt er sich jederzeit am Display der Heizung wieder einschalten. Braucht den Schreibzugriff. Gedacht für eigene Automationen oder den Blueprint - mit der Komponente Fremderzeuger entsteht der Schalter von selbst."
         }
       },
@@ -368,7 +399,7 @@
       },
       "switch_warning": {
         "title": "Schalten schreibt in deine Heizung",
-        "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren wieder abschalten."
+        "description": "Du hast die Schalter eingeschaltet. Home Assistant kann deine Heizung damit nicht mehr nur lesen, sondern Kessel und Heizkreise auch aus- und einschalten.\n\nBitte bedenke:\n- Einen Heizkreis oder den Kessel im Winter abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage zuständig, nicht Home Assistant.\n- Jeder, der Zugriff auf dein Home Assistant hat, kann diese Schalter bedienen.\n- Schalter entstehen nur dort, wo deine Anlage die Variable ausdrücklich als beschreibbar meldet.\n\nDu kannst das jederzeit unter Konfigurieren → Schalten wieder abschalten."
       },
       "zeitplaene": {
         "title": "Zeitprogramm aus Home Assistant",
@@ -425,7 +456,7 @@
           "weitere_intervall": "Abstand der Abfragen"
         },
         "data_description": {
-          "weitere_schnell": "Diese Werte liest zusätzlich die schnelle Abfrage, im Abstand aus den Einstellungen der Anlage. Höchstens {schnell_hoechstens}.",
+          "weitere_schnell": "Diese Werte liest zusätzlich die schnelle Abfrage, in ihrem Abstand aus Konfigurieren → Abfrage. Höchstens {schnell_hoechstens}.",
           "weitere_je_abfrage": "Weniger schont die Heizung, dafür kommt jeder Wert seltener dran.",
           "weitere_intervall": "Die festen Werte und die schnelle Abfrage laufen unabhängig davon."
         }
@@ -497,11 +528,11 @@
   "issues": {
     "component_not_found": {
       "title": "Komponente \"{component}\" nicht gefunden",
-      "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** und trage den tatsächlichen Namen ein - oder hake die Komponente ab, falls deine Anlage sie nicht hat."
+      "description": "Im Menü deiner ETA-Heizung stehen keine Werte für die Komponente \"{component}\". Vermutlich heißt ihr Funktionsblock an deiner Steuerung anders (erwartete Rollen: {fub_names}).\n\nÖffne **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren -> Anlage**. Im zweiten Schritt trägst du den tatsächlichen Namen ein - oder du wählst die Komponente im ersten ab, falls deine Anlage sie nicht hat."
     },
     "raumfuehler_stumm": {
       "title": "Thermometer {raumfuehler} meldet sich seit {stunden} Stunden nicht",
-      "description": "Das Thermometer {raumfuehler} ist der Raumfühler von {heizkreis}, hat aber seit {stunden} Stunden nichts mehr gesendet - auch nicht denselben Wert noch einmal. Ist die Batterie leer?\n\nDie Integration schreibt weiter den letzten Wert in die Heizung, der Heizkreis regelt also mit einer alten Raumtemperatur. Sobald sich das Thermometer wieder meldet, verschwindet dieser Hinweis von selbst. Fällt es dauerhaft aus, wähle unter **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren** ein anderes."
+      "description": "Das Thermometer {raumfuehler} ist der Raumfühler von {heizkreis}, hat aber seit {stunden} Stunden nichts mehr gesendet - auch nicht denselben Wert noch einmal. Ist die Batterie leer?\n\nDie Integration schreibt weiter den letzten Wert in die Heizung, der Heizkreis regelt also mit einer alten Raumtemperatur. Sobald sich das Thermometer wieder meldet, verschwindet dieser Hinweis von selbst. Fällt es dauerhaft aus, wähle unter **Einstellungen -> Geräte & Dienste -> ETA Web-Services -> Konfigurieren -> Schalten** ein anderes."
     },
     "zeitplan_zu_voll": {
       "title": "Zeitplan {zeitplan} passt nicht an allen Tagen",
@@ -513,7 +544,7 @@
         "step": {
           "confirm": {
             "title": "Zeitplan {zeitplan} übernehmen",
-            "description": "Der Zeitplan {zeitplan} weicht vom Zeitprogramm von {heizkreis} an der Heizung ab. Übernommen würde:\n\n{aenderungen}\n\nMit **Absenden** schreibt die Integration diese Zeitfenster in die Anlage. Danach überträgt sie jede Änderung am Zeitplan ohne Rückfrage. Willst du das nicht, passe den Zeitplan an oder wähle ihn unter Konfigurieren wieder ab."
+            "description": "Der Zeitplan {zeitplan} weicht vom Zeitprogramm von {heizkreis} an der Heizung ab. Übernommen würde:\n\n{aenderungen}\n\nMit **Absenden** schreibt die Integration diese Zeitfenster in die Anlage. Danach überträgt sie jede Änderung am Zeitplan ohne Rückfrage. Willst du das nicht, passe den Zeitplan an oder wähle ihn unter Konfigurieren → Schalten wieder ab."
           }
         },
         "abort": {

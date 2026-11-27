@@ -51,7 +51,6 @@ def test_einstellungen_haben_kein_blosses_zahlen_oder_textfeld():
     import homeassistant.helpers.config_validation as cv
     from homeassistant.helpers.selector import Selector
 
-    from eta_heating_ws.config_flow import _options_schema
 
     bloss = [
         str(feld)
@@ -63,7 +62,7 @@ def test_einstellungen_haben_kein_blosses_zahlen_oder_textfeld():
 
 def test_abfrageintervalle_werden_als_ganze_sekunden_gespeichert():
     """Das Zahlenfeld liefert Kommazahlen - gespeichert werden ganze Sekunden, der Heizwert bleibt genau."""
-    from eta_heating_ws.config_flow import _einstellungen, _options_schema
+    from eta_heating_ws.config_flow import _einstellungen
 
     eingabe = _options_schema({})(
         {"scan_interval": 45, "schnell_intervall": 2, "pellet_kwh_per_kg": 4.85, "pellet_preis": 310}
@@ -89,7 +88,6 @@ def test_abfrageintervalle_werden_als_ganze_sekunden_gespeichert():
     ],
 )
 def test_zahlenfelder_lehnen_werte_ausserhalb_ihrer_grenzen_ab(eingabe):
-    from eta_heating_ws.config_flow import _options_schema
 
     with pytest.raises(vol.Invalid):
         _options_schema({})(eingabe)
@@ -326,7 +324,6 @@ async def test_neu_konfigurieren_auf_vergebene_adresse_bricht_ab(monkeypatch):
 
 
 def test_optionen_fragen_nicht_nach_der_adresse():
-    from eta_heating_ws.config_flow import _options_schema
 
     felder = feldnamen(_options_schema({}))
     assert "host" not in felder
@@ -342,13 +339,32 @@ async def _keine_namen(*_):
     return []
 
 
-async def options_schritt(monkeypatch, bisher, eingabe):
-    """Führt den ersten Schritt von Konfigurieren aus."""
+def _options_schema(current, wetter=None):
+    """Alle Felder von Konfigurieren: die Formulare der Menüpunkte zusammen."""
+    from eta_heating_ws.config_flow import ABSCHNITTE, _abschnitt_schema
+
+    felder = {}
+    for abschnitt in ABSCHNITTE:
+        felder.update(_abschnitt_schema(abschnitt, current, wetter).schema)
+    return vol.Schema(felder)
+
+
+async def options_schritt(
+    monkeypatch, bisher, eingabe=None, abschnitt="anlage", pruefung=_keiner_ohne_volumen
+):
+    """Führt den ersten Schritt eines Menüpunkts von Konfigurieren aus.
+
+    eingabe darf alle Einstellungen nennen - abgeschickt werden die Felder
+    des Menüpunkts. Fremderzeuger und Verbindungen haben kein eigenes
+    Formular: Dort ist das Ergebnis ihr Schritt, noch ohne Eingabe.
+    pruefung steht für das, was die Anlage zu Puffern, Raumfühlern und
+    Zeitprogrammen meldet.
+    """
     from eta_heating_ws import config_flow as modul
 
     flow = modul.ETAOptionsFlow()
     monkeypatch.setattr(modul.ETAOptionsFlow, "_current", property(lambda self: bisher))
-    monkeypatch.setattr(modul, "_anlage_pruefen", _keiner_ohne_volumen)
+    monkeypatch.setattr(modul, "_anlage_pruefen", pruefung)
     monkeypatch.setattr(modul, "_fub_namen_der_anlage", _keine_namen)
     monkeypatch.setattr(
         modul.ETAOptionsFlow,
@@ -360,7 +376,11 @@ async def options_schritt(monkeypatch, bisher, eingabe):
         "async_create_entry",
         lambda self, **kwargs: {"type": "create_entry", **kwargs},
     )
-    return flow, await flow.async_step_init(eingabe)
+    schritt = getattr(flow, f"async_step_{abschnitt}")
+    if abschnitt not in modul.ABSCHNITTE:
+        return flow, await schritt()
+    felder = modul.ABSCHNITTE[abschnitt]
+    return flow, await schritt({feld: eingabe[feld] for feld in felder if feld in eingabe})
 
 
 async def verbindungen_bestaetigen(flow, schritt):
@@ -381,19 +401,20 @@ def optionen(**overrides):
 async def test_konfigurieren_warnt_vor_dem_schreibzugriff(monkeypatch):
     """Ohne die Warnung ließe sich das Schalten hier ungefragt einschalten."""
     flow, ergebnis = await options_schritt(
-        monkeypatch, {"enable_switches": False}, optionen(enable_switches=True)
+        monkeypatch, {"enable_switches": False}, optionen(enable_switches=True), "schalten"
     )
     assert ergebnis["step_id"] == "switch_warning"
 
     weiter = await flow.async_step_switch_warning({})
-    assert weiter["step_id"] == "fub_names"
+    assert weiter["type"] == "create_entry"
+    assert weiter["data"]["enable_switches"] is True
 
 
 async def test_bereits_freigegebener_schreibzugriff_warnt_nicht_erneut(monkeypatch):
     _, ergebnis = await options_schritt(
-        monkeypatch, {"enable_switches": True}, optionen(enable_switches=True)
+        monkeypatch, {"enable_switches": True}, optionen(enable_switches=True), "schalten"
     )
-    assert ergebnis["step_id"] == "fub_names"
+    assert ergebnis["type"] == "create_entry"
 
 
 async def test_konfigurieren_speichert_keine_adresse(monkeypatch):
@@ -471,13 +492,29 @@ async def test_neu_konfigurieren_wirkt_auch_nach_gespeicherten_optionen(monkeypa
 
 async def test_geleertes_wetterfeld_bleibt_leer(monkeypatch):
     """Sonst gewänne beim Start die Wahl aus der ersten Einrichtung."""
-    flow, _ = await options_schritt(monkeypatch, {"wetter": "weather.zuhause"}, optionen())
-    assert flow._data["wetter"] == ""
+    _, ergebnis = await options_schritt(
+        monkeypatch, {"wetter": "weather.zuhause"}, optionen(), "pellets"
+    )
+    assert ergebnis["data"]["wetter"] == ""
 
 
 async def test_gewaehltes_wetter_wird_gespeichert(monkeypatch):
-    flow, _ = await options_schritt(monkeypatch, {}, optionen(wetter="weather.zuhause"))
-    assert flow._data["wetter"] == "weather.zuhause"
+    _, ergebnis = await options_schritt(
+        monkeypatch, {}, optionen(wetter="weather.zuhause"), "pellets"
+    )
+    assert ergebnis["data"]["wetter"] == "weather.zuhause"
+
+
+@pytest.mark.parametrize("abschnitt", ["anlage", "abfrage", "schalten"])
+@pytest.mark.parametrize("bisher", [{}, {"wetter": ""}, {"wetter": "weather.zuhause"}])
+async def test_das_wetter_stellt_nur_der_menuepunkt_pellets(monkeypatch, abschnitt, bisher):
+    """In den anderen bleibt es, wie es ist - ungespeichert nimmt die Prognose die einzige Wetter-Entität."""
+    flow, ergebnis = await options_schritt(monkeypatch, bisher, optionen(), abschnitt)
+    if ergebnis["type"] != "create_entry":
+        ergebnis = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys"})
+
+    assert ergebnis["type"] == "create_entry"
+    assert {k: v for k, v in ergebnis["data"].items() if k == "wetter"} == bisher
 
 
 def test_wetter_ist_freiwillig():
@@ -515,22 +552,22 @@ async def test_puffer_mit_eigenem_volumen_wird_nicht_gefragt(monkeypatch):
 
 
 async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
-    """Nur für den Puffer, der sein Volumen nicht meldet; vorbelegt mit dem bisherigen Wert."""
-    from eta_heating_ws import config_flow as modul
-
-    bisher = {"host": "192.0.2.10", "port": 8080, "puffer2_volumen": 650}
-    flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
+    """Nur für den Puffer, der sein Volumen nicht meldet."""
 
     async def nur_puffer2(*_):
         return ["puffer2"], {}, {}
 
-    monkeypatch.setattr(modul, "_anlage_pruefen", nur_puffer2)
+    bisher = {"host": "192.0.2.10", "port": 8080}
+    flow, _ = await options_schritt(
+        monkeypatch, bisher, optionen(components=["puffer", "puffer2"]), pruefung=nur_puffer2
+    )
+
     schritt = await flow.async_step_fub_names(
         {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
     )
     assert schritt["step_id"] == "puffer"
     felder = {str(k): k.default() for k in schritt["data_schema"].schema}
-    assert felder == {"puffer2_volumen": 650}
+    assert felder == {"puffer2_volumen": 0}
     with pytest.raises(vol.Invalid):
         schritt["data_schema"]({"puffer2_volumen": -5})
     fertig = await verbindungen_bestaetigen(
@@ -539,6 +576,33 @@ async def test_alter_puffer_fragt_nach_seinen_litern(monkeypatch):
     assert fertig["type"] == "create_entry"
     assert fertig["data"]["puffer2_volumen"] == 800
     assert fertig["data"]["fub_names"]["pufferflex2"] == "Puffer"
+
+
+async def test_nach_den_litern_eines_puffers_wird_nur_einmal_gefragt(monkeypatch):
+    """Danach steht der Wert im Zahlenfeld "Puffervolumen" - und bleibt beim Speichern erhalten."""
+    gelesen = []
+
+    async def nur_puffer2(*angaben):
+        gelesen.append(angaben)
+        return ["puffer2"], {}, {}
+
+    bisher = {
+        "host": "192.0.2.10",
+        "components": ["kessel", "puffer", "puffer2"],
+        "puffer_volumen": 1000,
+        "puffer2_volumen": 650,
+    }
+    flow, _ = await options_schritt(
+        monkeypatch, bisher, optionen(components=["puffer", "puffer2"]), pruefung=nur_puffer2
+    )
+
+    fertig = await flow.async_step_fub_names(
+        {"kessel": "Kessel", "sys": "Sys", "pufferflex": "PufferFlex", "pufferflex2": "Puffer"}
+    )
+
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["puffer2_volumen"] == 650
+    assert gelesen == [], "kennt die Integration alle Liter, fragt sie die Anlage gar nicht"
 
 
 async def test_erkennung_der_puffer_ohne_volumen(monkeypatch):
@@ -597,10 +661,13 @@ async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
     """Die Zeitüberwachung wird nur geschrieben, wenn sie sich ändert - und nicht gespeichert."""
     from eta_heating_ws import config_flow as modul
 
-    bisher = {"host": "192.0.2.10", "port": 8080, "hk1_raumfuehler": "sensor.alt"}
-    flow, _ = await options_schritt(
-        monkeypatch, bisher, optionen(components=["hk1"], enable_switches=True)
-    )
+    bisher = {
+        "host": "192.0.2.10",
+        "port": 8080,
+        "components": ["kessel", "hk1"],
+        "enable_switches": True,
+        "hk1_raumfuehler": "sensor.alt",
+    }
 
     async def mit_thermostat(*_):
         return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 60}}, []
@@ -610,9 +677,10 @@ async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
     async def schreiben(hass, host, port, uri, sekunden):
         geschrieben.append((host, uri, sekunden))
 
-    monkeypatch.setattr(modul, "_anlage_pruefen", mit_thermostat)
     monkeypatch.setattr(modul, "_zeitueberwachung_schreiben", schreiben)
-    schritt = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
+    flow, schritt = await options_schritt(
+        monkeypatch, bisher, optionen(enable_switches=True), "schalten", mit_thermostat
+    )
     assert schritt["step_id"] == "raumfuehler"
     schema = schritt["data_schema"]
     standard = {str(k): k.default() for k in schema.schema if k.default is not vol.UNDEFINED}
@@ -643,19 +711,20 @@ async def test_raumfuehler_und_zeitueberwachung_im_dialog(monkeypatch):
 async def test_zeitueberwachung_nicht_geschrieben_zeigt_einen_fehler(monkeypatch):
     from eta_heating_ws import config_flow as modul
 
-    flow, _ = await options_schritt(
-        monkeypatch, {"host": "h"}, optionen(components=["hk1"], enable_switches=True)
-    )
-
     async def mit_thermostat(*_):
         return [], {"hk1": {"uri": "/1/5/0/0/13168", "sekunden": 0}}, []
 
     async def abgelehnt(*_):
         raise modul.ETAApiError("nein")
 
-    monkeypatch.setattr(modul, "_anlage_pruefen", mit_thermostat)
     monkeypatch.setattr(modul, "_zeitueberwachung_schreiben", abgelehnt)
-    schritt = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
+    flow, schritt = await options_schritt(
+        monkeypatch,
+        {"host": "h", "components": ["kessel", "hk1"], "enable_switches": True},
+        optionen(enable_switches=True),
+        "schalten",
+        mit_thermostat,
+    )
     standard = {str(k): k.default() for k in schritt["data_schema"].schema if k.default is not vol.UNDEFINED}
     assert standard == {"hk1_zeitueberwachung": 10}, "0 an der Anlage: 10 Minuten vorgeschlagen"
     ergebnis = await flow.async_step_raumfuehler({"hk1_zeitueberwachung": 10})
@@ -684,10 +753,13 @@ async def test_zeitplan_je_heizkreis_im_dialog(monkeypatch):
     """Nach dem Raumfühler: je Heizkreis mit beschreibbarem Zeitprogramm ein Zeitplan-Helfer."""
     from eta_heating_ws import config_flow as modul
 
-    bisher = {"host": "192.0.2.10", "port": 8080, "hk1_zeitplan": "schedule.alt"}
-    flow, _ = await options_schritt(
-        monkeypatch, bisher, optionen(components=["hk1", "hk2"], enable_switches=True)
-    )
+    bisher = {
+        "host": "192.0.2.10",
+        "port": 8080,
+        "components": ["kessel", "hk1", "hk2"],
+        "enable_switches": True,
+        "hk1_zeitplan": "schedule.alt",
+    }
 
     from eta_heating_ws.api import ETAApiClient, ETAValue
     from eta_heating_ws.const import WOCHENTAGE
@@ -701,11 +773,10 @@ async def test_zeitplan_je_heizkreis_im_dialog(monkeypatch):
         text = "05:30 - 22:30 20,0" if uri.endswith("/1") else "00:00 - 00:00 0,0"
         return ETAValue(0.0, text, "°C", False, 1)
 
-    monkeypatch.setattr(modul, "_anlage_pruefen", mit_zeitprogramm)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
     monkeypatch.setattr(ETAApiClient, "async_get_value", lesen)
-    schritt = await flow.async_step_fub_names(
-        {"kessel": "Kessel", "sys": "Sys", "hk": "HK", "hk2": "HK 2"}
+    flow, schritt = await options_schritt(
+        monkeypatch, bisher, optionen(enable_switches=True), "schalten", mit_zeitprogramm
     )
     assert schritt["step_id"] == "zeitplaene"
     assert schritt["description_placeholders"]["programm"] == (
@@ -823,27 +894,27 @@ async def test_ohne_menuebaum_bleibt_ein_geleertes_feld_geleert(monkeypatch):
 
 
 async def _konfigurieren(monkeypatch, daten, gespeichert, pruefung, schreiben=True, eingaben=None):
-    """Ein Durchlauf von Konfigurieren für Heizkreis 1 - gibt zurück, was als Optionen gespeichert wird."""
+    """Ein Durchlauf des Menüpunkts Schalten für Heizkreis 1 - gibt zurück, was als Optionen gespeichert wird."""
     from eta_heating_ws import config_flow as modul
     from eta_heating_ws.api import ETAApiClient, ETAValue
-
-    flow, schritt = await options_schritt(
-        monkeypatch, {**daten, **gespeichert}, optionen(components=["hk1"], enable_switches=schreiben)
-    )
 
     async def lesen(self, uri):
         return ETAValue(0.0, "00:00 - 00:00 0,0", "°C", False, 1)
 
-    monkeypatch.setattr(modul, "_anlage_pruefen", pruefung)
     monkeypatch.setattr(modul, "async_get_clientsession", lambda hass: None)
     monkeypatch.setattr(ETAApiClient, "async_get_value", lesen)
+    flow, schritt = await options_schritt(
+        monkeypatch,
+        {**daten, **gespeichert},
+        optionen(enable_switches=schreiben),
+        "schalten",
+        pruefung,
+    )
     for _ in range(8):
         if schritt["type"] == "create_entry":
             return schritt["data"]
         name = schritt["step_id"]
-        if name == "fub_names":
-            schritt = await flow.async_step_fub_names({"kessel": "Kessel", "sys": "Sys", "hk": "HK"})
-        elif name == "switch_warning":
+        if name == "switch_warning":
             schritt = await flow.async_step_switch_warning({})
         else:
             schritt = await getattr(flow, f"async_step_{name}")(dict((eingaben or {}).get(name, {})))
@@ -927,7 +998,6 @@ async def test_ein_neu_gewaehlter_wert_ersetzt_das_none(monkeypatch):
 
 def test_eine_neue_einrichtung_schlaegt_vor_fehlende_werte_auszublenden():
     """Eine bestehende behält ihre Platzhalter, bis der Nutzer den Haken setzt."""
-    from eta_heating_ws.config_flow import _options_schema
     from eta_heating_ws.const import CONF_FEHLENDE_AUSBLENDEN
 
     def vorgabe(schema) -> bool:

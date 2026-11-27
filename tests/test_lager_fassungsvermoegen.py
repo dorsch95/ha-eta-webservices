@@ -18,11 +18,10 @@ from eta_heating_ws import binary_sensor as binary_sensor_platform
 from eta_heating_ws import entitaet_vorgesehen
 from eta_heating_ws import number as number_platform
 from eta_heating_ws.api import ETAValue
-from eta_heating_ws.config_flow import _options_schema
 from eta_heating_ws.const import CONF_LAGER_MAXIMUM
 
 from .conftest import FIXTURES
-from .test_config_flow import optionen, options_schritt
+from .test_config_flow import _options_schema, optionen, options_schritt
 from .test_sensors import setup_integration
 
 ALTE_ANLAGE = (FIXTURES / "menu_alt.xml").read_text(encoding="utf-8")

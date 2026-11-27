@@ -18,7 +18,6 @@ from homeassistant.exceptions import HomeAssistantError
 
 from eta_heating_ws import entitaet_vorgesehen
 from eta_heating_ws import switch as switch_platform
-from eta_heating_ws.config_flow import _options_schema
 from eta_heating_ws.const import (
     CONF_KESSEL_GESPERRT,
     CONF_KESSEL_SPERRE,
@@ -27,7 +26,7 @@ from eta_heating_ws.const import (
     kessel_sperre_gewaehlt,
 )
 
-from .test_config_flow import optionen, options_schritt
+from .test_config_flow import _options_schema, optionen, options_schritt
 from .test_sensors import setup_integration
 
 TASTE = "/264/10891/0/0/12080"
@@ -307,15 +306,19 @@ async def test_ankreuzen_braucht_keinen_eigenen_warnschritt(monkeypatch):
     """Die Ein/Aus-Taste deckt schon die Warnung zum Schreibzugriff ab."""
     bisher = {**optionen(), "enable_switches": True, CONF_KESSEL_SPERRE: False}
     _, ergebnis = await options_schritt(
-        monkeypatch, bisher, {**optionen(), "enable_switches": True, CONF_KESSEL_SPERRE: True}
+        monkeypatch,
+        bisher,
+        {**optionen(), "enable_switches": True, CONF_KESSEL_SPERRE: True},
+        "schalten",
     )
 
-    assert ergebnis["step_id"] == "fub_names"
+    assert ergebnis["type"] == "create_entry"
+    assert ergebnis["data"][CONF_KESSEL_SPERRE] is True
 
 
-async def speichern(monkeypatch, bisher, eingabe):
-    """Geht Konfigurieren bis zum Speichern durch und gibt die neuen Optionen zurück."""
-    flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe)
+async def speichern(monkeypatch, bisher, eingabe, abschnitt="schalten"):
+    """Geht einen Menüpunkt von Konfigurieren bis zum Speichern durch und gibt die neuen Optionen zurück."""
+    flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe, abschnitt)
     for _ in range(6):
         if ergebnis["type"] == "create_entry":
             break
@@ -331,9 +334,10 @@ async def test_konfigurieren_behaelt_die_sperre(monkeypatch):
     gewaehlt = {**optionen(), "enable_switches": True, CONF_KESSEL_SPERRE: True}
     bisher = {**gewaehlt, CONF_KESSEL_GESPERRT: KESSEL_GESPERRT_AUSGESCHALTET}
 
-    daten = await speichern(monkeypatch, bisher, gewaehlt)
+    for abschnitt in ("schalten", "anlage", "abfrage", "pellets"):
+        daten = await speichern(monkeypatch, bisher, gewaehlt, abschnitt)
 
-    assert daten[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
+        assert daten[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET, abschnitt
 
 
 @pytest.mark.parametrize(
@@ -358,6 +362,7 @@ async def test_konfigurieren_behaelt_das_gemerkte_auch_ohne_den_schalter(monkeyp
 
     daten = await speichern(monkeypatch, bisher, {**optionen(), **neu})
 
+    assert {feld: daten[feld] for feld in neu} == neu
     assert daten[CONF_KESSEL_GESPERRT] == KESSEL_GESPERRT_AUSGESCHALTET
 
 

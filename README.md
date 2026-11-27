@@ -104,7 +104,20 @@ Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“: Trag die Li
 
 Die Einrichtung endet mit einer Auswahl: **Einrichtung abschließen**, **Weitere Werte auswählen** oder **Fehlende Werte zuordnen**, siehe [Weitere Werte](#weitere-werte) und [Fehlende Werte](#fehlende-werte). Beides geht auch später unter **Konfigurieren**.
 
-Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren → Einstellungen der Anlage** ändern. Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**.
+Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA Web-Services → Konfigurieren** ändern. Dort wählst du, was du ändern willst, alles andere bleibt, wie es ist:
+
+| Menüpunkt | Was dort steht |
+|---|---|
+| Anlage | Puffer, Warmwasser, Heizkreise, weitere Komponenten, fehlende Werte ausblenden, danach die Funktionsblock-Namen |
+| Abfrage | Abfrageintervall, schnelle Abfrage, Störungsmeldungen |
+| Pellets | Heizwert, Preis, Verbrauch je Zeitraum, Prognose, Wettervorhersage |
+| Schalten | Schreibzugriff, Schalter „Kessel sperren“, danach Raumfühler und Zeitplan |
+| Fremderzeuger | Name, Erkennung und was er sperrt, nur mit der Komponente Fremderzeuger |
+| Anlagenbild | wer woran hängt, nur mit mehreren Pufferspeichern oder einer Fernleitung |
+| Weitere Werte auswählen | siehe [Weitere Werte](#weitere-werte) |
+| Fehlende Werte zuordnen | siehe [Fehlende Werte](#fehlende-werte) |
+
+Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**.
 
 ### Funktionsblock-Namen
 
@@ -343,7 +356,7 @@ Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an ei
 
 Nicht jede Heizung führt jeden Wert: Ein Stückholzkessel misst keinen Pelletverbrauch, ein älterer Kessel hat keinen Kesseldruck.
 
-- **Ausblenden:** Mit dem Haken **Fehlende Werte ausblenden** bekommt so ein Wert keinen Sensor. Eine neue Einrichtung schlägt den Haken vor. Wer die Integration schon länger nutzt, behält seine Sensoren mit `-`, bis er den Haken unter **Konfigurieren → Einstellungen der Anlage** setzt. Sie verschwinden dann sofort. Nutzt du noch die ältere Dashboard-Karte aus der Aktion, erzeuge sie danach neu.
+- **Ausblenden:** Mit dem Haken **Fehlende Werte ausblenden** bekommt so ein Wert keinen Sensor. Eine neue Einrichtung schlägt den Haken vor. Wer die Integration schon länger nutzt, behält seine Sensoren mit `-`, bis er den Haken unter **Konfigurieren → Anlage** setzt. Sie verschwinden dann sofort. Nutzt du noch die ältere Dashboard-Karte aus der Aktion, erzeuge sie danach neu.
 - **Von Hand zuordnen:** Zeigt deine Heizung am Display einen Wert, den die Integration nicht findet, steht er im Menü vermutlich an anderer Stelle. Unter **Konfigurieren → Fehlende Werte zuordnen** wählst du erst den Wert und dann den Eintrag aus dem Menü deiner Heizung. Zur Wahl stehen nur Einträge aus demselben Funktionsblock, die nach Art und Einheit passen, je mit dem Wert, den die Heizung gerade anzeigt.
 - **Nur lesen:** Zuordnen lässt sich nur, was gelesen wird. Schalter, Zeitprogramme, der Partikelabscheider und Vorrat und Fassungsvermögen des Pelletlagers stehen nicht zur Wahl.
 - **Aschebox-Plan:** Ordnest du **Kessel Zustand** oder **Aschebox Verbrauch seit Leerung** von Hand zu, gibt es den [Aschebox-Plan](#entaschen-und-aschebox-leeren) nicht. Er schaltet den Kessel nur nach Werten, die die Integration selbst gefunden hat.
@@ -406,7 +419,7 @@ Die Karte zeigt je nach Breite 2 (Handy), 3 (Tablet) oder 4 Spalten (ab 1040 px)
 - **Uhr:** Hat ein Teil ein Zeitprogramm, öffnet der Knopf mit der Uhr seine Zeiten wie in der Karte [ETA Zeitprogramm](#zeitprogramm-auf-dem-dashboard). Nur mit Schreibzugriff.
 - **Hinweise:** Eine Störung steht oben mit ihrer Meldung. Niedriger Vorrat und fällige Aschebox sind farbig hervorgehoben.
 - **Platz:** Das Anlagenbild liegt waagerecht ab etwa 750 Pixeln Breite, mit mehreren Pufferspeichern oder einer Fernleitung ab etwa 1050. Am einfachsten ist eine eigene Ansicht mit dem Layout **Panel (einzelne Karte)**. Reicht der Platz nicht, wird das Bild zur Liste.
-- **Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten. Mit mehreren Pufferspeichern oder einer Fernleitung fragt **Konfigurieren** im letzten Schritt je Teil, woher es seine Wärme bekommt.
+- **Wer hängt woran:** Die Webservices verraten nicht, welches Teil welches versorgt. Die Karte nimmt an: Der Kessel lädt den ersten Pufferspeicher, weitere hängen hintereinander, Heizkreise und Warmwasser am letzten. Mit mehreren Pufferspeichern oder einer Fernleitung fragt die Einrichtung je Teil, woher es seine Wärme bekommt. Später änderst du das unter **Konfigurieren → Anlagenbild**.
 
 ---
 
@@ -465,7 +478,7 @@ Die Integration lernt aus deinem Verlauf, wie viel dein Haus bei welcher Außent
 | `sensor.eta_heizung_lager_reichweite` | Tage, die der Vorrat noch reicht |
 
 - **Was sie braucht:** einen Kessel mit Gesamtverbrauch, den Recorder von Home Assistant und 14 vollständige Tage, davon 7 mit höchstens 12 °C. Bis dahin steht im Status, worauf sie wartet. Die drei Lager-Werte gibt es nur mit Pelletlager.
-- **Wettervorhersage:** Wähle unter **Konfigurieren** eine Wetter-Entität. Gibt es genau eine, nimmt die Prognose sie von selbst. Ohne Vorhersage rechnet sie mit dem langjährigen Mittel.
+- **Wettervorhersage:** Wähle unter **Konfigurieren → Pellets** eine Wetter-Entität. Gibt es genau eine, nimmt die Prognose sie von selbst. Ohne Vorhersage rechnet sie mit dem langjährigen Mittel.
 - **Pufferspeicher:** Mit bekanntem [Puffervolumen](#puffervolumen) rechnet sie heraus, was der Puffer über Mitternacht mitnimmt. Beim PufferFlex steht es an der Heizung ab Werk auf 1000 l - prüf, ob das zu deinem Puffer passt.
 - **Genauigkeit:** In einer Simulation mit 120 Häusern lag der geschätzte Leer-Tag ohne Wettervorhersage im Mittel 3 Tage daneben, wenn das Lager in 30 Tagen leer war, und 6 Tage bei 120 Tagen.
 
@@ -475,7 +488,7 @@ Die Prognose rechnet nur in Home Assistant und schreibt nichts in die Heizung.
 
 ## 🔌 Schalten und Einstellen
 
-Ab Werk liest die Integration nur. Was in die Heizung schreibt, entsteht erst, wenn du beim Einrichten oder unter **Konfigurieren** *Kessel und Heizkreise schalten dürfen* einschaltest. Geschrieben wird nur, was die Anlage selbst als beschreibbar meldet. Dafür braucht sie Webservices **1.2** oder neuer.
+Ab Werk liest die Integration nur. Was in die Heizung schreibt, entsteht erst, wenn du beim Einrichten oder unter **Konfigurieren → Schalten** *Kessel und Heizkreise schalten dürfen* einschaltest. Geschrieben wird nur, was die Anlage selbst als beschreibbar meldet. Dafür braucht sie Webservices **1.2** oder neuer.
 
 > ⚠️ Schalten greift direkt in die Heizung ein. Im Winter einen Heizkreis oder den Kessel per Automation abzuschalten kann Räume auskühlen lassen. Für den Frostschutz bleibt die Anlage selbst zuständig.
 
@@ -511,7 +524,7 @@ In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) hat er eine eigene Kac
 
 ### Kessel sperren
 
-`switch.eta_heizung_kessel_sperren` lässt den Kessel pausieren, etwa per Automation. Du legst ihn unter **Konfigurieren** mit **Schalter „Kessel sperren“ anlegen** an, er braucht den Schreibzugriff. Mit der Komponente [Fremderzeuger](#fremderzeuger) entsteht er von selbst.
+`switch.eta_heizung_kessel_sperren` lässt den Kessel pausieren, etwa per Automation. Du legst ihn unter **Konfigurieren → Schalten** mit **Schalter „Kessel sperren“ anlegen** an, er braucht den Schreibzugriff. Mit der Komponente [Fremderzeuger](#fremderzeuger) entsteht er von selbst.
 
 - **Ein** schaltet den Kessel über seine Ein/Aus-Taste aus.
 - **Aus** schaltet ihn wieder ein, aber nur, wenn der Schalter ihn ausgeschaltet hat. War der Kessel beim Sperren schon aus, bleibt er aus.
@@ -581,7 +594,7 @@ Ob das Zeitprogramm gerade eine Heizzeit oder eine Absenkzeit hat, zeigt `sensor
 Ist ein Heizkreis im ETA-Assistenten mit **„Raumfühler ext. Schnittstelle“** eingerichtet, kann Home Assistant der Anlage die Raumtemperatur liefern, etwa von einem Zigbee-Thermometer. Dann entsteht:
 
 - **`climate.eta_heizung_heizkreis_1_thermostat`** (bis `_4_`): Istwert ist „Raum“, Sollwert „Raum Soll“ von 10 bis 30 °C in halben Grad. Stellst du ihn um, ändert das wie am Display die Temperatur der Heizzeiten für alle Tage.
-- **Der Schritt „Raumfühler aus Home Assistant“** unter **Konfigurieren**: je Heizkreis ein Thermometer und die **Zeitüberwachung** (1 bis 60 Minuten).
+- **Der Schritt „Raumfühler aus Home Assistant“** unter **Konfigurieren → Schalten**: je Heizkreis ein Thermometer und die **Zeitüberwachung** (1 bis 60 Minuten).
 
 Die Integration schreibt den Wert des Thermometers alle 30 Sekunden und bei jeder Änderung in die Anlage.
 
@@ -616,7 +629,7 @@ Die Heizung erlaubt höchstens 3 Zeitfenster je Tag, Zeiten in Viertelstunden un
 
 ### Zeitprogramm aus Home Assistant
 
-Statt über die Karte kann das Zeitprogramm eines Heizkreises einem **Zeitplan** aus Home Assistant folgen. Lege unter **Einstellungen → Geräte & Dienste → Helfer** einen Zeitplan an und wähle ihn unter **Konfigurieren** im Schritt **„Zeitprogramm aus Home Assistant“** beim Heizkreis aus. Jeder Block wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung.
+Statt über die Karte kann das Zeitprogramm eines Heizkreises einem **Zeitplan** aus Home Assistant folgen. Lege unter **Einstellungen → Geräte & Dienste → Helfer** einen Zeitplan an und wähle ihn unter **Konfigurieren → Schalten** im Schritt **„Zeitprogramm aus Home Assistant“** beim Heizkreis aus. Jeder Block wird ein Zeitfenster der Heizung, außerhalb gilt die Absenkung.
 
 - **Beim ersten Mal fragt die Integration nach:** Weicht der Zeitplan von der Heizung ab, zeigt sie unter **Einstellungen → Reparaturen** die geplanten Änderungen und schreibt erst mit **Absenden**.
 - **Danach** schreibt sie ohne Rückfrage, sobald du den Zeitplan änderst, und beim Start. Was jemand am Display ändert, gilt bis dahin.
@@ -665,7 +678,7 @@ Die Dateien liegen unter [`blueprints/automation/eta_webservices`](blueprints/au
 
 Die Integration findet die Werte über die **Namen** im Menübaum deiner Anlage, nicht über feste Adressen. Fehlt etwas, ist es an deiner Anlage meist nicht verbaut.
 
-**Eine ganze Komponente ohne Werte** meldet Home Assistant unter **Einstellungen → Reparaturen**. Der Hinweis führt zu **Konfigurieren**, wo du den tatsächlichen Funktionsblock-Namen einträgst.
+**Eine ganze Komponente ohne Werte** meldet Home Assistant unter **Einstellungen → Reparaturen**. Der Hinweis führt zu **Konfigurieren → Anlage**, wo du im zweiten Schritt den tatsächlichen Funktionsblock-Namen einträgst.
 
 **Ein einzelner Wert fehlt oder stimmt nicht:** Lade die Diagnose-Datei herunter (**Einstellungen → Geräte & Dienste → ETA Web-Services → Gerät „ETA Heizung“ → Diagnose herunterladen**) und häng sie an ein [Issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose). Sie enthält den vollständigen Menübaum, die IP-Adresse ist geschwärzt.
 

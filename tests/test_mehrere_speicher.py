@@ -182,7 +182,7 @@ def test_formular_begrenzt_die_anzahl():
 
 
 def test_formular_zeigt_die_bisherige_anzahl():
-    from eta_heating_ws.config_flow import _options_schema
+    from .test_config_flow import _options_schema
 
     schema = _options_schema({"components": ["kessel", "puffer", "puffer2", "fwm", "hk1", "hk3", "solar"]})
     vorgaben = {str(k): k.default() for k in schema.schema if callable(k.default)}

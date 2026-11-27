@@ -139,7 +139,7 @@
       },
       "switch_warning": {
         "title": "Switching writes to your heating system",
-        "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
+        "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure → Switching."
       },
       "zeitplaene": {
         "title": "Heating schedule from Home Assistant",
@@ -205,7 +205,7 @@
           "weitere_intervall": "Time between polls"
         },
         "data_description": {
-          "weitere_schnell": "These values are also read by the fast polling, at the interval from the system settings. At most {schnell_hoechstens}.",
+          "weitere_schnell": "These values are also read by the fast polling, at its interval from Configure → Polling. At most {schnell_hoechstens}.",
           "weitere_je_abfrage": "Fewer is easier on the heating system, but each value is read less often.",
           "weitere_intervall": "The fixed values and the fast polling run independently of this."
         }
@@ -246,39 +246,70 @@
     "step": {
       "init": {
         "title": "Edit ETA heating system",
+        "description": "What would you like to change? Everything else stays as it is.",
         "menu_options": {
-          "einstellungen": "System settings",
+          "anlage": "System: buffers, circuits, components",
+          "abfrage": "Polling: intervals, fault messages",
+          "pellets": "Pellets: price, consumption, prognosis",
+          "schalten": "Switching: access, room sensor, schedule",
+          "fremderzeuger": "Stand-alone heat source",
+          "verbindungen": "Diagram: who is connected to what",
           "weitere_werte": "Select additional values",
           "fehlende_werte": "Assign missing values"
         }
       },
-      "einstellungen": {
-        "title": "Edit ETA heating system",
+      "anlage": {
+        "title": "System",
+        "description": "What your heating system consists of. The next step shows the names of the function blocks.",
         "data": {
           "anzahl_puffer": "Buffer tanks",
           "anzahl_warmwasser": "Fresh water modules and hot water tanks",
           "anzahl_heizkreise": "Heating circuits",
           "components": "Other components on your system",
+          "fehlende_ausblenden": "Hide missing values"
+        },
+        "data_description": {
+          "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
+          "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead. When you tick this, those sensors disappear right away. If you use the older dashboard card from the action, re-create it afterwards."
+        }
+      },
+      "abfrage": {
+        "title": "Polling",
+        "description": "How often Home Assistant asks your heating system.",
+        "data": {
           "scan_interval": "Polling interval (seconds)",
           "schnell_intervall": "Fast polling (seconds, 0 = off)",
+          "enable_errors": "Read fault messages from the heating system"
+        },
+        "data_description": {
+          "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
+          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval."
+        }
+      },
+      "pellets": {
+        "title": "Pellets",
+        "description": "Energy content and price of your pellets and what the integration calculates from them.",
+        "data": {
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
-          "enable_errors": "Read fault messages from the heating system",
-          "fehlende_ausblenden": "Hide missing values",
-          "enable_switches": "Allow switching the boiler and heating circuits",
-          "kessel_sperre": "Create the switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
           "prognose": "Pellet prognosis and store range",
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
-          "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
-          "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead. When you tick this, those sensors disappear right away. If you use the older dashboard card from the action, re-create it afterwards.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
-          "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
-          "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
-          "schnell_intervall": "Reads everything switchable, the boiler state, the room temperature and, at the fresh water module, hot water temperature, flow, buffer pump speed and circulation more often than the rest. Only applies if smaller than the polling interval.",
+          "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
+        }
+      },
+      "schalten": {
+        "title": "Switching",
+        "description": "By default the integration only reads. Here you allow what Home Assistant may switch on your heating system. With write access, room sensor and schedule follow if your heating circuits are set up for them.",
+        "data": {
+          "enable_switches": "Allow switching the boiler and heating circuits",
+          "kessel_sperre": "Create the switch \"Lock boiler\""
+        },
+        "data_description": {
           "kessel_sperre": "For a stove or another device the ETA control does not know: while the switch is on, the boiler is switched off via its on/off key; afterwards Home Assistant switches it on again. In an emergency you can switch it back on at the heater's display at any time. Needs write access. Meant for your own automations or the blueprint - with the component Stand-alone heat source the switch appears by itself."
         }
       },
@@ -368,7 +399,7 @@
       },
       "switch_warning": {
         "title": "Switching writes to your heating system",
-        "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure."
+        "description": "You enabled switches. From now on Home Assistant can not only read your heating system, but also switch the boiler and the heating circuits off and on.\n\nPlease be aware:\n- Switching off a heating circuit or the boiler in winter can let rooms cool down. Frost protection remains the responsibility of the heating system, not of Home Assistant.\n- Anyone with access to your Home Assistant can operate these switches.\n- Switches only appear where your heating system explicitly reports the variable as writable.\n\nYou can turn this off again at any time under Configure → Switching."
       },
       "zeitplaene": {
         "title": "Heating schedule from Home Assistant",
@@ -425,7 +456,7 @@
           "weitere_intervall": "Time between polls"
         },
         "data_description": {
-          "weitere_schnell": "These values are also read by the fast polling, at the interval from the system settings. At most {schnell_hoechstens}.",
+          "weitere_schnell": "These values are also read by the fast polling, at its interval from Configure → Polling. At most {schnell_hoechstens}.",
           "weitere_je_abfrage": "Fewer is easier on the heating system, but each value is read less often.",
           "weitere_intervall": "The fixed values and the fast polling run independently of this."
         }
@@ -497,11 +528,11 @@
   "issues": {
     "component_not_found": {
       "title": "Component \"{component}\" not found",
-      "description": "The menu of your ETA heating system contains no values for the component \"{component}\". Its function block is probably named differently on your controller (expected roles: {fub_names}).\n\nOpen **Settings -> Devices & Services -> ETA Web-Services -> Configure** and enter the actual name, or untick the component if your system does not have it."
+      "description": "The menu of your ETA heating system contains no values for the component \"{component}\". Its function block is probably named differently on your controller (expected roles: {fub_names}).\n\nOpen **Settings -> Devices & Services -> ETA Web-Services -> Configure -> System**. Enter the actual name in the second step, or deselect the component in the first if your system does not have it."
     },
     "raumfuehler_stumm": {
       "title": "Thermometer {raumfuehler} has been silent for {stunden} hours",
-      "description": "The thermometer {raumfuehler} is the room sensor of {heizkreis}, but it has not sent anything for {stunden} hours - not even the same value again. Is its battery empty?\n\nThe integration keeps writing the last value to the heating system, so the heating circuit is controlled with an old room temperature. As soon as the thermometer reports again, this notice disappears by itself. If it is gone for good, choose another one under **Settings -> Devices & services -> ETA Web-Services -> Configure**."
+      "description": "The thermometer {raumfuehler} is the room sensor of {heizkreis}, but it has not sent anything for {stunden} hours - not even the same value again. Is its battery empty?\n\nThe integration keeps writing the last value to the heating system, so the heating circuit is controlled with an old room temperature. As soon as the thermometer reports again, this notice disappears by itself. If it is gone for good, choose another one under **Settings -> Devices & services -> ETA Web-Services -> Configure -> Switching**."
     },
     "zeitplan_zu_voll": {
       "title": "Schedule {zeitplan} does not fit on every day",
@@ -513,7 +544,7 @@
         "step": {
           "confirm": {
             "title": "Transfer schedule {zeitplan}",
-            "description": "The schedule {zeitplan} differs from the program of {heizkreis} on the heating system. This would be transferred:\n\n{aenderungen}\n\nWith **Submit** the integration writes these time windows to the system. From then on it transfers every change of the schedule without asking. If you do not want that, adjust the schedule or deselect it under Configure."
+            "description": "The schedule {zeitplan} differs from the program of {heizkreis} on the heating system. This would be transferred:\n\n{aenderungen}\n\nWith **Submit** the integration writes these time windows to the system. From then on it transfers every change of the schedule without asking. If you do not want that, adjust the schedule or deselect it under Configure → Switching."
           }
         },
         "abort": {

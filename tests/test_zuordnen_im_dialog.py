@@ -391,7 +391,7 @@ async def test_konfigurieren_bricht_ab_wenn_die_anlage_nicht_antwortet_oder_nich
 
 
 async def einstellungen_mit_haken(monkeypatch, hass, entry, namen=None):
-    """Speichert die Einstellungen der Anlage neu, mit dem Haken "Fehlende Werte ausblenden".
+    """Speichert den Menüpunkt Anlage neu, mit dem Haken "Fehlende Werte ausblenden".
 
     namen sind die Funktionsblock-Namen, die der Nutzer dabei einträgt -
     ohne Angabe bleiben die vorbelegten.
@@ -585,7 +585,7 @@ async def test_der_zweite_schritt_ohne_den_ersten_beginnt_beim_ersten(monkeypatc
     assert schritt["step_id"] == "fehlende_werte"
 
 
-async def test_einstellungen_speichern_behaelt_zuordnungen_und_geleerte_auswahl(monkeypatch):
+async def test_anlage_speichern_behaelt_zuordnungen_und_geleerte_auswahl(monkeypatch):
     """Stammen sie aus der Ersteinrichtung, gälten nach dem Speichern sonst wieder die alten."""
     bisher = {
         **optionen(),

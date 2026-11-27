@@ -199,7 +199,9 @@ async def test_takt_laeuft_nur_wenn_er_kuerzer_ist_als_das_abfrageintervall(hass
 
 
 def test_einstellung_steht_im_dialog():
-    from eta_heating_ws.config_flow import _connection_schema, _options_schema
+    from eta_heating_ws.config_flow import _connection_schema
+
+    from .test_config_flow import _options_schema
     from eta_heating_ws.const import DEFAULT_SCHNELL_INTERVALL, MIN_SCAN_INTERVAL
 
     for schema in (_connection_schema({}), _options_schema({})):

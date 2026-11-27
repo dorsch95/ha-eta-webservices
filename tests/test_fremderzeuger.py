@@ -800,26 +800,27 @@ async def test_schritt_verlangt_entitaet_oder_fuehler(monkeypatch):
     assert ergebnis.get("step_id") != "fremderzeuger"
 
 
-async def test_konfigurieren_behaelt_die_sperrtemperatur(monkeypatch):
+@pytest.mark.parametrize("abschnitt", ["fremderzeuger", "anlage", "pellets"])
+async def test_konfigurieren_behaelt_die_sperrtemperatur(monkeypatch, abschnitt):
     """Die Optionen werden beim Speichern ersetzt - die Sperrtemperatur steht in keinem Formular."""
     eingabe = {**optionen(components=["fremderzeuger"]), "enable_switches": True}
     bisher = {**eingabe, CONF_FREMDERZEUGER_FUEHLER: FUEHLER, CONF_FREMDERZEUGER_SCHWELLE: 85.0}
-    flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe)
-    ergebnis = await flow.async_step_fub_names(
-        {str(feld): feld.default() for feld in ergebnis["data_schema"].schema}
-    )
-    ergebnis = await flow.async_step_fremderzeuger(
-        {CONF_FREMDERZEUGER_NAME: "Ofen", CONF_FREMDERZEUGER_FUEHLER: FUEHLER}
-    )
+    flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe, abschnitt)
     for _ in range(6):
         if ergebnis["type"] == "create_entry":
             break
+        if ergebnis["step_id"] == "fremderzeuger":
+            ergebnis = await flow.async_step_fremderzeuger(
+                {CONF_FREMDERZEUGER_NAME: "Ofen", CONF_FREMDERZEUGER_FUEHLER: FUEHLER}
+            )
+            continue
         schema = ergebnis.get("data_schema")
         vorgaben = {str(feld): feld.default() for feld in schema.schema} if schema else {}
         ergebnis = await getattr(flow, f"async_step_{ergebnis['step_id']}")(vorgaben)
 
     assert ergebnis["type"] == "create_entry"
     assert ergebnis["data"][CONF_FREMDERZEUGER_SCHWELLE] == 85.0
+    assert ergebnis["data"][CONF_FREMDERZEUGER_FUEHLER] == FUEHLER
 
 
 async def test_binaersensor_kennt_den_zustand_gleich_nach_dem_einrichten(hass, entry):
@@ -1026,7 +1027,7 @@ async def test_entitaet_aus_der_ersteinrichtung_laesst_sich_wieder_entfernen(
         CONF_FREMDERZEUGER_FUEHLER: FUEHLER,
         CONF_FREMDERZEUGER_SPERRT: ["kessel"],
     }
-    flow, ergebnis = await options_schritt(monkeypatch, erst, eingabe)
+    flow, ergebnis = await options_schritt(monkeypatch, erst, abschnitt="fremderzeuger")
     for _ in range(8):
         if ergebnis["type"] == "create_entry":
             break
@@ -1087,8 +1088,8 @@ async def test_geleerte_entitaet_bleibt_auch_nach_dem_zweiten_speichern_geleert(
         CONF_FREMDERZEUGER_FREIGEBEN_NACH: 5,
     }
 
-    async def speichern(bisher):
-        flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe)
+    async def speichern(bisher, abschnitt="fremderzeuger"):
+        flow, ergebnis = await options_schritt(monkeypatch, bisher, eingabe, abschnitt)
         for _ in range(8):
             if ergebnis["type"] == "create_entry":
                 break
@@ -1105,6 +1106,11 @@ async def test_geleerte_entitaet_bleibt_auch_nach_dem_zweiten_speichern_geleert(
     zweite = await speichern({**ersteinrichtung, **erste})
 
     assert {**ersteinrichtung, **zweite}[CONF_FREMDERZEUGER_ENTITAET] is None
+
+    for abschnitt in ("anlage", "abfrage", "pellets", "schalten"):
+        dritte = await speichern({**ersteinrichtung, **zweite}, abschnitt)
+        assert {**ersteinrichtung, **dritte}[CONF_FREMDERZEUGER_ENTITAET] is None, abschnitt
+        assert dritte[CONF_FREMDERZEUGER_FUEHLER] == FUEHLER
 
 
 async def test_laesst_sich_der_kessel_mehrmals_nicht_freigeben_erscheint_eine_meldung(

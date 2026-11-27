@@ -128,6 +128,41 @@ from .const import (
 FELD_WERTE = "werte"
 """Das Feld, in dem der Nutzer die fehlenden Messwerte wählt, die er zuordnen will."""
 
+ABSCHNITTE: dict[str, tuple[str, ...]] = {
+    "anlage": (*GEZAEHLTE_KOMPONENTEN, CONF_COMPONENTS, CONF_FEHLENDE_AUSBLENDEN),
+    "abfrage": (CONF_SCAN_INTERVAL, CONF_SCHNELL_INTERVALL, CONF_ENABLE_ERRORS),
+    "pellets": (
+        CONF_PELLET_KWH_PER_KG,
+        CONF_PELLET_PREIS,
+        CONF_ZEITRAEUME,
+        CONF_PROGNOSE,
+        CONF_WETTER,
+    ),
+    "schalten": (CONF_ENABLE_SWITCHES, CONF_KESSEL_SPERRE),
+}
+"""Die Menüpunkte von Konfigurieren mit eigenem Formular, je mit ihren Feldern.
+
+Zusammen sind es die Felder der Ersteinrichtung ohne die Adresse, siehe
+_einstellung_felder. Jedes Feld steht in genau einem Abschnitt. Wer den
+Pelletpreis ändern will, sieht so nur die fünf Felder zu den Pellets und
+nicht mehr alle Schritte der Anlage.
+"""
+
+FOLGESCHRITTE: dict[str, tuple[str, ...]] = {
+    "anlage": ("fub_names", "fremderzeuger", "puffer", "verbindungen"),
+    "abfrage": (),
+    "pellets": (),
+    "schalten": ("switch_warning", "fremderzeuger", "raumfuehler", "zeitplaene"),
+    "fremderzeuger": ("fremderzeuger",),
+    "verbindungen": ("verbindungen",),
+}
+"""Je Menüpunkt von Konfigurieren die Schritte, die auf sein Formular folgen können.
+
+Gezeigt wird ein Schritt nur, wenn er in diesem Durchlauf etwas zu
+fragen hat, siehe ETAOptionsFlow._noetig. Fremderzeuger und Verbindungen
+sind Menüpunkte ohne eigenes Formular - sie bestehen aus ihrem Schritt.
+"""
+
 
 async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     """Prüft, ob die Anlage erreichbar ist und Webservices aktiv sind."""
@@ -336,25 +371,40 @@ def _geleert(eingabe: dict[str, Any], bisher: dict[str, Any], felder) -> dict[st
 
 
 def _bisherige_angaben(daten: dict[str, Any], bisher: dict[str, Any]) -> dict[str, Any]:
-    """Die Einstellungen, wenn der Menübaum gerade nicht lesbar ist.
+    """Die Einstellungen samt allem, wonach die Folgeschritte fragen würden - so, wie es bisher war.
 
-    Dann entfallen die Schritte für Puffervolumen, Raumfühler, Zeitpläne
-    und Verbindungen. Was dort bisher eingetragen war, bleibt für die weiter
-    gewählten Komponenten stehen - sonst ginge es verloren, nur weil die Anlage beim
-    Speichern gerade nicht geantwortet hat. Auch ein ausdrücklich geleertes
-    Feld bleibt geleert, siehe _geleert.
+    Ein Menüpunkt von Konfigurieren zeigt nur wenige Schritte. Was die
+    übrigen bisher gespeichert haben, bleibt für die weiter gewählten
+    Komponenten stehen: die Namen der Funktionsblöcke, der Fremderzeuger,
+    Puffervolumen, Raumfühler und Zeitpläne - beide nur mit Schreibzugriff
+    - und die Verbindungen. Was in daten schon steht, gilt. Auch ein
+    ausdrücklich geleertes Feld bleibt geleert, siehe _geleert.
     """
     komponenten = daten.get(CONF_COMPONENTS, [])
     schluessel = [puffer_volumen_schluessel(k) for k in PUFFER_SPEICHER if k in komponenten]
+    if "fremderzeuger" in komponenten:
+        schluessel += FREMDERZEUGER_FELDER
     if daten.get(CONF_ENABLE_SWITCHES):
-        schluessel += [
-            feld(heizkreis)
-            for heizkreis in THERMOSTATE
-            if heizkreis in komponenten
-            for feld in (raumfuehler_schluessel, zeitplan_schluessel)
-        ]
+        schluessel += _schreibende_helfer(komponenten)
     schluessel.append(CONF_VERBINDUNGEN)
-    return {**{k: bisher[k] for k in schluessel if k in bisher}, **daten}
+    bleibt = {k: bisher[k] for k in schluessel if k in bisher}
+    rollen = fub_roles_for_components(komponenten)
+    namen = {
+        rolle: name for rolle, name in (bisher.get(CONF_FUB_NAMES) or {}).items() if rolle in rollen
+    }
+    if namen:
+        bleibt[CONF_FUB_NAMES] = namen
+    return {**bleibt, **daten}
+
+
+def _schreibende_helfer(komponenten: list[str]) -> list[str]:
+    """Je gewähltem Heizkreis die Felder für Raumfühler und Zeitplan."""
+    return [
+        feld(heizkreis)
+        for heizkreis in THERMOSTATE
+        if heizkreis in komponenten
+        for feld in (raumfuehler_schluessel, zeitplan_schluessel)
+    ]
 
 
 def _zeitplaene_schema(zeitprogramme, current: dict[str, Any]) -> vol.Schema:
@@ -615,9 +665,31 @@ def _reconfigure_schema(current: dict[str, Any]) -> vol.Schema:
     return vol.Schema(_verbindung_felder(current))
 
 
-def _options_schema(current: dict[str, Any], wetter: str | None = None) -> vol.Schema:
-    """Konfigurieren ändert alles außer der Adresse der Anlage."""
-    return vol.Schema(_einstellung_felder(current, wetter))
+def _abschnitt_schema(
+    abschnitt: str, current: dict[str, Any], wetter: str | None = None
+) -> vol.Schema:
+    """Das Formular eines Menüpunkts von Konfigurieren: seine Felder in seiner Reihenfolge.
+
+    Konfigurieren ändert alles außer der Adresse der Anlage, nach
+    Menüpunkten getrennt, siehe ABSCHNITTE.
+    """
+    alle = {str(feld): (feld, wahl) for feld, wahl in _einstellung_felder(current, wetter).items()}
+    return vol.Schema(dict(alle[name] for name in ABSCHNITTE[abschnitt]))
+
+
+def _unveraendert(current: dict[str, Any], abschnitt: str) -> dict[str, Any]:
+    """Was die Formulare der anderen Menüpunkte lieferten, schickte der Nutzer sie unverändert ab.
+
+    Ohne die Felder von abschnitt - die kommen aus dessen Eingabe. Und
+    ohne das Wetter: Sein Feld ist freiwillig und hat keine Vorgabe,
+    siehe ETAOptionsFlow._beginnen.
+    """
+    eigene = ABSCHNITTE.get(abschnitt, ())
+    return {
+        str(feld): feld.default()
+        for feld in _einstellung_felder(current)
+        if feld.default is not vol.UNDEFINED and str(feld) not in eigene
+    }
 
 
 def _schieberegler(grenzen: tuple[int, int], einheit: str | None = None) -> NumberSelector:
@@ -730,13 +802,16 @@ def _zuordnung_schema(
 
 
 class _Anlagenschritte:
-    """Die Schritte nach den Funktionsblock-Namen, gleich für Einrichten und Konfigurieren.
+    """Die Formulare nach den Funktionsblock-Namen, gleich für Einrichten und Konfigurieren.
 
-    Die Unterklasse liefert _adresse(), _bisher und _fertig(daten), dazu
-    _abschluss() für das Ende der Anlagenschritte. Für die Zuordnung von
-    Hand liefert sie, woraus die Einrichtung gerade besteht
-    (_einrichtung, _komponenten), und was mit dem Ergebnis geschieht
-    (_zuordnung_speichern, _ohne_zuordnung).
+    In welcher Folge sie kommen, bestimmt die Unterklasse: Jedes Formular
+    ruft nach dem Absenden _nach(schritt). Die Ersteinrichtung geht alle
+    der Reihe nach durch, Konfigurieren nur die des gewählten Menüpunkts.
+
+    Die Unterklasse liefert außerdem _adresse(), _bisher und
+    _fertig(daten). Für die Zuordnung von Hand liefert sie, woraus die
+    Einrichtung gerade besteht (_einrichtung, _komponenten), und was mit
+    dem Ergebnis geschieht (_zuordnung_speichern, _ohne_zuordnung).
     """
 
     _menue: dict[str, Any] | None = None
@@ -751,16 +826,6 @@ class _Anlagenschritte:
     """Je gewähltem Messwert die gelesenen passenden Einträge, siehe _passende_lesen."""
     _verfallen: frozenset[str] = frozenset()
     """Gewählte Messwerte, deren bisherige Zuordnung gelesen wurde und nicht mehr passt."""
-
-    async def _nach_namen(self) -> ConfigFlowResult:
-        """Nach den Funktionsblock-Namen: der Fremderzeuger, wenn er gewählt ist.
-
-        Er steht nicht im Menübaum - gefragt wird deshalb auch dann, wenn
-        die Anlage gerade nicht erreichbar ist.
-        """
-        if "fremderzeuger" in self._data[CONF_COMPONENTS]:
-            return await self.async_step_fremderzeuger()
-        return await self._nach_fub_namen()
 
     async def async_step_fremderzeuger(
         self, user_input: dict[str, Any] | None = None
@@ -784,7 +849,7 @@ class _Anlagenschritte:
                         (CONF_FREMDERZEUGER_ENTITAET, CONF_FREMDERZEUGER_FUEHLER),
                     )
                 )
-                return await self._nach_fub_namen()
+                return await self._nach("fremderzeuger")
             errors["base"] = "fremderzeuger_ohne_quelle"
         return self.async_show_form(
             step_id="fremderzeuger",
@@ -793,52 +858,6 @@ class _Anlagenschritte:
             ),
             errors=errors,
         )
-
-    async def _nach_fub_namen(self) -> ConfigFlowResult:
-        host, port = self._adresse()
-        geprueft = await _anlage_pruefen(
-            self.hass,
-            host,
-            port,
-            self._data[CONF_FUB_NAMES],
-            self._data[CONF_COMPONENTS],
-            bool(self._data.get(CONF_ENABLE_SWITCHES)),
-        )
-        if geprueft is None:
-            self._online = False
-            return self._fertig(_bisherige_angaben(self._data, self._bisher))
-        self._online = True
-        self._ohne_volumen, self._thermostate, self._zeitprogramme = geprueft
-        if self._ohne_volumen:
-            return await self.async_step_puffer()
-        return await self._nach_puffer()
-
-    async def _nach_puffer(self) -> ConfigFlowResult:
-        if self._thermostate:
-            return await self.async_step_raumfuehler()
-        return await self._nach_raumfuehler()
-
-    async def _nach_raumfuehler(self) -> ConfigFlowResult:
-        if self._zeitprogramme:
-            return await self.async_step_zeitplaene()
-        return await self._nach_zeitplaene()
-
-    async def _nach_zeitplaene(self) -> ConfigFlowResult:
-        """Fragt nach den Verbindungen, wenn es etwas zu wählen gibt.
-
-        Sonst bleibt die bisherige Auswahl stehen. Konfigurieren ersetzt
-        die gespeicherten Optionen im Ganzen - ohne das Mitnehmen gälte
-        danach wieder die ältere Auswahl aus dem Einrichten.
-        """
-        if braucht_auswahl(self._data[CONF_COMPONENTS]):
-            return await self.async_step_verbindungen()
-        if self._bisher.get(CONF_VERBINDUNGEN):
-            self._data[CONF_VERBINDUNGEN] = self._bisher[CONF_VERBINDUNGEN]
-        return await self._nach_verbindungen()
-
-    async def _nach_verbindungen(self) -> ConfigFlowResult:
-        """Nach den Verbindungen ist die Anlage eingerichtet, siehe _abschluss der Unterklasse."""
-        return await self._abschluss()
 
     async def _menue_lesen(self) -> dict[str, Any] | None:
         """Der Menübaum der Anlage, je Dialog einmal gelesen - None, wenn sie nicht antwortet."""
@@ -1184,7 +1203,7 @@ class _Anlagenschritte:
             }
             if not im_kreis(komponenten, gewaehlt):
                 self._data[CONF_VERBINDUNGEN] = gewaehlt
-                return await self._nach_verbindungen()
+                return await self._nach("verbindungen")
             errors["base"] = "verbindung_im_kreis"
             wege = {**verbindungen(komponenten), **gewaehlt}
         return self.async_show_form(
@@ -1212,7 +1231,7 @@ class _Anlagenschritte:
                     [zeitplan_schluessel(hk) for hk in self._zeitprogramme],
                 )
             )
-            return await self._nach_zeitplaene()
+            return await self._nach("zeitplaene")
         host, port = self._adresse()
         return self.async_show_form(
             step_id="zeitplaene",
@@ -1230,7 +1249,7 @@ class _Anlagenschritte:
         """Fragt nach den Litern der Puffer, die kein Gesamtvolumen melden."""
         if user_input is not None:
             self._data.update(user_input)
-            return await self._nach_puffer()
+            return await self._nach("puffer")
         return self.async_show_form(
             step_id="puffer", data_schema=_puffer_schema(self._ohne_volumen, self._bisher)
         )
@@ -1273,7 +1292,7 @@ class _Anlagenschritte:
                         [raumfuehler_schluessel(hk) for hk in self._thermostate],
                     )
                 )
-                return await self._nach_raumfuehler()
+                return await self._nach("raumfuehler")
         return self.async_show_form(
             step_id="raumfuehler",
             data_schema=_raumfuehler_schema(self._thermostate, user_input or self._bisher),
@@ -1316,6 +1335,67 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
 
     def _komponenten(self) -> list[str]:
         return self._data[CONF_COMPONENTS]
+
+    async def _nach(self, schritt: str) -> ConfigFlowResult:
+        """Die Ersteinrichtung geht die Schritte der Anlage der Reihe nach durch."""
+        return await {
+            "fub_names": self._nach_namen,
+            "fremderzeuger": self._nach_fub_namen,
+            "puffer": self._nach_puffer,
+            "raumfuehler": self._nach_raumfuehler,
+            "zeitplaene": self._nach_zeitplaene,
+            "verbindungen": self._abschluss,
+        }[schritt]()
+
+    async def _nach_namen(self) -> ConfigFlowResult:
+        """Nach den Funktionsblock-Namen: der Fremderzeuger, wenn er gewählt ist.
+
+        Er steht nicht im Menübaum - gefragt wird deshalb auch dann, wenn
+        die Anlage gerade nicht erreichbar ist.
+        """
+        if "fremderzeuger" in self._data[CONF_COMPONENTS]:
+            return await self.async_step_fremderzeuger()
+        return await self._nach_fub_namen()
+
+    async def _nach_fub_namen(self) -> ConfigFlowResult:
+        """Liest die Anlage und fragt, was sie nicht selbst meldet.
+
+        Antwortet sie nicht, entfallen Puffervolumen, Raumfühler,
+        Zeitpläne und Verbindungen, und die Einrichtung ist fertig.
+        """
+        host, port = self._adresse()
+        geprueft = await _anlage_pruefen(
+            self.hass,
+            host,
+            port,
+            self._data[CONF_FUB_NAMES],
+            self._data[CONF_COMPONENTS],
+            bool(self._data.get(CONF_ENABLE_SWITCHES)),
+        )
+        if geprueft is None:
+            self._online = False
+            return self._fertig(self._data)
+        self._online = True
+        self._ohne_volumen, self._thermostate, self._zeitprogramme = geprueft
+        if self._ohne_volumen:
+            return await self.async_step_puffer()
+        return await self._nach_puffer()
+
+    async def _nach_puffer(self) -> ConfigFlowResult:
+        if self._thermostate:
+            return await self.async_step_raumfuehler()
+        return await self._nach_raumfuehler()
+
+    async def _nach_raumfuehler(self) -> ConfigFlowResult:
+        if self._zeitprogramme:
+            return await self.async_step_zeitplaene()
+        return await self._nach_zeitplaene()
+
+    async def _nach_zeitplaene(self) -> ConfigFlowResult:
+        """Fragt nach den Verbindungen, wenn es etwas zu wählen gibt."""
+        if braucht_auswahl(self._data[CONF_COMPONENTS]):
+            return await self.async_step_verbindungen()
+        return await self._abschluss()
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -1473,14 +1553,14 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
-            return await self._nach_namen()
+            return await self._nach("fub_names")
 
         host, port = self._adresse()
         namen = await _fub_namen_der_anlage(self.hass, host, port)
         vorschlag, fehlende = fub_namen_abgleich(roles, namen)
         if not fehlende:
             self._data[CONF_FUB_NAMES] = vorschlag
-            return await self._nach_namen()
+            return await self._nach("fub_names")
         sichtbar = [name for name in namen if name.strip() not in weitere.NIE_GENANNT]
         return self.async_show_form(
             step_id="fub_names",
@@ -1597,10 +1677,19 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
 
 
 class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
-    """Nachträgliches Ändern von Komponenten, Freigaben und FUB-Namen."""
+    """Konfigurieren: nachträgliches Ändern, nach Menüpunkten getrennt.
+
+    Ein Durchlauf bearbeitet einen Menüpunkt, siehe ABSCHNITTE und
+    FOLGESCHRITTE. Gespeichert wird immer die ganze Einrichtung: was der
+    Menüpunkt nicht fragt, bleibt, wie es war, siehe _beginnen.
+    """
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
+        self._abschnitt: str | None = None
+        """Der Menüpunkt dieses Durchlaufs, siehe _beginnen."""
+        self._anlage_gelesen = False
+        """Ob dieser Durchlauf die Anlage schon gefragt hat, siehe _anlage_lesen."""
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
@@ -1753,12 +1842,206 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Konfigurieren beginnt mit der Wahl: Einstellungen, weitere Werte oder fehlende zuordnen."""
-        if user_input is not None:
-            return await self.async_step_einstellungen(user_input)
+        """Konfigurieren beginnt mit der Wahl, was geändert werden soll.
+
+        Die Einstellungen sind nach Themen getrennt, siehe ABSCHNITTE -
+        früher stand alles in einem Formular, dem bis zu sieben Schritte
+        folgten. Den Fremderzeuger und die Verbindungen gibt es als
+        Menüpunkt nur an Anlagen, an denen es dort etwas einzustellen
+        gibt.
+        """
+        komponenten = self._komponenten()
+        auswahl = list(ABSCHNITTE)
+        if "fremderzeuger" in komponenten:
+            auswahl.append("fremderzeuger")
+        if braucht_auswahl(komponenten):
+            auswahl.append("verbindungen")
         return self.async_show_menu(
-            step_id="init", menu_options=["einstellungen", "weitere_werte", "fehlende_werte"]
+            step_id="init", menu_options=[*auswahl, "weitere_werte", "fehlende_werte"]
         )
+
+    def _beginnen(self, abschnitt: str, eingabe: dict[str, Any] | None = None) -> None:
+        """Beginnt den Durchlauf eines Menüpunkts mit dessen Eingabe.
+
+        self._data ist danach die ganze Einrichtung, wie sie gespeichert
+        würde: die Felder aller Menüpunkte mit ihren bisherigen Werten,
+        überlagert von der Eingabe, dazu alles, was die Folgeschritte
+        bisher gespeichert haben, siehe _bisherige_angaben. Ein
+        Folgeschritt, der in diesem Durchlauf gezeigt wird, überschreibt
+        seinen Teil.
+
+        Das Wetter stellt nur der Menüpunkt Pellets: Ein leeres Feld heißt
+        dort ausdrücklich keine Vorhersage. In den anderen bleibt es, wie
+        es ist - auch ungespeichert, dann nimmt die Prognose weiter die
+        einzige Wetter-Entität von selbst.
+        """
+        bisher = self._current
+        eingabe = eingabe or {}
+        self._abschnitt = abschnitt
+        daten = _einstellungen(
+            {**_unveraendert(bisher, abschnitt), **eingabe}, components_from_config(bisher)
+        )
+        if abschnitt == "pellets":
+            daten[CONF_WETTER] = eingabe.get(CONF_WETTER, "")
+        elif CONF_WETTER in bisher:
+            daten[CONF_WETTER] = bisher[CONF_WETTER]
+        self._data = _bisherige_angaben(daten, bisher)
+
+    async def _nach(self, schritt: str) -> ConfigFlowResult:
+        """Nach einem Schritt folgt der nächste des Menüpunkts, der etwas zu fragen hat - sonst wird gespeichert."""
+        folge = FOLGESCHRITTE[self._abschnitt]
+        return await self._weiter(folge[folge.index(schritt) + 1 :])
+
+    async def _weiter(self, folge: tuple[str, ...]) -> ConfigFlowResult:
+        for schritt in folge:
+            if await self._noetig(schritt):
+                return await getattr(self, f"async_step_{schritt}")()
+        return await self._abschluss()
+
+    async def _noetig(self, schritt: str) -> bool:
+        """Ob ein Folgeschritt in diesem Durchlauf etwas zu fragen hat.
+
+        - Die Namen der Funktionsblöcke kommen nach dem Formular der Anlage
+          immer: Dort lässt sich auch ein Name berichtigen.
+        - Die Warnung kommt, wenn der Schreibzugriff neu eingeschaltet wird.
+        - Der Fremderzeuger kommt über seinen eigenen Menüpunkt. Sonst
+          nur, wenn er noch nicht weiß, woran er erkennt, dass geheizt
+          wird - also neu gewählt ist -, oder wenn der Schreibzugriff neu
+          dazukommt: Erst dann lässt sich wählen, welche Kessel er sperrt.
+        - Die Verbindungen kommen über ihren eigenen Menüpunkt. Sonst nur,
+          wenn sich an den Komponenten etwas geändert hat.
+        - Nach dem Volumen eines Puffers wird einmal gefragt. Danach steht
+          es im Zahlenfeld "Puffervolumen".
+        - Raumfühler und Zeitpläne kommen mit Schreibzugriff, wenn die
+          Anlage sie anbietet.
+        """
+        bisher = self._current
+        komponenten = self._data[CONF_COMPONENTS]
+        schreiben = bool(self._data.get(CONF_ENABLE_SWITCHES))
+        neu_schreiben = schreiben and not bisher.get(CONF_ENABLE_SWITCHES)
+        if schritt == "fub_names":
+            return True
+        if schritt == "switch_warning":
+            return neu_schreiben
+        if schritt == "fremderzeuger":
+            if "fremderzeuger" not in komponenten:
+                return False
+            ohne_quelle = not (
+                bisher.get(CONF_FREMDERZEUGER_ENTITAET) or bisher.get(CONF_FREMDERZEUGER_FUEHLER)
+            )
+            return self._abschnitt == "fremderzeuger" or ohne_quelle or neu_schreiben
+        if schritt == "verbindungen":
+            if not braucht_auswahl(komponenten):
+                return False
+            return self._abschnitt == "verbindungen" or set(komponenten) != set(
+                components_from_config(bisher)
+            )
+        await self._anlage_lesen()
+        if schritt == "puffer":
+            return bool(self._ohne_volumen)
+        if schritt == "raumfuehler":
+            return bool(self._thermostate)
+        return bool(self._zeitprogramme)
+
+    async def _anlage_lesen(self) -> None:
+        """Fragt die Anlage einmal je Durchlauf, was Puffer, Raumfühler und Zeitpläne brauchen.
+
+        Der Menüpunkt Anlage fragt nur nach Puffern ohne Gesamtvolumen,
+        und davon nur nach denen, deren Liter noch nicht gespeichert sind.
+        Der Menüpunkt Schalten fragt mit Schreibzugriff nach Raumfühlern
+        und Zeitprogrammen. Was die Anlage dabei nicht mehr anbietet,
+        fällt aus der Einrichtung - wie bisher. Antwortet sie nicht,
+        bleibt alles, wie es war.
+        """
+        if self._anlage_gelesen:
+            return
+        self._anlage_gelesen = True
+        komponenten = self._data[CONF_COMPONENTS]
+        schreiben = self._abschnitt == "schalten" and bool(self._data.get(CONF_ENABLE_SWITCHES))
+        ohne_liter = [
+            komponente
+            for komponente in PUFFER_SPEICHER
+            if komponente in komponenten
+            and puffer_volumen_schluessel(komponente) not in self._current
+        ]
+        if not schreiben and (self._abschnitt == "schalten" or not ohne_liter):
+            return
+        host, port = self._adresse()
+        geprueft = await _anlage_pruefen(
+            self.hass, host, port, self._data.get(CONF_FUB_NAMES, {}), komponenten, schreiben
+        )
+        if geprueft is None:
+            return
+        ohne_volumen, thermostate, zeitprogramme = geprueft
+        if schreiben:
+            self._thermostate, self._zeitprogramme = thermostate, zeitprogramme
+            for feld in _schreibende_helfer(komponenten):
+                self._data.pop(feld, None)
+            return
+        self._ohne_volumen = [komponente for komponente in ohne_volumen if komponente in ohne_liter]
+
+    async def _abschnitt_schritt(
+        self, abschnitt: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Das Formular eines Menüpunkts und, nach dem Absenden, seine Folgeschritte."""
+        if user_input is not None:
+            self._beginnen(abschnitt, user_input)
+            return await self._weiter(FOLGESCHRITTE[abschnitt])
+        return self.async_show_form(
+            step_id=abschnitt,
+            data_schema=_abschnitt_schema(
+                abschnitt, self._current, wetter_vorschlag(self.hass, self._current)
+            ),
+            last_step=False if abschnitt == "anlage" else None if abschnitt == "schalten" else True,
+        )
+
+    async def async_step_anlage(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Was an der Anlage vorhanden ist: Puffer, Warmwasser, Heizkreise und weitere Komponenten.
+
+        Danach die Namen der Funktionsblöcke, siehe FOLGESCHRITTE. Hier
+        steht auch der Haken, fehlende Werte auszublenden.
+        """
+        return await self._abschnitt_schritt("anlage", user_input)
+
+    async def async_step_abfrage(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wie oft die Anlage gefragt wird und ob ihre Störungsmeldungen gelesen werden."""
+        return await self._abschnitt_schritt("abfrage", user_input)
+
+    async def async_step_pellets(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Heizwert und Preis der Pellets, Verbrauch je Zeitraum, Prognose und ihr Wetter."""
+        return await self._abschnitt_schritt("pellets", user_input)
+
+    async def async_step_schalten(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Was Home Assistant an der Anlage schalten darf.
+
+        Der Schreibzugriff und der Schalter "Kessel sperren", danach mit
+        Schreibzugriff Raumfühler und Zeitpläne, siehe FOLGESCHRITTE.
+        """
+        return await self._abschnitt_schritt("schalten", user_input)
+
+    async def async_step_fremderzeuger(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Der Fremderzeuger, auch als eigener Menüpunkt - dann beginnt der Durchlauf hier."""
+        if self._abschnitt is None:
+            self._beginnen("fremderzeuger")
+        return await super().async_step_fremderzeuger(user_input)
+
+    async def async_step_verbindungen(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Die Verbindungen, auch als eigener Menüpunkt - dann beginnt der Durchlauf hier."""
+        if self._abschnitt is None:
+            self._beginnen("verbindungen")
+        return await super().async_step_verbindungen(user_input)
 
     async def async_step_weitere_werte(
         self, user_input: dict[str, Any] | None = None
@@ -1843,34 +2126,13 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             speichern=self._weitere_speichern,
         )
 
-    async def async_step_einstellungen(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._data = {
-                **_einstellungen(user_input, components_from_config(self._current)),
-                CONF_WETTER: user_input.get(CONF_WETTER, ""),
-            }
-            if self._data.get(CONF_ENABLE_SWITCHES) and not self._current.get(
-                CONF_ENABLE_SWITCHES
-            ):
-                return await self.async_step_switch_warning()
-            return await self.async_step_fub_names()
-
-        return self.async_show_form(
-            step_id="einstellungen",
-            data_schema=_options_schema(
-                self._current, wetter_vorschlag(self.hass, self._current)
-            ),
-        )
-
     async def async_step_switch_warning(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Wie im Einrichtungsdialog: Schreibzugriff bestätigen lassen."""
         if user_input is not None:
-            return await self.async_step_fub_names()
-        return self.async_show_form(step_id="switch_warning")
+            return await self._nach("switch_warning")
+        return self.async_show_form(step_id="switch_warning", last_step=False)
 
     async def async_step_fub_names(
         self, user_input: dict[str, Any] | None = None
@@ -1879,7 +2141,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
 
         if user_input is not None:
             self._data[CONF_FUB_NAMES] = {role: user_input[role] for role in roles}
-            return await self._nach_namen()
+            return await self._nach("fub_names")
 
         host, port = self._adresse()
         vorschlag = fub_namen_vorschlagen(

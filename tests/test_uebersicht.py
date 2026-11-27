@@ -154,20 +154,29 @@ async def test_dialog_zeigt_die_bisherige_auswahl(monkeypatch):
     assert {str(k): k.default() for k in schritt["data_schema"].schema}[feld("puffer2")] == "kessel"
 
 
-async def test_ohne_menuebaum_bleibt_die_auswahl(monkeypatch):
-    from eta_heating_ws import config_flow as modul
-
-    bisher = {"verbindungen": {"puffer2": "kessel"}}
+async def test_ohne_aenderung_an_den_komponenten_bleibt_die_auswahl(monkeypatch):
+    """Der Schritt kommt dann nicht - geändert wird die Auswahl über den Menüpunkt Anlagenbild."""
+    bisher = {"components": ["kessel", "puffer", "puffer2"], "verbindungen": {"puffer2": "kessel"}}
     flow, _ = await options_schritt(monkeypatch, bisher, optionen(components=["puffer", "puffer2"]))
 
-    async def nicht_lesbar(*_):
-        return None
-
-    monkeypatch.setattr(modul, "_anlage_pruefen", nicht_lesbar)
     fertig = await flow.async_step_fub_names(FUB_NAMEN)
 
     assert fertig["type"] == "create_entry"
     assert fertig["data"]["verbindungen"] == {"puffer2": "kessel"}
+
+
+async def test_der_menuepunkt_anlagenbild_zeigt_und_aendert_die_auswahl(monkeypatch):
+    bisher = {"components": ["kessel", "puffer", "puffer2"], "verbindungen": {"puffer2": "kessel"}}
+    flow, schritt = await options_schritt(monkeypatch, bisher, abschnitt="verbindungen")
+
+    assert schritt["step_id"] == "verbindungen"
+    vorbelegt = {str(k): k.default() for k in schritt["data_schema"].schema}
+    assert vorbelegt == {feld("puffer"): "kessel", feld("puffer2"): "kessel"}
+
+    fertig = await flow.async_step_verbindungen({**vorbelegt, feld("puffer2"): "puffer"})
+
+    assert fertig["type"] == "create_entry"
+    assert fertig["data"]["verbindungen"] == {"puffer": "kessel", "puffer2": "puffer"}
 
 
 async def test_ohne_schritt_bleibt_die_letzte_auswahl(monkeypatch):
