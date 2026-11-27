@@ -77,7 +77,6 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Abfrageintervall | 30 Sekunden | 1 bis 600. Bei wenigen Sekunden die Auslastung am Display der Anlage im Auge behalten |
 | Schnelle Abfrage | 3 Sekunden | 0 = aus. Liest öfter, was sich schnell ändert: alles Schaltbare, Kessel-Zustand, Raumtemperatur und das Zapfen am Frischwassermodul |
 | Heizwert der Pellets | 4,8 kWh/kg | Richtwert für ENplus A1 |
-| Pelletpreis | 0 | Euro je Tonne, für die Kosten. Später änderst du ihn mit `number.eta_heizung_pelletpreis` oder in der Karte |
 | Störungsmeldungen auslesen | an | siehe [Störungen](#-störungen) |
 | Kessel und Heizkreise schalten dürfen | aus | der Schreibzugriff, siehe [Schalten und Einstellen](#-schalten-und-einstellen) |
 | Schalter „Kessel sperren“ anlegen | aus | siehe [Kessel sperren](#kessel-sperren) |
@@ -110,14 +109,14 @@ Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA We
 |---|---|
 | Anlage | Puffer, Warmwasser, Heizkreise, weitere Komponenten, fehlende Werte ausblenden, danach die Funktionsblock-Namen |
 | Abfrage | Abfrageintervall, schnelle Abfrage, Störungsmeldungen |
-| Pellets | Heizwert, Preis, Verbrauch je Zeitraum, Prognose, Wettervorhersage |
+| Pellets | Heizwert, Verbrauch je Zeitraum, Prognose, Wettervorhersage |
 | Schalten | Schreibzugriff, Schalter „Kessel sperren“, danach Raumfühler und Zeitplan |
 | Fremderzeuger | Name, Erkennung und was er sperrt, nur mit der Komponente Fremderzeuger |
 | Anlagenbild | wer woran hängt, nur mit mehreren Pufferspeichern oder einer Fernleitung |
 | Weitere Werte auswählen | siehe [Weitere Werte](#weitere-werte) |
 | Fehlende Werte zuordnen | siehe [Fehlende Werte](#fehlende-werte) |
 
-Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**.
+Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**. Den Pelletpreis stellst du nicht hier, sondern am Gerät, in der Karte oder mit einer Lieferung, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
 
 ### Funktionsblock-Namen
 

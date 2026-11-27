@@ -25,7 +25,6 @@
           "scan_interval": "Abfrageintervall (Sekunden)",
           "schnell_intervall": "Schnelle Abfrage (Sekunden, 0 = aus)",
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
-          "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
           "fehlende_ausblenden": "Fehlende Werte ausblenden",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
@@ -37,7 +36,7 @@
         "data_description": {
           "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
           "fehlende_ausblenden": "Was deine Heizung nicht führt, bekommt keinen Sensor - etwa der Pelletverbrauch an einem Stückholzkessel. Ohne Haken entsteht dafür ein Sensor, der „-“ zeigt.",
-          "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
+          "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch. Mit einem Pelletpreis kommen drei für die Kosten dazu: Den Preis stellst du am Gerät im Feld „Pelletpreis“ oder in der Karte am Pelletlager, oder du trägst ihn dort mit einer Lieferung ein.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
           "scan_interval": "1 bis 600. Je kürzer, desto öfter muss die Anlage antworten.",
@@ -250,7 +249,7 @@
         "menu_options": {
           "anlage": "Anlage: Puffer, Heizkreise, Komponenten",
           "abfrage": "Abfrage: Intervalle, Störungsmeldungen",
-          "pellets": "Pellets: Preis, Verbrauch, Prognose",
+          "pellets": "Pellets: Heizwert, Verbrauch, Prognose",
           "schalten": "Schalten: Freigabe, Raumfühler, Zeitplan",
           "fremderzeuger": "Fremderzeuger: Name, Erkennung, Sperren",
           "verbindungen": "Anlagenbild: Wer hängt woran",
@@ -288,16 +287,15 @@
       },
       "pellets": {
         "title": "Pellets",
-        "description": "Heizwert und Preis deiner Pellets und was die Integration daraus berechnet.",
+        "description": "Heizwert deiner Pellets und was die Integration daraus berechnet.",
         "data": {
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
-          "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
           "prognose": "Pelletprognose und Reichweite des Lagers",
           "wetter": "Wettervorhersage für die Pelletprognose"
         },
         "data_description": {
-          "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
+          "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch. Mit einem Pelletpreis kommen drei für die Kosten dazu: Den Preis stellst du am Gerät im Feld „Pelletpreis“ oder in der Karte am Pelletlager, oder du trägst ihn dort mit einer Lieferung ein.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel."
         }

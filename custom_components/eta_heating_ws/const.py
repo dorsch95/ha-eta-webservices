@@ -115,7 +115,11 @@ MIN_PELLET_KWH_PER_KG = 3.0
 MAX_PELLET_KWH_PER_KG = 6.0
 
 CONF_PELLET_PREIS = "pellet_preis"
-"""Pelletpreis in Euro je Tonne. 0 heißt: keine Kosten berechnen."""
+"""Pelletpreis in Euro je Tonne. 0 heißt: keine Kosten berechnen.
+
+Gestellt wird er über das Zahlenfeld PELLET_PREIS_ZAHL oder mit einer
+Lieferung, nicht in den Formularen der Einrichtung.
+"""
 DEFAULT_PELLET_PREIS = 0.0
 MAX_PELLET_PREIS = 2000.0
 

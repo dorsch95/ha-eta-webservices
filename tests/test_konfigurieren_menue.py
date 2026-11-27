@@ -147,7 +147,12 @@ def zeitprogramm_lesbar(monkeypatch):
 
 
 def test_jedes_feld_steht_in_genau_einem_menuepunkt():
-    """Zusammen sind es die Felder der Ersteinrichtung ohne die Adresse."""
+    """Zusammen sind es die Felder der Ersteinrichtung ohne die Adresse.
+
+    Was in keinem Formular steht - Pelletpreis, Fassungsvermögen des
+    Lagers, Lieferungen -, bleibt beim Speichern trotzdem erhalten, siehe
+    test_unveraendert_abgeschickt_aendert_kein_menuepunkt_etwas.
+    """
     verteilt = [feld for felder in ABSCHNITTE.values() for feld in felder]
     einrichtung = {str(feld) for feld in _connection_schema({}).schema} - {"host", "port"}
 
@@ -277,27 +282,23 @@ async def test_abfrage_speichert_nur_ihre_drei_felder(monkeypatch):
     assert type(ergebnis["data"]["scan_interval"]) is int
 
 
-async def test_pellets_speichert_nur_ihre_fuenf_felder(monkeypatch):
+async def test_pellets_speichert_nur_ihre_vier_felder(monkeypatch):
+    """Der Pelletpreis gehört nicht dazu: Er steht im Zahlenfeld am Gerät und bleibt, wie er ist."""
     _, ergebnis = await options_schritt(
         monkeypatch,
         ALLES,
-        {
-            "pellet_kwh_per_kg": 4.9,
-            "pellet_preis": 310.0,
-            "verbrauch_zeitraeume": True,
-            "prognose": True,
-        },
+        {"pellet_kwh_per_kg": 4.9, "verbrauch_zeitraeume": True, "prognose": True},
         "pellets",
     )
 
     assert ergebnis["data"] == {
         **GESPEICHERT,
         "pellet_kwh_per_kg": 4.9,
-        "pellet_preis": 310.0,
         "verbrauch_zeitraeume": True,
         "prognose": True,
         "wetter": "",
     }, "das geleerte Wetterfeld heißt: keine Vorhersage"
+    assert ergebnis["data"]["pellet_preis"] == 289.0
 
 
 async def test_formulare_der_menuepunkte_sind_mit_dem_bisherigen_vorbelegt(monkeypatch):
@@ -316,7 +317,6 @@ async def test_formulare_der_menuepunkte_sind_mit_dem_bisherigen_vorbelegt(monke
 
     assert unveraendert(pellets) == {
         "pellet_kwh_per_kg": 4.7,
-        "pellet_preis": 289.0,
         "verbrauch_zeitraeume": False,
         "prognose": False,
         "wetter": "weather.zuhause",

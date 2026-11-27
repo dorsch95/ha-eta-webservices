@@ -65,14 +65,13 @@ def test_abfrageintervalle_werden_als_ganze_sekunden_gespeichert():
     from eta_heating_ws.config_flow import _einstellungen
 
     eingabe = _options_schema({})(
-        {"scan_interval": 45, "schnell_intervall": 2, "pellet_kwh_per_kg": 4.85, "pellet_preis": 310}
+        {"scan_interval": 45, "schnell_intervall": 2, "pellet_kwh_per_kg": 4.85}
     )
     daten = _einstellungen(eingabe, [])
 
     assert (daten["scan_interval"], type(daten["scan_interval"])) == (45, int)
     assert (daten["schnell_intervall"], type(daten["schnell_intervall"])) == (2, int)
     assert daten["pellet_kwh_per_kg"] == 4.85
-    assert daten["pellet_preis"] == 310
 
 
 @pytest.mark.parametrize(
@@ -82,8 +81,6 @@ def test_abfrageintervalle_werden_als_ganze_sekunden_gespeichert():
         {"schnell_intervall": MAX_SCAN_INTERVAL + 1},
         {"pellet_kwh_per_kg": 2.9},
         {"pellet_kwh_per_kg": 6.1},
-        {"pellet_preis": -1},
-        {"pellet_preis": 2001},
         {"scan_interval": "viel"},
     ],
 )
@@ -321,6 +318,12 @@ async def test_neu_konfigurieren_auf_vergebene_adresse_bricht_ab(monkeypatch):
         andere=(andere,),
     )
     assert ergebnis == {"type": "abort", "reason": "already_configured"}
+
+
+def test_kein_formular_fragt_nach_dem_pelletpreis():
+    """Dafür gibt es das Zahlenfeld am Gerät und die Lieferung - eine Stelle, nicht zwei."""
+    assert "pellet_preis" not in feldnamen(_connection_schema({}))
+    assert "pellet_preis" not in feldnamen(_options_schema({"pellet_preis": 310.0}))
 
 
 def test_optionen_fragen_nicht_nach_der_adresse():

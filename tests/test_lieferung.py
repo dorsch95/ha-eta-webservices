@@ -77,7 +77,7 @@ async def test_vorrat_nur_wenn_die_anlage_ihn_beschreibbar_meldet_und_mit_schrei
     assert coordinator.vorrat_an_der_anlage is False
 
 
-async def test_pelletpreis_ist_derselbe_wert_wie_im_formular(hass, entry):
+async def test_pelletpreis_steht_im_zahlenfeld_und_uebersteht_den_neustart(hass, entry):
     coordinator, zahlen = await lager_von(hass, entry, preis=310.0)
     preis = zahlen["pellet_preis"]
 
@@ -89,7 +89,7 @@ async def test_pelletpreis_ist_derselbe_wert_wie_im_formular(hass, entry):
     await preis.async_set_native_value(289.5)
 
     assert coordinator.pellet_preis == 289.5
-    assert entry.options[CONF_PELLET_PREIS] == 289.5, "übersteht den Neustart und steht im Formular"
+    assert entry.options[CONF_PELLET_PREIS] == 289.5, "gespeichert in der Einrichtung"
     assert not getattr(hass.config_entries, "neu_laden_bestellt", 0), (
         "die Kostensensoren rechnen sofort mit dem neuen Preis"
     )

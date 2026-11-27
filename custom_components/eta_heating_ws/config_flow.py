@@ -92,7 +92,6 @@ from .const import (
     MAX_FREMDERZEUGER_WARTEZEIT,
     SENSORS,
     SPERRBARE_KESSEL,
-    DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
     DEFAULT_PROGNOSE,
     DEFAULT_ZEITRAEUME,
@@ -100,7 +99,6 @@ from .const import (
     DEFAULT_SCHNELL_INTERVALL,
     DOMAIN,
     MAX_PELLET_KWH_PER_KG,
-    MAX_PELLET_PREIS,
     MAX_PUFFER_VOLUMEN,
     MAX_SCAN_INTERVAL,
     MAX_SCHNELL_INTERVALL,
@@ -131,21 +129,15 @@ FELD_WERTE = "werte"
 ABSCHNITTE: dict[str, tuple[str, ...]] = {
     "anlage": (*GEZAEHLTE_KOMPONENTEN, CONF_COMPONENTS, CONF_FEHLENDE_AUSBLENDEN),
     "abfrage": (CONF_SCAN_INTERVAL, CONF_SCHNELL_INTERVALL, CONF_ENABLE_ERRORS),
-    "pellets": (
-        CONF_PELLET_KWH_PER_KG,
-        CONF_PELLET_PREIS,
-        CONF_ZEITRAEUME,
-        CONF_PROGNOSE,
-        CONF_WETTER,
-    ),
+    "pellets": (CONF_PELLET_KWH_PER_KG, CONF_ZEITRAEUME, CONF_PROGNOSE, CONF_WETTER),
     "schalten": (CONF_ENABLE_SWITCHES, CONF_KESSEL_SPERRE),
 }
 """Die Menüpunkte von Konfigurieren mit eigenem Formular, je mit ihren Feldern.
 
 Zusammen sind es die Felder der Ersteinrichtung ohne die Adresse, siehe
-_einstellung_felder. Jedes Feld steht in genau einem Abschnitt. Wer den
-Pelletpreis ändern will, sieht so nur die fünf Felder zu den Pellets und
-nicht mehr alle Schritte der Anlage.
+_einstellung_felder. Jedes Feld steht in genau einem Abschnitt. Wer das
+Abfrageintervall ändern will, sieht so nur die drei Felder zur Abfrage
+und nicht mehr alle Schritte der Anlage.
 """
 
 FOLGESCHRITTE: dict[str, tuple[str, ...]] = {
@@ -564,7 +556,12 @@ def _zahlenfeld(kleinste: float, groesste: float, ganz: bool = True) -> NumberSe
 def _einstellung_felder(
     current: dict[str, Any], wetter: str | None = None, neu: bool = False
 ) -> dict:
-    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Wetter.
+    """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Wetter.
+
+    Der Pelletpreis steht in keinem Formular. Er hat eine Stelle, nicht
+    zwei: das Zahlenfeld "Pelletpreis" am Gerät, das auch die Karte "ETA
+    Übersicht" stellt und das jede eingetragene Lieferung mit ihrem Preis
+    nachführt, siehe coordinator.pellet_preis_merken.
 
     Eine neue Einrichtung (neu) schlägt vor, fehlende Werte auszublenden.
     Eine bestehende behält ihre Platzhalter, bis der Nutzer den Haken
@@ -643,10 +640,6 @@ def _einstellung_felder(
             CONF_PELLET_KWH_PER_KG,
             default=current.get(CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG),
         ): _zahlenfeld(MIN_PELLET_KWH_PER_KG, MAX_PELLET_KWH_PER_KG, ganz=False),
-        vol.Required(
-            CONF_PELLET_PREIS,
-            default=current.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS),
-        ): _zahlenfeld(0, MAX_PELLET_PREIS, ganz=False),
         vol.Optional(
             CONF_WETTER, description={"suggested_value": wetter}
         ): EntitySelector(EntitySelectorConfig(domain="weather")),
@@ -1720,6 +1713,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
 
         Was das Zahlenfeld "Lager Fassungsvermögen" sich gemerkt hat, steht
         in keinem Formular und bleibt deshalb ausdrücklich erhalten. Ebenso
+        der Pelletpreis aus seinem Zahlenfeld. Ebenso
         das Puffervolumen eines Puffers, nach dem dieser Durchlauf nicht
         gefragt hat - beim PufferFlex steht es nur im Zahlenfeld. Ebenso
         die eingetragenen Pelletlieferungen, die Sperrtemperatur des
@@ -1754,6 +1748,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         if self._current.get(CONF_LIEFERUNGEN):
             daten = {CONF_LIEFERUNGEN: self._current[CONF_LIEFERUNGEN], **daten}
         for schluessel in (
+            CONF_PELLET_PREIS,
             CONF_WEITERE_WERTE,
             CONF_WEITERE_JE_ABFRAGE,
             CONF_WEITERE_INTERVALL,
@@ -2014,7 +2009,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     async def async_step_pellets(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Heizwert und Preis der Pellets, Verbrauch je Zeitraum, Prognose und ihr Wetter."""
+        """Heizwert der Pellets, Verbrauch je Zeitraum, Prognose und ihr Wetter."""
         return await self._abschnitt_schritt("pellets", user_input)
 
     async def async_step_schalten(
