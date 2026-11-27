@@ -1735,10 +1735,12 @@ SENSORS = {
 }
 """Alle Messwerte, die die Integration kennt.
 
-Was der Menübaum einer Anlage nicht hergibt, wird trotzdem als Entität
-mit "-" angelegt - außer bei "nur_wenn_vorhanden": Das gibt es nur an
-manchen Anlagen desselben Aufbaus, etwa die Ladepumpe eines dezentral
-geladenen Puffers, und ein dauerhaftes "-" wäre dort bloß Ballast.
+Was der Menübaum einer Anlage nicht hergibt, bekommt keine Entität,
+wenn fehlende Werte ausgeblendet sind, siehe CONF_FEHLENDE_AUSBLENDEN.
+Sonst wird es trotzdem als Entität mit "-" angelegt - außer bei
+"nur_wenn_vorhanden": Das gibt es nur an manchen Anlagen desselben
+Aufbaus, etwa die Ladepumpe eines dezentral geladenen Puffers, und ein
+dauerhaftes "-" wäre dort bloß Ballast.
 
 "zustaende" übersetzt den Klartext der Anlage in feste Zustände, die
 Home Assistant in der Sprache der Oberfläche zeigt - aus "Ein" wird so

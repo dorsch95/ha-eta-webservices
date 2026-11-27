@@ -178,7 +178,7 @@ def bewegte_auflagen(kachel):
     """Je bewegtem Bild die Bedingungen, unter denen es über der Kachel liegt."""
     auflagen = {}
     for element in kachel["elements"]:
-        if element.get("type") != "conditional":
+        if element.get("type") != "conditional" or "image" not in element["elements"][0]:
             continue
         bild = element["elements"][0]["image"].rsplit("/", 1)[1].split("?")[0]
         if bild.endswith(".webp"):

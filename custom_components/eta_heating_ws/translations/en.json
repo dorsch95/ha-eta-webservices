@@ -271,7 +271,7 @@
         },
         "data_description": {
           "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
-          "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead.",
+          "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead. When you tick this, those sensors disappear right away. If you use the older dashboard card from the action, re-create it afterwards.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",

@@ -88,6 +88,9 @@ async def async_setup_entry(
 def _messwert(coordinator: ETADataUpdateCoordinator, key: str, info: dict) -> SensorEntity:
     """Der Sensor zu einem Messwert der Anlage - oder sein Platzhalter mit "-".
 
+    Einen Messwert ohne Adresse gibt es hier nur, solange fehlende Werte
+    nicht ausgeblendet sind, siehe coordinator.build_sensor_defs.
+
     Ausnahme ist das Fassungsvermögen des Lagers: Es kann auch aus Home
     Assistant stammen und sich dort jederzeit ändern.
     """
@@ -106,6 +109,8 @@ def _pellet_energie(coordinator: ETADataUpdateCoordinator) -> SensorEntity:
     Führt eine Anlage den Gesamtverbrauch nicht - Hackgut- und
     Stückholzkessel messen ihren Verbrauch nicht -, entsteht ein
     Platzhalter mit "-", der sich dem Energie-Dashboard nicht anbietet.
+    Mit ausgeblendeten fehlenden Werten entsteht dann gar nichts, siehe
+    async_setup_entry.
     """
     if coordinator.sensor_defs.get("pellet_gesamtverbrauch", {}).get("uri"):
         return ETAPelletEnergySensor(
@@ -314,6 +319,9 @@ class ETAPlaceholderSensor(ETAMeasurementSensor):
     zeigen. Einheit, Geräte- und Zustandsklasse bleiben leer - Home
     Assistant lehnt einen Sensor mit numerischer Geräteklasse und dem
     Zustand "-" sonst ab.
+
+    Wer fehlende Werte ausblendet, bekommt keinen Platzhalter, siehe
+    const.CONF_FEHLENDE_AUSBLENDEN.
     """
 
     _attr_device_class = None
@@ -349,7 +357,8 @@ class ETAAscheboxStatusSensor(ETABaseSensor):
 
     Führt die Anlage einen der beiden Werte gar nicht - ein Kessel ohne
     Aschebox, oder gar kein Kessel-Block -, steht dort "-" wie bei jedem
-    Messwert, den die Anlage nicht kennt, statt "Unbekannt".
+    Messwert, den die Anlage nicht kennt, statt "Unbekannt". Mit
+    ausgeblendeten fehlenden Werten entsteht der Sensor dann nicht.
     """
 
     _attr_icon = "mdi:trash-can"

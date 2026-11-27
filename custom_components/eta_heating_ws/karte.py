@@ -149,6 +149,49 @@ def nur_mit_wert(element):
     return geschuetzt
 
 
+def _schuetzt(bedingung, entitaet) -> bool:
+    """Ob eine Bedingung ein Element verbirgt, solange es diese Entität nicht gibt.
+
+    Eine fehlende Entität wertet Home Assistant als "unknown", ebenso
+    jedes ihrer Merkmale. Verborgen bleibt das Element also, wenn die
+    Bedingung einen bestimmten Zustand verlangt oder "unknown" ausschließt
+    - gleich, ob sie nach dem Zustand oder nach einem Merkmal fragt.
+    """
+    if bedingung.get("entity") != entitaet:
+        return False
+    if "state" in bedingung:
+        return "unknown" not in _als_liste(bedingung["state"])
+    return "unknown" in _als_liste(bedingung.get("state_not"))
+
+
+def _als_liste(wert):
+    if wert is None:
+        return []
+    return wert if isinstance(wert, list) else [wert]
+
+
+def abgesichert(elemente, bedingungen=()):
+    """Verbirgt jede Beschriftung, deren Entität es nicht gibt.
+
+    Home Assistant zeigt an ihrer Stelle sonst ein Warndreieck. Mit
+    ausgeblendeten fehlenden Werten hat keine Entität mehr, was die Anlage
+    nicht führt - der Vorlauf eines Heizkreises etwa oder der Vorrat eines
+    Lagers ohne Messung. Was schon eine Bedingung auf seine Entität trägt,
+    bleibt, wie es ist.
+    """
+    ergebnis = []
+    for element in elemente:
+        if element.get("type") == "conditional":
+            innen = (*bedingungen, *element["conditions"])
+            element = {**element, "elements": abgesichert(element["elements"], innen)}
+        elif element.get("type") == "state-label" and not any(
+            _schuetzt(bedingung, element["entity"]) for bedingung in bedingungen
+        ):
+            element = nur_wenn_vorhanden(element)
+        ergebnis.append(element)
+    return ergebnis
+
+
 def betriebsart(entity, top, schrift):
     """Die Betriebsart als Text; ein Tippen öffnet die Auswahl.
 
@@ -1031,7 +1074,7 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     karte = {
         "type": "picture-elements",
         "image": bildadresse(f"{bild}.png"),
-        "elements": elemente,
+        "elements": abgesichert(elemente),
     }
     if zustandsbilder:
         entitaet, bilder = zustandsbilder

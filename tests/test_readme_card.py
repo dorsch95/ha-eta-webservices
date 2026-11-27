@@ -850,9 +850,75 @@ def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
             "lager_warnung.png",
         ]
         erstes_label = next(
-            i for i, e in enumerate(lager["card"]["elements"]) if e["type"] == "state-label"
+            i
+            for i, e in enumerate(lager["card"]["elements"])
+            if e["type"] == "conditional" and e["elements"][0]["type"] == "state-label"
         )
         assert erstes_label == len(bilder), "Beschriftungen müssen über den Bildern liegen"
+
+
+def test_keine_beschriftung_zeigt_ins_leere(karte):
+    """Gibt es eine Entität nicht, verschwindet ihre Beschriftung - sonst stünde dort ein Warndreieck.
+
+    Mit ausgeblendeten fehlenden Werten hat keine Entität, was die Anlage
+    nicht führt. Geschützt ist eine Beschriftung, wenn eine Bedingung um
+    sie herum ihre Entität verlangt.
+    """
+    from eta_heating_ws.karte import _schuetzt
+
+    offen = []
+
+    def pruefen(knoten, bedingungen=()):
+        if isinstance(knoten, list):
+            for teil in knoten:
+                pruefen(teil, bedingungen)
+            return
+        if not isinstance(knoten, dict):
+            return
+        if knoten.get("type") == "conditional":
+            bedingungen = (*bedingungen, *knoten["conditions"])
+        if knoten.get("type") == "state-label" and not any(
+            _schuetzt(bedingung, knoten["entity"]) for bedingung in bedingungen
+        ):
+            offen.append(knoten["entity"])
+        for schluessel in ("cards", "card", "elements"):
+            pruefen(knoten.get(schluessel), bedingungen)
+
+    pruefen(karte)
+    assert offen == []
+
+
+def test_abgesichert_laesst_geschuetzte_beschriftungen_wie_sie_sind():
+    """Der Strich bei einem Fühlerfehler hängt an einem Merkmal - auch das schützt."""
+    from eta_heating_ws.karte import abgesichert, label, mit_strich, nur_mit_wert, nur_wenn_vorhanden
+
+    zeile = label("heizkreis_vorlauftemperatur", "", "kessel", 50, 50, 100)
+    geschuetzt = [
+        *mit_strich(zeile),
+        nur_wenn_vorhanden(zeile),
+        nur_mit_wert(zeile),
+    ]
+    assert abgesichert(geschuetzt) == geschuetzt
+    assert abgesichert([zeile]) == [nur_wenn_vorhanden(zeile)]
+
+    nur_bei_heizen = {
+        "type": "conditional",
+        "conditions": [
+            {"condition": "state", "entity": "sensor.eta_heizung_kessel_zustand", "state": "Heizen"}
+        ],
+        "elements": [zeile],
+    }
+    assert abgesichert([nur_bei_heizen])[0]["elements"] == [nur_wenn_vorhanden(zeile)], (
+        "die Bedingung fragt nach einer anderen Entität"
+    )
+    ohne_strich = {
+        "type": "conditional",
+        "conditions": [{"condition": "state", "entity": zeile["entity"], "state_not": "-"}],
+        "elements": [zeile],
+    }
+    assert abgesichert([ohne_strich])[0]["elements"] == [nur_wenn_vorhanden(zeile)], (
+        "eine fehlende Entität ist nicht \"-\""
+    )
 
 
 @pytest.mark.parametrize("prozent", range(0, 121))
