@@ -201,6 +201,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         await verwaisten_plan_melden(
             hass, entry.entry_id, endgueltig=not coordinator.enable_switches
         )
+        if _plan_bestaetigt(coordinator):
+            entitaeten_abmelden(hass, entry, ASCHEBOX_PLAN_ENTITAETEN)
 
     coordinator.kesselsperre = kesselsperre_anlegen(coordinator)
     if coordinator.kesselsperre is not None:
@@ -311,14 +313,40 @@ def _schnelle_abfrage_starten(
     entry.async_on_unload(stoppen)
 
 
-def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:
-    """Den Aschebox-Plan gibt es nur, wenn alles dafür bestätigt ist.
+ASCHEBOX_WERTE = ("aschebox_verbrauch", "aschebox_schwelle")
+"""Woran die Integration erkennt, dass eine Anlage eine Aschebox hat, siehe _fuehrt_aschebox."""
+
+
+def _fuehrt_aschebox(coordinator: ETADataUpdateCoordinator) -> bool:
+    """Ob die Anlage selbst eine Aschebox führt.
+
+    Dann meldet sie den Verbrauch seit dem Leeren oder die Menge, nach der
+    zu leeren ist. Eine Entaschentaste allein genügt nicht: Ein
+    Stückholzkessel von 2015 (Menübaum aus Issue 11) hat die Taste, aber
+    keinen der beiden Werte. Eine Aschebox hat am Stückholzkessel nur der
+    angebaute Pelletteil (SH TWIN), der sie im Funktionsblock Twin führt,
+    siehe uri_discovery.TWIN_SCHLUESSEL. Ein von Hand zugeordneter Wert
+    zählt nicht - er belegt nicht, dass es die Aschebox gibt.
+    """
+    return any(
+        coordinator.sensor_defs.get(key, {}).get("uri") and key not in coordinator.von_hand
+        for key in ASCHEBOX_WERTE
+    )
+
+
+ASCHEBOX_PLAN_ENTITAETEN = ("aschebox_leeren_um", "aschebox_plan", "aschebox_plan_abbrechen")
+"""Die Entitäten des Aschebox-Plans - ohne den Knopf zum Entaschen, den es auch ohne Plan gibt."""
+
+
+def _plan_bestaetigt(coordinator: ETADataUpdateCoordinator) -> bool:
+    """Ob in diesem Start alles bestätigt ist, womit der Aschebox-Plan schaltet.
 
     Er schaltet den Kessel über seine Ein/Aus-Taste, drückt die
     Entaschentaste und liest dafür den Kessel-Zustand und den Verbrauch
     seit dem Leeren. Stammt einer dieser Messwerte aus einer Zuordnung von
-    Hand, gibt es den Plan nicht, siehe zuordnung.STEUERND: Ein falsch
-    zugeordneter Eintrag ließe ihn sonst zur falschen Zeit schalten.
+    Hand, gilt das nicht als bestätigt, siehe zuordnung.STEUERND: Ein
+    falsch zugeordneter Eintrag ließe den Plan sonst zur falschen Zeit
+    schalten.
     """
     return (
         coordinator.entaschen_def is not None
@@ -326,6 +354,20 @@ def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:
         and bool(coordinator.sensor_defs.get("kessel_zustand", {}).get("uri"))
         and not zuordnung.STEUERND & coordinator.von_hand
     )
+
+
+def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:
+    """Den Aschebox-Plan gibt es nur, wenn alles dafür bestätigt ist und die Anlage eine Aschebox hat.
+
+    Siehe _plan_bestaetigt und _fuehrt_aschebox. Den Knopf zum Entaschen
+    gibt es weiter überall, wo die Anlage die Taste hat.
+
+    Ist alles bestätigt und fehlt nur die Aschebox, nimmt das Einrichten
+    die Entitäten des Plans aus dem Register: Bis 0.31.0b2 bekam sie auch
+    ein Stückholzkessel. Ein Aussetzer der Anlage löst das nicht aus -
+    ohne ihre Antwort wären auch Schalter und Taste nicht bestätigt.
+    """
+    return _plan_bestaetigt(coordinator) and _fuehrt_aschebox(coordinator)
 
 
 def _raumfuehler_starten(

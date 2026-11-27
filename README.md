@@ -539,7 +539,7 @@ Was der Schalter sich gemerkt hat, übersteht einen Neustart. Nimmst du das Häk
 Findet die Integration die **Entaschentaste** (am Display unter *Sonstiges*), gibt es:
 
 - **`button.eta_heizung_kessel_entaschen`** drückt die Entaschentaste. Der Kessel geht in den Glutabbrand und entascht danach.
-- **Den Aschebox-Plan:** Die Aschebox darf nur bei ausgeschaltetem Kessel abgenommen werden. Unter `datetime.eta_heizung_aschebox_leeren_um` stellst du ein, wann du leeren willst. Home Assistant
+- **Den Aschebox-Plan**, wenn deine Heizung eine Aschebox führt. Ein Stückholzkessel hat keine, nur sein angebauter Pelletteil (SH TWIN, mit der Komponente TWIN). Die Aschebox darf nur bei ausgeschaltetem Kessel abgenommen werden. Unter `datetime.eta_heizung_aschebox_leeren_um` stellst du ein, wann du leeren willst. Home Assistant
   1. schaltet den Kessel rechtzeitig aus - beim ersten Mal 30 Minuten vorher, danach nach der gemessenen Dauer plus 5 Minuten,
   2. drückt die Entaschentaste, sobald der Kessel *Bereit* oder *Ausgeschaltet* meldet,
   3. meldet, wenn die Aschebox geleert werden kann,

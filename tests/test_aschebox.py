@@ -274,6 +274,32 @@ async def test_ohne_entaschentaste_weder_knopf_noch_plan(hass, entry, menu_xml):
     assert coordinator.aschebox is None
 
 
+VERBRAUCH_SEIT_LEEREN = "/264/10891/0/0/12013"
+LEEREN_NACH = "/264/10891/0/0/12120"
+
+
+async def test_ohne_aschebox_an_der_anlage_gibt_es_den_knopf_aber_keinen_plan(hass, entry, menu_xml):
+    """Die Entaschentaste allein belegt keine Aschebox - ein Stückholzkessel hat die Taste auch."""
+    hass.session.menu = ohne_objekt(menu_xml, VERBRAUCH_SEIT_LEEREN, LEEREN_NACH)
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.entaschen_def is not None
+    assert "kessel_schalter" in coordinator.switch_defs
+    assert coordinator.aschebox is None
+
+    gesammelt = []
+    await datetime_platform.async_setup_entry(hass, entry, gesammelt.extend)
+    assert gesammelt == [], "auch kein Feld für den Zeitpunkt"
+
+
+@pytest.mark.parametrize("fehlt", [VERBRAUCH_SEIT_LEEREN, LEEREN_NACH])
+async def test_einer_der_beiden_aschebox_werte_genuegt(hass, entry, menu_xml, fehlt):
+    hass.session.menu = ohne_objekt(menu_xml, fehlt)
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.aschebox is not None
+
+
 async def test_ohne_schreibzugriff_weder_knopf_noch_plan(hass, entry):
     entry.data["enable_switches"] = False
     coordinator, _ = await setup_integration(hass, entry)

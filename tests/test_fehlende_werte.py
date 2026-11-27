@@ -33,7 +33,7 @@ from eta_heating_ws.uri_discovery import (
     vorschlaege_fuer_zuordnung,
 )
 
-from .conftest import FIXTURES, FakeConfigEntry, load_menu
+from .conftest import FIXTURES, FakeConfigEntry, load_menu, ohne_objekt
 from .test_partikelabscheider import menu_mit_abscheider
 from .test_sensors import setup_integration
 
@@ -523,6 +523,64 @@ async def test_der_aschebox_plan_schaltet_nur_nach_selbst_gefundenen_werten(hass
     coordinator, _ = await setup_integration(hass, entry)
     assert coordinator.von_hand == {"kessel_druck"}
     assert coordinator.aschebox is not None, "der Kesseldruck steuert nichts"
+
+
+async def test_der_stueckholzkessel_hat_die_entaschentaste_aber_keinen_aschebox_plan(hass):
+    """Eine Aschebox hat am Stückholzkessel nur der angebaute Pelletteil (SH TWIN).
+
+    Bis 0.31.0b2 bekam er den Plan trotzdem. Dessen Entitäten verschwinden
+    beim Start, der Knopf zum Entaschen bleibt.
+    """
+    hass.session.menu = STUECKHOLZ
+    entry = einrichtung(enable_switches=True)
+    _eintraege(
+        hass,
+        entry,
+        "aschebox_leeren_um",
+        "aschebox_plan",
+        "aschebox_plan_abbrechen",
+        "kessel_entaschen",
+        "kessel_temperatur",
+    )
+
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.entaschen_def is not None
+    assert "kessel_schalter" in coordinator.switch_defs
+    assert coordinator.sensor_defs["kessel_zustand"]["uri"]
+    assert coordinator.aschebox is None
+    assert set(hass.entity_registry.eintraege) == {
+        "sensor.eta_kessel_entaschen",
+        "sensor.eta_kessel_temperatur",
+    }
+
+
+async def test_bestaetigt_die_anlage_die_taste_nicht_bleiben_die_entitaeten_des_plans(hass):
+    """Ein Aussetzer beim Start darf nichts aus dem Register nehmen."""
+    hass.session.menu = ohne_objekt(STUECKHOLZ, f"{KESSEL}/0/0/12112")
+    entry = einrichtung(enable_switches=True)
+    _eintraege(hass, entry, "aschebox_leeren_um", "aschebox_plan", "aschebox_plan_abbrechen")
+
+    coordinator, _ = await setup_integration(hass, entry)
+
+    assert coordinator.entaschen_def is None
+    assert coordinator.aschebox is None
+    assert len(hass.entity_registry.eintraege) == 3
+
+
+async def test_ein_von_hand_zugeordneter_wert_belegt_keine_aschebox(hass):
+    """Sonst bekäme der Stückholzkessel den Plan doch - über einen Eintrag, der nur so heißt."""
+    hass.session.menu = STUECKHOLZ
+    leistung = f"{KESSEL}/0/0/12204"
+    hass.session.werte[leistung] = {"value": "1000", "str_value": "1000", "unit": "kg", "scale": "1"}
+    coordinator, _ = await setup_integration(
+        hass,
+        einrichtung(enable_switches=True, **{CONF_ZUORDNUNGEN: {"aschebox_schwelle": leistung}}),
+    )
+
+    assert coordinator.von_hand == {"aschebox_schwelle"}
+    assert coordinator.sensor_defs["aschebox_schwelle"]["uri"] == leistung
+    assert coordinator.aschebox is None
 
 
 async def test_beim_laden_gilt_eine_zuordnung_nur_wenn_ihr_eintrag_noch_passt(hass):
