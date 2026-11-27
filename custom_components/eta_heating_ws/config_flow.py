@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 import voluptuous as vol
@@ -19,6 +19,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.translation import async_get_translations
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
@@ -31,8 +32,10 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
+from . import abhaengige, entitaeten_abmelden, platzhalter
 from . import uebernahme
 from . import weitere_werte as weitere
+from . import zuordnung
 from .api import ETAApiClient, ETAApiError, ETAValue
 from .prognose_koordinator import einzige_wetter_entitaet
 from .uri_discovery import (
@@ -41,6 +44,7 @@ from .uri_discovery import (
     fub_namen_im_menue,
     fub_namen_vorschlagen,
     kandidaten_fuer_zuordnung,
+    vorschlaege_fuer_zuordnung,
 )
 from .verbindungen import braucht_auswahl, felder, im_kreis, moegliche_quellen, verbindungen
 from .verbindungen import feld as verbindung_feld
@@ -57,8 +61,8 @@ from .const import (
     CONF_FREMDERZEUGER_SCHWELLE,
     CONF_FREMDERZEUGER_SPERREN_NACH,
     CONF_FREMDERZEUGER_SPERRT,
+    CONF_FEHLENDE_AUSBLENDEN,
     CONF_FUB_NAMES,
-    CONF_HIDE_MISSING_SENSORS,
     CONF_KESSEL_GESPERRT,
     CONF_KESSEL_SPERRE,
     CONF_LAGER_MAXIMUM,
@@ -72,16 +76,16 @@ from .const import (
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
-    CONF_URI_OVERRIDES,
     CONF_VERBINDUNGEN,
     CONF_WETTER,
     CONF_ZEITRAEUME,
+    CONF_ZUORDNUNGEN,
     DEFAULT_ENABLE_ERRORS,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH,
     DEFAULT_FREMDERZEUGER_NAME,
     DEFAULT_FREMDERZEUGER_SPERREN_NACH,
-    DEFAULT_HIDE_MISSING_SENSORS,
+    DEFAULT_FEHLENDE_AUSBLENDEN,
     DEFAULT_PELLET_KWH_PER_KG,
     FREMDERZEUGER_FELDER,
     MAX_FREMDERZEUGER_WARTEZEIT,
@@ -120,7 +124,8 @@ from .const import (
 )
 
 
-_ORIGINAL_ASYNC_GET_MENU = ETAApiClient.async_get_menu
+FELD_WERTE = "werte"
+"""Das Feld, in dem der Nutzer die fehlenden Messwerte wählt, die er zuordnen will."""
 
 
 async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
@@ -129,57 +134,31 @@ async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     return await client.async_test_connection()
 
 
-def _api_client_fuer_menue(
-    hass: HomeAssistant | None, host: str | None, port: int
-) -> ETAApiClient | None:
-    """Erstellt einen API-Client für Menüabfragen, sofern Adresse und Session verfügbar sind."""
+async def _menue_der_anlage(hass: HomeAssistant, host: str | None, port: int) -> dict[str, Any] | None:
+    """Der Menübaum der Anlage - None, wenn sie nicht antwortet."""
     if not host:
         return None
+    client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     try:
-        session = async_get_clientsession(hass)
-    except (AttributeError, KeyError, TypeError):
-        return None
-    if session is None and ETAApiClient.async_get_menu is _ORIGINAL_ASYNC_GET_MENU:
-        return None
-    return ETAApiClient(hass, session, host, port)
-
-
-async def _fehlende_pfad_kandidaten(
-    hass: HomeAssistant,
-    host: str | None,
-    port: int,
-    fub_names: dict[str, str],
-    komponenten: list[str],
-    uri_overrides: dict[str, str] | None = None,
-) -> tuple[dict[str, dict[str, str]], set[str]]:
-    """Ermittelt Kandidaten aus dem Menübaum für nicht gefundene feste Messwerte."""
-    client = _api_client_fuer_menue(hass, host, port)
-    if client is None:
-        return {}, set()
-    overrides = uri_overrides or {}
-    try:
-        parsed = await client.async_get_menu()
-
-        async def _gecachtes_menue() -> dict[str, Any]:
-            return parsed
-
-        client.async_get_menu = _gecachtes_menue  # type: ignore[method-assign]
-        gefunden, _ = await async_discover_uris(
-            client, fub_names, uri_overrides=overrides
-        )
+        return await client.async_get_menu()
     except ETAApiError:
-        return {}, set()
-    komponenten_set = set(komponenten)
-    missing_keys = [
-        key
-        for key, info in SENSORS.items()
-        if info.get("component") in komponenten_set
-        and not info.get("nur_wenn_vorhanden")
-        and (key not in gefunden or key in overrides)
-    ]
-    kandidaten = kandidaten_fuer_zuordnung(parsed, missing_keys, fub_names)
-    gefiltert = {key: optionen for key, optionen in kandidaten.items() if optionen}
-    return gefiltert, set(gefunden.values())
+        return None
+
+
+async def _sensor_namen(hass: HomeAssistant, schluessel) -> dict[str, str]:
+    """Je Messwert der Name, den sein Sensor in der Sprache von Home Assistant trägt.
+
+    Zwei Messwerte heißen nie gleich. Fehlt die Übersetzung, gilt der
+    deutsche Name aus const.SENSORS.
+    """
+    texte = await async_get_translations(hass, hass.config.language, "entity", [DOMAIN])
+    return {
+        key: texte.get(
+            f"component.{DOMAIN}.entity.sensor.{SENSORS[key]['translation_key']}.name"
+        )
+        or SENSORS[key]["name"]
+        for key in schluessel
+    }
 
 
 async def _fub_namen_der_anlage(hass: HomeAssistant, host: str | None, port: int) -> list[str]:
@@ -531,8 +510,14 @@ def _zahlenfeld(kleinste: float, groesste: float, ganz: bool = True) -> NumberSe
     )
 
 
-def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> dict:
+def _einstellung_felder(
+    current: dict[str, Any], wetter: str | None = None, neu: bool = False
+) -> dict:
     """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Preis, Wetter.
+
+    Eine neue Einrichtung (neu) schlägt vor, fehlende Werte auszublenden.
+    Eine bestehende behält ihre Platzhalter, bis der Nutzer den Haken
+    setzt, siehe CONF_FEHLENDE_AUSBLENDEN.
 
     Verbrauch je Zeitraum und Prognose sind abwählbar - wer nur die
     Messwerte will, bekommt dann auch nur die.
@@ -582,9 +567,9 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
             default=current.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
         ): cv.boolean,
         vol.Required(
-            CONF_HIDE_MISSING_SENSORS,
+            CONF_FEHLENDE_AUSBLENDEN,
             default=bool(
-                current.get(CONF_HIDE_MISSING_SENSORS, DEFAULT_HIDE_MISSING_SENSORS)
+                current.get(CONF_FEHLENDE_AUSBLENDEN, neu or DEFAULT_FEHLENDE_AUSBLENDEN)
             ),
         ): cv.boolean,
         vol.Required(
@@ -620,7 +605,7 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
 def _connection_schema(current: dict[str, Any], wetter: str | None = None) -> vol.Schema:
     """Das vollständige Formular beim ersten Einrichten."""
     return vol.Schema(
-        {**_verbindung_felder(current), **_einstellung_felder(current, wetter)}
+        {**_verbindung_felder(current), **_einstellung_felder(current, wetter, neu=True)}
     )
 
 
@@ -714,38 +699,55 @@ def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
     )
 
 
-def _pfade_schema(
-    kandidaten: dict[str, dict[str, str]],
-    current_overrides: dict[str, str],
+def _fehlende_schema(namen: dict[str, str], vorgabe: list[str]) -> vol.Schema:
+    """Die fehlenden Messwerte zur Wahl, mit ihren Namen, mehrere wählbar."""
+    return vol.Schema({vol.Optional(FELD_WERTE, default=vorgabe): _werte_feld(namen)})
+
+
+def _zuordnung_schema(
+    felder: dict[str, dict[str, str]], vorgaben: dict[str, str | None]
 ) -> vol.Schema:
-    """Je nicht gefundenem festen Sensor eine optionale Auswahl aus dem Menübaum."""
-    felder: dict = {}
-    for sensor_key, options_dict in kandidaten.items():
-        vorschlag = current_overrides.get(sensor_key)
-        felder[
-            vol.Optional(
-                sensor_key,
-                description={
-                    "suggested_value": vorschlag if vorschlag in options_dict else None
-                },
+    """Je gewähltem Messwert ein Feld mit den passenden Einträgen seines Funktionsblocks.
+
+    Das Feld heißt wie der Messwert - aus demselben Grund wie in
+    _weitere_schema. Ein leeres Feld heißt: nicht zuordnen.
+    """
+    return vol.Schema(
+        {
+            vol.Optional(name, description={"suggested_value": vorgaben.get(name)}): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        SelectOptionDict(value=uri, label=eintrag)
+                        for uri, eintrag in eintraege.items()
+                    ],
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
             )
-        ] = SelectSelector(
-            SelectSelectorConfig(
-                options=[
-                    SelectOptionDict(value=uri, label=label)
-                    for uri, label in options_dict.items()
-                ],
-                mode=SelectSelectorMode.DROPDOWN,
-            )
-        )
-    return vol.Schema(felder)
+            for name, eintraege in felder.items()
+        }
+    )
 
 
 class _Anlagenschritte:
     """Die Schritte nach den Funktionsblock-Namen, gleich für Einrichten und Konfigurieren.
 
-    Liefert die Unterklasse _adresse(), _bisher und _fertig(daten).
+    Die Unterklasse liefert _adresse(), _bisher und _fertig(daten), dazu
+    _abschluss() für das Ende der Anlagenschritte. Für die Zuordnung von
+    Hand liefert sie, woraus die Einrichtung gerade besteht
+    (_einrichtung, _komponenten), und was mit dem Ergebnis geschieht
+    (_zuordnung_speichern, _ohne_zuordnung).
     """
+
+    _menue: dict[str, Any] | None = None
+    """Der Menübaum der Anlage, je Dialog einmal gelesen, siehe _menue_lesen."""
+    _kandidaten: dict[str, dict[str, str]] | None = None
+    """Je fehlendem Messwert die Einträge seines Funktionsblocks, siehe _zuordenbare."""
+    _zuordnen: list[str] = []
+    """Die Messwerte, die der Nutzer im ersten Schritt der Zuordnung gewählt hat."""
+    _vorschlaege: dict[str, str] = {}
+    """Je Messwert die vorgeschlagene Adresse, siehe uri_discovery.vorschlaege_fuer_zuordnung."""
+    _passend: dict[str, dict[str, str]] | None = None
+    """Je gewähltem Messwert die gelesenen passenden Einträge, siehe _passende_lesen."""
 
     async def _nach_namen(self) -> ConfigFlowResult:
         """Nach den Funktionsblock-Namen: der Fremderzeuger, wenn er gewählt ist.
@@ -832,47 +834,161 @@ class _Anlagenschritte:
         return await self._nach_verbindungen()
 
     async def _nach_verbindungen(self) -> ConfigFlowResult:
-        """Prüft nach den Verbindungen auf fehlende feste Sensor-Pfade."""
-        if self._online:
-            host, port = self._adresse()
-            kandidaten, feste_uris = await _fehlende_pfad_kandidaten(
-                self.hass,
-                host,
-                port,
-                self._data[CONF_FUB_NAMES],
-                self._data[CONF_COMPONENTS],
-                self._bisher.get(CONF_URI_OVERRIDES),
-            )
-            self._pfad_kandidaten = kandidaten
-            self._feste_uris = feste_uris
-            if self._pfad_kandidaten:
-                return await self.async_step_pfade_zuordnen()
-        return await self._nach_pfade_zuordnen()
+        """Nach den Verbindungen ist die Anlage eingerichtet, siehe _abschluss der Unterklasse."""
+        return await self._abschluss()
 
-    async def async_step_pfade_zuordnen(
+    async def _menue_lesen(self) -> dict[str, Any] | None:
+        """Der Menübaum der Anlage, je Dialog einmal gelesen - None, wenn sie nicht antwortet."""
+        if self._menue is None:
+            host, port = self._adresse()
+            self._menue = await _menue_der_anlage(self.hass, host, port)
+        return self._menue
+
+    def _zuordnungen(self) -> dict[str, str]:
+        """Die bisher von Hand zugeordneten Adressen je Messwert, siehe zuordnung.py."""
+        return zuordnung.gueltige(self._einrichtung().get(CONF_ZUORDNUNGEN))
+
+    async def _gefunden_lesen(self, zuordnungen: dict[str, str] | None = None) -> dict[str, str]:
+        """Was die Erkennung im gelesenen Menübaum findet, mit den Zuordnungen von Hand."""
+        gefunden, _ = await async_discover_uris(
+            None,
+            self._einrichtung().get(CONF_FUB_NAMES),
+            zuordnungen=self._zuordnungen() if zuordnungen is None else zuordnungen,
+            menue=self._menue,
+        )
+        return gefunden
+
+    async def _zuordenbare(self) -> dict[str, dict[str, str]] | None:
+        """Je fehlendem Messwert die Einträge seines Funktionsblocks - None ohne Menübaum.
+
+        Fehlend heißt: von der Erkennung nicht gefunden oder schon von
+        Hand zugeordnet, siehe zuordnung.fehlende. Ein Messwert, dessen
+        Funktionsblock die Anlage nicht hat, steht nicht dabei.
+        """
+        if await self._menue_lesen() is None:
+            return None
+        einrichtung = self._einrichtung()
+        kandidaten = kandidaten_fuer_zuordnung(
+            self._menue,
+            zuordnung.fehlende(
+                self._komponenten(), await self._gefunden_lesen(), self._zuordnungen()
+            ),
+            einrichtung.get(CONF_FUB_NAMES),
+        )
+        return {key: eintraege for key, eintraege in kandidaten.items() if eintraege}
+
+    async def async_step_fehlende_werte(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Optionale manuelle Zuordnung von nicht automatisch gefundenen festen Sensoren."""
+        """Fehlende Werte von Hand zuordnen, erster Schritt: welche, siehe zuordnung.py.
+
+        Zur Wahl stehen die Messwerte der gewählten Komponenten, die die
+        Erkennung im Menübaum nicht gefunden hat, dazu die schon
+        zugeordneten. Vorgewählt ist, was schon zugeordnet ist und wofür
+        es einen Vorschlag gibt, siehe
+        uri_discovery.vorschlaege_fuer_zuordnung. Gelesen wird hier noch
+        nichts - erst der zweite Schritt liest die Funktionsblöcke der
+        gewählten Messwerte.
+        """
+        if self._kandidaten is None:
+            self._kandidaten = await self._zuordenbare()
+        if self._kandidaten is None:
+            return self.async_abort(reason="cannot_connect")
+        if not self._kandidaten:
+            return self.async_abort(reason="nichts_zuzuordnen")
         if user_input is not None:
-            overrides = {
-                k: user_input[k]
-                for k in self._pfad_kandidaten
-                if user_input.get(k)
-            }
-            self._data[CONF_URI_OVERRIDES] = overrides
-            self._feste_uris = self._feste_uris | set(overrides.values())
-            return await self._nach_pfade_zuordnen()
+            self._zuordnen = [
+                key for key in user_input.get(FELD_WERTE) or [] if key in self._kandidaten
+            ]
+            if not self._zuordnen:
+                return await self._ohne_zuordnung()
+            self._passend = None
+            return await self.async_step_werte_zuordnen()
+        bisher = self._zuordnungen()
+        self._vorschlaege = vorschlaege_fuer_zuordnung(
+            self._menue,
+            [key for key in self._kandidaten if key not in bisher],
+            self._einrichtung().get(CONF_FUB_NAMES),
+        )
         return self.async_show_form(
-            step_id="pfade_zuordnen",
-            data_schema=_pfade_schema(
-                self._pfad_kandidaten,
-                self._bisher.get(CONF_URI_OVERRIDES) or {},
+            step_id="fehlende_werte",
+            data_schema=_fehlende_schema(
+                await _sensor_namen(self.hass, self._kandidaten),
+                [key for key in self._kandidaten if key in bisher or key in self._vorschlaege],
             ),
-            description_placeholders={
-                "fehlende": ", ".join(
-                    SENSORS.get(k, {}).get("name", k) for k in self._pfad_kandidaten
-                )
-            },
+            last_step=False,
+        )
+
+    async def _passende_lesen(self) -> dict[str, dict[str, str]]:
+        """Je gewähltem Messwert die Einträge seines Blocks, die nach Art und Einheit passen.
+
+        Dazu liest der Schritt jeden Eintrag einmal - je Funktionsblock
+        einige Dutzend bis wenige hundert Anfragen. Je Adresse steht der
+        Weg im Block und in Klammern, was die Anlage gerade anzeigt. Was
+        die Erkennung schon für einen anderen Wert, einen Schalter oder
+        ein Zeitfenster nutzt, steht nicht zur Wahl.
+        """
+        gefunden = await self._gefunden_lesen()
+        belegt = {uri for key, uri in gefunden.items() if key not in self._zuordnen}
+        adressen = {
+            uri for key in self._zuordnen for uri in self._kandidaten[key] if uri not in belegt
+        }
+        host, port = self._adresse()
+        client = ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port)
+        gelesen = await client.async_get_values({uri: uri for uri in adressen})
+
+        def eintrag(weg: str, uri: str) -> str:
+            anzeige = zuordnung.anzeige(gelesen[uri])
+            return f"{weg} ({anzeige})" if anzeige else weg
+
+        return {
+            key: {
+                uri: eintrag(weg, uri)
+                for uri, weg in self._kandidaten[key].items()
+                if uri in gelesen and zuordnung.passt(key, gelesen[uri])
+            }
+            for key in self._zuordnen
+        }
+
+    async def async_step_werte_zuordnen(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Fehlende Werte von Hand zuordnen, zweiter Schritt: je Messwert ein Eintrag der Anlage.
+
+        Je gewähltem Messwert ein Feld mit den Einträgen seines
+        Funktionsblocks, die nach Art und Einheit zu ihm passen, siehe
+        _passende_lesen. Vorgewählt ist die bisherige Zuordnung, sonst der
+        Vorschlag - beides nur, wenn es passt. Ein leeres Feld hebt eine
+        Zuordnung auf. Messwerte, die hier gar nicht gewählt waren,
+        behalten ihre Zuordnung. Gibt es zu einem Messwert keinen
+        passenden Eintrag, nennt ihn der Hinweis über dem Formular.
+        """
+        if self._passend is None:
+            self._passend = await self._passende_lesen()
+        namen = await _sensor_namen(self.hass, self._zuordnen)
+        bisher = self._zuordnungen()
+        if user_input is not None:
+            neu = {key: uri for key, uri in bisher.items() if key not in self._zuordnen}
+            for key in self._zuordnen:
+                uri = user_input.get(namen[key])
+                if uri and uri in self._passend[key]:
+                    neu[key] = uri
+            return await self._zuordnung_speichern(neu)
+        vorgaben = {}
+        for key in self._zuordnen:
+            wahl = bisher.get(key)
+            if wahl not in self._passend[key]:
+                wahl = self._vorschlaege.get(key)
+            vorgaben[namen[key]] = wahl if wahl in self._passend[key] else None
+        ohne = [namen[key] for key in self._zuordnen if not self._passend[key]]
+        return self.async_show_form(
+            step_id="werte_zuordnen",
+            data_schema=_zuordnung_schema(
+                {namen[key]: self._passend[key] for key in self._zuordnen if self._passend[key]},
+                vorgaben,
+            ),
+            errors={"base": "ohne_passenden_eintrag"} if ohne else {},
+            description_placeholders={"ohne": ", ".join(ohne)},
         )
 
     async def _weitere_werte_auswaehlen(
@@ -884,9 +1000,17 @@ class _Anlagenschritte:
         bisher: dict[str, dict[str, Any]],
         client: ETAApiClient,
         user_input: dict[str, Any] | None,
-        bei_leer: Callable[[], ConfigFlowResult],
+        bei_leer: Callable[[], Awaitable[ConfigFlowResult]],
     ) -> ConfigFlowResult:
-        """Gemeinsamer Auswahlschritt für dynamische Werte im Einrichten und Konfigurieren."""
+        """Die Auswahl der weiteren Werte, gleich für Einrichten und Konfigurieren.
+
+        gruppen sind die wählbaren Werte je Funktionsblock, bisher die
+        schon gewählten nach Adresse. Jeden neu gewählten Wert liest der
+        Schritt einmal: So steht fest, ob er eine Zahl mit Einheit oder
+        ein Text ist - und was die Anlage gar nicht lesbar liefert, wird
+        nicht angenommen. Danach folgt der Takt, siehe
+        _weitere_takt_formular. Ist nichts gewählt, entscheidet bei_leer.
+        """
         auswahl = {uri for werte in gruppen.values() for uri in werte}
         platzhalter = {"hoechstens": str(weitere.HOECHSTENS), "ohne": ""}
         errors: dict[str, str] = {}
@@ -919,7 +1043,7 @@ class _Anlagenschritte:
                 if not ohne:
                     self._weitere_eintraege = eintraege
                     if not eintraege:
-                        return bei_leer()
+                        return await bei_leer()
                     return await self.async_step_weitere_takt()
                 errors["base"] = "werte_nicht_lesbar"
                 platzhalter["ohne"] = ", ".join(
@@ -934,15 +1058,22 @@ class _Anlagenschritte:
             last_step=False,
         )
 
-    def _weitere_takt_formular(
+    async def _weitere_takt_formular(
         self,
         *,
         je_abfrage: int,
         abstand: int,
         user_input: dict[str, Any] | None,
-        speichern: Callable[[list[dict[str, Any]], int, int], ConfigFlowResult],
+        speichern: Callable[[list[dict[str, Any]], int, int], Awaitable[ConfigFlowResult]],
     ) -> ConfigFlowResult:
-        """Gemeinsamer Taktschritt für dynamische Werte im Einrichten und Konfigurieren."""
+        """Der Takt der gewählten weiteren Werte, gleich für Einrichten und Konfigurieren.
+
+        Zwei Schieberegler: wie viele Werte eine Abfrage liest und in
+        welchem Abstand die Abfragen kommen, vorbelegt mit je_abfrage und
+        abstand. Dazu die Wahl, welche der eben gewählten Werte zusätzlich
+        die schnelle Abfrage liest. Was mit dem Ergebnis geschieht,
+        entscheidet speichern.
+        """
         gewaehlt = {
             eintrag["uri"]: weitere.bezeichnung(eintrag)
             for eintrag in self._weitere_eintraege
@@ -971,7 +1102,7 @@ class _Anlagenschritte:
                     }
                     for eintrag in self._weitere_eintraege
                 ]
-                return speichern(eintraege, je_abfrage, abstand)
+                return await speichern(eintraege, je_abfrage, abstand)
             errors["base"] = "zu_viele_schnelle_werte"
         return self.async_show_form(
             step_id="weitere_takt",
@@ -1116,12 +1247,10 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
-        self._pfad_kandidaten: dict[str, dict[str, str]] = {}
-        self._feste_uris: set[str] = set()
-        self._menue_werte: dict[str, dict[str, Any]] | None = None
         self._weitere_eintraege: list[dict[str, Any]] = []
-        self._dynamisch_gruppen: dict[str, dict[str, str]] = {}
-        self._online: bool = False
+        """Die im Schritt der weiteren Werte gewählten, bis ihr Takt feststeht."""
+        self._online = False
+        """Ob die Anlage beim Einrichten geantwortet hat, siehe _nach_fub_namen."""
         self._neu_gewaehlt = False
 
     _bisher: dict[str, Any] = {}
@@ -1131,6 +1260,12 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
 
     def _fertig(self, daten: dict[str, Any]) -> ConfigFlowResult:
         return self.async_create_entry(title="ETA Heizung", data=daten)
+
+    def _einrichtung(self) -> dict[str, Any]:
+        return self._data
+
+    def _komponenten(self) -> list[str]:
+        return self._data[CONF_COMPONENTS]
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -1291,84 +1426,116 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
             return await self._nach_namen()
 
         host, port = self._adresse()
-        anlagen_fubs = await _fub_namen_der_anlage(self.hass, host, port)
-        vorschlag, fehlende = fub_namen_abgleich(roles, anlagen_fubs)
+        namen = await _fub_namen_der_anlage(self.hass, host, port)
+        vorschlag, fehlende = fub_namen_abgleich(roles, namen)
         if not fehlende:
             self._data[CONF_FUB_NAMES] = vorschlag
             return await self._nach_namen()
+        sichtbar = [name for name in namen if name.strip() not in weitere.NIE_GENANNT]
         return self.async_show_form(
             step_id="fub_names",
             data_schema=_fub_names_schema(roles, vorschlag),
-            description_placeholders={
-                "vorhanden": ", ".join(anlagen_fubs) if anlagen_fubs else "-"
-            },
+            description_placeholders={"vorhanden": ", ".join(sichtbar) or "-"},
         )
 
-    async def _nach_pfade_zuordnen(self) -> ConfigFlowResult:
-        """Nach der Pfadzuordnung: optionale Auswahl weiterer dynamischer Werte."""
-        if not self._online:
-            return self._fertig(self._data)
-        if self._menue_werte is None:
-            host, port = self._adresse()
-            client = _api_client_fuer_menue(self.hass, host, port)
-            if client is None:
-                return self._fertig(self._data)
-            try:
-                self._menue_werte = weitere.menue_werte(await client.async_get_menu())
-            except ETAApiError:
-                return self._fertig(self._data)
-        gruppen = weitere.gruppen_fuer_menue(self._menue_werte, self._feste_uris)
-        if not gruppen:
-            return self._fertig(self._data)
-        self._dynamisch_gruppen = gruppen
-        return await self.async_step_dynamische_werte()
+    async def _abschluss(self) -> ConfigFlowResult:
+        """Nach den Schritten der Anlage: die Auswahl zum Schluss, wenn die Anlage antwortet.
 
-    async def async_step_dynamische_werte(
+        Antwortet sie nicht, gibt es dort nichts zu wählen, und die
+        Einrichtung ist fertig.
+        """
+        if not self._online or await self._menue_lesen() is None:
+            return self._fertig(self._data)
+        return await self.async_step_abschluss()
+
+    async def async_step_abschluss(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Optionale Auswahl dynamischer Zusatz-Sensoren direkt beim Einrichten."""
-        menue_werte = self._menue_werte or {}
-        gruppen = self._dynamisch_gruppen or weitere.gruppen_fuer_menue(
-            menue_werte, self._feste_uris
-        )
-        if not gruppen:
-            return self._fertig(self._data)
+        """Die Auswahl zum Schluss: abschließen, weitere Werte wählen oder fehlende zuordnen.
+
+        Beides gibt es auch später unter Konfigurieren. Hier steht es, weil
+        gerade an einer älteren Anlage manches fehlt, was sich gleich beim
+        Einrichten ergänzen lässt. Nach jedem der beiden Wege steht die
+        Auswahl wieder da. Das Zuordnen fehlt, wenn es nichts zuzuordnen
+        gibt.
+        """
+        self._kandidaten = await self._zuordenbare()
+        auswahl = ["fertig", "weitere_werte"]
+        if self._kandidaten:
+            auswahl.append("fehlende_werte")
+        return self.async_show_menu(step_id="abschluss", menu_options=auswahl)
+
+    async def async_step_fertig(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Schließt die Einrichtung ab."""
+        return self._fertig(self._data)
+
+    async def _ohne_zuordnung(self) -> ConfigFlowResult:
+        return await self.async_step_abschluss()
+
+    async def _zuordnung_speichern(self, neu: dict[str, str]) -> ConfigFlowResult:
+        """Merkt sich die Zuordnungen von Hand für den Eintrag und zeigt wieder die Auswahl."""
+        self._data.pop(CONF_ZUORDNUNGEN, None)
+        if neu:
+            self._data[CONF_ZUORDNUNGEN] = neu
+        return await self.async_step_abschluss()
+
+    async def async_step_weitere_werte(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wählt schon beim Einrichten Werte aus dem Menübaum, siehe weitere_werte.py.
+
+        Wie unter Konfigurieren: je Funktionsblock ein Feld, ohne die
+        Messwerte, die die Integration als feste Sensoren führt. Die
+        Zeitfenster der Zeitprogramme stehen zur Wahl wie dort.
+        """
+        werte = weitere.menue_werte(self._menue)
+        fest = {
+            uri
+            for key, uri in (await self._gefunden_lesen()).items()
+            if "_zeitfenster_" not in key and "_absenkwert_" not in key
+        }
+        bisher = {
+            eintrag["uri"]: eintrag
+            for eintrag in weitere.gewaehlte(self._data.get(CONF_WEITERE_WERTE))
+        }
         host, port = self._adresse()
-        try:
-            session = async_get_clientsession(self.hass)
-        except (AttributeError, KeyError, TypeError):
-            session = None
-        client = ETAApiClient(self.hass, session, host, port)
+
+        async def nichts_gewaehlt() -> ConfigFlowResult:
+            for schluessel in (CONF_WEITERE_WERTE, CONF_WEITERE_JE_ABFRAGE, CONF_WEITERE_INTERVALL):
+                self._data.pop(schluessel, None)
+            return await self.async_step_abschluss()
+
         return await self._weitere_werte_auswaehlen(
-            step_id="dynamische_werte",
-            gruppen=gruppen,
-            menue_werte=menue_werte,
-            bisher={},
-            client=client,
+            step_id="weitere_werte",
+            gruppen=weitere.gruppen_fuer_menue(werte, fest, bisher),
+            menue_werte=werte,
+            bisher=bisher,
+            client=ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port),
             user_input=user_input,
-            bei_leer=lambda: self._fertig(self._data),
+            bei_leer=nichts_gewaehlt,
         )
 
     async def async_step_weitere_takt(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Takt der beim Einrichten gewählten zusätzlichen Werte."""
-        je_abfrage = weitere.je_abfrage(None)
-        abstand = weitere.intervall(
-            None, self._data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        )
+        """Stellt den Takt der beim Einrichten gewählten Werte, siehe _weitere_takt_formular."""
 
-        def speichern(
-            eintraege: list[dict[str, Any]], je: int, intervall_sek: int
+        async def speichern(
+            eintraege: list[dict[str, Any]], je_abfrage: int, abstand: int
         ) -> ConfigFlowResult:
             self._data[CONF_WEITERE_WERTE] = eintraege
-            self._data[CONF_WEITERE_JE_ABFRAGE] = je
-            self._data[CONF_WEITERE_INTERVALL] = intervall_sek
-            return self._fertig(self._data)
+            self._data[CONF_WEITERE_JE_ABFRAGE] = je_abfrage
+            self._data[CONF_WEITERE_INTERVALL] = abstand
+            return await self.async_step_abschluss()
 
-        return self._weitere_takt_formular(
-            je_abfrage=je_abfrage,
-            abstand=abstand,
+        return await self._weitere_takt_formular(
+            je_abfrage=weitere.je_abfrage(self._data.get(CONF_WEITERE_JE_ABFRAGE)),
+            abstand=weitere.intervall(
+                self._data.get(CONF_WEITERE_INTERVALL),
+                self._data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            ),
             user_input=user_input,
             speichern=speichern,
         )
@@ -1387,9 +1554,6 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
-        self._pfad_kandidaten: dict[str, dict[str, str]] = {}
-        self._feste_uris: set[str] = set()
-        self._online: bool = False
         self._menue_werte: dict[str, dict[str, Any]] | None = None
         """Die wählbaren Werte aus dem Menübaum, einmal je Dialog gelesen."""
         self._weitere_eintraege: list[dict[str, Any]] = []
@@ -1406,6 +1570,12 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
     def _adresse(self) -> tuple[str | None, int]:
         return self._current.get(CONF_HOST), self._current.get(CONF_PORT, DEFAULT_PORT)
 
+    def _einrichtung(self) -> dict[str, Any]:
+        return self._current
+
+    def _komponenten(self) -> list[str]:
+        return components_from_config(self._current)
+
     def _fertig(self, daten: dict[str, Any]) -> ConfigFlowResult:
         """Speichert die Einstellungen als Optionen.
 
@@ -1415,8 +1585,14 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         gefragt hat - beim PufferFlex steht es nur im Zahlenfeld. Ebenso
         die eingetragenen Pelletlieferungen, die Sperrtemperatur des
         Fremderzeugers - solange er einen Fühler hat -, die frei gewählten
-        weiteren Werte samt ihrem Takt und dass Home Assistant den Kessel
-        gesperrt hält.
+        weiteren Werte samt ihrem Takt, die Zuordnungen von Hand und dass
+        Home Assistant den Kessel gesperrt hält. Die weiteren Werte und die
+        Zuordnungen bleiben auch leer erhalten: Stammen sie aus der
+        Ersteinrichtung, gälten sonst nach dem Speichern wieder die alten.
+
+        Setzt der Nutzer hier den Haken, fehlende Werte auszublenden,
+        verschwinden die Platzhalter mit "-" gleich mit, siehe
+        entitaeten_abmelden.
         Gibt es nach dem Speichern
         keine Kesselsperre mehr, räumt das Einrichten das Gemerkte auf,
         siehe switch.verwaiste_sperre_aufloesen.
@@ -1441,8 +1617,13 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             daten = {CONF_LAGER_MAXIMUM: self._current[CONF_LAGER_MAXIMUM], **daten}
         if self._current.get(CONF_LIEFERUNGEN):
             daten = {CONF_LIEFERUNGEN: self._current[CONF_LIEFERUNGEN], **daten}
-        for schluessel in (CONF_WEITERE_WERTE, CONF_WEITERE_JE_ABFRAGE, CONF_WEITERE_INTERVALL):
-            if self._current.get(schluessel):
+        for schluessel in (
+            CONF_WEITERE_WERTE,
+            CONF_WEITERE_JE_ABFRAGE,
+            CONF_WEITERE_INTERVALL,
+            CONF_ZUORDNUNGEN,
+        ):
+            if schluessel in self._current and schluessel not in daten:
                 daten = {schluessel: self._current[schluessel], **daten}
         if self._current.get(CONF_FREMDERZEUGER_SCHWELLE) is not None and daten.get(
             CONF_FREMDERZEUGER_FUEHLER
@@ -1453,21 +1634,51 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             }
         if self._current.get(CONF_KESSEL_GESPERRT):
             daten = {CONF_KESSEL_GESPERRT: self._current[CONF_KESSEL_GESPERRT], **daten}
-        if CONF_URI_OVERRIDES not in daten and self._current.get(CONF_URI_OVERRIDES):
-            daten = {CONF_URI_OVERRIDES: self._current[CONF_URI_OVERRIDES], **daten}
+        if daten.get(CONF_FEHLENDE_AUSBLENDEN) and not self._current.get(CONF_FEHLENDE_AUSBLENDEN):
+            koordinator = getattr(self.config_entry, "runtime_data", None)
+            if koordinator is not None:
+                entitaeten_abmelden(self.hass, self.config_entry, platzhalter(koordinator))
         return self.async_create_entry(title="", data=daten)
 
-    async def _nach_pfade_zuordnen(self) -> ConfigFlowResult:
-        """Schließt den Optionen-Dialog nach der Pfadzuordnung ab."""
+    async def _abschluss(self) -> ConfigFlowResult:
+        """Konfigurieren speichert nach den Schritten der Anlage."""
         return self._fertig(self._data)
+
+    async def _ohne_zuordnung(self) -> ConfigFlowResult:
+        return self.async_abort(reason="nichts_geaendert")
+
+    async def _zuordnung_speichern(self, neu: dict[str, str]) -> ConfigFlowResult:
+        """Speichert die Zuordnungen von Hand - alle anderen Einstellungen bleiben, wie sie sind.
+
+        Hebt der Nutzer eine Zuordnung auf und sind fehlende Werte
+        ausgeblendet, gibt es den Sensor danach nicht mehr - es sei denn,
+        die Erkennung findet den Messwert inzwischen selbst. Sein Eintrag
+        verschwindet dann gleich mit, siehe entitaeten_abmelden.
+        """
+        bisher = self._zuordnungen()
+        if neu == bisher:
+            return self.async_abort(reason="nichts_geaendert")
+        aufgehoben = set(bisher) - set(neu)
+        if aufgehoben and self._current.get(CONF_FEHLENDE_AUSBLENDEN):
+            gefunden = await self._gefunden_lesen(neu)
+            entitaeten_abmelden(
+                self.hass,
+                self.config_entry,
+                abhaengige({key for key in aufgehoben if key not in gefunden}),
+            )
+        return self.async_create_entry(
+            title="", data={**self.config_entry.options, CONF_ZUORDNUNGEN: neu}
+        )
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Konfigurieren beginnt mit der Wahl: Einstellungen der Anlage oder weitere Werte."""
+        """Konfigurieren beginnt mit der Wahl: Einstellungen, weitere Werte oder fehlende zuordnen."""
         if user_input is not None:
             return await self.async_step_einstellungen(user_input)
-        return self.async_show_menu(step_id="init", menu_options=["einstellungen", "weitere_werte"])
+        return self.async_show_menu(
+            step_id="init", menu_options=["einstellungen", "weitere_werte", "fehlende_werte"]
+        )
 
     async def async_step_weitere_werte(
         self, user_input: dict[str, Any] | None = None
@@ -1483,25 +1694,27 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         Danach folgt der Takt, siehe async_step_weitere_takt. Ist nichts
         gewählt, wird gleich gespeichert.
         """
-        host, port = self._adresse()
-        client = ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port)
         if self._menue_werte is None:
-            try:
-                self._menue_werte = weitere.menue_werte(await client.async_get_menu())
-            except ETAApiError:
+            if await self._menue_lesen() is None:
                 return self.async_abort(reason="cannot_connect")
+            self._menue_werte = weitere.menue_werte(self._menue)
+        werte = self._menue_werte
         bisher = self._weitere_bisher()
         koordinator = getattr(self.config_entry, "runtime_data", None)
         fest = set(koordinator.abfragbare_uris.values()) if koordinator is not None else set()
-        gruppen = weitere.gruppen_fuer_menue(self._menue_werte, fest, bisher)
+        host, port = self._adresse()
+
+        async def nichts_gewaehlt() -> ConfigFlowResult:
+            return await self._weitere_speichern([])
+
         return await self._weitere_werte_auswaehlen(
             step_id="weitere_werte",
-            gruppen=gruppen,
-            menue_werte=self._menue_werte,
+            gruppen=weitere.gruppen_fuer_menue(werte, fest, bisher),
+            menue_werte=werte,
             bisher=bisher,
-            client=client,
+            client=ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port),
             user_input=user_input,
-            bei_leer=lambda: self._weitere_speichern([]),
+            bei_leer=nichts_gewaehlt,
         )
 
     def _weitere_bisher(self) -> dict[str, dict[str, Any]]:
@@ -1518,7 +1731,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             self._current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
         )
 
-    def _weitere_speichern(
+    async def _weitere_speichern(
         self, eintraege: list[dict[str, Any]], je_abfrage: int | None = None, abstand: int | None = None
     ) -> ConfigFlowResult:
         """Speichert Auswahl und Takt - alle anderen Einstellungen bleiben, wie sie sind."""
@@ -1543,7 +1756,7 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         gewählten Werte zusätzlich die schnelle Abfrage liest.
         """
         je_abfrage, abstand = self._weitere_takt()
-        return self._weitere_takt_formular(
+        return await self._weitere_takt_formular(
             je_abfrage=je_abfrage,
             abstand=abstand,
             user_input=user_input,

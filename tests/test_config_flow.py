@@ -925,28 +925,47 @@ async def test_ein_neu_gewaehlter_wert_ersetzt_das_none(monkeypatch):
     assert zweite["hk1_zeitplan"] is None
 
 
-def test_hide_missing_sensors_in_connection_und_options_schema():
+def test_eine_neue_einrichtung_schlaegt_vor_fehlende_werte_auszublenden():
+    """Eine bestehende behält ihre Platzhalter, bis der Nutzer den Haken setzt."""
     from eta_heating_ws.config_flow import _options_schema
-    from eta_heating_ws.const import CONF_HIDE_MISSING_SENSORS
+    from eta_heating_ws.const import CONF_FEHLENDE_AUSBLENDEN
 
-    for schema_fn in (_connection_schema, _options_schema):
-        felder = {str(k): k for k in schema_fn({}).schema}
-        assert CONF_HIDE_MISSING_SENSORS in felder
-        assert felder[CONF_HIDE_MISSING_SENSORS].default() is False
+    def vorgabe(schema) -> bool:
+        return {str(feld): feld for feld in schema.schema}[CONF_FEHLENDE_AUSBLENDEN].default()
 
-        aktiv = {str(k): k for k in schema_fn({CONF_HIDE_MISSING_SENSORS: True}).schema}
-        assert aktiv[CONF_HIDE_MISSING_SENSORS].default() is True
+    assert vorgabe(_connection_schema({})) is True
+    assert vorgabe(_connection_schema({CONF_FEHLENDE_AUSBLENDEN: False})) is False
+    assert vorgabe(_options_schema({})) is False
+    assert vorgabe(_options_schema({CONF_FEHLENDE_AUSBLENDEN: True})) is True
 
 
-def _config_flow_fuer(monkeypatch, hass=None):
+def config_flow_fuer(monkeypatch, hass=None):
+    """Der Dialog der Ersteinrichtung, ohne laufendes Home Assistant.
+
+    Mit hass antwortet dessen Attrappe der Anlage. Ohne antwortet keine -
+    der Menübaum ist dann nicht lesbar.
+    """
     from eta_heating_ws import config_flow as modul
+    from eta_heating_ws.const import SENSORS
 
     flow = modul.ETAConfigFlow()
     flow.hass = hass or FakeHass()
     if hass is not None:
         monkeypatch.setattr(modul, "async_get_clientsession", lambda _hass: hass.session)
+    else:
+
+        async def kein_menue(*_):
+            return None
+
+        monkeypatch.setattr(modul, "_menue_der_anlage", kein_menue)
+
+    async def namen(_hass, schluessel):
+        return {key: SENSORS[key]["name"] for key in schluessel}
+
+    monkeypatch.setattr(modul, "_sensor_namen", namen)
     for name, art in (
         ("async_show_form", "form"),
+        ("async_show_menu", "menu"),
         ("async_create_entry", "create_entry"),
         ("async_abort", "abort"),
     ):
@@ -958,142 +977,44 @@ def _config_flow_fuer(monkeypatch, hass=None):
     return flow
 
 
-async def test_config_flow_fub_names_ueberspringt_bei_vollstaendiger_uebereinstimmung(monkeypatch):
+async def test_meldet_die_anlage_alle_funktionsbloecke_entfaellt_der_schritt_der_namen(monkeypatch):
     from eta_heating_ws import config_flow as modul
 
-    flow = _config_flow_fuer(monkeypatch)
+    flow = config_flow_fuer(monkeypatch)
     flow._data = {"host": "192.0.2.10", "port": 8080, "components": ["kessel"]}
 
-    async def passende_fubs(hass, host, port):
+    async def passende_namen(hass, host, port):
         return ["Kessel", "Sys"]
 
-    async def ohne_sonderfaelle(*_):
-        return [], {}, {}
-
-    async def keine_kandidaten(*_):
-        return {}, set()
-
-    monkeypatch.setattr(modul, "_fub_namen_der_anlage", passende_fubs)
-    monkeypatch.setattr(modul, "_anlage_pruefen", ohne_sonderfaelle)
-    monkeypatch.setattr(modul, "_fehlende_pfad_kandidaten", keine_kandidaten)
+    monkeypatch.setattr(modul, "_fub_namen_der_anlage", passende_namen)
+    monkeypatch.setattr(modul, "_anlage_pruefen", _keiner_ohne_volumen)
 
     ergebnis = await flow.async_step_fub_names()
+
     assert ergebnis["type"] == "create_entry"
     assert ergebnis["data"]["fub_names"] == {"kessel": "Kessel", "sys": "Sys"}
 
 
-async def test_config_flow_fub_names_zeigt_formular_bei_abweichung_oder_offline(monkeypatch):
+async def test_fehlt_ein_funktionsblock_zeigt_der_schritt_was_die_anlage_meldet(monkeypatch):
     from eta_heating_ws import config_flow as modul
 
-    flow = _config_flow_fuer(monkeypatch)
+    flow = config_flow_fuer(monkeypatch)
     flow._data = {"host": "192.0.2.10", "port": 8080, "components": ["kessel"]}
 
     async def umbenannt(hass, host, port):
-        return ["Holzkessel", "Sys"]
+        return ["Holzkessel", "Sys", "Diagnose"]
 
     monkeypatch.setattr(modul, "_fub_namen_der_anlage", umbenannt)
     schritt = await flow.async_step_fub_names()
+
     assert schritt["type"] == "form"
     assert schritt["step_id"] == "fub_names"
-    assert schritt["description_placeholders"]["vorhanden"] == "Holzkessel, Sys"
-
-    async def offline(hass, host, port):
-        return []
-
-    monkeypatch.setattr(modul, "_fub_namen_der_anlage", offline)
-    schritt_offline = await flow.async_step_fub_names()
-    assert schritt_offline["type"] == "form"
-    assert schritt_offline["step_id"] == "fub_names"
-    assert schritt_offline["description_placeholders"]["vorhanden"] == "-"
-
-
-async def test_config_flow_pfade_zuordnen_ueberspringbar_oder_mit_override(monkeypatch):
-    from eta_heating_ws.const import CONF_URI_OVERRIDES
-
-    # Überspringbar mit {} -> speichert leere uri_overrides
-    flow_leer = _config_flow_fuer(monkeypatch)
-    flow_leer._online = True
-    flow_leer._data = {"host": "192.0.2.10", "port": 8080, "components": ["kessel"]}
-    flow_leer._pfad_kandidaten = {
-        "ruecklauf_temperatur": {"/48/10391/0/0/12220": "Kessel › Rücklauf"}
-    }
-    flow_leer._menue_werte = {}
-
-    form = await flow_leer.async_step_pfade_zuordnen()
-    assert form["type"] == "form"
-    assert form["step_id"] == "pfade_zuordnen"
-
-    fertig_leer = await flow_leer.async_step_pfade_zuordnen({})
-    assert fertig_leer["type"] == "create_entry"
-    assert fertig_leer["data"][CONF_URI_OVERRIDES] == {}
-
-    # Gewählter Override wird gespeichert
-    flow_wahl = _config_flow_fuer(monkeypatch)
-    flow_wahl._online = True
-    flow_wahl._data = {"host": "192.0.2.10", "port": 8080, "components": ["kessel"]}
-    flow_wahl._pfad_kandidaten = {
-        "ruecklauf_temperatur": {"/48/10391/0/0/12220": "Kessel › Rücklauf"}
-    }
-    flow_wahl._menue_werte = {}
-
-    fertig_wahl = await flow_wahl.async_step_pfade_zuordnen(
-        {"ruecklauf_temperatur": "/48/10391/0/0/12220"}
+    assert schritt["description_placeholders"] == {"vorhanden": "Holzkessel, Sys"}, (
+        "der Block Diagnose wird nirgends gezeigt"
     )
-    assert fertig_wahl["type"] == "create_entry"
-    assert fertig_wahl["data"][CONF_URI_OVERRIDES] == {
-        "ruecklauf_temperatur": "/48/10391/0/0/12220"
-    }
 
+    monkeypatch.setattr(modul, "_fub_namen_der_anlage", _keine_namen)
+    offline = await flow.async_step_fub_names()
 
-async def test_config_flow_dynamische_werte_leer_oder_mit_takt_und_zeiten(monkeypatch, hass):
-    from pathlib import Path
-
-    from eta_heating_ws import weitere_werte as weitere
-    from eta_heating_ws.api import ETAApiClient
-    from eta_heating_ws.const import CONF_WEITERE_WERTE
-
-    stueckholz_menu = (
-        Path(__file__).parent / "fixtures" / "menu_stueckholz.xml"
-    ).read_text(encoding="utf-8")
-    hass.session.menu = stueckholz_menu
-    client = ETAApiClient(hass, hass.session, "192.0.2.10", 8080)
-    menue_werte = weitere.menue_werte(await client.async_get_menu())
-
-    # Leere Auswahl -> sofort create_entry
-    flow_leer = _config_flow_fuer(monkeypatch, hass)
-    flow_leer._online = True
-    flow_leer._data = {"host": "192.0.2.10", "port": 8080, "components": ["kessel"], "scan_interval": 30}
-    flow_leer._menue_werte = menue_werte
-    flow_leer._dynamisch_gruppen = weitere.gruppen_fuer_menue(menue_werte, set())
-
-    form = await flow_leer.async_step_dynamische_werte()
-    assert form["type"] == "form"
-    assert form["step_id"] == "dynamische_werte"
-
-    fertig_leer = await flow_leer.async_step_dynamische_werte({})
-    assert fertig_leer["type"] == "create_entry"
-    assert CONF_WEITERE_WERTE not in fertig_leer["data"]
-
-    # Auswahl inkl. "Zeiten"-Eintrag -> weiter zu weitere_takt -> create_entry
-    zeiten_uri = "/120/10251/12130/0/1110"
-    assert zeiten_uri in flow_leer._dynamisch_gruppen["Zeiten"]
-
-    flow_wahl = _config_flow_fuer(monkeypatch, hass)
-    flow_wahl._online = True
-    flow_wahl._data = {"host": "192.0.2.10", "port": 8080, "components": ["kessel"], "scan_interval": 30}
-    flow_wahl._menue_werte = menue_werte
-    flow_wahl._dynamisch_gruppen = weitere.gruppen_fuer_menue(menue_werte, set())
-
-    takt_form = await flow_wahl.async_step_dynamische_werte({"Zeiten": [zeiten_uri]})
-    assert takt_form["type"] == "form"
-    assert takt_form["step_id"] == "weitere_takt"
-
-    fertig_wahl = await flow_wahl.async_step_weitere_takt(
-        {"weitere_je_abfrage": 25, "weitere_intervall": 30, "weitere_schnell": [zeiten_uri]}
-    )
-    assert fertig_wahl["type"] == "create_entry"
-    gespeichert = fertig_wahl["data"][CONF_WEITERE_WERTE]
-    assert len(gespeichert) == 1
-    assert gespeichert[0]["uri"] == zeiten_uri
-    assert gespeichert[0]["schnell"] is True
-    assert weitere.kategorie_fuer_eintrag(gespeichert[0]) == "Zeiten"
+    assert offline["step_id"] == "fub_names"
+    assert offline["description_placeholders"] == {"vorhanden": "-"}

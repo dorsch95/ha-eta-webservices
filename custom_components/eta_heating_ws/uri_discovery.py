@@ -28,6 +28,8 @@ from .const import (
     absenkwert_schluessel,
     zeitfenster_schluessel,
 )
+from .weitere_werte import gesperrt
+from .zuordnung import zuordenbar
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -228,15 +230,8 @@ Formular gespeichert wurde.
 """
 
 AUSWEICHPFADE = {
-    "kessel_temperatur": [["Kessel", "Kessel"], ["Kessel", "Kessel", "Kessel"]],
-    "ruecklauf_temperatur": [
-        ["Kessel", "Rücklauf"],
-        ["Kessel", "Rücklauf", "Rücklaufmischer", "Ist Temperatur"],
-    ],
-    "abgas_temperatur": [["Eingänge", "Abgas Wendekammer"], ["Kessel", "Abgas"]],
-    "restsauerstoff": [["Kessel", "Restsauerstoff"]],
-    "aussentemperatur": [["Eingänge", "Außentemperatur"], ["System", "Außentemperatur"]],
-    "kessel_zustand": [["Kessel"]],
+    "abgas_temperatur": [["Eingänge", "Abgas Wendekammer"]],
+    "ruecklauf_temperatur": [["Kessel", "Rücklauf"]],
     **{f"{k}_warmwasser": [["Eingänge", "Warmwasserspeicher"]] for k in WARMWASSER_SPEICHER},
     **{
         f"{k}_zustand": [["Warmwasserspeicher", "Warmwasser-Zustand detailliert"]]
@@ -263,6 +258,12 @@ Den Abgasfühler nennt ein Kessel "Abgas Wendekammer", so steht er im
 Menübaum einer echten Anlage unter "Eingänge". Der Name "Abgas" ist dort
 unbelegt: Unter ihm führt eine ältere Regelung den Wert auf der
 Funktionsebene, siehe ANZEIGEWERTE.
+
+Den Rücklauf führt ein Stückholzkessel von 2015 nicht unter "Eingänge",
+sondern nur als Anzeigewert unter Kessel > Rücklauf, siehe
+WEITERE_ANZEIGEWERTE. Kesseltemperatur, Abgas, Restsauerstoff und
+Außentemperatur stehen dort ebenfalls auf der Funktionsebene; sie finden
+schon die ANZEIGEWERTE und brauchen keinen eigenen Pfad.
 """
 
 KENNUNGEN = {
@@ -395,10 +396,22 @@ und wie dort nur im eigenen Funktionsblock. Ein Treffer steht in der
 Diagnose ebenfalls unter "ueber_kennung_gefunden".
 """
 
-WEITERE_KENNUNGEN: dict[str, tuple[str, ...]] = {
-    "ruecklauf_temperatur": ("0/0/12220", "0/11163/2121"),
+WEITERE_ANZEIGEWERTE = {
+    "ruecklauf_temperatur": ("0/0/12220",),
 }
-"""Weitere bestätigte URI-Kennungen je Schlüssel über ANZEIGEWERTE hinaus."""
+"""Anzeigewerte, die ein Messwert neben dem aus ANZEIGEWERTE haben kann.
+
+Den Rücklauf führt die Regelung von 2017 als "Rücklaufmischer" 12999.
+Ein Stückholzkessel von 2015 (Menübaum aus Issue 11) hat stattdessen
+Kessel > Rücklauf mit der Kennung 12220, gelesen mit 69,1 °C bei 81,9 °C
+Kesseltemperatur. Denselben Eintrag führt der Kessel-Block einer neueren
+Anlage, dort neben dem Fühler unter "Eingänge".
+
+Die Kennung 12220 heißt auch in Heizkreis, Puffer und Brennwert-
+Wärmetauscher "Rücklauf". Gesucht wird deshalb wie bei allen Kennungen
+nur im Funktionsblock des Messwerts, hier dem Kessel, und erst nach
+ANZEIGEWERTE.
+"""
 
 FLEXIBLE_PFAD_MUSTER: dict[str, dict[str, tuple]] = {
     "kessel_temperatur": {
@@ -668,7 +681,21 @@ FLEXIBLE_PFAD_MUSTER: dict[str, dict[str, tuple]] = {
         "ausschluss": (),
     },
 }
-"""Stage-4-Muster für Suffix-Pfade und Sprach-Aliase bei abweichender Menü-Tiefe."""
+"""Woran ein fehlender Messwert im Menübaum zu erkennen sein könnte - nur als Vorschlag.
+
+Je Messwert die Enden möglicher Wege ("pfade"), mögliche Namen des
+Objekts ("namen") und Wörter, die einen Weg ausschließen ("ausschluss"),
+etwa "soll" oder "pumpe". Anders als DISCOVERY_PATHS, KENNUNGEN und
+ANZEIGEWERTE ist das eine Vermutung: Die deutschen Namen stammen aus
+Menübäumen echter Anlagen, stehen dort aber an anderer Stelle; die
+englischen sind an keinem Menübaum belegt.
+
+Deshalb übernimmt die Erkennung einen solchen Treffer nie von selbst.
+Er erscheint beim Zuordnen von Hand als Vorschlag, und auch das nur,
+wenn seine Einheit zum Messwert passt, siehe vorschlaege_fuer_zuordnung
+und config_flow.py. An dreizehn bekannten Menübäumen findet die Suche
+nichts, was die übrigen Stufen nicht schon gefunden hätten.
+"""
 
 PUFFER_VOLUMEN = ("Gesamtvolumen", "0/0/13520")
 """Name und Kennung des Gesamtvolumens eines Puffers in Litern.
@@ -1073,140 +1100,171 @@ def fub_namen_im_menue(parsed) -> list[str]:
     return [fub["@name"] for fub in fubs if isinstance(fub, dict) and fub.get("@name")]
 
 
-def fub_namen_abgleich(
-    rollen: list[str],
-    namen_der_anlage: list[str],
-    gespeichert: dict[str, str] | None = None,
-) -> tuple[dict[str, str], list[str]]:
-    """Schlägt FUB-Namen vor und meldet Rollen, deren Name im Menübaum fehlt."""
-    gespeichert = gespeichert or {}
-    vorschlag = fub_namen_vorschlagen(rollen, namen_der_anlage, gespeichert)
-    if not namen_der_anlage:
-        return vorschlag, list(rollen)
+def fub_namen_abgleich(rollen, namen_der_anlage):
+    """Der Vorschlag für die Funktionsblock-Namen und die Rollen, deren Block die Anlage nicht meldet.
 
+    Meldet die Anlage zu jeder Rolle einen Block unter dem vorgeschlagenen
+    Namen, gibt es nichts zu bestätigen: Die Ersteinrichtung überspringt
+    dann den Schritt der Funktionsblock-Namen. Fehlt einer - weil der
+    Block an der Steuerung umbenannt ist oder die Anlage nicht antwortet -,
+    zeigt sie ihn.
+    """
+    vorschlag = fub_namen_vorschlagen(rollen, namen_der_anlage)
     vorhanden = {_vergleichsname(name) for name in namen_der_anlage}
-    fehlende: list[str] = []
-    for rolle in rollen:
-        defaults = FUB_ROLE_DEFAULT_NAMES.get(rolle, [])
-        default_set = {_vergleichsname(name) for name in defaults}
-        gespeicherter_name = gespeichert.get(rolle)
-        if gespeicherter_name and _vergleichsname(gespeicherter_name) not in default_set:
-            if _vergleichsname(gespeicherter_name) not in vorhanden:
-                fehlende.append(rolle)
-            continue
-        kandidat = vorschlag.get(rolle)
-        if (kandidat and _vergleichsname(kandidat) in vorhanden) or any(
-            d in vorhanden for d in default_set
-        ):
-            continue
-        fehlende.append(rolle)
+    fehlende = [rolle for rolle in rollen if _vergleichsname(vorschlag[rolle]) not in vorhanden]
     return vorschlag, fehlende
 
 
-def _indexiere_fub_knoten(fub) -> list[tuple[tuple[str, ...], str, str]]:
-    """Erfasst alle benannten Objekte mit URI in einem Funktionsblock samt Pfad."""
-    if fub is None:
-        return []
-    eintraege: list[tuple[tuple[str, ...], str, str]] = []
+def _block_eintraege(fub) -> list[tuple[tuple[str, ...], str]]:
+    """Alle benannten Objekte eines Funktionsblocks: der Weg dorthin und die Adresse.
 
-    def durchsuchen(knoten, pfad: tuple[str, ...]) -> None:
+    In der Reihenfolge der Anlage. Steht eine Adresse mehrfach im Block,
+    zählt die erste Stelle.
+    """
+    eintraege: list[tuple[tuple[str, ...], str]] = []
+    gesehen: set[str] = set()
+
+    def sammeln(knoten, weg: tuple[str, ...]) -> None:
         for kind in _as_list(knoten.get("object")):
             if not isinstance(kind, dict):
                 continue
             name = (kind.get("@name") or "").strip()
             uri = (kind.get("@uri") or "").strip()
-            neuer_pfad = (*pfad, name) if name else pfad
-            if name and uri:
-                eintraege.append((neuer_pfad, name, uri))
-            durchsuchen(kind, neuer_pfad)
+            pfad = (*weg, name) if name else weg
+            if name and uri and uri not in gesehen:
+                gesehen.add(uri)
+                eintraege.append((pfad, uri))
+            sammeln(kind, pfad)
 
-    durchsuchen(fub, ())
+    if isinstance(fub, dict):
+        sammeln(fub, ())
     return eintraege
 
 
-def _pfad_ausgeschlossen(pfad: tuple[str, ...], ausschluss: tuple[str, ...]) -> bool:
-    if not ausschluss:
-        return False
+def _ausgeschlossen(pfad: tuple[str, ...], ausschluss: tuple[str, ...]) -> bool:
+    """Ob im Weg eines der Wörter steht, die einen Vorschlag ausschließen."""
     gesamt = " ".join(pfad).casefold()
-    return any(wort in gesamt for wort in ausschluss)
+    return any(wort.casefold() in gesamt for wort in ausschluss)
 
 
-def _finde_flexibel(
-    knoten_index: list[tuple[tuple[str, ...], str, str]],
-    key: str,
-) -> str | None:
-    """Sucht in Stage 4 per Suffix-Pfad oder Sprach-Alias im indizierten FUB-Baum."""
+def _vermutung(eintraege: list[tuple[tuple[str, ...], str]], key: str) -> str | None:
+    """Die Adresse, die nach FLEXIBLE_PFAD_MUSTER zu einem Messwert passen könnte.
+
+    Zuerst die Wege, die auf eines der Muster enden, dann die bloßen
+    Namen. Ein Weg mit einem Ausschlusswort zählt nicht.
+    """
     muster = FLEXIBLE_PFAD_MUSTER.get(key)
-    if not muster or not knoten_index:
+    if not muster:
         return None
-    ausschluss = tuple(w.casefold() for w in muster.get("ausschluss", ()))
-
-    for suffix in muster.get("pfade", ()):
-        ziel = tuple(_vergleichsname(teil) for teil in suffix)
-        laenge = len(ziel)
-        for pfad, _name, uri in knoten_index:
-            if len(pfad) < laenge:
-                continue
-            if tuple(_vergleichsname(teil) for teil in pfad[-laenge:]) != ziel:
-                continue
-            if not _pfad_ausgeschlossen(pfad, ausschluss):
+    ausschluss = muster.get("ausschluss", ())
+    for ende in muster.get("pfade", ()):
+        ziel = tuple(_vergleichsname(teil) for teil in ende)
+        for pfad, uri in eintraege:
+            if tuple(_vergleichsname(teil) for teil in pfad[-len(ziel) :]) == ziel and not (
+                _ausgeschlossen(pfad, ausschluss)
+            ):
                 return uri
-
-    namen = {_vergleichsname(n) for n in muster.get("namen", ())}
-    if namen:
-        for pfad, name, uri in knoten_index:
-            if _vergleichsname(name) not in namen:
-                continue
-            if not _pfad_ausgeschlossen(pfad, ausschluss):
-                return uri
-
+    namen = {_vergleichsname(name) for name in muster.get("namen", ())}
+    for pfad, uri in eintraege:
+        if _vergleichsname(pfad[-1]) in namen and not _ausgeschlossen(pfad, ausschluss):
+            return uri
     return None
 
 
-_WOCHENTAG_NAMEN = {_vergleichsname(tag) for tag in WOCHENTAGE.values()}
-_ZEITPLAN_RAUSCHEN = _WOCHENTAG_NAMEN | {"absenktemperatur"}
+_ZEITPLAN_NAMEN = {_vergleichsname(tag) for tag in WOCHENTAGE.values()} | {"absenktemperatur"}
 
 
-def _ist_zeitplan_rauschen(pfad: tuple[str, ...]) -> bool:
-    for teil in pfad:
-        name = _vergleichsname(teil)
-        if name in _ZEITPLAN_RAUSCHEN or name.startswith("zeitfenster "):
-            return True
-    return False
+def _im_zeitprogramm(pfad: tuple[str, ...]) -> bool:
+    """Ob ein Weg durch ein Zeitprogramm führt: über einen Wochentag oder ein Zeitfenster.
+
+    Solche Einträge sind Schaltzeiten, kein Messwert. Ein Zeitprogramm
+    hat an jedem Wochentag drei Fenster - sie füllten die Auswahl beim
+    Zuordnen, ohne dass je eines passte.
+    """
+    return any(
+        _vergleichsname(teil) in _ZEITPLAN_NAMEN or _vergleichsname(teil).startswith("zeitfenster ")
+        for teil in pfad
+    )
+
+
+def _block_des_messwerts(key, fubs_by_role, twin):
+    """Der Funktionsblock, in dem die Erkennung einen Messwert sucht - None, wenn es ihn nicht gibt."""
+    eintrag = DISCOVERY_PATHS.get(key) or PUMPEN.get(key)
+    if eintrag is None:
+        return None
+    if twin is not None and key in TWIN_SCHLUESSEL:
+        return twin
+    return fubs_by_role.get(eintrag[0])
+
+
+def _bloecke(parsed, fub_name_overrides):
+    """Die Funktionsblöcke eines gelesenen Menübaums je Rolle und der Block "Twin", wenn er gewählt ist."""
+    wurzel = parsed.get("eta", {}).get("menu", {}) if isinstance(parsed, dict) else {}
+    fubs = _as_list(wurzel.get("fub") if isinstance(wurzel, dict) else None)
+    fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
+    twin = fubs_by_role.get("twin") if "twin" in (fub_name_overrides or {}) else None
+    return fubs_by_role, twin
 
 
 def kandidaten_fuer_zuordnung(
-    parsed,
-    fehlende_schluessel: list[str],
-    fub_name_overrides: dict[str, str] | None = None,
+    parsed, schluessel, fub_name_overrides=None
 ) -> dict[str, dict[str, str]]:
-    """Liefert je fehlendem Messwert-Schlüssel mögliche {uri: 'Pfad › Name'}-Kandidaten."""
-    fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub")) if isinstance(parsed, dict) else []
-    fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
-    twin = fubs_by_role.get("twin") if "twin" in (fub_name_overrides or {}) else None
-    ergebnis: dict[str, dict[str, str]] = {}
+    """Je Messwert die Einträge seines Funktionsblocks, die sich ihm von Hand zuordnen lassen.
 
-    for key in fehlende_schluessel:
-        eintrag = DISCOVERY_PATHS.get(key) or PUMPEN.get(key)
-        if eintrag is not None:
-            role = eintrag[0]
-        else:
-            puffer_komponente = next(
-                (k for k in PUFFER_SPEICHER if key.startswith(f"{k}_")), None
-            )
-            if puffer_komponente is None:
-                continue
-            role = _rolle(puffer_komponente)
-        fub = twin if (twin is not None and key in TWIN_SCHLUESSEL) else fubs_by_role.get(role)
-        knoten = _indexiere_fub_knoten(fub)
-        gefiltert = [(pfad, uri) for pfad, _name, uri in knoten if not _ist_zeitplan_rauschen(pfad)]
-        auswahl = gefiltert or [(pfad, uri) for pfad, _name, uri in knoten]
-        kandidaten: dict[str, str] = {}
-        for pfad, uri in auswahl:
-            if uri not in kandidaten:
-                kandidaten[uri] = " › ".join(pfad)
-        ergebnis[key] = kandidaten
+    Je Adresse der Weg im Block, etwa "Kessel › Rücklauf". Zur Wahl steht
+    nur der eigene Funktionsblock des Messwerts, ohne die Einträge seiner
+    Zeitprogramme. Ob ein Eintrag nach Art und Einheit passt, zeigt erst
+    sein gelesener Wert, siehe zuordnung.passt. Für Messwerte, die sich
+    nicht zuordnen lassen (zuordnung.zuordenbar), und für gesperrte
+    Funktionsblöcke (weitere_werte.gesperrt) gibt es nichts.
+    """
+    fubs_by_role, twin = _bloecke(parsed, fub_name_overrides)
+    ergebnis: dict[str, dict[str, str]] = {}
+    for key in schluessel:
+        fub = _block_des_messwerts(key, fubs_by_role, twin)
+        if fub is None or not zuordenbar(key) or gesperrt(fub):
+            continue
+        ergebnis[key] = {
+            uri: " › ".join(pfad)
+            for pfad, uri in _block_eintraege(fub)
+            if not _im_zeitprogramm(pfad)
+        }
     return ergebnis
+
+
+def vorschlaege_fuer_zuordnung(parsed, schluessel, fub_name_overrides=None) -> dict[str, str]:
+    """Je Messwert die Adresse, die FLEXIBLE_PFAD_MUSTER für ihn vermutet.
+
+    Nur ein Vorschlag für die Zuordnung von Hand, nie von selbst
+    übernommen - siehe FLEXIBLE_PFAD_MUSTER. Messwerte ohne Vermutung
+    fehlen.
+    """
+    fubs_by_role, twin = _bloecke(parsed, fub_name_overrides)
+    vorschlaege: dict[str, str] = {}
+    for key in schluessel:
+        fub = _block_des_messwerts(key, fubs_by_role, twin)
+        if fub is None or not zuordenbar(key) or gesperrt(fub):
+            continue
+        uri = _vermutung(
+            [(pfad, uri) for pfad, uri in _block_eintraege(fub) if not _im_zeitprogramm(pfad)],
+            key,
+        )
+        if uri:
+            vorschlaege[key] = uri
+    return vorschlaege
+
+
+def _zugeordnet(key, fub, zuordnungen) -> str | None:
+    """Die von Hand zugeordnete Adresse eines Messwerts, wenn sie gilt.
+
+    Sie gilt nur für einen Messwert, der sich zuordnen lässt, und nur,
+    solange die Adresse im eigenen Funktionsblock des Messwerts steht -
+    nie außerhalb und nie in einem gesperrten Block.
+    """
+    uri = (zuordnungen or {}).get(key)
+    if not isinstance(uri, str) or not zuordenbar(key) or gesperrt(fub):
+        return None
+    return uri if any(uri == adresse for _, adresse in _block_eintraege(fub)) else None
 
 
 def _finde_schalter(fub):
@@ -1360,32 +1418,15 @@ def _nummerierte_fuehler(eingaenge):
     return found
 
 
-def _alle_uris(fubs: list) -> set[str]:
-    """Sammelt alle im Menübaum vorkommenden Objekt-URIs."""
-    uris: set[str] = set()
-
-    def sammeln(knoten) -> None:
-        if not isinstance(knoten, dict):
-            return
-        uri = (knoten.get("@uri") or "").strip()
-        if uri:
-            uris.add(uri)
-        for kind in _as_list(knoten.get("object")):
-            sammeln(kind)
-
-    for fub in fubs:
-        sammeln(fub)
-    return uris
-
-
 async def async_discover_uris(
     client,
     fub_name_overrides=None,
     ueber_kennung=None,
     fub_namen=None,
     zeitprogramme=None,
-    uri_overrides=None,
-    dynamisch_gefunden=None,
+    zuordnungen=None,
+    von_hand=None,
+    menue=None,
 ):
     """Ruft /user/menu ab und ermittelt die URIs anhand der Namenspfade.
 
@@ -1403,19 +1444,18 @@ async def async_discover_uris(
     vorbelegten "PufferFlex", wenn die Erkennung auf den älteren Block
     ausgewichen ist. In zeitprogramme, falls übergeben, landen die Lade-
     und Bereitschaftszeiten, siehe WEITERE_ZEITPROGRAMME.
+
+    zuordnungen sind die Adressen, die der Nutzer fehlenden Messwerten von
+    Hand zugeordnet hat, je Schlüssel. Eine gültige Zuordnung geht der
+    Suche vor, siehe _zugeordnet; in von_hand, falls übergeben, landen die
+    Schlüssel, bei denen sie gegriffen hat. Ist der Menübaum schon gelesen,
+    kommt er als menue mit und wird nicht noch einmal geholt.
     """
     discovered = {}
 
-    parsed = await client.async_get_menu()
+    parsed = menue if menue is not None else await client.async_get_menu()
 
     fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
-    alle_uris = _alle_uris(fubs)
-    for key, override_uri in (uri_overrides or {}).items():
-        if isinstance(override_uri, str):
-            ziel_uri = override_uri.strip()
-            if ziel_uri and ziel_uri in alle_uris:
-                discovered[key] = ziel_uri
-
     fubs_by_role = _resolve_fubs_by_role(fubs, fub_name_overrides)
     if fub_namen is not None:
         fub_namen.update(
@@ -1423,21 +1463,17 @@ async def async_discover_uris(
         )
     twin = fubs_by_role.get("twin") if "twin" in (fub_name_overrides or {}) else None
 
-    index_cache: dict[int, list[tuple[tuple[str, ...], str, str]]] = {}
-
-    def fub_index(fub_knoten) -> list[tuple[tuple[str, ...], str, str]]:
-        fid = id(fub_knoten)
-        if fid not in index_cache:
-            index_cache[fid] = _indexiere_fub_knoten(fub_knoten)
-        return index_cache[fid]
-
     for key, (role, path) in DISCOVERY_PATHS.items():
-        if key in discovered:
-            continue
         fub = fubs_by_role.get(role)
         if twin is not None and key in TWIN_SCHLUESSEL:
             fub = twin
         if fub is None:
+            continue
+        uri = _zugeordnet(key, fub, zuordnungen)
+        if uri:
+            discovered[key] = uri
+            if von_hand is not None:
+                von_hand.add(key)
             continue
         found = _find_path(fub, path)
         uri = found.get("@uri") if found is not None else None
@@ -1446,20 +1482,6 @@ async def async_discover_uris(
                 break
             found = _find_path(fub, ausweichpfad)
             uri = found.get("@uri") if found is not None else None
-            if (
-                uri
-                and ueber_kennung is not None
-                and key
-                in (
-                    "kessel_temperatur",
-                    "ruecklauf_temperatur",
-                    "abgas_temperatur",
-                    "restsauerstoff",
-                    "aussentemperatur",
-                )
-                and _kennung(uri) == ANZEIGEWERTE.get(key)
-            ):
-                ueber_kennung.add(key)
         if not uri and key in NAMENSSUCHE:
             uri = _finde_nach_namen(fub, NAMENSSUCHE[key])
         for kennungen in (KENNUNGEN, ANZEIGEWERTE):
@@ -1468,24 +1490,21 @@ async def async_discover_uris(
             uri = _finde_nach_kennung(fub, kennungen[key])
             if uri and ueber_kennung is not None:
                 ueber_kennung.add(key)
-        if not uri and key in WEITERE_KENNUNGEN:
-            for kennung in WEITERE_KENNUNGEN[key]:
-                uri = _finde_nach_kennung(fub, kennung)
-                if uri:
-                    if ueber_kennung is not None:
-                        ueber_kennung.add(key)
-                    break
-        if not uri:
-            uri = _finde_flexibel(fub_index(fub), key)
-            if uri and dynamisch_gefunden is not None:
-                dynamisch_gefunden.add(key)
+        for kennung in WEITERE_ANZEIGEWERTE.get(key, ()):
+            if uri:
+                break
+            uri = _finde_nach_kennung(fub, kennung)
+            if uri and ueber_kennung is not None:
+                ueber_kennung.add(key)
         if uri:
             discovered[key] = uri
 
     for key, (role, stichwort) in PUMPEN.items():
-        if key in discovered:
-            continue
-        uri = _finde_pumpe(fubs_by_role.get(role), stichwort)
+        fub = fubs_by_role.get(role)
+        uri = _zugeordnet(key, fub, zuordnungen) if fub is not None else None
+        if uri and von_hand is not None:
+            von_hand.add(key)
+        uri = uri or _finde_pumpe(fub, stichwort)
         if uri:
             discovered[key] = uri
 
@@ -1494,8 +1513,6 @@ async def async_discover_uris(
         if fub is None or _find_path(fub, RAUM_EXTERN) is None:
             continue
         for key, weg in thermostat_objekte(definition["praefix"]).items():
-            if key in discovered:
-                continue
             if isinstance(weg, list):
                 gefunden = _find_path(fub, weg)
                 uri = gefunden.get("@uri") if gefunden is not None else None
@@ -1505,41 +1522,31 @@ async def async_discover_uris(
                 discovered[key] = uri
 
     for definition in THERMOSTATE.values():
-        for key, uri in _zeitfenster(
-            fubs_by_role.get(definition["role"]), definition["praefix"]
-        ).items():
-            discovered.setdefault(key, uri)
+        discovered.update(
+            _zeitfenster(fubs_by_role.get(definition["role"]), definition["praefix"])
+        )
     namen = zeitprogramme if zeitprogramme is not None else {}
     for rolle, komponente in WEITERE_ZEITPROGRAMME.items():
-        for key, uri in _weitere_zeitprogramme(
-            fubs_by_role.get(rolle), komponente, namen
-        ).items():
-            discovered.setdefault(key, uri)
+        discovered.update(_weitere_zeitprogramme(fubs_by_role.get(rolle), komponente, namen))
 
     for key, role in SWITCH_ROLES.items():
-        if key in discovered:
-            continue
         fub = fubs_by_role.get(role)
         uri = _finde_schalter(fub)
         if uri:
             discovered[key] = uri
 
-    if "kessel_entaschen" not in discovered:
-        entaschen = _finde_nach_namen(fubs_by_role.get("kessel"), ENTASCHEN_TASTE)
-        if entaschen:
-            discovered["kessel_entaschen"] = entaschen
+    entaschen = _finde_nach_namen(fubs_by_role.get("kessel"), ENTASCHEN_TASTE)
+    if entaschen:
+        discovered["kessel_entaschen"] = entaschen
 
     for key, role in BETRIEBSART_ROLES.items():
         fub = fubs_by_role.get(role)
         if fub is None:
             continue
         for modus, name in BETRIEBSART_TASTEN.items():
-            full_key = f"{key}_{modus}"
-            if full_key in discovered:
-                continue
             uri = _finde_nach_namen(fub, name)
             if uri:
-                discovered[full_key] = uri
+                discovered[f"{key}_{modus}"] = uri
 
     puffer_fuehler_indices = []
     alle_fuehler = set()
@@ -1547,24 +1554,15 @@ async def async_discover_uris(
         puffer = fubs_by_role.get(COMPONENTS[komponente]["roles"][0])
         fuehler = _discover_puffer_fuehler(puffer)
         for index, uri in fuehler.items():
-            fuehler_key = f"{komponente}_fuehler_{index}"
-            discovered.setdefault(fuehler_key, uri)
-            alle_fuehler.add(fuehler_key)
-        for key in discovered:
-            if key.startswith(f"{komponente}_fuehler_"):
-                alle_fuehler.add(key)
+            discovered[f"{komponente}_fuehler_{index}"] = uri
+            alle_fuehler.add(f"{komponente}_fuehler_{index}")
         if komponente == "puffer":
-            puffer_fuehler_indices = sorted(
-                int(key.removeprefix("puffer_fuehler_"))
-                for key in discovered
-                if key.startswith("puffer_fuehler_")
-            )
-        if f"{komponente}_volumen" not in discovered:
-            volumen = _finde_nach_namen(puffer, PUFFER_VOLUMEN[0]) or _finde_nach_kennung(
-                puffer, PUFFER_VOLUMEN[1]
-            )
-            if volumen:
-                discovered[f"{komponente}_volumen"] = volumen
+            puffer_fuehler_indices = sorted(fuehler)
+        volumen = _finde_nach_namen(puffer, PUFFER_VOLUMEN[0]) or _finde_nach_kennung(
+            puffer, PUFFER_VOLUMEN[1]
+        )
+        if volumen:
+            discovered[f"{komponente}_volumen"] = volumen
 
     gesucht = set(DISCOVERY_PATHS) | set(PUMPEN) | {f"{k}_volumen" for k in PUFFER_SPEICHER}
     messwerte = (gesucht & set(discovered)) | alle_fuehler

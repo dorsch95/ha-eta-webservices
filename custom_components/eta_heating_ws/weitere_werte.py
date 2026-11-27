@@ -33,34 +33,49 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
 from .api import ETAValue
 
-ZEITEN_KATEGORIE = "Zeiten"
-"""Sammelkategorie für Zeitprogramme und Zeit-Einträge im Menübaum."""
-
-_EINHEIT_KLASSEN: dict[str, SensorDeviceClass] = {
+KLASSEN = {
     "°C": SensorDeviceClass.TEMPERATURE,
-    "K": SensorDeviceClass.TEMPERATURE,
+    "K": getattr(SensorDeviceClass, "TEMPERATURE_DELTA", None),
     "kg": SensorDeviceClass.WEIGHT,
-    "t": SensorDeviceClass.WEIGHT,
     "bar": SensorDeviceClass.PRESSURE,
-    "Pa": SensorDeviceClass.PRESSURE,
-    "hPa": SensorDeviceClass.PRESSURE,
     "mbar": SensorDeviceClass.PRESSURE,
-    "kW": SensorDeviceClass.POWER,
+    "hPa": SensorDeviceClass.PRESSURE,
+    "Pa": SensorDeviceClass.PRESSURE,
     "W": SensorDeviceClass.POWER,
+    "kW": SensorDeviceClass.POWER,
+    "Wh": SensorDeviceClass.ENERGY,
     "kWh": SensorDeviceClass.ENERGY,
     "MWh": SensorDeviceClass.ENERGY,
-    "Wh": SensorDeviceClass.ENERGY,
-    "l/min": SensorDeviceClass.VOLUME_FLOW_RATE,
-    "l/h": SensorDeviceClass.VOLUME_FLOW_RATE,
     "m³/h": SensorDeviceClass.VOLUME_FLOW_RATE,
-    "l": SensorDeviceClass.WATER,
-    "m³": SensorDeviceClass.WATER,
-    "V": SensorDeviceClass.VOLTAGE,
     "mV": SensorDeviceClass.VOLTAGE,
-    "A": SensorDeviceClass.CURRENT,
+    "V": SensorDeviceClass.VOLTAGE,
+    "kV": SensorDeviceClass.VOLTAGE,
     "mA": SensorDeviceClass.CURRENT,
+    "A": SensorDeviceClass.CURRENT,
+    "s": SensorDeviceClass.DURATION,
+    "min": SensorDeviceClass.DURATION,
+    "h": SensorDeviceClass.DURATION,
+    "d": SensorDeviceClass.DURATION,
 }
-_ZAEHLER_WOERTER = ("gesamt", "zähler", "counter", "total", "verbrauch")
+"""Die Geräteklasse eines weiteren Werts nach seiner Einheit, siehe sensor_klassen.
+
+Nur Einheiten, die eine Größe eindeutig benennen und die Home Assistant
+für diese Klasse genau so schreibt - sonst warnt es bei jedem Start.
+Deshalb fehlen Liter und Liter je Minute: Die Anlage schreibt "l", Home
+Assistant "L". Ebenso Prozent, Tonnen und Kubikmeter, die für mehr als
+eine Größe stehen. Kelvin nennt die Anlage bei Unterschieden wie einer
+Einschaltdifferenz; als Temperatur rechnete Home Assistant 5 K in
+-268 °C um. Die Klasse für Unterschiede gibt es erst in neueren
+Versionen von Home Assistant, davor bleibt Kelvin ohne Klasse.
+"""
+
+ZAEHLER = ("zähler", "verbrauch")
+"""Woran im Namen ein Zähler zu erkennen ist.
+
+Im Menübaum echter Anlagen stehen Zähler unter "Zählerstände", und die
+Verbräuche heißen "Gesamtverbrauch", "Verbrauch seit Entaschung" und
+"Verbrauch seit Aschebox leeren".
+"""
 
 PRAEFIX = "wert"
 """Damit beginnt der Schlüssel jedes gewählten Werts, siehe schluessel."""
@@ -112,6 +127,14 @@ schon gewählt war, entfällt samt seinem Sensor, siehe gewaehlte.
 
 GESPERRTE_NAMEN = ("Diagnose", "Part.-Absch.", "Partikelabscheider")
 """Dieselben Blöcke nach ihrem Namen, falls eine Anlage sie unter einer anderen Nummer führt."""
+
+NIE_GENANNT = ("Diagnose",)
+"""Funktionsblöcke, die die Integration nicht einmal beim Namen nennt.
+
+Die Einrichtung zählt auf, welche Funktionsblöcke die Anlage meldet.
+Der Block Diagnose fehlt dort - der Partikelabscheider nicht, er ist
+eine wählbare Komponente.
+"""
 
 TRENNER = " › "
 """Trennt Funktionsblock und Stufen des Menübaums im Namen eines Werts."""
@@ -198,66 +221,54 @@ def bezeichnung(eintrag: dict[str, Any]) -> str:
     return TRENNER.join(teil for teil in [eintrag.get("fub"), *(eintrag.get("pfad") or [])] if teil)
 
 
-def kategorie_fuer_eintrag(eintrag: dict[str, Any]) -> str:
-    """Ordnet einen Menüeintrag in 'Zeiten' oder nach seinem Funktionsblock ein."""
-    pfad = eintrag.get("pfad") or []
-    if any("zeit" in str(teil).casefold() for teil in pfad) or "zeit" in " ".join(
-        str(teil) for teil in pfad
-    ).casefold():
-        return ZEITEN_KATEGORIE
-    return eintrag.get("fub") or "?"
-
-
 def gruppen_fuer_menue(
-    menue_werte: dict[str, dict[str, Any]],
+    menue: dict[str, dict[str, Any]],
     fest: set[str],
     bisher: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, str]]:
-    """Gruppiert wählbare Menüeinträge nach Funktionsblock und schiebt 'Zeiten' ans Ende."""
+    """Die wählbaren Werte je Funktionsblock: je Adresse der Weg im Block.
+
+    Ohne die Adressen der festen Sensoren - es sei denn, sie sind schon
+    gewählt. Ein gewählter Wert, den der Menübaum nicht mehr führt, bleibt
+    in seinem Block stehen und lässt sich so abwählen.
+    """
     bisher = bisher or {}
     gruppen: dict[str, dict[str, str]] = {}
-    verschwunden = {uri: e for uri, e in bisher.items() if uri not in menue_werte}
-    for uri, eintrag in {**menue_werte, **verschwunden}.items():
-        if uri not in bisher and uri in fest:
-            continue
-        kategorie = kategorie_fuer_eintrag(eintrag)
-        if kategorie == ZEITEN_KATEGORIE and eintrag.get("fub"):
-            label = bezeichnung({"fub": eintrag.get("fub"), "pfad": eintrag.get("pfad")})
-        else:
-            label = bezeichnung({"pfad": eintrag.get("pfad")})
-        gruppen.setdefault(kategorie, {})[uri] = label
-    if ZEITEN_KATEGORIE in gruppen:
-        zeiten = gruppen.pop(ZEITEN_KATEGORIE)
-        gruppen[ZEITEN_KATEGORIE] = zeiten
+    verschwunden = {uri: eintrag for uri, eintrag in bisher.items() if uri not in menue}
+    for uri, eintrag in {**menue, **verschwunden}.items():
+        if uri in bisher or uri not in fest:
+            gruppen.setdefault(eintrag.get("fub") or "?", {})[uri] = bezeichnung(
+                {"pfad": eintrag.get("pfad")}
+            )
     return gruppen
 
 
 def sensor_klassen(
-    einheit: str | None, bezeichnung_text: str
+    einheit: str | None, name: str | None
 ) -> tuple[SensorDeviceClass | None, SensorStateClass | None]:
-    """Leitet device_class und state_class aus Einheit und Bezeichnung eines Werts ab."""
-    unit = (einheit or "").strip()
-    name_lower = (bezeichnung_text or "").casefold()
+    """Geräte- und Zustandsklasse eines weiteren Werts, der eine Zahl ist.
 
-    device_class: SensorDeviceClass | None = _EINHEIT_KLASSEN.get(unit)
-    if device_class is None and unit == "%":
-        if "feucht" in name_lower or "humid" in name_lower:
-            device_class = SensorDeviceClass.HUMIDITY
+    Die Geräteklasse folgt der Einheit, siehe KLASSEN. Damit rechnet Home
+    Assistant um, etwa Sekunden in Stunden, und bietet eine Energie dem
+    Energie-Dashboard an.
 
-    if "gestern" in name_lower or "yesterday" in name_lower:
-        return device_class, None
-
-    if device_class == SensorDeviceClass.ENERGY:
-        return device_class, SensorStateClass.TOTAL_INCREASING
-    if device_class == SensorDeviceClass.WEIGHT and any(
-        wort in name_lower for wort in _ZAEHLER_WOERTER
+    Die Zustandsklasse ist die eines Messwerts - außer bei Zählern: Eine
+    Energie zählt immer hoch, so führen es auch die festen Sensoren für
+    Wärmemenge und Ertrag. Ein Gewicht oder eine Dauer zählt hoch, wenn
+    der Name einen Zähler nennt, siehe ZAEHLER. Der Ertrag von gestern
+    ist weder Messwert noch Zähler und bleibt wie beim festen Sensor ohne
+    Zustandsklasse.
+    """
+    klasse = KLASSEN.get((einheit or "").strip())
+    bezeichnung_klein = (name or "").casefold()
+    zaehler = any(wort in bezeichnung_klein for wort in ZAEHLER)
+    if klasse == SensorDeviceClass.ENERGY and "gestern" in bezeichnung_klein:
+        return klasse, None
+    if klasse == SensorDeviceClass.ENERGY or (
+        zaehler and klasse in (SensorDeviceClass.WEIGHT, SensorDeviceClass.DURATION)
     ):
-        return device_class, SensorStateClass.TOTAL_INCREASING
-
-    if device_class is not None or unit:
-        return device_class, SensorStateClass.MEASUREMENT
-
-    return None, None
+        return klasse, SensorStateClass.TOTAL_INCREASING
+    return klasse, SensorStateClass.MEASUREMENT
 
 
 def _als_zahl(text: str) -> float | None:

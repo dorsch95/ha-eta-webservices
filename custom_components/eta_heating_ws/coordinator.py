@@ -124,17 +124,26 @@ type ETAConfigEntry = ConfigEntry["ETADataUpdateCoordinator"]
 """Config Entry, der seinen Koordinator in runtime_data trägt."""
 
 
+BLEIBT_OHNE_ADRESSE = frozenset({"lager_maximum"})
+"""Messwerte, deren Sensor auch ohne Adresse entsteht, selbst wenn fehlende Werte ausgeblendet sind.
+
+Das Fassungsvermögen des Pelletlagers kann aus Home Assistant stammen,
+siehe sensor.ETALagerMaximumSensor.
+"""
+
+
 def build_sensor_defs(
-    discovered_uris, puffer_fuehler_indices, components, hide_missing_sensors: bool = False
+    discovered_uris, puffer_fuehler_indices, components, fehlende_ausblenden: bool = False
 ):
     """Stellt zusammen, welche Sensoren diese Anlage hat und unter welcher URI.
 
     Jede URI stammt aus dem Menübaum dieser Anlage; feste Adressen gibt es
-    nicht. Was der Menübaum nicht hergibt, bekommt trotzdem eine Entität,
-    nur ohne URI - sie zeigt dann dauerhaft "-". Ausgenommen ist, was als
-    "nur_wenn_vorhanden" markiert ist, sowie alle fehlenden Sensoren bei
-    hide_missing_sensors=True. Für nicht ausgewählte Komponenten entsteht
-    nichts.
+    nicht. Was der Menübaum nicht hergibt, bekommt mit fehlende_ausblenden
+    keine Entität. Ohne bekommt es trotzdem eine, nur ohne URI - sie zeigt
+    dann dauerhaft "-", siehe CONF_FEHLENDE_AUSBLENDEN. Ausgenommen ist,
+    was als "nur_wenn_vorhanden" markiert ist: Das entsteht in jedem Fall
+    nur mit URI. Umgekehrt bleibt, was in BLEIBT_OHNE_ADRESSE steht. Für
+    nicht ausgewählte Komponenten entsteht nichts.
 
     Das Gesamtvolumen eines Puffers wird mitgelesen, bekommt aber keinen
     Sensor: Es steht im Zahlenfeld "Puffervolumen", daher der Vermerk
@@ -149,7 +158,8 @@ def build_sensor_defs(
         if info["component"] in aktiv
         and (
             discovered_uris.get(key)
-            or (not hide_missing_sensors and not info.get("nur_wenn_vorhanden"))
+            or key in BLEIBT_OHNE_ADRESSE
+            or (not fehlende_ausblenden and not info.get("nur_wenn_vorhanden"))
         )
     }
 
@@ -169,7 +179,7 @@ def build_sensor_defs(
         for index in indices:
             key = f"{praefix}{index}"
             uri = discovered_uris.get(key)
-            if hide_missing_sensors and not uri:
+            if fehlende_ausblenden and not uri:
                 continue
             sensor_defs[key] = {
                 **puffer_fuehler_info(index, index == last_index, komponente),
@@ -251,8 +261,6 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         pellet_kwh_per_kg: float,
         enable_switches: bool = False,
         enable_errors: bool = True,
-        hide_missing_sensors: bool = False,
-        uri_overrides: dict[str, str] | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -278,12 +286,15 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.puffer_volumen_eingetragen: dict[str, float] = {}
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors
-        self.hide_missing_sensors = hide_missing_sensors
-        self.uri_overrides = dict(uri_overrides or {})
+        self.fehlende_ausblenden = False
+        """Ob Messwerte, die die Anlage nicht führt, keinen Sensor bekommen, siehe CONF_FEHLENDE_AUSBLENDEN."""
+        self.zuordnungen: dict[str, str] = {}
+        """Je Messwert die Adresse, die der Nutzer ihm von Hand zugeordnet hat, siehe zuordnung.py."""
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
         self.ueber_kennung: set[str] = set()
-        self.dynamisch_gefunden: set[str] = set()
+        self.von_hand: set[str] = set()
+        """Die Messwerte, deren Adresse aus einer Zuordnung von Hand stammt."""
         self.fub_namen: dict[str, str] = {}
         self.thermostat_defs: dict[str, dict] = {}
         self.zeitprogramm_defs: dict[str, dict[tuple[str, int], dict]] = {}
@@ -1417,11 +1428,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return zustaende.get(wert.text.strip().casefold())
 
-    async def async_discover(
-        self,
-        fub_name_overrides: dict[str, str],
-        uri_overrides: dict[str, str] | None = None,
-    ) -> None:
+    async def async_discover(self, fub_name_overrides: dict[str, str]) -> None:
         """Ermittelt einmalig die URIs aller Messwerte dieser Anlage.
 
         Ohne Menübaum gibt es nichts abzufragen; Home Assistant bekommt
@@ -1430,9 +1437,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         dem Laden - das allein sind rund 90 Anfragen, die den Start sonst um
         über zehn Sekunden verzögern.
         """
-        if uri_overrides is not None:
-            self.uri_overrides = dict(uri_overrides)
-        self.dynamisch_gefunden.clear()
+        self.von_hand.clear()
         try:
             self.discovered_uris, indices = await async_discover_uris(
                 self.client,
@@ -1440,8 +1445,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 self.ueber_kennung,
                 self.fub_namen,
                 self.zeitprogramm_namen,
-                uri_overrides=self.uri_overrides,
-                dynamisch_gefunden=self.dynamisch_gefunden,
+                zuordnungen=self.zuordnungen,
+                von_hand=self.von_hand,
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
@@ -1453,7 +1458,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             self.discovered_uris,
             indices,
             self.components,
-            hide_missing_sensors=self.hide_missing_sensors,
+            fehlende_ausblenden=self.fehlende_ausblenden,
         )
         self.components_without_data = async_check_components(
             self.hass,

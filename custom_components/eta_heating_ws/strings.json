@@ -27,7 +27,7 @@
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
-          "hide_missing_sensors": "Hide missing sensors",
+          "fehlende_ausblenden": "Hide missing values",
           "enable_switches": "Allow switching the boiler and heating circuits",
           "kessel_sperre": "Create the switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
@@ -36,7 +36,7 @@
         },
         "data_description": {
           "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
-          "hide_missing_sensors": "Do not create sensor entities whose object URI could not be found in the heating system's menu tree instead of showing \"-\".",
+          "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
@@ -47,7 +47,7 @@
       },
       "fub_names": {
         "title": "Confirm function block names",
-        "description": "The fields are pre-filled with the names your system reports, otherwise with the ETA default names. If you renamed a function block (FUB) on the controller, enter the actual name here.\n\nReported by the system: {vorhanden}",
+        "description": "The fields are pre-filled with the names your system reports, otherwise with the ETA default names. If you renamed a function block (FUB) on the controller, enter the actual name here.\n\nYour system reports these function blocks: {vorhanden}",
         "data": {
           "kessel": "FUB name: boiler",
           "twin": "FUB name: pellet unit of the SH TWIN (Twin)",
@@ -183,13 +183,18 @@
           "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
       },
-      "pfade_zuordnen": {
-        "title": "Assign missing sensor paths",
-        "description": "The following fixed sensors could not be found automatically in the heating system's menu tree: {fehlende}.\n\nOptionally pick the matching object from the menu tree for each sensor, or leave a field empty to skip it."
+      "abschluss": {
+        "title": "Almost done",
+        "description": "The heating system is set up. Finish now or add something first. Both are also available later under \"Configure\".",
+        "menu_options": {
+          "fertig": "Finish setup",
+          "weitere_werte": "Select additional values",
+          "fehlende_werte": "Assign missing values"
+        }
       },
-      "dynamische_werte": {
+      "weitere_werte": {
         "title": "Additional values",
-        "description": "Optionally pick additional values from your heating system's menu tree to add as sensors. Each function block has its own field. Type part of a name there to search, for example 'Volllast' - the names are those shown on the controller. Leave everything empty to finish setup directly. The values are only read, never written. At most {hoechstens} values."
+        "description": "Pick values from your heating system's menu tree that should appear as additional sensors. Each function block has its own field. Type part of a name there to search, for example 'Volllast' - the names are those shown on the controller. The values are only read, never written. At most {hoechstens} values."
       },
       "weitere_takt": {
         "title": "Polling of the additional values",
@@ -204,6 +209,17 @@
           "weitere_je_abfrage": "Fewer is easier on the heating system, but each value is read less often.",
           "weitere_intervall": "The fixed values and the fast polling run independently of this."
         }
+      },
+      "fehlende_werte": {
+        "title": "Assign missing values",
+        "description": "Not every heating system has every value, and on some systems a value sits in a different place in the menu than where the integration looks for it. In that case you can assign it here by hand.\n\nPick the values your controller shows and that are missing in Home Assistant. Pre-selected are values that are already assigned and values for which there is a suggestion. In the next step the integration reads the entries of the affected function blocks from the heating system, which can take a moment.",
+        "data": {
+          "werte": "Values I want to assign"
+        }
+      },
+      "werte_zuordnen": {
+        "title": "Assign entries of the heating system",
+        "description": "For each value, pick the entry from your heating system's menu. Only entries from the value's function block that match in kind and unit are offered. The brackets show what the heating system currently displays - compare it with the controller. An empty field means: do not assign. The values are only read, never written."
       }
     },
     "error": {
@@ -213,12 +229,15 @@
       "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating.",
       "zu_viele_werte": "Too many values. Pick at most {hoechstens}.",
       "werte_nicht_lesbar": "The heating system does not return a readable value for: {ohne}. They have been deselected.",
-      "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}."
+      "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}.",
+      "ohne_passenden_eintrag": "Your heating system has no matching entry for these values: {ohne}."
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
       "reconfigure_successful": "Settings saved.",
-      "keine_alte_einrichtung": "No setup from before version 0.26 found."
+      "keine_alte_einrichtung": "No setup from before version 0.26 found.",
+      "cannot_connect": "The heating system cannot be reached right now. Please try again later.",
+      "nichts_zuzuordnen": "No value is missing on your heating system that could be assigned."
     }
   },
   "options": {
@@ -227,7 +246,8 @@
         "title": "Edit ETA heating system",
         "menu_options": {
           "einstellungen": "System settings",
-          "weitere_werte": "Select additional values"
+          "weitere_werte": "Select additional values",
+          "fehlende_werte": "Assign missing values"
         }
       },
       "einstellungen": {
@@ -242,7 +262,7 @@
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
-          "hide_missing_sensors": "Hide missing sensors",
+          "fehlende_ausblenden": "Hide missing values",
           "enable_switches": "Allow switching the boiler and heating circuits",
           "kessel_sperre": "Create the switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
@@ -251,7 +271,7 @@
         },
         "data_description": {
           "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
-          "hide_missing_sensors": "Do not create sensor entities whose object URI could not be found in the heating system's menu tree instead of showing \"-\".",
+          "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead.",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
@@ -390,10 +410,6 @@
           "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
       },
-      "pfade_zuordnen": {
-        "title": "Assign missing sensor paths",
-        "description": "The following fixed sensors could not be found automatically in the heating system's menu tree: {fehlende}.\n\nOptionally pick the matching object from the menu tree for each sensor, or leave a field empty to skip it."
-      },
       "weitere_werte": {
         "title": "Additional values",
         "description": "Pick values from your heating system's menu tree that should appear as additional sensors. Each function block has its own field. Type part of a name there to search, for example 'Volllast' - the names are those shown on the controller. The values are only read, never written. At most {hoechstens} values."
@@ -411,6 +427,17 @@
           "weitere_je_abfrage": "Fewer is easier on the heating system, but each value is read less often.",
           "weitere_intervall": "The fixed values and the fast polling run independently of this."
         }
+      },
+      "fehlende_werte": {
+        "title": "Assign missing values",
+        "description": "Not every heating system has every value, and on some systems a value sits in a different place in the menu than where the integration looks for it. In that case you can assign it here by hand.\n\nPick the values your controller shows and that are missing in Home Assistant. Pre-selected are values that are already assigned and values for which there is a suggestion. In the next step the integration reads the entries of the affected function blocks from the heating system, which can take a moment.",
+        "data": {
+          "werte": "Values I want to assign"
+        }
+      },
+      "werte_zuordnen": {
+        "title": "Assign entries of the heating system",
+        "description": "For each value, pick the entry from your heating system's menu. Only entries from the value's function block that match in kind and unit are offered. The brackets show what the heating system currently displays - compare it with the controller. An empty field means: do not assign. The values are only read, never written."
       }
     },
     "error": {
@@ -419,10 +446,13 @@
       "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating.",
       "zu_viele_werte": "Too many values. Pick at most {hoechstens}.",
       "werte_nicht_lesbar": "The heating system does not return a readable value for: {ohne}. They have been deselected.",
-      "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}."
+      "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}.",
+      "ohne_passenden_eintrag": "Your heating system has no matching entry for these values: {ohne}."
     },
     "abort": {
-      "cannot_connect": "The heating system cannot be reached right now. Please try again later."
+      "cannot_connect": "The heating system cannot be reached right now. Please try again later.",
+      "nichts_zuzuordnen": "No value is missing on your heating system that could be assigned.",
+      "nichts_geaendert": "Nothing was changed."
     }
   },
   "selector": {

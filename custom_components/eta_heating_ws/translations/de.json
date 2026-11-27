@@ -27,7 +27,7 @@
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
-          "hide_missing_sensors": "Fehlende Sensoren ausblenden",
+          "fehlende_ausblenden": "Fehlende Werte ausblenden",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
           "kessel_sperre": "Schalter „Kessel sperren“ anlegen",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
@@ -36,7 +36,7 @@
         },
         "data_description": {
           "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
-          "hide_missing_sensors": "Sensoren ohne gefundene Objekt-URI im Menübaum der Heizung gar nicht erst anlegen, statt „-“ anzuzeigen.",
+          "fehlende_ausblenden": "Was deine Heizung nicht führt, bekommt keinen Sensor - etwa der Pelletverbrauch an einem Stückholzkessel. Ohne Haken entsteht dafür ein Sensor, der „-“ zeigt.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
@@ -47,7 +47,7 @@
       },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
-        "description": "Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, sonst mit den ETA-Standardnamen. Falls du einen Funktionsblock (FUB) an der Steuerung umbenannt hast, trage hier den tatsächlichen Namen ein.\n\nVon der Anlage gemeldete Funktionsblöcke: {vorhanden}",
+        "description": "Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, sonst mit den ETA-Standardnamen. Falls du einen Funktionsblock (FUB) an der Steuerung umbenannt hast, trage hier den tatsächlichen Namen ein.\n\nDeine Anlage meldet diese Funktionsblöcke: {vorhanden}",
         "data": {
           "kessel": "FUB-Name: Kessel",
           "twin": "FUB-Name: Pelletteil des SH TWIN (Twin)",
@@ -183,13 +183,18 @@
           "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
       },
-      "pfade_zuordnen": {
-        "title": "Fehlende Sensor-Pfade zuordnen",
-        "description": "Folgende feste Sensoren konnten im Menübaum der Heizung nicht automatisch gefunden werden: {fehlende}.\n\nWähle bei Bedarf das passende Objekt aus dem Menübaum, oder lass ein Feld leer, um es zu überspringen."
+      "abschluss": {
+        "title": "Fast fertig",
+        "description": "Die Heizung ist eingerichtet. Du kannst jetzt abschließen oder vorher noch etwas ergänzen. Beides geht auch später unter „Konfigurieren“.",
+        "menu_options": {
+          "fertig": "Einrichtung abschließen",
+          "weitere_werte": "Weitere Werte auswählen",
+          "fehlende_werte": "Fehlende Werte zuordnen"
+        }
       },
-      "dynamische_werte": {
+      "weitere_werte": {
         "title": "Weitere Werte",
-        "description": "Wähle optional weitere Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Jeder Funktionsblock hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Lass alles leer, um die Einrichtung direkt abzuschließen. Die Werte werden nur gelesen, nie geschrieben. Höchstens {hoechstens} Werte."
+        "description": "Hier wählst du Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Jeder Funktionsblock hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Die Werte werden nur gelesen, nie geschrieben. Höchstens {hoechstens} Werte."
       },
       "weitere_takt": {
         "title": "Abfrage der weiteren Werte",
@@ -204,6 +209,17 @@
           "weitere_je_abfrage": "Weniger schont die Heizung, dafür kommt jeder Wert seltener dran.",
           "weitere_intervall": "Die festen Werte und die schnelle Abfrage laufen unabhängig davon."
         }
+      },
+      "fehlende_werte": {
+        "title": "Fehlende Werte zuordnen",
+        "description": "Nicht jede Heizung führt jeden Wert, und an manchen Anlagen steht ein Wert an anderer Stelle im Menü, als die Integration ihn sucht. Dann kannst du ihn hier von Hand zuordnen.\n\nWähle die Werte, die deine Heizung am Display zeigt und die in Home Assistant fehlen. Vorgewählt ist, was schon zugeordnet ist und wofür es einen Vorschlag gibt. Im nächsten Schritt liest die Integration die Einträge der betroffenen Funktionsblöcke von der Heizung, das kann einen Moment dauern.",
+        "data": {
+          "werte": "Werte, die ich zuordnen will"
+        }
+      },
+      "werte_zuordnen": {
+        "title": "Einträge der Heizung zuordnen",
+        "description": "Wähle zu jedem Wert den Eintrag aus dem Menü deiner Heizung. Zur Wahl stehen nur Einträge aus dem Funktionsblock des Werts, die nach Art und Einheit passen. In Klammern steht, was die Heizung gerade anzeigt - vergleiche es mit dem Display. Ein leeres Feld heißt: nicht zuordnen. Die Werte werden nur gelesen, nie geschrieben."
       }
     },
     "error": {
@@ -213,12 +229,15 @@
       "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt.",
       "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
       "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt.",
-      "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}."
+      "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}.",
+      "ohne_passenden_eintrag": "Zu diesen Werten führt deine Heizung keinen passenden Eintrag: {ohne}."
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
       "reconfigure_successful": "Einstellungen gespeichert.",
-      "keine_alte_einrichtung": "Keine Einrichtung von vor Version 0.26 gefunden."
+      "keine_alte_einrichtung": "Keine Einrichtung von vor Version 0.26 gefunden.",
+      "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal.",
+      "nichts_zuzuordnen": "An deiner Heizung fehlt kein Wert, der sich zuordnen ließe."
     }
   },
   "options": {
@@ -227,7 +246,8 @@
         "title": "ETA Heizung bearbeiten",
         "menu_options": {
           "einstellungen": "Einstellungen der Anlage",
-          "weitere_werte": "Weitere Werte auswählen"
+          "weitere_werte": "Weitere Werte auswählen",
+          "fehlende_werte": "Fehlende Werte zuordnen"
         }
       },
       "einstellungen": {
@@ -242,7 +262,7 @@
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
-          "hide_missing_sensors": "Fehlende Sensoren ausblenden",
+          "fehlende_ausblenden": "Fehlende Werte ausblenden",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
           "kessel_sperre": "Schalter „Kessel sperren“ anlegen",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
@@ -251,7 +271,7 @@
         },
         "data_description": {
           "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
-          "hide_missing_sensors": "Sensoren ohne gefundene Objekt-URI im Menübaum der Heizung gar nicht erst anlegen, statt „-“ anzuzeigen.",
+          "fehlende_ausblenden": "Was deine Heizung nicht führt, bekommt keinen Sensor - etwa der Pelletverbrauch an einem Stückholzkessel. Ohne Haken entsteht dafür ein Sensor, der „-“ zeigt.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
@@ -390,10 +410,6 @@
           "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
       },
-      "pfade_zuordnen": {
-        "title": "Fehlende Sensor-Pfade zuordnen",
-        "description": "Folgende feste Sensoren konnten im Menübaum der Heizung nicht automatisch gefunden werden: {fehlende}.\n\nWähle bei Bedarf das passende Objekt aus dem Menübaum, oder lass ein Feld leer, um es zu überspringen."
-      },
       "weitere_werte": {
         "title": "Weitere Werte",
         "description": "Hier wählst du Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Jeder Funktionsblock hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Die Werte werden nur gelesen, nie geschrieben. Höchstens {hoechstens} Werte."
@@ -411,6 +427,17 @@
           "weitere_je_abfrage": "Weniger schont die Heizung, dafür kommt jeder Wert seltener dran.",
           "weitere_intervall": "Die festen Werte und die schnelle Abfrage laufen unabhängig davon."
         }
+      },
+      "fehlende_werte": {
+        "title": "Fehlende Werte zuordnen",
+        "description": "Nicht jede Heizung führt jeden Wert, und an manchen Anlagen steht ein Wert an anderer Stelle im Menü, als die Integration ihn sucht. Dann kannst du ihn hier von Hand zuordnen.\n\nWähle die Werte, die deine Heizung am Display zeigt und die in Home Assistant fehlen. Vorgewählt ist, was schon zugeordnet ist und wofür es einen Vorschlag gibt. Im nächsten Schritt liest die Integration die Einträge der betroffenen Funktionsblöcke von der Heizung, das kann einen Moment dauern.",
+        "data": {
+          "werte": "Werte, die ich zuordnen will"
+        }
+      },
+      "werte_zuordnen": {
+        "title": "Einträge der Heizung zuordnen",
+        "description": "Wähle zu jedem Wert den Eintrag aus dem Menü deiner Heizung. Zur Wahl stehen nur Einträge aus dem Funktionsblock des Werts, die nach Art und Einheit passen. In Klammern steht, was die Heizung gerade anzeigt - vergleiche es mit dem Display. Ein leeres Feld heißt: nicht zuordnen. Die Werte werden nur gelesen, nie geschrieben."
       }
     },
     "error": {
@@ -419,10 +446,13 @@
       "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt.",
       "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
       "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt.",
-      "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}."
+      "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}.",
+      "ohne_passenden_eintrag": "Zu diesen Werten führt deine Heizung keinen passenden Eintrag: {ohne}."
     },
     "abort": {
-      "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal."
+      "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal.",
+      "nichts_zuzuordnen": "An deiner Heizung fehlt kein Wert, der sich zuordnen ließe.",
+      "nichts_geaendert": "Es wurde nichts geändert."
     }
   },
   "selector": {

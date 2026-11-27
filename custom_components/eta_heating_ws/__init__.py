@@ -19,9 +19,9 @@ from homeassistant.helpers.typing import ConfigType
 
 from .api import ETAApiClient
 from .const import (
+    CONF_FEHLENDE_AUSBLENDEN,
     CONF_FUB_NAMES,
-    CONF_HIDE_MISSING_SENSORS,
-    CONF_URI_OVERRIDES,
+    CONF_ZUORDNUNGEN,
     CONF_ENABLE_ERRORS,
     CONF_ENABLE_SWITCHES,
     CONF_PELLET_KWH_PER_KG,
@@ -37,7 +37,6 @@ from .const import (
     DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH,
     DEFAULT_FREMDERZEUGER_SCHWELLE,
     DEFAULT_FREMDERZEUGER_SPERREN_NACH,
-    DEFAULT_HIDE_MISSING_SENSORS,
     FREMDERZEUGER_SCHALTER,
     FREMDERZEUGER_SCHWELLE_ZAHL,
     KESSEL_SPERRE,
@@ -51,6 +50,7 @@ from .const import (
     CONF_WETTER,
     CONF_ZEITRAEUME,
     DEFAULT_ENABLE_ERRORS,
+    DEFAULT_FEHLENDE_AUSBLENDEN,
     DEFAULT_ENABLE_SWITCHES,
     DEFAULT_PELLET_KWH_PER_KG,
     DEFAULT_PELLET_PREIS,
@@ -78,13 +78,19 @@ from .const import (
     zeitplan_schluessel,
 )
 from . import weitere_werte
+from . import zuordnung
 from .aschebox import AscheboxPlan, verwaisten_plan_melden
 from .fremderzeuger import Fremderzeuger
 from .switch import kesselsperre_anlegen, verwaiste_sperre_aufloesen
 from .aschebox import speicher as aschebox_speicher
 from .raumfuehler import RaumfuehlerSender
 from .aktionen import async_aktionen_registrieren
-from .coordinator import ETAConfigEntry, ETADataUpdateCoordinator, puffer_fuehler_schluessel
+from .coordinator import (
+    BLEIBT_OHNE_ADRESSE,
+    ETAConfigEntry,
+    ETADataUpdateCoordinator,
+    puffer_fuehler_schluessel,
+)
 from .entitaets_ids import deutsche_namen
 from .prognose_koordinator import ETAPrognoseKoordinator
 from .uebernahme import UEBERNOMMEN_VON, async_uebernehmen
@@ -135,10 +141,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     port = config[CONF_PORT]
     components = components_from_config(config)
     fub_name_overrides = config.get(CONF_FUB_NAMES, {})
-    uri_overrides = config.get(CONF_URI_OVERRIDES) or {}
-    hide_missing_sensors = bool(
-        config.get(CONF_HIDE_MISSING_SENSORS, DEFAULT_HIDE_MISSING_SENSORS)
-    )
     scan_interval = config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     pellet_kwh_per_kg = config.get(
         CONF_PELLET_KWH_PER_KG, DEFAULT_PELLET_KWH_PER_KG
@@ -154,9 +156,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
         pellet_kwh_per_kg,
         enable_switches=config.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
         enable_errors=config.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
-        hide_missing_sensors=hide_missing_sensors,
-        uri_overrides=uri_overrides,
     )
+    coordinator.fehlende_ausblenden = bool(
+        config.get(CONF_FEHLENDE_AUSBLENDEN, DEFAULT_FEHLENDE_AUSBLENDEN)
+    )
+    coordinator.zuordnungen = zuordnung.gueltige(config.get(CONF_ZUORDNUNGEN))
 
     coordinator.pellet_preis = config.get(CONF_PELLET_PREIS, DEFAULT_PELLET_PREIS)
     coordinator.lager_maximum_eingetragen = float(config.get(CONF_LAGER_MAXIMUM) or 0)
@@ -177,7 +181,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ETAConfigEntry) -> bool:
     coordinator.mit_prognose = config.get(CONF_PROGNOSE, DEFAULT_PROGNOSE)
     coordinator.mit_zeitraeumen = config.get(CONF_ZEITRAEUME, DEFAULT_ZEITRAEUME)
     coordinator.deutsche_namen = await hass.async_add_executor_job(deutsche_namen)
-    await coordinator.async_discover(fub_name_overrides, uri_overrides)
+    await coordinator.async_discover(fub_name_overrides)
     await coordinator.async_config_entry_first_refresh()
 
     if coordinator.mit_prognose and _prognose_moeglich(hass, coordinator):
@@ -490,8 +494,6 @@ def entitaet_vorgesehen(
     ofenfuehler: bool = False,
     ofenschalter: bool = False,
     weitere: frozenset[str] | set[str] = frozenset(),
-    hide_missing_sensors: bool = False,
-    mit_uri: set[str] | None = None,
 ) -> bool | None:
     """Sagt, ob eine Entität mit dieser Einrichtung noch entstehen kann.
 
@@ -506,11 +508,7 @@ def entitaet_vorgesehen(
     if weitere_werte.gewaehlt(key):
         return key in weitere
     if key in SENSORS:
-        if SENSORS[key]["component"] not in aktiv:
-            return False
-        if hide_missing_sensors and mit_uri is not None:
-            return key in mit_uri
-        return True
+        return SENSORS[key]["component"] in aktiv
     if key in SWITCHES:
         definition = SWITCHES[key]
         return (
@@ -543,18 +541,6 @@ def entitaet_vorgesehen(
         return ofenschalter and "fremderzeuger" in aktiv
     if key == PELLET_PREIS_ZAHL:
         return "kessel" in aktiv or "lager" in aktiv
-    if key == "pellet_energie_gesamt":
-        if _EIGENE_ENTITAETEN[key] not in aktiv:
-            return False
-        if hide_missing_sensors and mit_uri is not None:
-            return "pellet_gesamtverbrauch" in mit_uri
-        return True
-    if key == "aschebox_status":
-        if _EIGENE_ENTITAETEN[key] not in aktiv:
-            return False
-        if hide_missing_sensors and mit_uri is not None:
-            return {"aschebox_verbrauch", "aschebox_schwelle"} <= mit_uri
-        return True
     if key in _EIGENE_ENTITAETEN:
         return _EIGENE_ENTITAETEN[key] in aktiv
     thermostat = next(
@@ -564,14 +550,69 @@ def entitaet_vorgesehen(
         return enable_switches and thermostat in aktiv
     fuehler = re.fullmatch(r"(puffer\d?)_fuehler_\d+", key)
     if fuehler:
-        if fuehler.group(1) not in aktiv:
-            return False
-        if hide_missing_sensors and mit_uri is not None:
-            return key in mit_uri
-        return True
+        return fuehler.group(1) in aktiv
     if key.startswith("komponente_"):
         return key.removeprefix("komponente_") in aktiv
     return None
+
+
+_HAENGT_AN = {
+    "aschebox_faellig": ("aschebox_verbrauch",),
+    "aschebox_status": ("aschebox_verbrauch", "aschebox_schwelle"),
+    "pellet_energie_gesamt": ("pellet_gesamtverbrauch",),
+    "lager_niedrig": ("lager_vorrat",),
+    "lager_fuellstand": ("lager_vorrat",),
+    "lager_reicht_bis": ("lager_vorrat",),
+    "lager_bestellen_bis": ("lager_vorrat",),
+    "lager_reichweite": ("lager_vorrat",),
+}
+"""Entitäten ohne eigene Adresse, die es nur gibt, solange die Anlage diese Messwerte führt.
+
+Mit ausgeblendeten fehlenden Werten entstehen sie nicht, wenn einer
+ihrer Messwerte fehlt, siehe sensor.py und binary_sensor.py.
+"""
+
+def abhaengige(schluessel: set[str]) -> set[str]:
+    """Diese Messwerte samt den Entitäten, die an ihnen hängen, siehe _HAENGT_AN."""
+    return schluessel | {
+        key for key, quellen in _HAENGT_AN.items() if any(q in schluessel for q in quellen)
+    }
+
+
+def platzhalter(coordinator: ETADataUpdateCoordinator) -> set[str]:
+    """Die Entitäten dieser Anlage, die nur als Platzhalter bestehen.
+
+    Das sind die Sensoren ohne Adresse - sie zeigen dauerhaft "-" - und was
+    an ihnen hängt. Nicht dazu gehört der aus den Fühlern gerechnete
+    Ladezustand eines Puffers: Er hat keine Adresse, aber einen Wert.
+    """
+    gerechnet = {f"{k}_ladezustand" for k in coordinator.puffer_mit_berechnetem_ladezustand}
+    ohne_adresse = {
+        key
+        for key, info in coordinator.sensor_defs.items()
+        if not info.get("uri") and "platform" not in info
+    }
+    return abhaengige(ohne_adresse - gerechnet - BLEIBT_OHNE_ADRESSE)
+
+
+def entitaeten_abmelden(hass: HomeAssistant, entry: ETAConfigEntry, schluessel: set[str]) -> None:
+    """Nimmt die Entitäten zu diesen Schlüsseln aus der Entity Registry.
+
+    Aufgerufen im Augenblick, in dem der Nutzer fehlende Werte ausblendet
+    oder eine Zuordnung von Hand aufhebt, mit dem, was die Anlage in
+    diesem Augenblick nicht führt - siehe config_flow.py. Beim Start räumt
+    die Integration solche Einträge bewusst nicht weg, siehe
+    entitaet_vorgesehen: Ein Aussetzer der Anlage darf keine Entität samt
+    ihren Anpassungen löschen.
+    """
+    registry = er.async_get(hass)
+    praefix = f"eta_static_{entry.entry_id}_"
+    for eintrag in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if eintrag.unique_id.startswith(praefix) and (
+            eintrag.unique_id.removeprefix(praefix) in schluessel
+        ):
+            _LOGGER.info("ETA: %s führt die Anlage nicht, entfernt", eintrag.entity_id)
+            registry.async_remove(eintrag.entity_id)
 
 
 def _verwaiste_entitaeten_entfernen(
@@ -584,7 +625,6 @@ def _verwaiste_entitaeten_entfernen(
     """
     registry = er.async_get(hass)
     praefixe = (f"eta_static_{entry.entry_id}_", f"eta_switch_{entry.entry_id}_")
-    mit_uri = {key for key, info in coordinator.sensor_defs.items() if info.get("uri")}
     for eintrag in er.async_entries_for_config_entry(registry, entry.entry_id):
         praefix = next((p for p in praefixe if eintrag.unique_id.startswith(p)), None)
         if praefix is None:
@@ -602,8 +642,6 @@ def _verwaiste_entitaeten_entfernen(
             coordinator.fremderzeuger is not None and bool(coordinator.fremderzeuger.fuehler),
             coordinator.fremderzeuger is not None and coordinator.fremderzeuger.eigener_schalter,
             set(coordinator.weitere_werte),
-            hide_missing_sensors=coordinator.hide_missing_sensors,
-            mit_uri=mit_uri,
         )
         if vorgesehen is False:
             _LOGGER.info(

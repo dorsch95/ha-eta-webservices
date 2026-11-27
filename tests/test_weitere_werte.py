@@ -548,7 +548,11 @@ async def test_konfigurieren_beginnt_mit_einer_wahl(monkeypatch, hass, entry):
 
     schritt = await flow.async_step_init()
 
-    assert schritt == {"type": "menu", "step_id": "init", "menu_options": ["einstellungen", "weitere_werte"]}
+    assert schritt == {
+        "type": "menu",
+        "step_id": "init",
+        "menu_options": ["einstellungen", "weitere_werte", "fehlende_werte"],
+    }
 
     from eta_heating_ws import config_flow as modul
 

@@ -77,11 +77,20 @@ DEFAULT_ENABLE_SWITCHES = False
 
 DEFAULT_ENABLE_ERRORS = True
 CONF_FUB_NAMES = "fub_names"
-CONF_URI_OVERRIDES = "uri_overrides"
-"""Manuell zugeordnete Objekt-URIs je Messwert-Schlüssel, falls die Erkennung sie nicht fand."""
-CONF_HIDE_MISSING_SENSORS = "hide_missing_sensors"
-"""Blendet Sensoren ohne gefundene URI im Menübaum aus, statt "-" anzuzeigen."""
-DEFAULT_HIDE_MISSING_SENSORS = False
+CONF_ZUORDNUNGEN = "zuordnungen"
+"""Je Messwert die Adresse, die der Nutzer ihm von Hand zugeordnet hat, siehe zuordnung.py."""
+CONF_FEHLENDE_AUSBLENDEN = "fehlende_ausblenden"
+"""Ob Messwerte, die die Anlage nicht führt, keinen Sensor bekommen.
+
+Ohne den Haken entsteht für jeden festen Messwert einer gewählten
+Komponente eine Entität, notfalls als Platzhalter mit "-". So war es
+immer, und Dashboards aus der Zeit davor verlassen sich darauf: Fehlt
+dort eine Entität, zeigt Home Assistant eine Warnung. Deshalb gilt für
+bestehende Einrichtungen weiter DEFAULT_FEHLENDE_AUSBLENDEN, bis der
+Nutzer den Haken setzt. Eine neue Einrichtung schlägt den Haken vor,
+siehe config_flow.py.
+"""
+DEFAULT_FEHLENDE_AUSBLENDEN = False
 CONF_VERBINDUNGEN = "verbindungen"
 """Je Teil der Anlage, woher es seine Wärme bekommt - siehe verbindungen.py."""
 CONF_SCAN_INTERVAL = "scan_interval"
