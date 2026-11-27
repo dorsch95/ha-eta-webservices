@@ -27,6 +27,7 @@
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
+          "hide_missing_sensors": "Fehlende Sensoren ausblenden",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
           "kessel_sperre": "Schalter „Kessel sperren“ anlegen",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
@@ -35,6 +36,7 @@
         },
         "data_description": {
           "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
+          "hide_missing_sensors": "Sensoren ohne gefundene Objekt-URI im Menübaum der Heizung gar nicht erst anlegen, statt „-“ anzuzeigen.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
@@ -45,7 +47,7 @@
       },
       "fub_names": {
         "title": "Funktionsblock-Namen bestätigen",
-        "description": "Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, sonst mit den ETA-Standardnamen. Falls du einen Funktionsblock (FUB) an der Steuerung umbenannt hast, trage hier den tatsächlichen Namen ein.",
+        "description": "Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, sonst mit den ETA-Standardnamen. Falls du einen Funktionsblock (FUB) an der Steuerung umbenannt hast, trage hier den tatsächlichen Namen ein.\n\nVon der Anlage gemeldete Funktionsblöcke: {vorhanden}",
         "data": {
           "kessel": "FUB-Name: Kessel",
           "twin": "FUB-Name: Pelletteil des SH TWIN (Twin)",
@@ -180,13 +182,38 @@
           "verbindung_fremdwaerme": "Fremdwärme lädt in",
           "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
+      },
+      "pfade_zuordnen": {
+        "title": "Fehlende Sensor-Pfade zuordnen",
+        "description": "Folgende feste Sensoren konnten im Menübaum der Heizung nicht automatisch gefunden werden: {fehlende}.\n\nWähle bei Bedarf das passende Objekt aus dem Menübaum, oder lass ein Feld leer, um es zu überspringen."
+      },
+      "dynamische_werte": {
+        "title": "Weitere Werte",
+        "description": "Wähle optional weitere Werte aus dem Menübaum deiner Heizung, die zusätzlich als Sensoren erscheinen. Jeder Funktionsblock hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen - etwa „Volllast“. Lass alles leer, um die Einrichtung direkt abzuschließen. Die Werte werden nur gelesen, nie geschrieben. Höchstens {hoechstens} Werte."
+      },
+      "weitere_takt": {
+        "title": "Abfrage der weiteren Werte",
+        "description": "Du hast {gewaehlt} Werte gewählt. Mit den beiden Reglern stellst du ein, wie viele davon die Integration je Abfrage liest und in welchem Abstand. Passen nicht alle in eine Abfrage, kommen sie reihum dran. Mit der bisherigen Einstellung wird jeder Wert alle {dauer} Sekunden gelesen.",
+        "data": {
+          "weitere_schnell": "Davon mit der schnellen Abfrage",
+          "weitere_je_abfrage": "Werte je Abfrage",
+          "weitere_intervall": "Abstand der Abfragen"
+        },
+        "data_description": {
+          "weitere_schnell": "Diese Werte liest zusätzlich die schnelle Abfrage, im Abstand aus den Einstellungen der Anlage. Höchstens {schnell_hoechstens}.",
+          "weitere_je_abfrage": "Weniger schont die Heizung, dafür kommt jeder Wert seltener dran.",
+          "weitere_intervall": "Die festen Werte und die schnelle Abfrage laufen unabhängig davon."
+        }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zur ETA Heizung fehlgeschlagen. Prüfe IP-Adresse und ob Webservices im Kessel aktiviert sind.",
       "zeitueberwachung_nicht_geschrieben": "Die Zeitüberwachung konnte nicht geschrieben werden.",
       "verbindung_im_kreis": "Diese Auswahl läuft im Kreis - etwa Pufferspeicher 1 an Pufferspeicher 2 und umgekehrt.",
-      "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt."
+      "fremderzeuger_ohne_quelle": "Bitte eine Entität oder einen Temperaturfühler angeben - sonst lässt sich nicht erkennen, ob der Fremderzeuger heizt.",
+      "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
+      "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt.",
+      "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}."
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
@@ -215,6 +242,7 @@
           "pellet_kwh_per_kg": "Heizwert der Pellets (kWh/kg)",
           "pellet_preis": "Pelletpreis (Euro je Tonne, 0 = keine Kosten)",
           "enable_errors": "Störungsmeldungen der Anlage auslesen",
+          "hide_missing_sensors": "Fehlende Sensoren ausblenden",
           "enable_switches": "Kessel und Heizkreise schalten dürfen",
           "kessel_sperre": "Schalter „Kessel sperren“ anlegen",
           "verbrauch_zeitraeume": "Pelletverbrauch je Zeitraum (heute, Woche, Jahr)",
@@ -223,6 +251,7 @@
         },
         "data_description": {
           "components": "Fremdwärme oder Fremderzeuger? Steht dein Ofen am Display der Heizung als eigener Block (ab Werk „F.Wärme“, manchmal umbenannt, etwa „Ofen“), wähle Fremdwärme: Die ETA-Regelung misst und lädt selbst, Home Assistant zeigt es an. Steht er dort nicht, wähle Fremderzeuger: Dann erkennt Home Assistant an einer Entität oder einem Temperaturfühler, ob er heizt, und er kann den Kessel sperren.",
+          "hide_missing_sensors": "Sensoren ohne gefundene Objekt-URI im Menübaum der Heizung gar nicht erst anlegen, statt „-“ anzuzeigen.",
           "verbrauch_zeitraeume": "Drei Sensoren für den Verbrauch, mit Pelletpreis drei weitere für die Kosten.",
           "prognose": "Lernt aus dem Verlauf, wie viel dein Haus bei welcher Außentemperatur verbrennt, und sagt, wie lange das Lager reicht. Bis zu sechs Sensoren.",
           "wetter": "Leer lassen, wenn du keine Vorhersage nutzen willst. Die Prognose rechnet dann mit dem langjährigen Temperaturmittel.",
@@ -360,6 +389,10 @@
           "verbindung_fremdwaerme": "Fremdwärme lädt in",
           "verbindung_fremderzeuger": "Fremderzeuger lädt in"
         }
+      },
+      "pfade_zuordnen": {
+        "title": "Fehlende Sensor-Pfade zuordnen",
+        "description": "Folgende feste Sensoren konnten im Menübaum der Heizung nicht automatisch gefunden werden: {fehlende}.\n\nWähle bei Bedarf das passende Objekt aus dem Menübaum, oder lass ein Feld leer, um es zu überspringen."
       },
       "weitere_werte": {
         "title": "Weitere Werte",

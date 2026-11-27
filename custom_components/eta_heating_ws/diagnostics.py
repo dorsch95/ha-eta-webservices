@@ -224,6 +224,8 @@ async def async_get_config_entry_diagnostics(
                 set(DISCOVERY_PATHS) - set(coordinator.discovered_uris)
             ),
             "ueber_kennung_gefunden": sorted(coordinator.ueber_kennung),
+            "dynamisch_gefunden": sorted(coordinator.dynamisch_gefunden),
+            "uri_overrides": coordinator.uri_overrides,
             "pufferfuehler": {
                 komponente: [
                     int(key.rsplit("_", 1)[1])

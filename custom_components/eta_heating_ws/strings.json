@@ -27,6 +27,7 @@
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
+          "hide_missing_sensors": "Hide missing sensors",
           "enable_switches": "Allow switching the boiler and heating circuits",
           "kessel_sperre": "Create the switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
@@ -35,6 +36,7 @@
         },
         "data_description": {
           "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
+          "hide_missing_sensors": "Do not create sensor entities whose object URI could not be found in the heating system's menu tree instead of showing \"-\".",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
@@ -45,7 +47,7 @@
       },
       "fub_names": {
         "title": "Confirm function block names",
-        "description": "The fields are pre-filled with the names your system reports, otherwise with the ETA default names. If you renamed a function block (FUB) on the controller, enter the actual name here.",
+        "description": "The fields are pre-filled with the names your system reports, otherwise with the ETA default names. If you renamed a function block (FUB) on the controller, enter the actual name here.\n\nReported by the system: {vorhanden}",
         "data": {
           "kessel": "FUB name: boiler",
           "twin": "FUB name: pellet unit of the SH TWIN (Twin)",
@@ -180,13 +182,38 @@
           "verbindung_fremdwaerme": "External heat charges",
           "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
+      },
+      "pfade_zuordnen": {
+        "title": "Assign missing sensor paths",
+        "description": "The following fixed sensors could not be found automatically in the heating system's menu tree: {fehlende}.\n\nOptionally pick the matching object from the menu tree for each sensor, or leave a field empty to skip it."
+      },
+      "dynamische_werte": {
+        "title": "Additional values",
+        "description": "Optionally pick additional values from your heating system's menu tree to add as sensors. Each function block has its own field. Type part of a name there to search, for example 'Volllast' - the names are those shown on the controller. Leave everything empty to finish setup directly. The values are only read, never written. At most {hoechstens} values."
+      },
+      "weitere_takt": {
+        "title": "Polling of the additional values",
+        "description": "You picked {gewaehlt} values. The two sliders set how many of them the integration reads per poll and how far apart the polls are. If they do not all fit into one poll, they take turns. With the current setting each value is read every {dauer} seconds.",
+        "data": {
+          "weitere_schnell": "Of these, with fast polling",
+          "weitere_je_abfrage": "Values per poll",
+          "weitere_intervall": "Time between polls"
+        },
+        "data_description": {
+          "weitere_schnell": "These values are also read by the fast polling, at the interval from the system settings. At most {schnell_hoechstens}.",
+          "weitere_je_abfrage": "Fewer is easier on the heating system, but each value is read less often.",
+          "weitere_intervall": "The fixed values and the fast polling run independently of this."
+        }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to the ETA heating system. Check the IP address and make sure the web services are enabled on the boiler.",
       "zeitueberwachung_nicht_geschrieben": "The time monitoring could not be written.",
       "verbindung_im_kreis": "This selection runs in a circle - for example buffer tank 1 fed by buffer tank 2 and the other way round.",
-      "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating."
+      "fremderzeuger_ohne_quelle": "Please give an entity or a temperature sensor - otherwise there is no way to tell whether the heat source is heating.",
+      "zu_viele_werte": "Too many values. Pick at most {hoechstens}.",
+      "werte_nicht_lesbar": "The heating system does not return a readable value for: {ohne}. They have been deselected.",
+      "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}."
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
@@ -215,6 +242,7 @@
           "pellet_kwh_per_kg": "Energy content of the pellets (kWh/kg)",
           "pellet_preis": "Pellet price (EUR per tonne, 0 = no costs)",
           "enable_errors": "Read fault messages from the heating system",
+          "hide_missing_sensors": "Hide missing sensors",
           "enable_switches": "Allow switching the boiler and heating circuits",
           "kessel_sperre": "Create the switch \"Lock boiler\"",
           "verbrauch_zeitraeume": "Pellet consumption per period (today, week, year)",
@@ -223,6 +251,7 @@
         },
         "data_description": {
           "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
+          "hide_missing_sensors": "Do not create sensor entities whose object URI could not be found in the heating system's menu tree instead of showing \"-\".",
           "verbrauch_zeitraeume": "Three sensors for consumption, with a pellet price three more for the costs.",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
@@ -360,6 +389,10 @@
           "verbindung_fremdwaerme": "External heat charges",
           "verbindung_fremderzeuger": "Stand-alone heat source charges"
         }
+      },
+      "pfade_zuordnen": {
+        "title": "Assign missing sensor paths",
+        "description": "The following fixed sensors could not be found automatically in the heating system's menu tree: {fehlende}.\n\nOptionally pick the matching object from the menu tree for each sensor, or leave a field empty to skip it."
       },
       "weitere_werte": {
         "title": "Additional values",

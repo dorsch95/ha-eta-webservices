@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from typing import Any
 
 import voluptuous as vol
@@ -34,7 +35,13 @@ from . import uebernahme
 from . import weitere_werte as weitere
 from .api import ETAApiClient, ETAApiError, ETAValue
 from .prognose_koordinator import einzige_wetter_entitaet
-from .uri_discovery import async_discover_uris, fub_namen_im_menue, fub_namen_vorschlagen
+from .uri_discovery import (
+    async_discover_uris,
+    fub_namen_abgleich,
+    fub_namen_im_menue,
+    fub_namen_vorschlagen,
+    kandidaten_fuer_zuordnung,
+)
 from .verbindungen import braucht_auswahl, felder, im_kreis, moegliche_quellen, verbindungen
 from .verbindungen import feld as verbindung_feld
 from .zeitplan import programm_zusammenfassen
@@ -51,6 +58,7 @@ from .const import (
     CONF_FREMDERZEUGER_SPERREN_NACH,
     CONF_FREMDERZEUGER_SPERRT,
     CONF_FUB_NAMES,
+    CONF_HIDE_MISSING_SENSORS,
     CONF_KESSEL_GESPERRT,
     CONF_KESSEL_SPERRE,
     CONF_LAGER_MAXIMUM,
@@ -64,6 +72,7 @@ from .const import (
     CONF_PROGNOSE,
     CONF_SCAN_INTERVAL,
     CONF_SCHNELL_INTERVALL,
+    CONF_URI_OVERRIDES,
     CONF_VERBINDUNGEN,
     CONF_WETTER,
     CONF_ZEITRAEUME,
@@ -72,9 +81,11 @@ from .const import (
     DEFAULT_FREMDERZEUGER_FREIGEBEN_NACH,
     DEFAULT_FREMDERZEUGER_NAME,
     DEFAULT_FREMDERZEUGER_SPERREN_NACH,
+    DEFAULT_HIDE_MISSING_SENSORS,
     DEFAULT_PELLET_KWH_PER_KG,
     FREMDERZEUGER_FELDER,
     MAX_FREMDERZEUGER_WARTEZEIT,
+    SENSORS,
     SPERRBARE_KESSEL,
     DEFAULT_PELLET_PREIS,
     DEFAULT_PORT,
@@ -109,10 +120,66 @@ from .const import (
 )
 
 
+_ORIGINAL_ASYNC_GET_MENU = ETAApiClient.async_get_menu
+
+
 async def _test_connection(hass: HomeAssistant, host: str, port: int) -> bool:
     """Prüft, ob die Anlage erreichbar ist und Webservices aktiv sind."""
     client = ETAApiClient(hass, async_get_clientsession(hass), host, port)
     return await client.async_test_connection()
+
+
+def _api_client_fuer_menue(
+    hass: HomeAssistant | None, host: str | None, port: int
+) -> ETAApiClient | None:
+    """Erstellt einen API-Client für Menüabfragen, sofern Adresse und Session verfügbar sind."""
+    if not host:
+        return None
+    try:
+        session = async_get_clientsession(hass)
+    except (AttributeError, KeyError, TypeError):
+        return None
+    if session is None and ETAApiClient.async_get_menu is _ORIGINAL_ASYNC_GET_MENU:
+        return None
+    return ETAApiClient(hass, session, host, port)
+
+
+async def _fehlende_pfad_kandidaten(
+    hass: HomeAssistant,
+    host: str | None,
+    port: int,
+    fub_names: dict[str, str],
+    komponenten: list[str],
+    uri_overrides: dict[str, str] | None = None,
+) -> tuple[dict[str, dict[str, str]], set[str]]:
+    """Ermittelt Kandidaten aus dem Menübaum für nicht gefundene feste Messwerte."""
+    client = _api_client_fuer_menue(hass, host, port)
+    if client is None:
+        return {}, set()
+    overrides = uri_overrides or {}
+    try:
+        parsed = await client.async_get_menu()
+
+        async def _gecachtes_menue() -> dict[str, Any]:
+            return parsed
+
+        client.async_get_menu = _gecachtes_menue  # type: ignore[method-assign]
+        gefunden, _ = await async_discover_uris(
+            client, fub_names, uri_overrides=overrides
+        )
+    except ETAApiError:
+        return {}, set()
+    komponenten_set = set(komponenten)
+    missing_keys = [
+        key
+        for key, info in SENSORS.items()
+        if info.get("component") in komponenten_set
+        and not info.get("nur_wenn_vorhanden")
+        and (key not in gefunden or key in overrides)
+    ]
+    kandidaten = kandidaten_fuer_zuordnung(parsed, missing_keys, fub_names)
+    gefiltert = {key: optionen for key, optionen in kandidaten.items() if optionen}
+    return gefiltert, set(gefunden.values())
 
 
 async def _fub_namen_der_anlage(hass: HomeAssistant, host: str | None, port: int) -> list[str]:
@@ -515,6 +582,12 @@ def _einstellung_felder(current: dict[str, Any], wetter: str | None = None) -> d
             default=current.get(CONF_ENABLE_ERRORS, DEFAULT_ENABLE_ERRORS),
         ): cv.boolean,
         vol.Required(
+            CONF_HIDE_MISSING_SENSORS,
+            default=bool(
+                current.get(CONF_HIDE_MISSING_SENSORS, DEFAULT_HIDE_MISSING_SENSORS)
+            ),
+        ): cv.boolean,
+        vol.Required(
             CONF_ENABLE_SWITCHES,
             default=current.get(CONF_ENABLE_SWITCHES, DEFAULT_ENABLE_SWITCHES),
         ): cv.boolean,
@@ -641,6 +714,33 @@ def _fub_names_schema(roles: list[str], defaults: dict[str, str]) -> vol.Schema:
     )
 
 
+def _pfade_schema(
+    kandidaten: dict[str, dict[str, str]],
+    current_overrides: dict[str, str],
+) -> vol.Schema:
+    """Je nicht gefundenem festen Sensor eine optionale Auswahl aus dem Menübaum."""
+    felder: dict = {}
+    for sensor_key, options_dict in kandidaten.items():
+        vorschlag = current_overrides.get(sensor_key)
+        felder[
+            vol.Optional(
+                sensor_key,
+                description={
+                    "suggested_value": vorschlag if vorschlag in options_dict else None
+                },
+            )
+        ] = SelectSelector(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=uri, label=label)
+                    for uri, label in options_dict.items()
+                ],
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
+    return vol.Schema(felder)
+
+
 class _Anlagenschritte:
     """Die Schritte nach den Funktionsblock-Namen, gleich für Einrichten und Konfigurieren.
 
@@ -700,7 +800,9 @@ class _Anlagenschritte:
             bool(self._data.get(CONF_ENABLE_SWITCHES)),
         )
         if geprueft is None:
+            self._online = False
             return self._fertig(_bisherige_angaben(self._data, self._bisher))
+        self._online = True
         self._ohne_volumen, self._thermostate, self._zeitprogramme = geprueft
         if self._ohne_volumen:
             return await self.async_step_puffer()
@@ -727,7 +829,160 @@ class _Anlagenschritte:
             return await self.async_step_verbindungen()
         if self._bisher.get(CONF_VERBINDUNGEN):
             self._data[CONF_VERBINDUNGEN] = self._bisher[CONF_VERBINDUNGEN]
-        return self._fertig(self._data)
+        return await self._nach_verbindungen()
+
+    async def _nach_verbindungen(self) -> ConfigFlowResult:
+        """Prüft nach den Verbindungen auf fehlende feste Sensor-Pfade."""
+        if self._online:
+            host, port = self._adresse()
+            kandidaten, feste_uris = await _fehlende_pfad_kandidaten(
+                self.hass,
+                host,
+                port,
+                self._data[CONF_FUB_NAMES],
+                self._data[CONF_COMPONENTS],
+                self._bisher.get(CONF_URI_OVERRIDES),
+            )
+            self._pfad_kandidaten = kandidaten
+            self._feste_uris = feste_uris
+            if self._pfad_kandidaten:
+                return await self.async_step_pfade_zuordnen()
+        return await self._nach_pfade_zuordnen()
+
+    async def async_step_pfade_zuordnen(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Optionale manuelle Zuordnung von nicht automatisch gefundenen festen Sensoren."""
+        if user_input is not None:
+            overrides = {
+                k: user_input[k]
+                for k in self._pfad_kandidaten
+                if user_input.get(k)
+            }
+            self._data[CONF_URI_OVERRIDES] = overrides
+            self._feste_uris = self._feste_uris | set(overrides.values())
+            return await self._nach_pfade_zuordnen()
+        return self.async_show_form(
+            step_id="pfade_zuordnen",
+            data_schema=_pfade_schema(
+                self._pfad_kandidaten,
+                self._bisher.get(CONF_URI_OVERRIDES) or {},
+            ),
+            description_placeholders={
+                "fehlende": ", ".join(
+                    SENSORS.get(k, {}).get("name", k) for k in self._pfad_kandidaten
+                )
+            },
+        )
+
+    async def _weitere_werte_auswaehlen(
+        self,
+        *,
+        step_id: str,
+        gruppen: dict[str, dict[str, str]],
+        menue_werte: dict[str, dict[str, Any]],
+        bisher: dict[str, dict[str, Any]],
+        client: ETAApiClient,
+        user_input: dict[str, Any] | None,
+        bei_leer: Callable[[], ConfigFlowResult],
+    ) -> ConfigFlowResult:
+        """Gemeinsamer Auswahlschritt für dynamische Werte im Einrichten und Konfigurieren."""
+        auswahl = {uri for werte in gruppen.values() for uri in werte}
+        platzhalter = {"hoechstens": str(weitere.HOECHSTENS), "ohne": ""}
+        errors: dict[str, str] = {}
+        vorgabe = list(bisher)
+        if user_input is not None:
+            gewaehlt = [
+                uri
+                for uri in dict.fromkeys(
+                    uri for fub in gruppen for uri in user_input.get(fub) or []
+                )
+                if uri in auswahl
+            ]
+            vorgabe = gewaehlt
+            neu = {uri: uri for uri in gewaehlt if uri not in bisher}
+            if len(gewaehlt) > weitere.HOECHSTENS:
+                errors["base"] = "zu_viele_werte"
+            else:
+                gelesen = await client.async_get_values(neu) if neu else {}
+                eintraege = []
+                ohne = []
+                for uri in gewaehlt:
+                    if uri in bisher:
+                        eintraege.append(bisher[uri])
+                        continue
+                    art = weitere.einordnen(gelesen.get(uri))
+                    if art is None:
+                        ohne.append(uri)
+                        continue
+                    eintraege.append({"uri": uri, **menue_werte[uri], **art})
+                if not ohne:
+                    self._weitere_eintraege = eintraege
+                    if not eintraege:
+                        return bei_leer()
+                    return await self.async_step_weitere_takt()
+                errors["base"] = "werte_nicht_lesbar"
+                platzhalter["ohne"] = ", ".join(
+                    weitere.bezeichnung(menue_werte[uri]) for uri in ohne[:5]
+                )
+                vorgabe = [uri for uri in gewaehlt if uri not in ohne]
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=_weitere_schema(gruppen, vorgabe),
+            errors=errors,
+            description_placeholders=platzhalter,
+            last_step=False,
+        )
+
+    def _weitere_takt_formular(
+        self,
+        *,
+        je_abfrage: int,
+        abstand: int,
+        user_input: dict[str, Any] | None,
+        speichern: Callable[[list[dict[str, Any]], int, int], ConfigFlowResult],
+    ) -> ConfigFlowResult:
+        """Gemeinsamer Taktschritt für dynamische Werte im Einrichten und Konfigurieren."""
+        gewaehlt = {
+            eintrag["uri"]: weitere.bezeichnung(eintrag)
+            for eintrag in self._weitere_eintraege
+        }
+        schnell = [
+            eintrag["uri"]
+            for eintrag in self._weitere_eintraege
+            if eintrag.get("schnell")
+        ]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            je_abfrage = weitere.je_abfrage(user_input.get(CONF_WEITERE_JE_ABFRAGE))
+            abstand = weitere.intervall(
+                user_input.get(CONF_WEITERE_INTERVALL), abstand
+            )
+            schnell = [
+                uri
+                for uri in dict.fromkeys(user_input.get(CONF_WEITERE_SCHNELL) or [])
+                if uri in gewaehlt
+            ]
+            if len(schnell) <= weitere.SCHNELL_HOECHSTENS:
+                eintraege = [
+                    {
+                        **{k: v for k, v in eintrag.items() if k != "schnell"},
+                        **({"schnell": True} if eintrag["uri"] in schnell else {}),
+                    }
+                    for eintrag in self._weitere_eintraege
+                ]
+                return speichern(eintraege, je_abfrage, abstand)
+            errors["base"] = "zu_viele_schnelle_werte"
+        return self.async_show_form(
+            step_id="weitere_takt",
+            data_schema=_takt_schema(gewaehlt, schnell, je_abfrage, abstand),
+            errors=errors,
+            description_placeholders={
+                "gewaehlt": str(len(gewaehlt)),
+                "dauer": f"{weitere.abfrage_alle(len(gewaehlt), abstand, je_abfrage):g}",
+                "schnell_hoechstens": str(weitere.SCHNELL_HOECHSTENS),
+            },
+        )
 
     async def async_step_verbindungen(
         self, user_input: dict[str, Any] | None = None
@@ -748,7 +1003,7 @@ class _Anlagenschritte:
             }
             if not im_kreis(komponenten, gewaehlt):
                 self._data[CONF_VERBINDUNGEN] = gewaehlt
-                return self._fertig(self._data)
+                return await self._nach_verbindungen()
             errors["base"] = "verbindung_im_kreis"
             wege = {**verbindungen(komponenten), **gewaehlt}
         return self.async_show_form(
@@ -861,6 +1116,12 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
+        self._pfad_kandidaten: dict[str, dict[str, str]] = {}
+        self._feste_uris: set[str] = set()
+        self._menue_werte: dict[str, dict[str, Any]] | None = None
+        self._weitere_eintraege: list[dict[str, Any]] = []
+        self._dynamisch_gruppen: dict[str, dict[str, str]] = {}
+        self._online: bool = False
         self._neu_gewaehlt = False
 
     _bisher: dict[str, Any] = {}
@@ -1030,12 +1291,86 @@ class ETAConfigFlow(_Anlagenschritte, ConfigFlow, domain=DOMAIN):
             return await self._nach_namen()
 
         host, port = self._adresse()
-        vorschlag = fub_namen_vorschlagen(
-            roles, await _fub_namen_der_anlage(self.hass, host, port)
-        )
+        anlagen_fubs = await _fub_namen_der_anlage(self.hass, host, port)
+        vorschlag, fehlende = fub_namen_abgleich(roles, anlagen_fubs)
+        if not fehlende:
+            self._data[CONF_FUB_NAMES] = vorschlag
+            return await self._nach_namen()
         return self.async_show_form(
             step_id="fub_names",
             data_schema=_fub_names_schema(roles, vorschlag),
+            description_placeholders={
+                "vorhanden": ", ".join(anlagen_fubs) if anlagen_fubs else "-"
+            },
+        )
+
+    async def _nach_pfade_zuordnen(self) -> ConfigFlowResult:
+        """Nach der Pfadzuordnung: optionale Auswahl weiterer dynamischer Werte."""
+        if not self._online:
+            return self._fertig(self._data)
+        if self._menue_werte is None:
+            host, port = self._adresse()
+            client = _api_client_fuer_menue(self.hass, host, port)
+            if client is None:
+                return self._fertig(self._data)
+            try:
+                self._menue_werte = weitere.menue_werte(await client.async_get_menu())
+            except ETAApiError:
+                return self._fertig(self._data)
+        gruppen = weitere.gruppen_fuer_menue(self._menue_werte, self._feste_uris)
+        if not gruppen:
+            return self._fertig(self._data)
+        self._dynamisch_gruppen = gruppen
+        return await self.async_step_dynamische_werte()
+
+    async def async_step_dynamische_werte(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Optionale Auswahl dynamischer Zusatz-Sensoren direkt beim Einrichten."""
+        menue_werte = self._menue_werte or {}
+        gruppen = self._dynamisch_gruppen or weitere.gruppen_fuer_menue(
+            menue_werte, self._feste_uris
+        )
+        if not gruppen:
+            return self._fertig(self._data)
+        host, port = self._adresse()
+        try:
+            session = async_get_clientsession(self.hass)
+        except (AttributeError, KeyError, TypeError):
+            session = None
+        client = ETAApiClient(self.hass, session, host, port)
+        return await self._weitere_werte_auswaehlen(
+            step_id="dynamische_werte",
+            gruppen=gruppen,
+            menue_werte=menue_werte,
+            bisher={},
+            client=client,
+            user_input=user_input,
+            bei_leer=lambda: self._fertig(self._data),
+        )
+
+    async def async_step_weitere_takt(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Takt der beim Einrichten gewählten zusätzlichen Werte."""
+        je_abfrage = weitere.je_abfrage(None)
+        abstand = weitere.intervall(
+            None, self._data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        )
+
+        def speichern(
+            eintraege: list[dict[str, Any]], je: int, intervall_sek: int
+        ) -> ConfigFlowResult:
+            self._data[CONF_WEITERE_WERTE] = eintraege
+            self._data[CONF_WEITERE_JE_ABFRAGE] = je
+            self._data[CONF_WEITERE_INTERVALL] = intervall_sek
+            return self._fertig(self._data)
+
+        return self._weitere_takt_formular(
+            je_abfrage=je_abfrage,
+            abstand=abstand,
+            user_input=user_input,
+            speichern=speichern,
         )
 
     @staticmethod
@@ -1052,6 +1387,9 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         self._ohne_volumen: list[str] = []
         self._thermostate: dict[str, dict] = {}
         self._zeitprogramme: dict[str, dict[tuple[str, int], str]] = {}
+        self._pfad_kandidaten: dict[str, dict[str, str]] = {}
+        self._feste_uris: set[str] = set()
+        self._online: bool = False
         self._menue_werte: dict[str, dict[str, Any]] | None = None
         """Die wählbaren Werte aus dem Menübaum, einmal je Dialog gelesen."""
         self._weitere_eintraege: list[dict[str, Any]] = []
@@ -1115,7 +1453,13 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             }
         if self._current.get(CONF_KESSEL_GESPERRT):
             daten = {CONF_KESSEL_GESPERRT: self._current[CONF_KESSEL_GESPERRT], **daten}
+        if CONF_URI_OVERRIDES not in daten and self._current.get(CONF_URI_OVERRIDES):
+            daten = {CONF_URI_OVERRIDES: self._current[CONF_URI_OVERRIDES], **daten}
         return self.async_create_entry(title="", data=daten)
+
+    async def _nach_pfade_zuordnen(self) -> ConfigFlowResult:
+        """Schließt den Optionen-Dialog nach der Pfadzuordnung ab."""
+        return self._fertig(self._data)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -1149,58 +1493,15 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         bisher = self._weitere_bisher()
         koordinator = getattr(self.config_entry, "runtime_data", None)
         fest = set(koordinator.abfragbare_uris.values()) if koordinator is not None else set()
-        gruppen: dict[str, dict[str, str]] = {}
-        verschwunden = {uri: e for uri, e in bisher.items() if uri not in self._menue_werte}
-        for uri, eintrag in {**self._menue_werte, **verschwunden}.items():
-            if uri in bisher or uri not in fest:
-                gruppen.setdefault(eintrag.get("fub") or "?", {})[uri] = weitere.bezeichnung(
-                    {"pfad": eintrag.get("pfad")}
-                )
-        auswahl = {uri for werte in gruppen.values() for uri in werte}
-        platzhalter = {"hoechstens": str(weitere.HOECHSTENS), "ohne": ""}
-        errors: dict[str, str] = {}
-        vorgabe = list(bisher)
-        if user_input is not None:
-            gewaehlt = [
-                uri
-                for uri in dict.fromkeys(
-                    uri for fub in gruppen for uri in user_input.get(fub) or []
-                )
-                if uri in auswahl
-            ]
-            vorgabe = gewaehlt
-            neu = {uri: uri for uri in gewaehlt if uri not in bisher}
-            if len(gewaehlt) > weitere.HOECHSTENS:
-                errors["base"] = "zu_viele_werte"
-            else:
-                gelesen = await client.async_get_values(neu) if neu else {}
-                eintraege = []
-                ohne = []
-                for uri in gewaehlt:
-                    if uri in bisher:
-                        eintraege.append(bisher[uri])
-                        continue
-                    art = weitere.einordnen(gelesen.get(uri))
-                    if art is None:
-                        ohne.append(uri)
-                        continue
-                    eintraege.append({"uri": uri, **self._menue_werte[uri], **art})
-                if not ohne:
-                    self._weitere_eintraege = eintraege
-                    if not eintraege:
-                        return self._weitere_speichern([])
-                    return await self.async_step_weitere_takt()
-                errors["base"] = "werte_nicht_lesbar"
-                platzhalter["ohne"] = ", ".join(
-                    weitere.bezeichnung(self._menue_werte[uri]) for uri in ohne[:5]
-                )
-                vorgabe = [uri for uri in gewaehlt if uri not in ohne]
-        return self.async_show_form(
+        gruppen = weitere.gruppen_fuer_menue(self._menue_werte, fest, bisher)
+        return await self._weitere_werte_auswaehlen(
             step_id="weitere_werte",
-            data_schema=_weitere_schema(gruppen, vorgabe),
-            errors=errors,
-            description_placeholders=platzhalter,
-            last_step=False,
+            gruppen=gruppen,
+            menue_werte=self._menue_werte,
+            bisher=bisher,
+            client=client,
+            user_input=user_input,
+            bei_leer=lambda: self._weitere_speichern([]),
         )
 
     def _weitere_bisher(self) -> dict[str, dict[str, Any]]:
@@ -1241,41 +1542,12 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         welchem Abstand die Abfragen kommen. Dazu die Wahl, welche der eben
         gewählten Werte zusätzlich die schnelle Abfrage liest.
         """
-        gewaehlt = {
-            eintrag["uri"]: weitere.bezeichnung(eintrag) for eintrag in self._weitere_eintraege
-        }
         je_abfrage, abstand = self._weitere_takt()
-        schnell = [
-            eintrag["uri"] for eintrag in self._weitere_eintraege if eintrag.get("schnell")
-        ]
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            je_abfrage = weitere.je_abfrage(user_input.get(CONF_WEITERE_JE_ABFRAGE))
-            abstand = weitere.intervall(user_input.get(CONF_WEITERE_INTERVALL), abstand)
-            schnell = [
-                uri
-                for uri in dict.fromkeys(user_input.get(CONF_WEITERE_SCHNELL) or [])
-                if uri in gewaehlt
-            ]
-            if len(schnell) <= weitere.SCHNELL_HOECHSTENS:
-                eintraege = [
-                    {
-                        **{k: v for k, v in eintrag.items() if k != "schnell"},
-                        **({"schnell": True} if eintrag["uri"] in schnell else {}),
-                    }
-                    for eintrag in self._weitere_eintraege
-                ]
-                return self._weitere_speichern(eintraege, je_abfrage, abstand)
-            errors["base"] = "zu_viele_schnelle_werte"
-        return self.async_show_form(
-            step_id="weitere_takt",
-            data_schema=_takt_schema(gewaehlt, schnell, je_abfrage, abstand),
-            errors=errors,
-            description_placeholders={
-                "gewaehlt": str(len(gewaehlt)),
-                "dauer": f"{weitere.abfrage_alle(len(gewaehlt), abstand, je_abfrage):g}",
-                "schnell_hoechstens": str(weitere.SCHNELL_HOECHSTENS),
-            },
+        return self._weitere_takt_formular(
+            je_abfrage=je_abfrage,
+            abstand=abstand,
+            user_input=user_input,
+            speichern=self._weitere_speichern,
         )
 
     async def async_step_einstellungen(

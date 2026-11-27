@@ -30,12 +30,12 @@ Die Karte [ETA Übersicht](#neue-karte-eta-übersicht) als Anlagenbild, als Kach
 **ETA Web-Services** reads ETA heating systems (pellet, wood chip and log boilers with buffer tanks, hot water, heating circuits, solar, PV heating module, pellet store and more) **entirely locally** via the ETAtouch webservices built into the boiler. Read-only by default; switching has to be enabled explicitly.
 
 - Install via HACS, restart, then **Settings → Devices & services → Add integration → ETA Web-Services**. Enter the boiler's IP address (port 8080) and what your system has.
-- Values are found by their names in the boiler's menu tree, not by fixed addresses. The search uses the German menu names. With another display language, enter your function block names as the display shows them.
+- Values are found by their names in the boiler's menu tree, not by fixed addresses. A multi-stage discovery supports pellet, wood chip, and log boilers with various firmware layouts. With another display language, enter your function block names as the display shows them.
 - Entity IDs are the same in every language (e.g. `sensor.eta_heizung_kesseltemperatur`), display names are translated.
 - The card **ETA Overview** needs no YAML: add it like any other card and pick tiles, a system diagram or a compact list. The card **ETA Zeitprogramm** shows and edits time programs.
 - With switching enabled: boiler on/off, heating circuit modes, thermostat, time programs, ash box plan, pellet store and buffer tank volume, and locking the boiler while a wood stove heats.
 - A self-learning forecast predicts tomorrow's pellet consumption and the day the pellet store runs empty.
-- Any other value from the boiler's menu tree can be added as a read-only sensor under **Configure → Select additional values**.
+- Any other value from the boiler's menu tree can be added as a read-only sensor under **Configure → Select additional values** (including a dedicated **Times** category with proper duration and total-increasing classes for long-term statistics). Missing or unused base sensors can optionally be hidden.
 - Tested with webservices 1.2 and one older control with webservices 1.1 (read-only there).
 - Problems: open an [issue](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) and attach the **diagnostics file** (device page → *Download diagnostics*). The IP address is redacted.
 
@@ -83,10 +83,11 @@ Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** die In
 | Pelletverbrauch je Zeitraum | an | heute, Woche und Jahr |
 | Pelletprognose und Reichweite des Lagers | an | siehe [Verbrauchsprognose](#-verbrauchsprognose-und-reichweite-des-lagers) |
 | Wettervorhersage | automatisch | für die Prognose |
+| Nicht vorhandene Sensoren ausblenden | aus | blendet nicht auflösbare Sensoren (z. B. reine Pellet-Werte an Stückholzkesseln) komplett aus, statt `-` anzuzeigen |
 
 **2. Funktionsblock-Namen bestätigen**
 
-Die Felder sind mit den Namen vorausgefüllt, die deine Anlage meldet, siehe [Funktionsblock-Namen](#funktionsblock-namen).
+Stimmen alle erkannten Funktionsblöcke mit den Standard- oder vorhandenen Namen überein, wird dieser Schritt automatisch übersprungen. Gibt es Abweichungen oder ist die Anlage offline, sind die Felder mit den gemeldeten bzw. Standardnamen vorausgefüllt, siehe [Funktionsblock-Namen](#funktionsblock-namen).
 
 **3. Puffervolumen**
 
@@ -94,6 +95,8 @@ Der Schritt erscheint nur beim älteren Funktionsblock „Puffer“: Trag die Li
 
 **Weitere Schritte, je nach Anlage**
 
+- **Pfade zuordnen (optional):** Konnten einzelne Kernmesswerte im Menübaum nicht automatisch zugeordnet werden (z. B. bei abweichenden Menüpfaden oder seltenen Firmwareständen), kannst du sie aus den Menükandidaten manuell zuweisen oder den Schritt einfach überspringen.
+- **Zusätzliche Werte auswählen (optional):** Auf Wunsch kannst du bereits bei der Ersteinrichtung zusätzliche Menüsensoren und deren Takt festlegen, siehe [Weitere Werte](#weitere-werte).
 - **Fremderzeuger**, wenn angekreuzt, siehe [Fremderzeuger](#fremderzeuger).
 - **Raumfühler** und **Zeitprogramm aus Home Assistant**, nur mit Schreibzugriff, siehe [Thermostat und Raumfühler](#thermostat-und-raumfühler-aus-home-assistant) und [Zeitprogramm aus Home Assistant](#zeitprogramm-aus-home-assistant).
 - **Wer hängt woran**, nur mit mehreren Pufferspeichern oder einer Fernleitung, siehe [Neue Karte „ETA Übersicht“](#neue-karte-eta-übersicht).
@@ -324,9 +327,11 @@ Das sagt das Attribut `status` jedes Sensors:
 
 ### Weitere Werte
 
-Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an einer echten Anlage über tausend. Unter **Konfigurieren → Weitere Werte auswählen** suchst du dir daraus aus, was du zusätzlich als Sensor haben willst, etwa Betriebsstunden oder Zählerstände.
+Der Menübaum einer Anlage führt weit mehr Werte als die festen Sensoren, an einer echten Anlage über tausend. Unter **Konfigurieren → Weitere Werte auswählen** (oder optional direkt beim Einrichten) suchst du dir daraus aus, was du zusätzlich als Sensor haben willst, etwa Betriebsstunden oder Zählerstände.
 
 - **Auswählen:** Jeder Funktionsblock deiner Heizung hat sein eigenes Feld. Tipp dort einen Teil des Namens ein, um zu suchen. Der Sensor heißt wie der Weg im Menübaum, etwa „Kessel › Zählerstände › Zähler Zündungen“.
+- **Kategorie Zeiten:** Neben den Funktionsblöcken gibt es den separaten Bereich **Zeiten**. Er fasst Betriebsstunden, Zählerstände und Zeittakte aus allen Blöcken der Heizung übersichtlich zusammen.
+- **Zähler und Zeiteinheiten:** Werte mit Zeiteinheiten erhalten automatisch die Geräteklasse `duration`, Zählerstände und kumulative Verbräuche die Zustandsklasse `total_increasing` für die langfristige Statistik in Home Assistant.
 - **Nur lesen:** Geschrieben wird nie. Einheit und Text kommen von der Heizung.
 - **Nicht zur Wahl:** der Funktionsblock „Diagnose“, weil er am Display der Heizung erst nach Eingabe eines Passworts zu sehen ist, und der Partikelabscheider, von dem die Integration nur Spannung, Strom und Leistung führt.
 - **Takt:** Die weiteren Werte werden getrennt von den festen gelesen. Im zweiten Schritt stellst du mit zwei Reglern ein, wie viele je Abfrage gelesen werden (ab Werk 25) und in welchem Abstand (ab Werk dein Abfrageintervall). Passen nicht alle in eine Abfrage, kommen sie reihum dran. Höchstens 100 Werte. Wie oft ein Wert drankommt, steht in seinem Attribut `abfrage_alle`.
@@ -397,7 +402,8 @@ Die Karte zeigt je nach Breite 2 (Handy), 3 (Tablet) oder 4 Spalten (ab 1040 px)
 
 Welche Werte ankommen, entscheidet die Anlage.
 
-- **Pelletkessel** führen einen Gesamtverbrauch. Daraus entstehen Energiewert, Verbrauch je Zeitraum und Prognose. **Hackgut und Stückholz** messen ihren Verbrauch nicht.
+- **Pelletkessel** führen einen Gesamtverbrauch. Daraus entstehen Energiewert, Verbrauch je Zeitraum und Prognose. **Hackgut und Stückholz** messen ihren Verbrauch nicht. Reine Pellet-Sensoren (wie Pellets-Vorrat oder Aschebox) lassen sich mit der Option *Nicht vorhandene Sensoren ausblenden* verbergen.
+- **Dynamische Erkennung & Stückholzkessel:** Die Integration nutzt eine mehrstufige Menü-Erkennung. Auch Zwischenknoten mit Messwerten (wie z. B. die Rücklauftemperatur älterer Stückholz- und Scheitholzkessel) und alternative Menüstrukturen werden automatisch aufgelöst.
 - **TWIN:** für einen Stückholzkessel mit angebautem Pelletteil (SH TWIN). Dann erscheinen Pelletverbrauch, Tagesbehälter und Aschebox wie bei einem Pelletkessel.
 - **Abgastemperatur:** nur, wenn der Kessel einen Abgasfühler im Menübaum führt.
 - **Pelletlager:** Vorrat, Warngrenze und Fassungsvermögen kommen von der Anlage, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
