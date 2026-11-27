@@ -230,7 +230,8 @@
       "zu_viele_werte": "Too many values. Pick at most {hoechstens}.",
       "werte_nicht_lesbar": "The heating system does not return a readable value for: {ohne}. They have been deselected.",
       "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}.",
-      "ohne_passenden_eintrag": "Your heating system has no matching entry for these values: {ohne}."
+      "ohne_passenden_eintrag": "Your heating system has no matching entry for these values: {ohne}.",
+      "doppelt_zugeordnet": "The same entry is assigned to two values. Pick a separate one for each value."
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
@@ -448,7 +449,9 @@
       "zu_viele_werte": "Too many values. Pick at most {hoechstens}.",
       "werte_nicht_lesbar": "The heating system does not return a readable value for: {ohne}. They have been deselected.",
       "zu_viele_schnelle_werte": "Too many values for fast polling. Pick at most {schnell_hoechstens}.",
-      "ohne_passenden_eintrag": "Your heating system has no matching entry for these values: {ohne}."
+      "ohne_passenden_eintrag": "Your heating system has no matching entry for these values: {ohne}.",
+      "cannot_connect": "The heating system is not responding right now. Try again.",
+      "doppelt_zugeordnet": "The same entry is assigned to two values. Pick a separate one for each value."
     },
     "abort": {
       "cannot_connect": "The heating system cannot be reached right now. Please try again later.",

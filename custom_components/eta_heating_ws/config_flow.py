@@ -32,11 +32,12 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from . import abhaengige, entitaeten_abmelden, platzhalter
+from . import abhaengige, entitaeten_abmelden, ohne_adresse
 from . import uebernahme
 from . import weitere_werte as weitere
 from . import zuordnung
 from .api import ETAApiClient, ETAApiError, ETAValue
+from .coordinator import build_sensor_defs
 from .prognose_koordinator import einzige_wetter_entitaet
 from .uri_discovery import (
     async_discover_uris,
@@ -744,10 +745,12 @@ class _Anlagenschritte:
     """Je fehlendem Messwert die Einträge seines Funktionsblocks, siehe _zuordenbare."""
     _zuordnen: list[str] = []
     """Die Messwerte, die der Nutzer im ersten Schritt der Zuordnung gewählt hat."""
-    _vorschlaege: dict[str, str] = {}
-    """Je Messwert die vorgeschlagene Adresse, siehe uri_discovery.vorschlaege_fuer_zuordnung."""
+    _vorschlaege: dict[str, str] | None = None
+    """Je Messwert die vorgeschlagene Adresse, siehe _vorschlaege_lesen."""
     _passend: dict[str, dict[str, str]] | None = None
     """Je gewähltem Messwert die gelesenen passenden Einträge, siehe _passende_lesen."""
+    _verfallen: frozenset[str] = frozenset()
+    """Gewählte Messwerte, deren bisherige Zuordnung gelesen wurde und nicht mehr passt."""
 
     async def _nach_namen(self) -> ConfigFlowResult:
         """Nach den Funktionsblock-Namen: der Fremderzeuger, wenn er gewählt ist.
@@ -877,6 +880,22 @@ class _Anlagenschritte:
         )
         return {key: eintraege for key, eintraege in kandidaten.items() if eintraege}
 
+    def _vorschlaege_lesen(self) -> dict[str, str]:
+        """Je fehlendem Messwert ohne Zuordnung die Adresse, die die Muster vermuten.
+
+        Aus dem gelesenen Menübaum, siehe
+        uri_discovery.vorschlaege_fuer_zuordnung - gelesen wird dafür
+        nichts von der Anlage.
+        """
+        if self._vorschlaege is None:
+            bisher = self._zuordnungen()
+            self._vorschlaege = vorschlaege_fuer_zuordnung(
+                self._menue,
+                [key for key in self._kandidaten or {} if key not in bisher],
+                self._einrichtung().get(CONF_FUB_NAMES),
+            )
+        return self._vorschlaege
+
     async def async_step_fehlende_werte(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -885,10 +904,11 @@ class _Anlagenschritte:
         Zur Wahl stehen die Messwerte der gewählten Komponenten, die die
         Erkennung im Menübaum nicht gefunden hat, dazu die schon
         zugeordneten. Vorgewählt ist, was schon zugeordnet ist und wofür
-        es einen Vorschlag gibt, siehe
-        uri_discovery.vorschlaege_fuer_zuordnung. Gelesen wird hier noch
-        nichts - erst der zweite Schritt liest die Funktionsblöcke der
-        gewählten Messwerte.
+        es einen Vorschlag gibt, siehe _vorschlaege_lesen. Mit dem
+        Absenden liest der Schritt die Funktionsblöcke der gewählten
+        Messwerte, siehe _passende_lesen. Antwortet die Anlage dabei gar
+        nicht, bleibt der Schritt mit einer Meldung stehen - eine
+        Zuordnung geht so nicht verloren.
         """
         if self._kandidaten is None:
             self._kandidaten = await self._zuordenbare()
@@ -896,30 +916,29 @@ class _Anlagenschritte:
             return self.async_abort(reason="cannot_connect")
         if not self._kandidaten:
             return self.async_abort(reason="nichts_zuzuordnen")
+        bisher = self._zuordnungen()
+        vorschlaege = self._vorschlaege_lesen()
+        vorgabe = [key for key in self._kandidaten if key in bisher or key in vorschlaege]
+        errors: dict[str, str] = {}
         if user_input is not None:
             self._zuordnen = [
                 key for key in user_input.get(FELD_WERTE) or [] if key in self._kandidaten
             ]
             if not self._zuordnen:
                 return await self._ohne_zuordnung()
-            self._passend = None
-            return await self.async_step_werte_zuordnen()
-        bisher = self._zuordnungen()
-        self._vorschlaege = vorschlaege_fuer_zuordnung(
-            self._menue,
-            [key for key in self._kandidaten if key not in bisher],
-            self._einrichtung().get(CONF_FUB_NAMES),
-        )
+            self._passend = await self._passende_lesen()
+            if self._passend is not None:
+                return await self.async_step_werte_zuordnen()
+            errors["base"] = "cannot_connect"
+            vorgabe = self._zuordnen
         return self.async_show_form(
             step_id="fehlende_werte",
-            data_schema=_fehlende_schema(
-                await _sensor_namen(self.hass, self._kandidaten),
-                [key for key in self._kandidaten if key in bisher or key in self._vorschlaege],
-            ),
+            data_schema=_fehlende_schema(await _sensor_namen(self.hass, self._kandidaten), vorgabe),
+            errors=errors,
             last_step=False,
         )
 
-    async def _passende_lesen(self) -> dict[str, dict[str, str]]:
+    async def _passende_lesen(self) -> dict[str, dict[str, str]] | None:
         """Je gewähltem Messwert die Einträge seines Blocks, die nach Art und Einheit passen.
 
         Dazu liest der Schritt jeden Eintrag einmal - je Funktionsblock
@@ -927,7 +946,16 @@ class _Anlagenschritte:
         Weg im Block und in Klammern, was die Anlage gerade anzeigt. Was
         die Erkennung schon für einen anderen Wert, einen Schalter oder
         ein Zeitfenster nutzt, steht nicht zur Wahl.
+
+        Eine bisherige Zuordnung bleibt zur Wahl, auch wenn ihr Eintrag
+        gerade nicht lesbar war oder inzwischen anderweitig genutzt wird -
+        sonst höbe ein Aussetzer der Anlage sie beim Absenden auf. Nur
+        wenn ihr Eintrag gelesen wurde und nicht mehr passt, steht sie
+        nicht mehr da, siehe _verfallen.
+
+        Antwortet die Anlage auf keine der Anfragen, None.
         """
+        bisher = self._zuordnungen()
         gefunden = await self._gefunden_lesen()
         belegt = {uri for key, uri in gefunden.items() if key not in self._zuordnen}
         adressen = {
@@ -936,19 +964,30 @@ class _Anlagenschritte:
         host, port = self._adresse()
         client = ETAApiClient(self.hass, async_get_clientsession(self.hass), host, port)
         gelesen = await client.async_get_values({uri: uri for uri in adressen})
+        if adressen and not gelesen:
+            return None
 
         def eintrag(weg: str, uri: str) -> str:
             anzeige = zuordnung.anzeige(gelesen[uri])
             return f"{weg} ({anzeige})" if anzeige else weg
 
-        return {
-            key: {
+        passend: dict[str, dict[str, str]] = {}
+        verfallen: set[str] = set()
+        for key in self._zuordnen:
+            wege = self._kandidaten[key]
+            passend[key] = {
                 uri: eintrag(weg, uri)
-                for uri, weg in self._kandidaten[key].items()
+                for uri, weg in wege.items()
                 if uri in gelesen and zuordnung.passt(key, gelesen[uri])
             }
-            for key in self._zuordnen
-        }
+            alt = bisher.get(key)
+            if alt in wege and alt not in passend[key]:
+                if alt in gelesen:
+                    verfallen.add(key)
+                else:
+                    passend[key] = {alt: wege[alt], **passend[key]}
+        self._verfallen = frozenset(verfallen)
+        return passend
 
     async def async_step_werte_zuordnen(
         self, user_input: dict[str, Any] | None = None
@@ -961,33 +1000,44 @@ class _Anlagenschritte:
         Vorschlag - beides nur, wenn es passt. Ein leeres Feld hebt eine
         Zuordnung auf. Messwerte, die hier gar nicht gewählt waren,
         behalten ihre Zuordnung. Gibt es zu einem Messwert keinen
-        passenden Eintrag, nennt ihn der Hinweis über dem Formular.
+        passenden Eintrag, nennt ihn der Hinweis über dem Formular; seine
+        bisherige Zuordnung bleibt dann, außer sie passt selbst nicht mehr.
+        Derselbe Eintrag lässt sich nicht zwei Messwerten zuordnen.
         """
         if self._passend is None:
-            self._passend = await self._passende_lesen()
+            return await self.async_step_fehlende_werte()
         namen = await _sensor_namen(self.hass, self._zuordnen)
         bisher = self._zuordnungen()
-        if user_input is not None:
-            neu = {key: uri for key, uri in bisher.items() if key not in self._zuordnen}
-            for key in self._zuordnen:
-                uri = user_input.get(namen[key])
-                if uri and uri in self._passend[key]:
-                    neu[key] = uri
-            return await self._zuordnung_speichern(neu)
-        vorgaben = {}
+        vorschlaege = self._vorschlaege_lesen()
+        vorgaben: dict[str, str | None] = {}
         for key in self._zuordnen:
             wahl = bisher.get(key)
             if wahl not in self._passend[key]:
-                wahl = self._vorschlaege.get(key)
+                wahl = vorschlaege.get(key)
             vorgaben[namen[key]] = wahl if wahl in self._passend[key] else None
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            neu = dict(bisher)
+            for key in self._zuordnen:
+                uri = user_input.get(namen[key])
+                if uri in self._passend[key]:
+                    neu[key] = uri
+                elif self._passend[key] or key in self._verfallen:
+                    neu.pop(key, None)
+            if len(set(neu.values())) == len(neu):
+                return await self._zuordnung_speichern(neu)
+            errors["base"] = "doppelt_zugeordnet"
+            vorgaben = {namen[key]: user_input.get(namen[key]) for key in self._zuordnen}
         ohne = [namen[key] for key in self._zuordnen if not self._passend[key]]
+        if ohne and not errors:
+            errors["base"] = "ohne_passenden_eintrag"
         return self.async_show_form(
             step_id="werte_zuordnen",
             data_schema=_zuordnung_schema(
                 {namen[key]: self._passend[key] for key in self._zuordnen if self._passend[key]},
                 vorgaben,
             ),
-            errors={"base": "ohne_passenden_eintrag"} if ohne else {},
+            errors=errors,
             description_placeholders={"ohne": ", ".join(ohne)},
         )
 
@@ -1590,9 +1640,6 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
         Zuordnungen bleiben auch leer erhalten: Stammen sie aus der
         Ersteinrichtung, gälten sonst nach dem Speichern wieder die alten.
 
-        Setzt der Nutzer hier den Haken, fehlende Werte auszublenden,
-        verschwinden die Platzhalter mit "-" gleich mit, siehe
-        entitaeten_abmelden.
         Gibt es nach dem Speichern
         keine Kesselsperre mehr, räumt das Einrichten das Gemerkte auf,
         siehe switch.verwaiste_sperre_aufloesen.
@@ -1634,15 +1681,48 @@ class ETAOptionsFlow(_Anlagenschritte, OptionsFlowWithReload):
             }
         if self._current.get(CONF_KESSEL_GESPERRT):
             daten = {CONF_KESSEL_GESPERRT: self._current[CONF_KESSEL_GESPERRT], **daten}
-        if daten.get(CONF_FEHLENDE_AUSBLENDEN) and not self._current.get(CONF_FEHLENDE_AUSBLENDEN):
-            koordinator = getattr(self.config_entry, "runtime_data", None)
-            if koordinator is not None:
-                entitaeten_abmelden(self.hass, self.config_entry, platzhalter(koordinator))
         return self.async_create_entry(title="", data=daten)
 
     async def _abschluss(self) -> ConfigFlowResult:
-        """Konfigurieren speichert nach den Schritten der Anlage."""
+        """Konfigurieren speichert nach den Schritten der Anlage.
+
+        Setzt der Nutzer dabei den Haken, fehlende Werte auszublenden,
+        verschwinden die Platzhalter mit "-" gleich mit, siehe
+        _platzhalter_abmelden.
+        """
+        if self._data.get(CONF_FEHLENDE_AUSBLENDEN) and not self._current.get(
+            CONF_FEHLENDE_AUSBLENDEN
+        ):
+            await self._platzhalter_abmelden()
         return self._fertig(self._data)
+
+    async def _platzhalter_abmelden(self) -> None:
+        """Nimmt die Platzhalter aus dem Register, die es mit den neuen Einstellungen nicht mehr gibt.
+
+        Weg kommt nur, was bisher ein Platzhalter war und auch mit den
+        neuen Einstellungen keine Adresse hat. Korrigiert der Nutzer im
+        selben Durchlauf etwa den Namen eines Funktionsblocks, bleiben die
+        Sensoren, die die Erkennung danach findet - samt ihren
+        Anpassungen. Läuft die Integration gerade nicht oder antwortet die
+        Anlage nicht, bleibt alles stehen.
+        """
+        koordinator = getattr(self.config_entry, "runtime_data", None)
+        if koordinator is None or await self._menue_lesen() is None:
+            return
+        gefunden, fuehler = await async_discover_uris(
+            None,
+            self._data.get(CONF_FUB_NAMES),
+            zuordnungen=self._zuordnungen(),
+            menue=self._menue,
+        )
+        kuenftig = build_sensor_defs(
+            gefunden, fuehler, self._data[CONF_COMPONENTS], fehlende_ausblenden=True
+        )
+        entitaeten_abmelden(
+            self.hass,
+            self.config_entry,
+            abhaengige({key for key in ohne_adresse(koordinator) if key not in kuenftig}),
+        )
 
     async def _ohne_zuordnung(self) -> ConfigFlowResult:
         return self.async_abort(reason="nichts_geaendert")

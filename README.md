@@ -346,6 +346,7 @@ Nicht jede Heizung führt jeden Wert: Ein Stückholzkessel misst keinen Pelletve
 - **Ausblenden:** Mit dem Haken **Fehlende Werte ausblenden** bekommt so ein Wert keinen Sensor. Eine neue Einrichtung schlägt den Haken vor. Wer die Integration schon länger nutzt, behält seine Sensoren mit `-`, bis er den Haken unter **Konfigurieren → Einstellungen der Anlage** setzt. Sie verschwinden dann sofort. Nutzt du noch die ältere Dashboard-Karte aus der Aktion, erzeuge sie danach neu.
 - **Von Hand zuordnen:** Zeigt deine Heizung am Display einen Wert, den die Integration nicht findet, steht er im Menü vermutlich an anderer Stelle. Unter **Konfigurieren → Fehlende Werte zuordnen** wählst du erst den Wert und dann den Eintrag aus dem Menü deiner Heizung. Zur Wahl stehen nur Einträge aus demselben Funktionsblock, die nach Art und Einheit passen, je mit dem Wert, den die Heizung gerade anzeigt.
 - **Nur lesen:** Zuordnen lässt sich nur, was gelesen wird. Schalter, Zeitprogramme, der Partikelabscheider und Vorrat und Fassungsvermögen des Pelletlagers stehen nicht zur Wahl.
+- **Aschebox-Plan:** Ordnest du **Kessel Zustand** oder **Aschebox Verbrauch seit Leerung** von Hand zu, gibt es den [Aschebox-Plan](#entaschen-und-aschebox-leeren) nicht. Er schaltet den Kessel nur nach Werten, die die Integration selbst gefunden hat.
 - **Melde es bitte trotzdem:** Mit deiner [Diagnose-Datei](https://github.com/dorsch95/ha-eta-webservices/issues/new/choose) findet die nächste Version den Wert von selbst, auch bei anderen.
 
 ---

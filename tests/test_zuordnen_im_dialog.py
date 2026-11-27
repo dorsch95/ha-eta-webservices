@@ -390,31 +390,199 @@ async def test_konfigurieren_bricht_ab_wenn_die_anlage_nicht_antwortet_oder_nich
     assert await flow.async_step_fehlende_werte() == {"type": "abort", "reason": "nichts_zuzuordnen"}
 
 
-async def test_wer_fehlende_werte_ausblendet_wird_die_platzhalter_gleich_los(monkeypatch, hass):
-    hass.session.menu = STUECKHOLZ
-    entry = einrichtung()
-    await setup_integration(hass, entry)
-    for key in ("kessel_druck", "aschebox_status", "kessel_temperatur"):
-        hass.entity_registry.anlegen(
-            f"sensor.eta_{key}", f"eta_static_{entry.entry_id}_{key}", entry.entry_id
-        )
+async def einstellungen_mit_haken(monkeypatch, hass, entry, namen=None):
+    """Speichert die Einstellungen der Anlage neu, mit dem Haken "Fehlende Werte ausblenden".
 
+    namen sind die Funktionsblock-Namen, die der Nutzer dabei einträgt -
+    ohne Angabe bleiben die vorbelegten.
+    """
     bisher = {**entry.data, **optionen(components=["puffer"])}
     flow, ergebnis = await options_schritt(
         monkeypatch, bisher, optionen(components=["puffer"], **{CONF_FEHLENDE_AUSBLENDEN: True})
     )
     flow.hass = hass
     monkeypatch.setattr(modul.ETAOptionsFlow, "config_entry", property(lambda self: entry))
+    monkeypatch.setattr(modul, "async_get_clientsession", lambda _hass: hass.session)
     for _ in range(4):
         if ergebnis["type"] == "create_entry":
             break
-        ergebnis = await getattr(flow, f"async_step_{ergebnis['step_id']}")(
-            {str(feld): feld.default() for feld in ergebnis["data_schema"].schema}
-        )
-
+        eingabe = {str(feld): feld.default() for feld in ergebnis["data_schema"].schema}
+        if ergebnis["step_id"] == "fub_names" and namen:
+            eingabe = namen
+        ergebnis = await getattr(flow, f"async_step_{ergebnis['step_id']}")(eingabe)
     assert ergebnis["type"] == "create_entry"
     assert ergebnis["data"][CONF_FEHLENDE_AUSBLENDEN] is True
+    return ergebnis
+
+
+def eintragen(hass, entry, *schluessel):
+    for key in schluessel:
+        hass.entity_registry.anlegen(
+            f"sensor.eta_{key}", f"eta_static_{entry.entry_id}_{key}", entry.entry_id
+        )
+
+
+async def test_wer_fehlende_werte_ausblendet_wird_die_platzhalter_gleich_los(monkeypatch, hass):
+    hass.session.menu = STUECKHOLZ
+    entry = einrichtung()
+    await setup_integration(hass, entry)
+    eintragen(hass, entry, "kessel_druck", "aschebox_status", "kessel_temperatur")
+
+    await einstellungen_mit_haken(monkeypatch, hass, entry)
+
     assert set(hass.entity_registry.eintraege) == {"sensor.eta_kessel_temperatur"}
+
+
+async def test_aufgeraeumt_wird_nach_den_neuen_einstellungen(monkeypatch, hass):
+    """Der Nutzer berichtigt im selben Durchlauf den Namen des Kessels und setzt den Haken.
+
+    Bisher fand die Integration den Kessel nicht, alle seine Sensoren
+    zeigten "-". Mit dem richtigen Namen findet sie ihn - diese Sensoren
+    bleiben, samt ihren Anpassungen. Weg kommt nur, was auch danach fehlt.
+    """
+    hass.session.menu = STUECKHOLZ
+    falsch = {"kessel": "Kesel", "pufferflex": "Puffer", "sys": "Sys"}
+    entry = einrichtung(fub_names=falsch)
+    _, by_name = await setup_integration(hass, entry)
+    assert by_name["Kesseltemperatur"].native_value == "-"
+    eintragen(hass, entry, "kessel_druck", "kessel_temperatur", "ruecklauf_temperatur")
+
+    await einstellungen_mit_haken(monkeypatch, hass, entry, {**falsch, "kessel": "Kessel"})
+
+    assert set(hass.entity_registry.eintraege) == {
+        "sensor.eta_kessel_temperatur",
+        "sensor.eta_ruecklauf_temperatur",
+    }
+
+
+async def test_laeuft_die_integration_nicht_bleibt_beim_haken_alles_stehen(monkeypatch, hass):
+    hass.session.menu = STUECKHOLZ
+    entry = einrichtung()
+    eintragen(hass, entry, "kessel_druck")
+
+    await einstellungen_mit_haken(monkeypatch, hass, entry)
+
+    assert set(hass.entity_registry.eintraege) == {"sensor.eta_kessel_druck"}
+
+
+async def test_antwortet_die_anlage_beim_zuordnen_nicht_geht_keine_zuordnung_verloren(monkeypatch, hass):
+    """Sonst höbe ein Aussetzer jede gewählte Zuordnung auf - und nähme ausgeblendet ihren Sensor mit."""
+    hass.session.werte[LEISTUNG] = DRUCK
+    entry = einrichtung(
+        **{CONF_FEHLENDE_AUSBLENDEN: True, CONF_ZUORDNUNGEN: {"kessel_druck": LEISTUNG}}
+    )
+    flow = konfigurieren(monkeypatch, hass, entry)
+    abgemeldet = []
+    monkeypatch.setattr(modul, "entitaeten_abmelden", lambda *angaben: abgemeldet.append(angaben))
+    await flow.async_step_fehlende_werte()
+    hass.session.fail_uris = {"/user/var/"}
+
+    schritt = await flow.async_step_fehlende_werte({"werte": ["kessel_druck", "kessel_schalter"]})
+
+    assert schritt["step_id"] == "fehlende_werte"
+    assert schritt["errors"] == {"base": "cannot_connect"}
+    assert felder(schritt)["werte"].default() == ["kessel_druck"], "die Wahl bleibt stehen"
+    assert abgemeldet == []
+
+    hass.session.fail_uris = set()
+    zuordnen = await flow.async_step_fehlende_werte({"werte": ["kessel_druck"]})
+    assert zuordnen["step_id"] == "werte_zuordnen"
+    assert vorgewaehlt(zuordnen, "Kesseldruck") == LEISTUNG
+
+
+async def test_eine_gerade_nicht_lesbare_zuordnung_bleibt_zur_wahl(monkeypatch, hass):
+    hass.session.werte[LEISTUNG] = DRUCK
+    hass.session.werte[f"{KESSEL}/0/0/12006"] = {**DRUCK, "str_value": "2,0"}
+    entry = einrichtung(**{CONF_ZUORDNUNGEN: {"kessel_druck": LEISTUNG}})
+    flow = konfigurieren(monkeypatch, hass, entry)
+    await flow.async_step_fehlende_werte()
+    hass.session.fail_uris = {f"/user/var{LEISTUNG}"}
+
+    zuordnen = await flow.async_step_fehlende_werte({"werte": ["kessel_druck"]})
+
+    assert zur_wahl(zuordnen, "Kesseldruck") == {
+        LEISTUNG: "Kessel › Kessel › Angeforderte Leistung",
+        f"{KESSEL}/0/0/12006": "Kessel › Kessel › Angeforderte Temperatur (2,0 bar)",
+    }
+    assert vorgewaehlt(zuordnen, "Kesseldruck") == LEISTUNG
+    assert await flow.async_step_werte_zuordnen({"Kesseldruck": LEISTUNG}) == {
+        "type": "abort",
+        "reason": "nichts_geaendert",
+    }
+
+
+async def test_eine_zuordnung_die_nicht_mehr_passt_entfaellt_beim_absenden(monkeypatch, hass):
+    """Der zugeordnete Eintrag meldet inzwischen °C statt bar, einen anderen in bar gibt es nicht."""
+    entry = einrichtung(
+        **{
+            CONF_ZUORDNUNGEN: {
+                "kessel_druck": LEISTUNG,
+                "ruecklauf_temperatur": f"{KESSEL}/0/11163/2121",
+            }
+        }
+    )
+    flow = konfigurieren(monkeypatch, hass, entry)
+    await flow.async_step_fehlende_werte()
+
+    zuordnen = await flow.async_step_fehlende_werte({"werte": ["kessel_druck"]})
+
+    assert felder(zuordnen) == {}
+    assert zuordnen["errors"] == {"base": "ohne_passenden_eintrag"}
+    ergebnis = await flow.async_step_werte_zuordnen({})
+    assert ergebnis["data"][CONF_ZUORDNUNGEN] == {"ruecklauf_temperatur": f"{KESSEL}/0/11163/2121"}
+
+
+async def test_ohne_passenden_eintrag_bleibt_eine_gerade_nicht_lesbare_zuordnung(monkeypatch, hass):
+    entry = einrichtung(**{CONF_ZUORDNUNGEN: {"kessel_druck": LEISTUNG}})
+    flow = konfigurieren(monkeypatch, hass, entry)
+    await flow.async_step_fehlende_werte()
+    hass.session.fail_uris = {f"/user/var{LEISTUNG}"}
+
+    zuordnen = await flow.async_step_fehlende_werte({"werte": ["kessel_druck"]})
+
+    assert zur_wahl(zuordnen, "Kesseldruck") == {LEISTUNG: "Kessel › Kessel › Angeforderte Leistung"}
+    assert await flow.async_step_werte_zuordnen({"Kesseldruck": LEISTUNG}) == {
+        "type": "abort",
+        "reason": "nichts_geaendert",
+    }
+
+
+async def test_derselbe_eintrag_laesst_sich_nicht_zwei_werten_zuordnen(monkeypatch, hass):
+    oben_min, soll = f"{PUFFER}/0/0/12211", f"{PUFFER}/0/0/12209"
+    entry = einrichtung(("kessel", "puffer", "puffer2"))
+    entry.data["fub_names"] = {"kessel": "Kessel", "pufferflex": "Puffer", "pufferflex2": "Puffer", "sys": "Sys"}
+    flow = konfigurieren(monkeypatch, hass, einrichtung())
+    await flow.async_step_fehlende_werte()
+    hass.session.texte[oben_min] = "Ein"
+    hass.session.texte[soll] = "Aus"
+
+    zuordnen = await flow.async_step_fehlende_werte(
+        {"werte": ["puffer_ladepumpe", "puffer_warmwasser_zustand"]}
+    )
+    doppelt = await flow.async_step_werte_zuordnen(
+        {"Puffer Ladepumpe": oben_min, "Puffer Warmwasser Zustand": oben_min}
+    )
+
+    assert doppelt["step_id"] == "werte_zuordnen"
+    assert doppelt["errors"] == {"base": "doppelt_zugeordnet"}
+    assert vorgewaehlt(doppelt, "Puffer Ladepumpe") == oben_min, "die Eingabe bleibt stehen"
+    assert list(felder(zuordnen)) == ["Puffer Ladepumpe", "Puffer Warmwasser Zustand"]
+
+    ergebnis = await flow.async_step_werte_zuordnen(
+        {"Puffer Ladepumpe": oben_min, "Puffer Warmwasser Zustand": soll}
+    )
+    assert ergebnis["data"][CONF_ZUORDNUNGEN] == {
+        "puffer_ladepumpe": oben_min,
+        "puffer_warmwasser_zustand": soll,
+    }
+
+
+async def test_der_zweite_schritt_ohne_den_ersten_beginnt_beim_ersten(monkeypatch, hass):
+    flow = konfigurieren(monkeypatch, hass, einrichtung())
+
+    schritt = await flow.async_step_werte_zuordnen()
+
+    assert schritt["step_id"] == "fehlende_werte"
 
 
 async def test_einstellungen_speichern_behaelt_zuordnungen_und_geleerte_auswahl(monkeypatch):

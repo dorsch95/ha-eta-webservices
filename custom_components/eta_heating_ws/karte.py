@@ -178,6 +178,12 @@ def abgesichert(elemente, bedingungen=()):
     nicht führt - der Vorlauf eines Heizkreises etwa oder der Vorrat eines
     Lagers ohne Messung. Was schon eine Bedingung auf seine Entität trägt,
     bleibt, wie es ist.
+
+    Der Preis: Auch eine Beschriftung, deren Entität es gibt und die
+    gerade "unknown" meldet, verschwindet - Home Assistant unterscheidet
+    das in einer Bedingung nicht. Abgesichert wird deshalb nur die
+    universelle Karte, siehe responsive_karte. Die auf eine Anlage
+    zugeschnittene lässt ohnehin weg, was es dort nicht gibt.
     """
     ergebnis = []
     for element in elemente:
@@ -1074,7 +1080,7 @@ def komponente(marker, zustand, bild, elemente, zustandsbilder=None):
     karte = {
         "type": "picture-elements",
         "image": bildadresse(f"{bild}.png"),
-        "elements": abgesichert(elemente),
+        "elements": elemente,
     }
     if zustandsbilder:
         entitaet, bilder = zustandsbilder
@@ -1417,7 +1423,9 @@ def responsive_karte(komponenten=None, fuehler=None):
 
     Ohne Angaben entsteht die universelle Karte, die ohne Nachfragen zu
     fast jeder Anlage passt - die gehört ins Repo. Sie zeigt bis zu
-    UNIVERSELL_JE_ART Puffer und Warmwasser.
+    UNIVERSELL_JE_ART Puffer und Warmwasser. Weil sie nicht weiß, was es
+    an der Anlage gibt, verbirgt sie jede Beschriftung ohne Entität,
+    siehe abgesichert.
 
     Wer seine Anlage kennt, kann sie zuschneiden: "komponenten" nimmt die
     Schlüssel aus MARKER, "fuehler" die tatsächliche Zahl der
@@ -1443,6 +1451,9 @@ def responsive_karte(komponenten=None, fuehler=None):
         ],
     }
     if komponenten is None and fuehler is None:
+        for variante in karte["cards"]:
+            for kachel in variante["card"]["cards"]:
+                kachel["card"]["elements"] = abgesichert(kachel["card"]["elements"])
         return karte
 
     behalten = (

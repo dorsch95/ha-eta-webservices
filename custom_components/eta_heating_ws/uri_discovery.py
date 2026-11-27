@@ -28,7 +28,7 @@ from .const import (
     absenkwert_schluessel,
     zeitfenster_schluessel,
 )
-from .weitere_werte import gesperrt
+from .weitere_werte import gesperrt, verborgen
 from .zuordnung import zuordenbar
 
 _LOGGER = logging.getLogger(__name__)
@@ -1095,23 +1095,40 @@ def fub_namen_vorschlagen(rollen, namen_der_anlage, gespeichert=None):
 
 
 def fub_namen_im_menue(parsed) -> list[str]:
-    """Die Namen aller Funktionsblöcke eines gelesenen Menübaums."""
+    """Die Namen der Funktionsblöcke eines gelesenen Menübaums.
+
+    Ohne den Block Diagnose, siehe weitere_werte.VERBORGEN: Die
+    Einrichtung zählt diese Namen auf, und zu einer Komponente gehört er
+    nie.
+    """
     fubs = _as_list(parsed.get("eta", {}).get("menu", {}).get("fub"))
-    return [fub["@name"] for fub in fubs if isinstance(fub, dict) and fub.get("@name")]
+    return [
+        fub["@name"]
+        for fub in fubs
+        if isinstance(fub, dict) and fub.get("@name") and not verborgen(fub)
+    ]
 
 
 def fub_namen_abgleich(rollen, namen_der_anlage):
     """Der Vorschlag für die Funktionsblock-Namen und die Rollen, deren Block die Anlage nicht meldet.
 
-    Meldet die Anlage zu jeder Rolle einen Block unter dem vorgeschlagenen
-    Namen, gibt es nichts zu bestätigen: Die Ersteinrichtung überspringt
-    dann den Schritt der Funktionsblock-Namen. Fehlt einer - weil der
-    Block an der Steuerung umbenannt ist oder die Anlage nicht antwortet -,
-    zeigt sie ihn.
+    Meldet die Anlage zu jeder Rolle einen eigenen Block unter dem
+    vorgeschlagenen Namen, gibt es nichts zu bestätigen: Die
+    Ersteinrichtung überspringt dann den Schritt der Funktionsblock-Namen.
+    Fehlt einer - weil der Block an der Steuerung umbenannt ist oder die
+    Anlage nicht antwortet -, zeigt sie ihn. Ebenso, wenn zwei Rollen
+    denselben Block bekämen: Drei Puffer an einer Anlage, die nur zwei
+    meldet, ließen sonst einen ohne Block zurück.
     """
     vorschlag = fub_namen_vorschlagen(rollen, namen_der_anlage)
     vorhanden = {_vergleichsname(name) for name in namen_der_anlage}
-    fehlende = [rolle for rolle in rollen if _vergleichsname(vorschlag[rolle]) not in vorhanden]
+    vergeben: set[str] = set()
+    fehlende = []
+    for rolle in rollen:
+        name = _vergleichsname(vorschlag[rolle])
+        if name not in vorhanden or name in vergeben:
+            fehlende.append(rolle)
+        vergeben.add(name)
     return vorschlag, fehlende
 
 

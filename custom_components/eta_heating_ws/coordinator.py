@@ -52,6 +52,7 @@ from .const import (
     zeitfenster_schluessel,
 )
 from . import weitere_werte as weitere
+from . import zuordnung
 from .entitaets_ids import Namen
 from .repairs import async_check_components
 from .uri_discovery import async_discover_uris
@@ -295,6 +296,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.ueber_kennung: set[str] = set()
         self.von_hand: set[str] = set()
         """Die Messwerte, deren Adresse aus einer Zuordnung von Hand stammt."""
+        self.zuordnungen_verworfen: dict[str, str] = {}
+        """Zuordnungen von Hand, deren Eintrag beim Laden nicht mehr zum Messwert passte."""
         self.fub_namen: dict[str, str] = {}
         self.thermostat_defs: dict[str, dict] = {}
         self.zeitprogramm_defs: dict[str, dict[tuple[str, int], dict]] = {}
@@ -1445,7 +1448,7 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 self.ueber_kennung,
                 self.fub_namen,
                 self.zeitprogramm_namen,
-                zuordnungen=self.zuordnungen,
+                zuordnungen=await self._zuordnungen_pruefen(),
                 von_hand=self.von_hand,
             )
         except ETAApiError as err:
@@ -1474,6 +1477,35 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         await self._zahlen_pruefen()
         await self._varset_anlegen()
 
+    async def _zuordnungen_pruefen(self) -> dict[str, str]:
+        """Die Zuordnungen von Hand, deren Eintrag noch nach Art und Einheit zum Messwert passt.
+
+        Geprüft hat das schon der Dialog, siehe config_flow.py - aber die
+        Anlage kann seither umgebaut sein. Liefert ein Eintrag inzwischen
+        etwas anderes, etwa einen Text statt einer Temperatur, gilt seine
+        Zuordnung nicht mehr; sie steht dann in zuordnungen_verworfen und
+        in der Diagnose. Antwortet die Anlage zu einem Eintrag gerade
+        nicht, bleibt seine Zuordnung.
+        """
+        self.zuordnungen_verworfen = {}
+        if not self.zuordnungen:
+            return {}
+        gelesen = await self.client.async_get_values(self.zuordnungen)
+        for key, wert in gelesen.items():
+            if not zuordnung.passt(key, wert):
+                self.zuordnungen_verworfen[key] = self.zuordnungen[key]
+                _LOGGER.warning(
+                    "ETA: Die Zuordnung von Hand für %s gilt nicht mehr, der Eintrag %s "
+                    "passt nach Art oder Einheit nicht zum Messwert",
+                    key,
+                    self.zuordnungen[key],
+                )
+        return {
+            key: uri
+            for key, uri in self.zuordnungen.items()
+            if key not in self.zuordnungen_verworfen
+        }
+
     async def _kombi_pruefen(self) -> None:
         """Nimmt das Warmwasser eines Puffers heraus, der kein Kombispeicher ist.
 
@@ -1481,13 +1513,14 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         Kombispeicher. Eingerichtet ist er, wenn seine Solltemperatur eine
         Einheit meldet - dasselbe Merkmal wie bei den Ladezeiten, siehe
         _programm_eingerichtet. Ohne Solltemperatur im Menübaum oder ohne
-        Antwort der Anlage bleiben die Werte stehen.
+        Antwort der Anlage bleiben die Werte stehen. Ebenso, was der Nutzer
+        von Hand zugeordnet hat.
         """
         for komponente in PUFFER_SPEICHER:
             schluessel = [
                 key
                 for key in (f"{komponente}_warmwasser", f"{komponente}_warmwasser_zustand")
-                if key in self.discovered_uris
+                if key in self.discovered_uris and key not in self.von_hand
             ]
             soll = next(
                 (

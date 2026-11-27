@@ -23,8 +23,17 @@ Heizung. Drei Regeln halten das ungefährlich:
 - Der Partikelabscheider bleibt außen vor. Aus seinem Funktionsblock
   gibt es nur Hochspannung, Strom und Leistung.
 
+Dazu kommt eine vierte für das, was die Integration von selbst
+schaltet: Der Aschebox-Plan schaltet den Kessel aus und wieder ein und
+drückt die Entaschentaste, je nachdem, was Kessel-Zustand und Verbrauch
+seit dem Leeren melden. Stammt einer der beiden aus einer Zuordnung von
+Hand, gibt es den Plan nicht, siehe STEUERND - geschaltet wird nur nach
+Werten, die die Erkennung selbst gefunden hat.
+
 Gespeichert wird je Messwert die Adresse (CONF_ZUORDNUNGEN). Eine
 Zuordnung geht der Suche vor, siehe uri_discovery.async_discover_uris.
+Beim Laden prüft die Integration jede noch einmal nach Art und Einheit,
+siehe coordinator.ETADataUpdateCoordinator.async_discover.
 """
 
 from __future__ import annotations
@@ -40,6 +49,13 @@ BESCHRIEBEN = frozenset(definition["quelle"] for definition in ZAHLEN.values())
 
 OHNE_ZUORDNUNG = frozenset({"partikelabscheider"})
 """Komponenten, deren Messwerte sich nie von Hand zuordnen lassen."""
+
+STEUERND = frozenset({"kessel_zustand", "aschebox_verbrauch"})
+"""Messwerte, nach denen die Integration von selbst schaltet, siehe aschebox.py.
+
+Sie lassen sich zuordnen, damit ihr Sensor einen Wert hat. Den
+Aschebox-Plan gibt es dann aber nicht.
+"""
 
 
 def zuordenbar(key: str) -> bool:

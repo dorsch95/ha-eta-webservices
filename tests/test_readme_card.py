@@ -857,13 +857,8 @@ def test_lager_zeigt_fuellstand_schnecke_und_warnung(karte):
         assert erstes_label == len(bilder), "Beschriftungen müssen über den Bildern liegen"
 
 
-def test_keine_beschriftung_zeigt_ins_leere(karte):
-    """Gibt es eine Entität nicht, verschwindet ihre Beschriftung - sonst stünde dort ein Warndreieck.
-
-    Mit ausgeblendeten fehlenden Werten hat keine Entität, was die Anlage
-    nicht führt. Geschützt ist eine Beschriftung, wenn eine Bedingung um
-    sie herum ihre Entität verlangt.
-    """
+def ungeschuetzte_beschriftungen(karte) -> list[str]:
+    """Die Entitäten aller Beschriftungen, um die keine Bedingung ihre Entität verlangt."""
     from eta_heating_ws.karte import _schuetzt
 
     offen = []
@@ -885,7 +880,31 @@ def test_keine_beschriftung_zeigt_ins_leere(karte):
             pruefen(knoten.get(schluessel), bedingungen)
 
     pruefen(karte)
-    assert offen == []
+    return offen
+
+
+def test_keine_beschriftung_zeigt_ins_leere(karte):
+    """Gibt es eine Entität nicht, verschwindet ihre Beschriftung - sonst stünde dort ein Warndreieck.
+
+    Mit ausgeblendeten fehlenden Werten hat keine Entität, was die Anlage
+    nicht führt. Geschützt ist eine Beschriftung, wenn eine Bedingung um
+    sie herum ihre Entität verlangt.
+    """
+    assert ungeschuetzte_beschriftungen(karte) == []
+
+
+def test_die_zugeschnittene_karte_verbirgt_keine_beschriftung_zusaetzlich():
+    """Die Bedingung verbirgt auch eine Entität, die es gibt und die gerade "unknown" meldet.
+
+    Die zugeschnittene Karte nennt nur, was es an der Anlage gibt - dort
+    bliebe von der Absicherung nur dieser Nachteil. Kurz nach dem Start
+    stünde der Vorrat im Lager sonst gar nicht da.
+    """
+    from eta_heating_ws.karte import responsive_karte
+
+    zugeschnitten = responsive_karte(["kessel", "puffer", "lager"], 4)
+
+    assert "sensor.eta_heizung_lager_vorrat" in ungeschuetzte_beschriftungen(zugeschnitten)
 
 
 def test_abgesichert_laesst_geschuetzte_beschriftungen_wie_sie_sind():

@@ -225,8 +225,9 @@ async def async_get_config_entry_diagnostics(
             ),
             "ueber_kennung_gefunden": sorted(coordinator.ueber_kennung),
             "von_hand_zugeordnet": {
-                key: coordinator.discovered_uris[key] for key in sorted(coordinator.von_hand)
+                key: coordinator.discovered_uris.get(key) for key in sorted(coordinator.von_hand)
             },
+            "zuordnung_passt_nicht_mehr": coordinator.zuordnungen_verworfen,
             "fehlende_ausgeblendet": coordinator.fehlende_ausblenden,
             "pufferfuehler": {
                 komponente: [

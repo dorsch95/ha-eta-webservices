@@ -315,12 +315,16 @@ def _aschebox_moeglich(coordinator: ETADataUpdateCoordinator) -> bool:
     """Den Aschebox-Plan gibt es nur, wenn alles dafür bestätigt ist.
 
     Er schaltet den Kessel über seine Ein/Aus-Taste, drückt die
-    Entaschentaste und liest dafür den Kessel-Zustand.
+    Entaschentaste und liest dafür den Kessel-Zustand und den Verbrauch
+    seit dem Leeren. Stammt einer dieser Messwerte aus einer Zuordnung von
+    Hand, gibt es den Plan nicht, siehe zuordnung.STEUERND: Ein falsch
+    zugeordneter Eintrag ließe ihn sonst zur falschen Zeit schalten.
     """
     return (
         coordinator.entaschen_def is not None
         and "kessel_schalter" in coordinator.switch_defs
         and bool(coordinator.sensor_defs.get("kessel_zustand", {}).get("uri"))
+        and not zuordnung.STEUERND & coordinator.von_hand
     )
 
 
@@ -562,14 +566,23 @@ _HAENGT_AN = {
     "pellet_energie_gesamt": ("pellet_gesamtverbrauch",),
     "lager_niedrig": ("lager_vorrat",),
     "lager_fuellstand": ("lager_vorrat",),
-    "lager_reicht_bis": ("lager_vorrat",),
-    "lager_bestellen_bis": ("lager_vorrat",),
-    "lager_reichweite": ("lager_vorrat",),
+    **{key: ("pellet_gesamtverbrauch",) for key in sorted(_ZEITRAUM | _KOSTEN)},
+    **{
+        key: (
+            "pellet_gesamtverbrauch",
+            "aussentemperatur",
+            *(("lager_vorrat",) if komponente == "lager" else ()),
+        )
+        for key, komponente in _PROGNOSE.items()
+    },
 }
 """Entitäten ohne eigene Adresse, die es nur gibt, solange die Anlage diese Messwerte führt.
 
 Mit ausgeblendeten fehlenden Werten entstehen sie nicht, wenn einer
-ihrer Messwerte fehlt, siehe sensor.py und binary_sensor.py.
+ihrer Messwerte fehlt, siehe sensor.py und binary_sensor.py. Verbrauch
+je Zeitraum, Kosten und Prognose gibt es in jedem Fall nur mit
+Gesamtverbrauch - die Prognose braucht dazu die Außentemperatur, siehe
+_prognose_moeglich.
 """
 
 def abhaengige(schluessel: set[str]) -> set[str]:
@@ -579,20 +592,24 @@ def abhaengige(schluessel: set[str]) -> set[str]:
     }
 
 
-def platzhalter(coordinator: ETADataUpdateCoordinator) -> set[str]:
-    """Die Entitäten dieser Anlage, die nur als Platzhalter bestehen.
+def ohne_adresse(coordinator: ETADataUpdateCoordinator) -> set[str]:
+    """Die Sensoren dieser Anlage, die nur als Platzhalter bestehen und dauerhaft "-" zeigen.
 
-    Das sind die Sensoren ohne Adresse - sie zeigen dauerhaft "-" - und was
-    an ihnen hängt. Nicht dazu gehört der aus den Fühlern gerechnete
-    Ladezustand eines Puffers: Er hat keine Adresse, aber einen Wert.
+    Nicht dazu gehört der aus den Fühlern gerechnete Ladezustand eines
+    Puffers: Er hat keine Adresse, aber einen Wert. Ebenso wenig, was auch
+    ohne Adresse bleibt, siehe BLEIBT_OHNE_ADRESSE.
     """
     gerechnet = {f"{k}_ladezustand" for k in coordinator.puffer_mit_berechnetem_ladezustand}
-    ohne_adresse = {
+    return {
         key
         for key, info in coordinator.sensor_defs.items()
         if not info.get("uri") and "platform" not in info
-    }
-    return abhaengige(ohne_adresse - gerechnet - BLEIBT_OHNE_ADRESSE)
+    } - gerechnet - BLEIBT_OHNE_ADRESSE
+
+
+def platzhalter(coordinator: ETADataUpdateCoordinator) -> set[str]:
+    """Die Platzhalter dieser Anlage samt den Entitäten, die an ihnen hängen."""
+    return abhaengige(ohne_adresse(coordinator))
 
 
 def entitaeten_abmelden(hass: HomeAssistant, entry: ETAConfigEntry, schluessel: set[str]) -> None:

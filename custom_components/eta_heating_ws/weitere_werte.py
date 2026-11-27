@@ -128,13 +128,15 @@ schon gewählt war, entfällt samt seinem Sensor, siehe gewaehlte.
 GESPERRTE_NAMEN = ("Diagnose", "Part.-Absch.", "Partikelabscheider")
 """Dieselben Blöcke nach ihrem Namen, falls eine Anlage sie unter einer anderen Nummer führt."""
 
-NIE_GENANNT = ("Diagnose",)
-"""Funktionsblöcke, die die Integration nicht einmal beim Namen nennt.
+VERBORGEN = ("10911",)
+"""Funktionsblöcke, die die Integration nirgends zeigt, nicht einmal mit ihrem Namen.
 
-Die Einrichtung zählt auf, welche Funktionsblöcke die Anlage meldet.
-Der Block Diagnose fehlt dort - der Partikelabscheider nicht, er ist
-eine wählbare Komponente.
+Der Block Diagnose, siehe GESPERRT. Der Partikelabscheider gehört nicht
+dazu: Er ist eine wählbare Komponente.
 """
+
+NIE_GENANNT = ("Diagnose",)
+"""Dieselben Blöcke nach ihrem Namen, falls eine Anlage sie unter einer anderen Nummer führt."""
 
 TRENNER = " › "
 """Trennt Funktionsblock und Stufen des Menübaums im Namen eines Werts."""
@@ -157,6 +159,12 @@ def _liste(knoten: Any) -> list:
     if knoten is None:
         return []
     return knoten if isinstance(knoten, list) else [knoten]
+
+
+def verborgen(fub: dict) -> bool:
+    """Zeigt die Integration diesen Funktionsblock nirgends? Siehe VERBORGEN."""
+    nummer = (fub.get("@uri") or "").strip("/").split("/")[-1]
+    return nummer in VERBORGEN or (fub.get("@name") or "").strip() in NIE_GENANNT
 
 
 def gesperrt(fub: dict) -> bool:

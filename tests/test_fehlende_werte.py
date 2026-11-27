@@ -14,7 +14,9 @@ import pytest
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.components.sensor.const import DEVICE_CLASS_STATE_CLASSES, DEVICE_CLASS_UNITS
 
-from eta_heating_ws import abhaengige, entitaeten_abmelden, platzhalter
+import re
+
+from eta_heating_ws import abhaengige, entitaeten_abmelden, ohne_adresse, platzhalter
 from eta_heating_ws import weitere_werte as weitere
 from eta_heating_ws import zuordnung
 from eta_heating_ws.api import ETAApiClient, ETAValue
@@ -26,6 +28,7 @@ from eta_heating_ws.uri_discovery import (
     PUMPEN,
     async_discover_uris,
     fub_namen_abgleich,
+    fub_namen_im_menue,
     kandidaten_fuer_zuordnung,
     vorschlaege_fuer_zuordnung,
 )
@@ -414,6 +417,27 @@ def test_funktionsblock_namen_gelten_als_bestaetigt_wenn_die_anlage_alle_meldet(
     ], "ein Block für zwei Puffer"
 
 
+def test_bekaemen_zwei_rollen_denselben_block_fehlt_einer():
+    """Drei Puffer gewählt, die Anlage meldet zwei: Der Schritt der Namen muss erscheinen."""
+    puffer = ["pufferflex", "pufferflex2", "pufferflex3"]
+    vorschlag, fehlende = fub_namen_abgleich(puffer, ["PufferFlex", "PufferFlex 3"])
+
+    assert vorschlag["pufferflex2"] == vorschlag["pufferflex3"] == "PufferFlex 3"
+    assert fehlende == ["pufferflex3"]
+    assert fub_namen_abgleich(puffer, ["PufferFlex", "PufferFlex 2", "PufferFlex 3"])[1] == []
+
+
+async def test_der_block_diagnose_wird_auch_unter_anderem_namen_nicht_genannt(hass):
+    menu = """<eta xmlns="http://www.eta.co.at/rest/v1" version="1.0"><menu uri="/user/menu">
+    <fub uri="/48/10391" name="Kessel"/>
+    <fub uri="/264/10911" name="Service"/>
+    <fub uri="/264/10912" name="Diagnose"/>
+    <fub uri="/264/10571" name="Part.-Absch."/>
+    </menu></eta>"""
+
+    assert fub_namen_im_menue(await menuebaum(hass, menu)) == ["Kessel", "Part.-Absch."]
+
+
 async def test_ohne_ausblenden_steht_ein_platzhalter(hass):
     hass.session.menu = STUECKHOLZ
     _, by_name = await setup_integration(hass, einrichtung())
@@ -472,6 +496,79 @@ async def test_eine_zuordnung_von_hand_ergibt_einen_sensor(hass):
     assert by_name["Kesseldruck"].native_unit_of_measurement == "bar"
 
 
+def kessel_adresse(menu: str, ende: str) -> str:
+    """Die erste Adresse im Funktionsblock Kessel des Menübaums, die so endet."""
+    block = re.search(r'<fub[^>]*name="Kessel".*?</fub>', menu, re.S)[0]
+    return re.search(rf'uri="(/[0-9/]+{re.escape(ende)})"', block)[1]
+
+
+async def test_der_aschebox_plan_schaltet_nur_nach_selbst_gefundenen_werten(hass, entry):
+    """Ohne Zuordnung von Hand gibt es ihn, mit einer für Kessel-Zustand oder Verbrauch nicht."""
+    menu = load_menu()
+    coordinator, _ = await setup_integration(hass, entry)
+    assert coordinator.aschebox is not None
+
+    for key, adresse in (
+        ("aschebox_verbrauch", kessel_adresse(menu, "/12120")),
+        ("kessel_zustand", kessel_adresse(menu, "/2001")),
+    ):
+        entry.data[CONF_ZUORDNUNGEN] = {key: adresse}
+        coordinator, _ = await setup_integration(hass, entry)
+        assert coordinator.von_hand == {key}, key
+        assert coordinator.aschebox is None, key
+
+    druck = kessel_adresse(menu, "/12170")
+    hass.session.werte[druck] = {"value": "16", "str_value": "1,6", "unit": "bar", "scale": "10"}
+    entry.data[CONF_ZUORDNUNGEN] = {"kessel_druck": druck}
+    coordinator, _ = await setup_integration(hass, entry)
+    assert coordinator.von_hand == {"kessel_druck"}
+    assert coordinator.aschebox is not None, "der Kesseldruck steuert nichts"
+
+
+async def test_beim_laden_gilt_eine_zuordnung_nur_wenn_ihr_eintrag_noch_passt(hass):
+    """Die Anlage meldet am zugeordneten Eintrag inzwischen °C statt bar."""
+    hass.session.menu = STUECKHOLZ
+    leistung = f"{KESSEL}/0/0/12204"
+    coordinator, by_name = await setup_integration(
+        hass, einrichtung(**{CONF_ZUORDNUNGEN: {"kessel_druck": leistung}})
+    )
+
+    assert coordinator.zuordnungen_verworfen == {"kessel_druck": leistung}
+    assert coordinator.von_hand == set()
+    assert "kessel_druck" not in coordinator.discovered_uris
+    assert by_name["Kesseldruck"].native_value == "-", "wieder ein Platzhalter"
+
+
+async def test_antwortet_die_anlage_zu_einem_zugeordneten_eintrag_nicht_bleibt_die_zuordnung(hass):
+    hass.session.menu = STUECKHOLZ
+    leistung = f"{KESSEL}/0/0/12204"
+    hass.session.fail_uris = {f"/user/var{leistung}"}
+    coordinator, _ = await setup_integration(
+        hass, einrichtung(**{CONF_ZUORDNUNGEN: {"kessel_druck": leistung}})
+    )
+
+    assert coordinator.zuordnungen_verworfen == {}
+    assert coordinator.von_hand == {"kessel_druck"}
+
+
+async def test_ein_von_hand_zugeordneter_warmwasserbereich_bleibt_und_die_diagnose_nennt_ihn(hass, entry):
+    """Ohne Kombispeicher nimmt die Integration den Warmwasserbereich sonst heraus."""
+    from eta_heating_ws.diagnostics import async_get_config_entry_diagnostics
+
+    from .test_puffer_ohne_kombi import MENU, aufbauen
+
+    zustand = re.search(r'uri="(/120/10601/0/0/12528)"', MENU)[1]
+    hass.session.texte[zustand] = "Bereit"
+    entry.data[CONF_ZUORDNUNGEN] = {"puffer_warmwasser_zustand": zustand}
+    coordinator = await aufbauen(hass, entry)
+
+    assert coordinator.discovered_uris["puffer_warmwasser_zustand"] == zustand
+    assert "puffer_warmwasser" not in coordinator.discovered_uris, "den nimmt sie weiter heraus"
+    bericht = await async_get_config_entry_diagnostics(hass, entry)
+    assert bericht["erkennung"]["von_hand_zugeordnet"] == {"puffer_warmwasser_zustand": zustand}
+    assert bericht["erkennung"]["zuordnung_passt_nicht_mehr"] == {}
+
+
 def _eintraege(hass, entry, *schluessel):
     for key in schluessel:
         hass.entity_registry.anlegen(
@@ -484,8 +581,9 @@ async def test_platzhalter_sind_was_keine_adresse_hat_und_was_daran_haengt(hass)
     entry = einrichtung()
     coordinator, _ = await setup_integration(hass, entry)
 
-    erwartet = {*FEHLT_AM_STUECKHOLZKESSEL, "aschebox_status", "aschebox_faellig", "pellet_energie_gesamt"}
-    assert platzhalter(coordinator) == erwartet
+    assert ohne_adresse(coordinator) == set(FEHLT_AM_STUECKHOLZKESSEL)
+    assert platzhalter(coordinator) == abhaengige(set(FEHLT_AM_STUECKHOLZKESSEL))
+    assert {"aschebox_status", "aschebox_faellig", "pellet_energie_gesamt"} <= platzhalter(coordinator)
     assert abhaengige({"lager_vorrat"}) == {
         "lager_vorrat",
         "lager_niedrig",
@@ -494,6 +592,23 @@ async def test_platzhalter_sind_was_keine_adresse_hat_und_was_daran_haengt(hass)
         "lager_bestellen_bis",
         "lager_reichweite",
     }
+    assert abhaengige({"pellet_gesamtverbrauch"}) == {
+        "pellet_gesamtverbrauch",
+        "pellet_energie_gesamt",
+        "pellet_verbrauch_heute",
+        "pellet_verbrauch_woche",
+        "pellet_verbrauch_jahr",
+        "pellet_kosten_heute",
+        "pellet_kosten_woche",
+        "pellet_kosten_jahr",
+        "pellet_prognose_morgen",
+        "pellet_prognose_treffsicherheit",
+        "pellet_prognose_status",
+        "lager_reicht_bis",
+        "lager_bestellen_bis",
+        "lager_reichweite",
+    }, "Verbrauch je Zeitraum, Kosten und Prognose gibt es nur mit Gesamtverbrauch"
+    assert "pellet_prognose_morgen" in abhaengige({"aussentemperatur"})
     assert abhaengige({"kessel_druck"}) == {"kessel_druck"}
 
     _eintraege(hass, entry, "kessel_druck", "aschebox_status", "kessel_temperatur", "ruecklauf_temperatur")

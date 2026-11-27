@@ -230,7 +230,8 @@
       "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
       "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt.",
       "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}.",
-      "ohne_passenden_eintrag": "Zu diesen Werten führt deine Heizung keinen passenden Eintrag: {ohne}."
+      "ohne_passenden_eintrag": "Zu diesen Werten führt deine Heizung keinen passenden Eintrag: {ohne}.",
+      "doppelt_zugeordnet": "Derselbe Eintrag ist zwei Werten zugeordnet. Wähle für jeden Wert einen eigenen."
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
@@ -448,7 +449,9 @@
       "zu_viele_werte": "Das sind zu viele Werte. Wähle höchstens {hoechstens}.",
       "werte_nicht_lesbar": "Diese Werte liefert die Heizung nicht lesbar: {ohne}. Sie sind wieder abgewählt.",
       "zu_viele_schnelle_werte": "Für die schnelle Abfrage sind das zu viele Werte. Wähle höchstens {schnell_hoechstens}.",
-      "ohne_passenden_eintrag": "Zu diesen Werten führt deine Heizung keinen passenden Eintrag: {ohne}."
+      "ohne_passenden_eintrag": "Zu diesen Werten führt deine Heizung keinen passenden Eintrag: {ohne}.",
+      "cannot_connect": "Die Heizung antwortet gerade nicht. Versuch es noch einmal.",
+      "doppelt_zugeordnet": "Derselbe Eintrag ist zwei Werten zugeordnet. Wähle für jeden Wert einen eigenen."
     },
     "abort": {
       "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal.",
