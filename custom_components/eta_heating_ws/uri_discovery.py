@@ -1217,6 +1217,10 @@ def kandidaten_fuer_zuordnung(
     sein gelesener Wert, siehe zuordnung.passt. Für Messwerte, die sich
     nicht zuordnen lassen (zuordnung.zuordenbar), und für gesperrte
     Funktionsblöcke (weitere_werte.gesperrt) gibt es nichts.
+
+    Führt der Block an einer Stelle zwei Objekte desselben Namens mit
+    verschiedenen Adressen, bekommt das zweite eine Nummer - wie bei den
+    weiteren Werten, siehe weitere_werte.menue_werte.
     """
     fubs_by_role, twin = _bloecke(parsed, fub_name_overrides)
     ergebnis: dict[str, dict[str, str]] = {}
@@ -1224,11 +1228,14 @@ def kandidaten_fuer_zuordnung(
         fub = _block_des_messwerts(key, fubs_by_role, twin)
         if fub is None or not zuordenbar(key) or gesperrt(fub):
             continue
-        ergebnis[key] = {
-            uri: " › ".join(pfad)
-            for pfad, uri in _block_eintraege(fub)
-            if not _im_zeitprogramm(pfad)
-        }
+        eintraege: dict[str, str] = {}
+        vergeben: dict[tuple[str, ...], int] = {}
+        for pfad, uri in _block_eintraege(fub):
+            vergeben[pfad] = vergeben.get(pfad, 0) + 1
+            if not _im_zeitprogramm(pfad):
+                weg = " › ".join(pfad)
+                eintraege[uri] = weg if vergeben[pfad] == 1 else f"{weg} ({vergeben[pfad]})"
+        ergebnis[key] = eintraege
     return ergebnis
 
 

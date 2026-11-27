@@ -234,6 +234,7 @@
     },
     "abort": {
       "already_configured": "Diese ETA Heizung (IP-Adresse + Port) ist bereits eingerichtet.",
+      "already_in_progress": "Die Einrichtung dieser Heizung läuft schon in einem anderen Fenster.",
       "reconfigure_successful": "Einstellungen gespeichert.",
       "keine_alte_einrichtung": "Keine Einrichtung von vor Version 0.26 gefunden.",
       "cannot_connect": "Die Heizung ist gerade nicht erreichbar. Versuch es später noch einmal.",

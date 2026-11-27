@@ -306,6 +306,25 @@ async def test_zur_wahl_steht_nur_der_eigene_funktionsblock(hass):
         assert f"{PUFFER}/12130/0/{im_zeitprogramm}" not in puffer, "Wochentag, Zeitfenster, Absenktemperatur"
 
 
+async def test_gleiche_namen_an_derselben_stelle_bekommen_eine_nummer(hass):
+    """An echten Anlagen steht "Sensor Typ" unter einem Fühler zweimal."""
+    menu = """<eta xmlns="http://www.eta.co.at/rest/v1" version="1.0"><menu uri="/user/menu">
+    <fub uri="/48/10391" name="Kessel">
+      <object uri="/48/10391/0/11109/0" name="Fühler">
+        <object uri="/48/10391/0/11109/2011" name="Sensor Typ"/>
+        <object uri="/48/10391/0/11109/2019" name="Sensor Typ"/>
+      </object>
+    </fub>
+    </menu></eta>"""
+    kandidaten = kandidaten_fuer_zuordnung(await menuebaum(hass, menu), ["kessel_druck"])
+
+    assert kandidaten["kessel_druck"] == {
+        "/48/10391/0/11109/0": "Fühler",
+        "/48/10391/0/11109/2011": "Fühler › Sensor Typ",
+        "/48/10391/0/11109/2019": "Fühler › Sensor Typ (2)",
+    }
+
+
 async def test_aus_dem_partikelabscheider_steht_nichts_zur_wahl(hass):
     """Aus seinem Funktionsblock gibt es nur Hochspannung, Strom und Leistung."""
     schluessel = [key for key, info in SENSORS.items() if info["component"] == "partikelabscheider"]

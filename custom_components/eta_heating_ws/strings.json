@@ -234,6 +234,7 @@
     },
     "abort": {
       "already_configured": "This ETA heating system (IP address + port) is already configured.",
+      "already_in_progress": "Setup of this heating system is already running in another window.",
       "reconfigure_successful": "Settings saved.",
       "keine_alte_einrichtung": "No setup from before version 0.26 found.",
       "cannot_connect": "The heating system cannot be reached right now. Please try again later.",
