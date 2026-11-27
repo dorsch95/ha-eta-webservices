@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eta version="1.0" xmlns="http://www.eta.co.at/rest/v1">
+  <menu>
+    <fub uri="/120/10251" name="Puffer">
+      <object uri="/120/10251/0/0/12207" name="Puffer">
+        <object uri="/120/10251/0/0/12242" name="Puffer oben">
+          <object uri="/120/10251/12130/0/0" name="Ladezeiten">
+            <object uri="/120/10251/12130/0/1109" name="Schaltzustand"/>
+            <object uri="/120/10251/12130/0/1110" name="Temperatur"/>
+            <object uri="/120/10251/12130/0/1081" name="Montag">
+              <object uri="/120/10251/12130/0/1111" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1082" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1083" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1084" name="Zeitfenster 3"/>
+            </object>
+            <object uri="/120/10251/12130/0/1085" name="Dienstag">
+              <object uri="/120/10251/12130/0/1112" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1086" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1087" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1088" name="Zeitfenster 3"/>
+            </object>
+            <object uri="/120/10251/12130/0/1089" name="Mittwoch">
+              <object uri="/120/10251/12130/0/1113" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1090" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1091" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1092" name="Zeitfenster 3"/>
+            </object>
+            <object uri="/120/10251/12130/0/1093" name="Donnerstag">
+              <object uri="/120/10251/12130/0/1114" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1094" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1095" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1096" name="Zeitfenster 3"/>
+            </object>
+            <object uri="/120/10251/12130/0/1097" name="Freitag">
+              <object uri="/120/10251/12130/0/1115" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1098" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1099" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1100" name="Zeitfenster 3"/>
+            </object>
+            <object uri="/120/10251/12130/0/1101" name="Samstag">
+              <object uri="/120/10251/12130/0/1116" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1102" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1103" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1104" name="Zeitfenster 3"/>
+            </object>
+            <object uri="/120/10251/12130/0/1105" name="Sonntag">
+              <object uri="/120/10251/12130/0/1117" name="Absenktemperatur"/>
+              <object uri="/120/10251/12130/0/1106" name="Zeitfenster 1"/>
+              <object uri="/120/10251/12130/0/1107" name="Zeitfenster 2"/>
+              <object uri="/120/10251/12130/0/1108" name="Zeitfenster 3"/>
+            </object>
+          </object>
+          <object uri="/120/10251/0/0/12211" name="Puffer oben Min"/>
+          <object uri="/120/10251/0/0/12209" name="Puffer Soll"/>
+          <object uri="/120/10251/0/0/12667" name="Laden mit anderen Verbrauchern">
+            <object uri="/120/10251/0/0/13535" name="Einschaltdifferenz"/>
+          </object>
+          <object uri="/120/10251/0/0/12932" name="Laden mit Erzeuger">
+            <object uri="/120/10251/0/0/13535" name="Einschaltdifferenz"/>
+          </object>
+        </object>
+        <object uri="/120/10251/0/0/12522" name="Puffer mitte"/>
+        <object uri="/120/10251/0/0/12244" name="Puffer unten">
+          <object uri="/120/10251/0/0/12212" name="Puffer unten Aus"/>
+        </object>
+        <object uri="/120/10251/0/0/12533" name="geforderte Leistung">
+          <object uri="/120/10251/0/0/12528" name="Ladezustand"/>
+        </object>
+        <object uri="/120/10251/0/0/12317" name="Kaskade"/>
+        <object uri="/120/10251/0/0/12270" name="Freigabe Brenner">
+          <object uri="/120/10251/0/0/12524" name="Brenner starten unter"/>
+        </object>
+        <object uri="/120/10251/0/0/12668" name="Anfahrentlastung"/>
+        <object uri="/120/10251/0/0/12652" name="Solar abschöpfen">
+          <object uri="/120/10251/0/0/12683" name="Aktivieren ?"/>
+          <object uri="/120/10251/0/0/12645" name="...bis Puffer Max"/>
+        </object>
+      </object>
+      <object uri="/120/10251/0/0/12182" name="Sonstiges"/>
+    </fub>
+    <fub uri="/48/10391" name="Kessel">
+      <object uri="/48/10391/0/0/12010" name="Zählerstände">
+        <object uri="/48/10391/0/0/12153" name="Volllaststunden"/>
+        <object uri="/48/10391/0/0/12404" name="Volllaststunden seit Wartung"/>
+        <object uri="/48/10391/0/0/12540" name="Übertemperatur"/>
+        <object uri="/48/10391/0/0/12081" name="Auslösung Sicherheitstemperaturbegrenzer"/>
+      </object>
+      <object uri="/48/10391/0/0/12000" name="Kessel">
+        <object uri="/48/10391/0/0/12421" name="Einstellungen">
+          <object uri="/48/10391/0/0/13035" name="Starten mit Taste"/>
+        </object>
+        <object uri="/48/10391/0/0/12161" name="Kessel">
+          <object uri="/48/10391/0/0/12001" name="Kessel Soll"/>
+          <object uri="/48/10391/0/0/12204" name="Angeforderte Leistung"/>
+          <object uri="/48/10391/0/0/12006" name="Angeforderte Temperatur"/>
+        </object>
+        <object uri="/48/10391/0/0/12220" name="Rücklauf">
+          <object uri="/48/10391/0/11163/0" name="Rücklaufmischer">
+            <object uri="/48/10391/0/11163/2120" name="Soll Temperatur"/>
+            <object uri="/48/10391/0/11163/2002" name="Zustand"/>
+            <object uri="/48/10391/0/11163/2121" name="Ist Temperatur"/>
+            <object uri="/48/10391/0/11163/2127" name="Position"/>
+          </object>
+        </object>
+        <object uri="/48/10391/0/11123/0" name="Kesselpumpe">
+          <object uri="/48/10391/0/11123/2001" name="Anforderung"/>
+          <object uri="/48/10391/0/11123/2130" name="Ausgang"/>
+        </object>
+        <object uri="/48/10391/0/0/12162" name="Abgas">
+          <object uri="/48/10391/0/0/12002" name="Abgas Soll"/>
+          <object uri="/48/10391/0/0/13266" name="Emissionsmessung">
+            <object uri="/48/10391/0/0/13267" name="Beginn der Messung"/>
+            <object uri="/48/10391/0/0/13268" name="Verriegelungsdauer"/>
+            <object uri="/48/10391/0/0/13269" name="Jetzt starten"/>
+            <object uri="/48/10391/0/0/13277" name="Messung deaktivieren"/>
+          </object>
+        </object>
+        <object uri="/48/10391/0/0/12165" name="Abgasgebläse"/>
+        <object uri="/48/10391/0/0/12164" name="Restsauerstoff"/>
+      </object>
+      <object uri="/48/10391/0/0/12182" name="Sonstiges">
+        <object uri="/48/10391/0/0/12080" name="Ein/Aus Taste"/>
+        <object uri="/48/10391/0/0/12112" name="Entaschentaste"/>
+        <object uri="/48/10391/0/0/12528" name="Ladezustand"/>
+      </object>
+    </fub>
+    <fub uri="/48/10241" name="Sys">
+      <object uri="/48/10241/0/0/10990" name="Eingänge">
+        <object uri="/48/10241/0/0/12197" name="Außentemperatur"/>
+      </object>
+      <object uri="/48/10241/0/0/12256" name="System">
+        <object uri="/48/10241/0/0/12197" name="Außentemperatur"/>
+      </object>
+    </fub>
+  </menu>
+</eta>

@@ -124,14 +124,17 @@ type ETAConfigEntry = ConfigEntry["ETADataUpdateCoordinator"]
 """Config Entry, der seinen Koordinator in runtime_data trägt."""
 
 
-def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
+def build_sensor_defs(
+    discovered_uris, puffer_fuehler_indices, components, hide_missing_sensors: bool = False
+):
     """Stellt zusammen, welche Sensoren diese Anlage hat und unter welcher URI.
 
     Jede URI stammt aus dem Menübaum dieser Anlage; feste Adressen gibt es
     nicht. Was der Menübaum nicht hergibt, bekommt trotzdem eine Entität,
     nur ohne URI - sie zeigt dann dauerhaft "-". Ausgenommen ist, was als
-    "nur_wenn_vorhanden" markiert ist. Für nicht ausgewählte Komponenten
-    entsteht nichts.
+    "nur_wenn_vorhanden" markiert ist, sowie alle fehlenden Sensoren bei
+    hide_missing_sensors=True. Für nicht ausgewählte Komponenten entsteht
+    nichts.
 
     Das Gesamtvolumen eines Puffers wird mitgelesen, bekommt aber keinen
     Sensor: Es steht im Zahlenfeld "Puffervolumen", daher der Vermerk
@@ -144,7 +147,10 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
         key: {**info, "uri": discovered_uris.get(key)}
         for key, info in SENSORS.items()
         if info["component"] in aktiv
-        and (discovered_uris.get(key) or not info.get("nur_wenn_vorhanden"))
+        and (
+            discovered_uris.get(key)
+            or (not hide_missing_sensors and not info.get("nur_wenn_vorhanden"))
+        )
     }
 
     for komponente in PUFFER_SPEICHER:
@@ -162,9 +168,12 @@ def build_sensor_defs(discovered_uris, puffer_fuehler_indices, components):
         last_index = indices[-1]
         for index in indices:
             key = f"{praefix}{index}"
+            uri = discovered_uris.get(key)
+            if hide_missing_sensors and not uri:
+                continue
             sensor_defs[key] = {
                 **puffer_fuehler_info(index, index == last_index, komponente),
-                "uri": discovered_uris.get(key),
+                "uri": uri,
             }
         volumen = discovered_uris.get(f"{komponente}_volumen")
         if volumen:
@@ -242,6 +251,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         pellet_kwh_per_kg: float,
         enable_switches: bool = False,
         enable_errors: bool = True,
+        hide_missing_sensors: bool = False,
+        uri_overrides: dict[str, str] | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -267,9 +278,12 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         self.puffer_volumen_eingetragen: dict[str, float] = {}
         self.enable_switches = enable_switches
         self.enable_errors = enable_errors
+        self.hide_missing_sensors = hide_missing_sensors
+        self.uri_overrides = dict(uri_overrides or {})
         self.sensor_defs: dict[str, dict] = {}
         self.discovered_uris: dict[str, str] = {}
         self.ueber_kennung: set[str] = set()
+        self.dynamisch_gefunden: set[str] = set()
         self.fub_namen: dict[str, str] = {}
         self.thermostat_defs: dict[str, dict] = {}
         self.zeitprogramm_defs: dict[str, dict[tuple[str, int], dict]] = {}
@@ -1393,7 +1407,11 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
             return None
         return zustaende.get(wert.text.strip().casefold())
 
-    async def async_discover(self, fub_name_overrides: dict[str, str]) -> None:
+    async def async_discover(
+        self,
+        fub_name_overrides: dict[str, str],
+        uri_overrides: dict[str, str] | None = None,
+    ) -> None:
         """Ermittelt einmalig die URIs aller Messwerte dieser Anlage.
 
         Ohne Menübaum gibt es nichts abzufragen; Home Assistant bekommt
@@ -1402,6 +1420,9 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
         dem Laden - das allein sind rund 90 Anfragen, die den Start sonst um
         über zehn Sekunden verzögern.
         """
+        if uri_overrides is not None:
+            self.uri_overrides = dict(uri_overrides)
+        self.dynamisch_gefunden.clear()
         try:
             self.discovered_uris, indices = await async_discover_uris(
                 self.client,
@@ -1409,6 +1430,8 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
                 self.ueber_kennung,
                 self.fub_namen,
                 self.zeitprogramm_namen,
+                uri_overrides=self.uri_overrides,
+                dynamisch_gefunden=self.dynamisch_gefunden,
             )
         except ETAApiError as err:
             raise ConfigEntryNotReady(
@@ -1417,7 +1440,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
 
         await self._kombi_pruefen()
         self.sensor_defs = build_sensor_defs(
-            self.discovered_uris, indices, self.components
+            self.discovered_uris,
+            indices,
+            self.components,
+            hide_missing_sensors=self.hide_missing_sensors,
         )
         self.components_without_data = async_check_components(
             self.hass,

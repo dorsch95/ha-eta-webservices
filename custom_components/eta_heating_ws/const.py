@@ -77,6 +77,11 @@ DEFAULT_ENABLE_SWITCHES = False
 
 DEFAULT_ENABLE_ERRORS = True
 CONF_FUB_NAMES = "fub_names"
+CONF_URI_OVERRIDES = "uri_overrides"
+"""Manuell zugeordnete Objekt-URIs je Messwert-Schlüssel, falls die Erkennung sie nicht fand."""
+CONF_HIDE_MISSING_SENSORS = "hide_missing_sensors"
+"""Blendet Sensoren ohne gefundene URI im Menübaum aus, statt "-" anzuzeigen."""
+DEFAULT_HIDE_MISSING_SENSORS = False
 CONF_VERBINDUNGEN = "verbindungen"
 """Je Teil der Anlage, woher es seine Wärme bekommt - siehe verbindungen.py."""
 CONF_SCAN_INTERVAL = "scan_interval"

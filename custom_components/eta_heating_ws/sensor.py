@@ -44,7 +44,11 @@ async def async_setup_entry(
         ETAPufferLadezustandSensor(coordinator, komponente) for komponente in berechnet.values()
     )
 
-    entities.append(ETAAscheboxStatusSensor(coordinator))
+    if not coordinator.hide_missing_sensors or all(
+        coordinator.sensor_defs.get(k, {}).get("uri")
+        for k in ("aschebox_verbrauch", "aschebox_schwelle")
+    ):
+        entities.append(ETAAscheboxStatusSensor(coordinator))
     if coordinator.mit_zeitraeumen and coordinator.sensor_defs.get(
         "pellet_gesamtverbrauch", {}
     ).get("uri"):
@@ -61,7 +65,10 @@ async def async_setup_entry(
         entities.extend(
             ETAPrognoseSensor(coordinator.prognose, coordinator, key) for key in schluessel
         )
-    entities.append(_pellet_energie(coordinator))
+    if not coordinator.hide_missing_sensors or coordinator.sensor_defs.get(
+        "pellet_gesamtverbrauch", {}
+    ).get("uri"):
+        entities.append(_pellet_energie(coordinator))
     if coordinator.aschebox is not None:
         entities.append(ETAAscheboxPlanSensor(coordinator))
     if coordinator.enable_errors:
@@ -247,9 +254,14 @@ class ETAWeitererWert(ETABaseSensor):
         self._zahl = bool(eintrag.get("zahl"))
         if self._zahl:
             self._attr_native_unit_of_measurement = eintrag.get("einheit") or None
-            self._attr_state_class = SensorStateClass.MEASUREMENT
+            self._attr_device_class, self._attr_state_class = weitere.sensor_klassen(
+                self._attr_native_unit_of_measurement, self._attr_name or ""
+            )
             if eintrag.get("stellen") is not None:
                 self._attr_suggested_display_precision = max(0, min(int(eintrag["stellen"]), 3))
+        else:
+            self._attr_device_class = None
+            self._attr_state_class = None
 
     @property
     def available(self) -> bool:

@@ -29,7 +29,38 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+
 from .api import ETAValue
+
+ZEITEN_KATEGORIE = "Zeiten"
+"""Sammelkategorie für Zeitprogramme und Zeit-Einträge im Menübaum."""
+
+_EINHEIT_KLASSEN: dict[str, SensorDeviceClass] = {
+    "°C": SensorDeviceClass.TEMPERATURE,
+    "K": SensorDeviceClass.TEMPERATURE,
+    "kg": SensorDeviceClass.WEIGHT,
+    "t": SensorDeviceClass.WEIGHT,
+    "bar": SensorDeviceClass.PRESSURE,
+    "Pa": SensorDeviceClass.PRESSURE,
+    "hPa": SensorDeviceClass.PRESSURE,
+    "mbar": SensorDeviceClass.PRESSURE,
+    "kW": SensorDeviceClass.POWER,
+    "W": SensorDeviceClass.POWER,
+    "kWh": SensorDeviceClass.ENERGY,
+    "MWh": SensorDeviceClass.ENERGY,
+    "Wh": SensorDeviceClass.ENERGY,
+    "l/min": SensorDeviceClass.VOLUME_FLOW_RATE,
+    "l/h": SensorDeviceClass.VOLUME_FLOW_RATE,
+    "m³/h": SensorDeviceClass.VOLUME_FLOW_RATE,
+    "l": SensorDeviceClass.WATER,
+    "m³": SensorDeviceClass.WATER,
+    "V": SensorDeviceClass.VOLTAGE,
+    "mV": SensorDeviceClass.VOLTAGE,
+    "A": SensorDeviceClass.CURRENT,
+    "mA": SensorDeviceClass.CURRENT,
+}
+_ZAEHLER_WOERTER = ("gesamt", "zähler", "counter", "total", "verbrauch")
 
 PRAEFIX = "wert"
 """Damit beginnt der Schlüssel jedes gewählten Werts, siehe schluessel."""
@@ -165,6 +196,68 @@ def menue_werte(parsed: Any) -> dict[str, dict[str, Any]]:
 def bezeichnung(eintrag: dict[str, Any]) -> str:
     """Der Name eines Werts: Funktionsblock und Weg im Menübaum."""
     return TRENNER.join(teil for teil in [eintrag.get("fub"), *(eintrag.get("pfad") or [])] if teil)
+
+
+def kategorie_fuer_eintrag(eintrag: dict[str, Any]) -> str:
+    """Ordnet einen Menüeintrag in 'Zeiten' oder nach seinem Funktionsblock ein."""
+    pfad = eintrag.get("pfad") or []
+    if any("zeit" in str(teil).casefold() for teil in pfad) or "zeit" in " ".join(
+        str(teil) for teil in pfad
+    ).casefold():
+        return ZEITEN_KATEGORIE
+    return eintrag.get("fub") or "?"
+
+
+def gruppen_fuer_menue(
+    menue_werte: dict[str, dict[str, Any]],
+    fest: set[str],
+    bisher: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, dict[str, str]]:
+    """Gruppiert wählbare Menüeinträge nach Funktionsblock und schiebt 'Zeiten' ans Ende."""
+    bisher = bisher or {}
+    gruppen: dict[str, dict[str, str]] = {}
+    verschwunden = {uri: e for uri, e in bisher.items() if uri not in menue_werte}
+    for uri, eintrag in {**menue_werte, **verschwunden}.items():
+        if uri not in bisher and uri in fest:
+            continue
+        kategorie = kategorie_fuer_eintrag(eintrag)
+        if kategorie == ZEITEN_KATEGORIE and eintrag.get("fub"):
+            label = bezeichnung({"fub": eintrag.get("fub"), "pfad": eintrag.get("pfad")})
+        else:
+            label = bezeichnung({"pfad": eintrag.get("pfad")})
+        gruppen.setdefault(kategorie, {})[uri] = label
+    if ZEITEN_KATEGORIE in gruppen:
+        zeiten = gruppen.pop(ZEITEN_KATEGORIE)
+        gruppen[ZEITEN_KATEGORIE] = zeiten
+    return gruppen
+
+
+def sensor_klassen(
+    einheit: str | None, bezeichnung_text: str
+) -> tuple[SensorDeviceClass | None, SensorStateClass | None]:
+    """Leitet device_class und state_class aus Einheit und Bezeichnung eines Werts ab."""
+    unit = (einheit or "").strip()
+    name_lower = (bezeichnung_text or "").casefold()
+
+    device_class: SensorDeviceClass | None = _EINHEIT_KLASSEN.get(unit)
+    if device_class is None and unit == "%":
+        if "feucht" in name_lower or "humid" in name_lower:
+            device_class = SensorDeviceClass.HUMIDITY
+
+    if "gestern" in name_lower or "yesterday" in name_lower:
+        return device_class, None
+
+    if device_class == SensorDeviceClass.ENERGY:
+        return device_class, SensorStateClass.TOTAL_INCREASING
+    if device_class == SensorDeviceClass.WEIGHT and any(
+        wort in name_lower for wort in _ZAEHLER_WOERTER
+    ):
+        return device_class, SensorStateClass.TOTAL_INCREASING
+
+    if device_class is not None or unit:
+        return device_class, SensorStateClass.MEASUREMENT
+
+    return None, None
 
 
 def _als_zahl(text: str) -> float | None:
