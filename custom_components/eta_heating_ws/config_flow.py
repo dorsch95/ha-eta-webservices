@@ -558,10 +558,10 @@ def _einstellung_felder(
 ) -> dict:
     """Komponenten, Abfrageintervall, Freigaben, Zusatzfunktionen, Heizwert, Wetter.
 
-    Der Pelletpreis steht in keinem Formular. Er hat eine Stelle, nicht
-    zwei: das Zahlenfeld "Pelletpreis" am Gerät, das auch die Karte "ETA
-    Übersicht" stellt und das jede eingetragene Lieferung mit ihrem Preis
-    nachführt, siehe coordinator.pellet_preis_merken.
+    Der Pelletpreis steht in keinem Formular. Er kommt mit der
+    eingetragenen Lieferung, siehe coordinator.pellet_preis_merken. Wer
+    kein Pelletlager hat oder ihn berichtigen will, stellt ihn im
+    Zahlenfeld "Pelletpreis" am Gerät.
 
     Eine neue Einrichtung (neu) schlägt vor, fehlende Werte auszublenden.
     Eine bestehende behält ihre Platzhalter, bis der Nutzer den Haken

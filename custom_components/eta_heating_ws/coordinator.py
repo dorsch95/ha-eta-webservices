@@ -1315,9 +1315,10 @@ class ETADataUpdateCoordinator(DataUpdateCoordinator[dict[str, ETAValue]]):
     def pellet_preis_merken(self, preis: float) -> None:
         """Übernimmt einen neuen Pelletpreis in Euro je Tonne, 0 schaltet die Kosten ab.
 
-        Der Preis hat nur diese eine Stelle: Das Zahlenfeld "Pelletpreis"
-        und jede Lieferung mit Preis rufen sie, in den Formularen der
-        Einrichtung steht er nicht. Die Kostensensoren
+        Er kommt mit jeder Lieferung, die einen Preis nennt, oder aus dem
+        Zahlenfeld "Pelletpreis" am Gerät. In den Formularen der
+        Einrichtung und im Stift-Fenster der Karte steht er nicht. Die
+        Kostensensoren
         rechnen sofort damit. Nur wenn sie neu entstehen oder wegfallen -
         der Preis also von oder auf 0 wechselt -, wird die Einrichtung neu
         geladen.

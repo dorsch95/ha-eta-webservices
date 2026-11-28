@@ -154,7 +154,6 @@ const TEXTE = {
     datum: "Datum",
     menge: "Menge",
     preis_je_tonne: "Preis je Tonne",
-    pelletpreis: "Pelletpreis",
     speichern: "Speichern",
     abbrechen: "Abbrechen",
     ok: "OK",
@@ -297,7 +296,6 @@ const TEXTE = {
     datum: "Date",
     menge: "Amount",
     preis_je_tonne: "Price per tonne",
-    pelletpreis: "Pellet price",
     speichern: "Save",
     abbrechen: "Cancel",
     ok: "OK",
@@ -1873,13 +1871,14 @@ class EtaUebersichtKarte extends HTMLElement {
 
   /**
    * Am Pelletlager: Plus trägt eine Lieferung ein, der Stift stellt
-   * Vorrat, Fassungsvermögen und Pelletpreis. Beides nur, wo es die
-   * Zahlenfelder dafür gibt.
+   * Vorrat und Fassungsvermögen. Beides nur, wo es die Zahlenfelder
+   * dafür gibt. Den Pelletpreis gibt es nur bei der Lieferung - eine
+   * Stelle, nicht zwei.
    */
   _lagerKnoepfe(teil) {
     if (teil.art !== "lager") return "";
     const knopf = (aktion, symbol, name) => `<button type="button" class="eta-rund eta-zeit" data-aktion="${aktion}" title="${e(name)}" aria-label="${e(name)}">${symbol}</button>`;
-    return (teil.preis ? knopf("lieferung", ICON.plus, this._t.lieferung) : "") + (teil.stellen || teil.vorratStellen || teil.preis ? knopf("lager-einstellen", ICON.stift, this._t.lager_einstellen) : "");
+    return (teil.preis ? knopf("lieferung", ICON.plus, this._t.lieferung) : "") + (teil.stellen || teil.vorratStellen ? knopf("lager-einstellen", ICON.stift, this._t.lager_einstellen) : "");
   }
 
   _info(w) {
@@ -2450,9 +2449,9 @@ class EtaUebersichtKarte extends HTMLElement {
   }
 
   /**
-   * Die kleinen Fenster zum Einstellen. "lager-einstellen" zeigt Vorrat,
-   * Fassungsvermögen und Pelletpreis als Zahlenfelder und schreibt, was
-   * geändert wurde. "lieferung" nimmt Datum, Menge und Preis und ruft die
+   * Die kleinen Fenster zum Einstellen. "lager-einstellen" zeigt Vorrat
+   * und Fassungsvermögen als Zahlenfelder und schreibt, was geändert
+   * wurde. "lieferung" nimmt Datum, Menge und Preis und ruft die
    * Aktion "Pelletlieferung eintragen" auf - vor dem OK steht, ob dabei
    * auch der Vorrat an der Heizung geändert wird. Was gerade nicht
    * verfügbar ist, bleibt gesperrt und wird nicht geschrieben.
@@ -2495,7 +2494,6 @@ class EtaUebersichtKarte extends HTMLElement {
       const felder = [
         ["vorrat", t.vorrat, vorrat, "kg", t.an_der_heizung, true],
         ["maximum", t.fassungsvermoegen, maximum, "kg", maximum?.attributes.gespeichert === "Anlage" ? t.an_der_heizung : t.nur_in_ha, true],
-        ["preis", t.pelletpreis, preis, "€/t", "", false],
       ].filter(([, , s]) => s);
       const erstes = felder.find(([, , s]) => !fehlt(s));
       formular.innerHTML =

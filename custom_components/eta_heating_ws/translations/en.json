@@ -36,7 +36,7 @@
         "data_description": {
           "components": "External heat or stand-alone heat source? If your stove appears at the heater's display as its own block (\"F.Wärme\" by default, sometimes renamed, e.g. \"Ofen\"), choose External heat: the ETA control measures and charges the buffer itself, Home Assistant shows it. If it does not appear there, choose Stand-alone heat source: Home Assistant then recognises from an entity or a temperature sensor whether it heats, and it can lock the boiler.",
           "fehlende_ausblenden": "Whatever your heating system does not have gets no sensor - the pellet consumption on a log boiler, for example. Unticked, a sensor showing \"-\" is created instead.",
-          "verbrauch_zeitraeume": "Three sensors for consumption. With a pellet price three more for the costs: set the price on the device in the field \"Pellet price\" or in the card at the pellet store, or enter it there with a delivery.",
+          "verbrauch_zeitraeume": "Three sensors for consumption. With a pellet price three more for the costs: enter the price with a delivery, using the plus at the pellet store in the card \"ETA Übersicht\". Without a pellet store, set it on the device in the field \"Pellet price\".",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average.",
           "scan_interval": "1 to 600. The shorter, the more often the system has to answer.",
@@ -295,7 +295,7 @@
           "wetter": "Weather forecast for the pellet prognosis"
         },
         "data_description": {
-          "verbrauch_zeitraeume": "Three sensors for consumption. With a pellet price three more for the costs: set the price on the device in the field \"Pellet price\" or in the card at the pellet store, or enter it there with a delivery.",
+          "verbrauch_zeitraeume": "Three sensors for consumption. With a pellet price three more for the costs: enter the price with a delivery, using the plus at the pellet store in the card \"ETA Übersicht\". Without a pellet store, set it on the device in the field \"Pellet price\".",
           "prognose": "Learns from the history how much your house burns at which outside temperature and tells how long the store lasts. Up to six sensors.",
           "wetter": "Leave empty if you do not want to use a forecast. The prognosis then uses the long-term temperature average."
         }

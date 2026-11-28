@@ -116,7 +116,7 @@ Alles lässt sich später unter **Einstellungen → Geräte & Dienste → ETA We
 | Weitere Werte auswählen | siehe [Weitere Werte](#weitere-werte) |
 | Fehlende Werte zuordnen | siehe [Fehlende Werte](#fehlende-werte) |
 
-Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**. Den Pelletpreis stellst du nicht hier, sondern am Gerät, in der Karte oder mit einer Lieferung, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
+Die IP-Adresse steht im Drei-Punkte-Menü unter **Neu konfigurieren**. Den Pelletpreis stellst du nicht hier. Du gibst ihn mit einer Lieferung an, siehe [Pelletlager](#pelletlager-vorrat-fassungsvermögen-preis-und-lieferung).
 
 ### Funktionsblock-Namen
 
@@ -548,13 +548,13 @@ Findet die Integration die **Entaschentaste** (am Display unter *Sonstiges*), gi
 
 ### Pelletlager: Vorrat, Fassungsvermögen, Preis und Lieferung
 
-In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) hat das Pelletlager zwei Knöpfe: **Plus** trägt eine Lieferung ein (Datum, Menge, Preis je Tonne) und erhöht den Vorrat an der Heizung. **Stift** stellt Vorrat, Fassungsvermögen und Pelletpreis. Ohne Karte:
+In der Karte [ETA Übersicht](#neue-karte-eta-übersicht) hat das Pelletlager zwei Knöpfe: **Plus** trägt eine Lieferung ein (Datum, Menge, Preis je Tonne) und erhöht den Vorrat an der Heizung. **Stift** stellt Vorrat und Fassungsvermögen. Den Pelletpreis gibst du mit der Lieferung an, er gilt ab dann für die Kosten. Ohne Karte:
 
 | | Was | Wohin |
 |---|---|---|
 | `number.eta_heizung_lager_vorrat` | Vorrat in kg | an die Anlage. Nur mit Schreibzugriff und wenn die Anlage den Vorrat als beschreibbar meldet |
 | `number.eta_heizung_lager_fassungsvermogen` | Fassungsvermögen in kg | an die Anlage, sonst nur in Home Assistant |
-| `number.eta_heizung_pelletpreis` | Preis in Euro je Tonne | nur in Home Assistant. 0 schaltet die Kosten ab |
+| `number.eta_heizung_pelletpreis` | Preis in Euro je Tonne, zum Berichtigen oder ohne Pelletlager | nur in Home Assistant. 0 schaltet die Kosten ab |
 | Aktion `eta_heating_ws.lieferung_eintragen` | `datum`, `menge` in kg, `preis` in Euro je Tonne | merkt sich die Lieferung, übernimmt den Preis, erhöht den Vorrat an der Anlage |
 
 Die letzten 20 Lieferungen stehen im Attribut `lieferungen` von `number.eta_heizung_pelletpreis`. Lässt sich der Vorrat nicht schreiben, wird die Lieferung gemerkt und der Preis übernommen. Den Vorrat stellst du dann am Display.
